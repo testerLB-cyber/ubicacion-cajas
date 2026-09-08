@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Registrar ubicación de caja</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+.card{width:min(520px,100%);background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(15,23,42,.14);overflow:hidden}
+.head{background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;padding:22px}.head h1{margin:0;font-size:22px}.head p{margin:6px 0 0;color:#bfdbfe;font-size:13px}
+.body{padding:22px}.unit{padding:14px;border:1px solid #dbeafe;background:#eff6ff;border-radius:14px;margin-bottom:16px}.unit strong{font-size:18px;display:block}.unit span{font-size:12px;color:#475569}
+.status{padding:12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;margin-bottom:14px}
+button{width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:800;cursor:pointer;background:#2563eb;color:white}
+button:disabled{opacity:.6;cursor:wait}.ok{background:#dcfce7;border-color:#86efac;color:#166534}.err{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+.meta{font-size:11px;color:#64748b;margin-top:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head"><h1>Registrar ubicación</h1><p>GM Transport · Control de Cajas</p></div>
+  <div class="body">
+    <div id="unit" class="unit"><strong>Validando QR...</strong><span></span></div>
+    <div id="status" class="status">Abre este enlace desde el celular y permite el acceso a tu ubicación.</div>
+    <button id="btn" disabled>Guardar ubicación actual</button>
+    <div class="meta">Se guardarán latitud, longitud, precisión y fecha/hora. El sistema conserva únicamente las últimas 5 ubicaciones de esta unidad.</div>
+  </div>
+</div>
+<script>
+const EDGE='https://nbogdhriavzqetnlrrau.supabase.co/functions/v1/cc-location';
+const q=new URLSearchParams(location.search).get('q')||'';
+const unit=document.getElementById('unit'),status=document.getElementById('status'),btn=document.getElementById('btn');
+let unitData=null;
+function setStatus(msg,type=''){status.textContent=msg;status.className='status'+(type?' '+type:'');}
+async function init(){
+  if(!q){setStatus('QR inválido: falta el identificador de la unidad.','err');return;}
+  try{
+    const r=await fetch(EDGE+'?q='+encodeURIComponent(q),{cache:'no-store'});
+    const d=await r.json();
+    if(!r.ok||!d.ok)throw new Error(d.error||'No se pudo validar la unidad');
+    unitData=d;
+    unit.querySelector('strong').textContent=d.unidad||'Unidad';
+    unit.querySelector('span').textContent=d.descripcion||'';
+    btn.disabled=false;
+    setStatus('Unidad validada. Presiona el botón para obtener y guardar la ubicación.');
+  }catch(e){setStatus('No se pudo validar este QR. '+(e.message||e),'err');}
+}
+btn.onclick=()=>{
+  if(!navigator.geolocation){setStatus('Este navegador no permite obtener ubicación.','err');return;}
+  btn.disabled=true;btn.textContent='Obteniendo ubicación...';
+  setStatus('Solicitando ubicación del teléfono...');
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const body={q,lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
+      setStatus('Ubicación obtenida. Guardando...');
+      const r=await fetch(EDGE,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+      const d=await r.json();
+      if(!r.ok||!d.ok)throw new Error(d.error||'No se pudo guardar');
+      setStatus('Ubicación guardada correctamente.','ok');
+      btn.textContent='Ubicación guardada';
+    }catch(e){
+      setStatus('No se pudo guardar la ubicación. '+(e.message||e),'err');
+      btn.disabled=false;btn.textContent='Intentar de nuevo';
+    }
+  },err=>{
+    const m=err.code===1?'Permiso de ubicación rechazado.':err.code===2?'No fue posible determinar la ubicación.':'Tiempo agotado al obtener ubicación.';
+    setStatus(m,'err');btn.disabled=false;btn.textContent='Intentar de nuevo';
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+};
+init();
+</script>
+</body>
+</html>
