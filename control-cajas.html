@@ -845,7 +845,30 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <tbody id="ccMatrixBody"></tbody>
 </table>
 </div>
-<div class="cc-note">Solo se muestran rentas activas. La única acción disponible es <b>Sacar de renta</b>.</div>
+<div class="cc-note">Arriba se muestran únicamente rentas activas. Al sacar una unidad de renta, su registro permanece en el histórico por cliente.</div>
+
+<div class="cc-config-card" style="margin-top:16px">
+  <div class="cc-toolbar">
+    <div>
+      <strong>Histórico de rentas por cliente</strong>
+      <div class="cc-note">Conserva entradas y salidas de renta aunque la caja ya no esté activa.</div>
+    </div>
+    <button class="cc-btn cc-btn-light" type="button" onclick="ccRentaHistoricoLimpiar()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
+  </div>
+  <div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(140px,1fr))">
+    <div><label>Cliente</label><select id="ccRentaHistCliente" onchange="ccRenderRentaHistorico()"><option value="">Todos</option></select></div>
+    <div><label>Desde</label><input id="ccRentaHistDesde" type="date" onchange="ccRenderRentaHistorico()"></div>
+    <div><label>Hasta</label><input id="ccRentaHistHasta" type="date" onchange="ccRenderRentaHistorico()"></div>
+    <div><label>Estatus</label><select id="ccRentaHistEstatus" onchange="ccRenderRentaHistorico()"><option value="">Todos</option><option value="ACTIVA">Activas</option><option value="FINALIZADA">Finalizadas</option></select></div>
+  </div>
+  <div id="ccRentaHistKpis" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+  <div class="cc-inv-wrap" style="max-height:50vh;overflow:auto">
+    <table class="cc-table-list" style="min-width:980px">
+      <thead><tr><th>CLIENTE</th><th>UNIDAD</th><th>ENTRADA</th><th>SALIDA</th><th>DÍAS</th><th>MÉTODO</th><th>RESPONSABLE</th><th>ESTATUS</th></tr></thead>
+      <tbody id="ccRentaHistBody"></tbody>
+    </table>
+  </div>
+</div>
 </div>
 </section>
 <!-- BARRA DE FILTRO DE FECHAS (Diseño tipo tarjeta moderna) -->
@@ -6172,7 +6195,53 @@ window.ccRenderRenta=function(){
     <div class="cc-card"><small>Clientes visibles</small><strong style="display:block;font-size:20px">${new Set(rows.map(r=>r.clienteId).filter(Boolean)).size}</strong></div>
     <div class="cc-card"><small>Responsables visibles</small><strong style="display:block;font-size:20px">${new Set(rows.map(r=>r.responsableId).filter(Boolean)).size}</strong></div>
     <div class="cc-card"><small>Disponibles</small><strong style="display:block;font-size:20px;color:#b91c1c">${Math.max(0,unidadesTipo.filter(x=>x.estatus!=='MANTENIMIENTO'&&x.estatus!=='INACTIVO').length-activas)}</strong></div>`;
+  ccRenderRentaHistorico();
 };
+
+window.ccRenderRentaHistorico=function(){
+  const body=document.getElementById('ccRentaHistBody');if(!body)return;
+  const cliSel=document.getElementById('ccRentaHistCliente');
+  if(cliSel){
+    const cur=cliSel.value;
+    cliSel.innerHTML='<option value="">Todos</option>'+clientes.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
+    cliSel.value=cur;
+  }
+  const clienteId=cliSel?.value||'',desde=document.getElementById('ccRentaHistDesde')?.value||'',hasta=document.getElementById('ccRentaHistHasta')?.value||'',estatus=document.getElementById('ccRentaHistEstatus')?.value||'',hoy=iso(new Date());
+  const cajaMap=new Map(cajas.map(x=>[x.id,x])),cliMap=new Map(clientes.map(x=>[x.id,x])),respMap=new Map(responsables.map(x=>[x.id,x]));
+  const rows=rentas.filter(r=>{
+    if(r.estatus==='CANCELADA')return false;
+    if(clienteId&&r.clienteId!==clienteId)return false;
+    const inicio=String(r.fechaInicio||''),fin=(r.indeterminada==='SI'||!r.fechaFin)?hoy:String(r.fechaFin||'');
+    if(desde&&fin<desde)return false;
+    if(hasta&&inicio>hasta)return false;
+    const estado=(r.indeterminada==='SI'||!r.fechaFin)?'ACTIVA':'FINALIZADA';
+    if(estatus&&estado!==estatus)return false;
+    return true;
+  }).map(r=>{
+    const inicio=String(r.fechaInicio||''),fin=(r.indeterminada==='SI'||!r.fechaFin)?hoy:String(r.fechaFin||'');
+    const a=desde&&desde>inicio?desde:inicio,b=hasta&&hasta<fin?hasta:fin;
+    const dias=(a&&b&&a<=b)?Math.floor((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000)+1:0;
+    return {r,unidad:cajaMap.get(r.cajaId),cliente:cliMap.get(r.clienteId),responsable:respMap.get(r.responsableId),estado:(r.indeterminada==='SI'||!r.fechaFin)?'ACTIVA':'FINALIZADA',dias};
+  }).sort((a,b)=>String(b.r.fechaInicio||'').localeCompare(String(a.r.fechaInicio||'')));
+  const clientesSet=new Set(rows.map(x=>x.r.clienteId).filter(Boolean)),unidadesSet=new Set(rows.map(x=>x.r.cajaId).filter(Boolean)),diasTotal=rows.reduce((s,x)=>s+x.dias,0);
+  const k=document.getElementById('ccRentaHistKpis');if(k)k.innerHTML=`
+    <div class="cc-card"><small>Registros</small><strong style="display:block;font-size:20px">${rows.length}</strong></div>
+    <div class="cc-card"><small>Clientes</small><strong style="display:block;font-size:20px">${clientesSet.size}</strong></div>
+    <div class="cc-card"><small>Unidades</small><strong style="display:block;font-size:20px">${unidadesSet.size}</strong></div>
+    <div class="cc-card"><small>Días rentados</small><strong style="display:block;font-size:20px">${diasTotal}</strong></div>`;
+  body.innerHTML=rows.length?rows.map(x=>`<tr>
+    <td><strong>${esc(x.cliente?.nombre||'—')}</strong></td>
+    <td>${esc(x.unidad?.numero||'—')}<div class="cc-note">${esc(x.unidad?.descripcion||'')}</div></td>
+    <td>${esc(x.r.fechaInicio||'—')}</td>
+    <td>${esc((x.r.indeterminada==='SI'||!x.r.fechaFin)?'ABIERTA':x.r.fechaFin)}</td>
+    <td>${x.dias}</td>
+    <td>${esc(x.r.metodoCobro||'DIARIO')}</td>
+    <td>${esc(x.responsable?.nombre||'—')}</td>
+    <td><span class="cc-badge ${x.estado==='ACTIVA'?'cc-ok':''}">${x.estado}</span></td>
+  </tr>`).join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:#94a3b8">Sin historial con los filtros seleccionados.</td></tr>';
+  window.ccRentaHistoricoData=rows;
+};
+window.ccRentaHistoricoLimpiar=function(){['ccRentaHistCliente','ccRentaHistDesde','ccRentaHistHasta','ccRentaHistEstatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});ccRenderRentaHistorico();};
 function ccHistDays(desde,hasta){if(!desde||!hasta||desde>hasta)return 0;const a=new Date(desde+'T12:00:00'),b=new Date(hasta+'T12:00:00');return Math.floor((b-a)/86400000)+1;}
 function ccHistOverlapDays(r,desde,hasta){
   const hoy=iso(new Date());
