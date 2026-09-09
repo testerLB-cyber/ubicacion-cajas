@@ -6987,8 +6987,12 @@ window.ccAntComprobar=async function(id){
 
   var formEl=ov.querySelector('#ccCompForm');
   if(!formEl){alert('No se pudo abrir el formulario de comprobación.');return}
+  var ccCompSaving=false;
   formEl.onsubmit=async function(ev){
     ev.preventDefault();
+    if(ccCompSaving)return;
+    ccCompSaving=true;
+    var submitBtn=formEl.querySelector('button[type="submit"]');if(submitBtn){submitBtn.disabled=true;submitBtn.textContent='Guardando...'}
     var fd=new FormData(formEl),file=fd.get('archivo'),msgEl=ov.querySelector('#ccCompMsg');
     try{
       var conceptoId=String(fd.get('conceptoId')||''),monto=Number(fd.get('monto'));
@@ -7017,6 +7021,9 @@ window.ccAntComprobar=async function(id){
     }catch(err){
       var msg=(err&&err.message)?err.message:String(err);
       if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(msg)+'</span>';else alert(msg);
+    }finally{
+      ccCompSaving=false;
+      if(submitBtn){submitBtn.disabled=false;submitBtn.textContent='Guardar y agregar otro'}
     }
   };
   await refresh();
