@@ -7558,7 +7558,29 @@ window.ccDeleteAppUser=async function(userId,email){
 };
 
 document.addEventListener('DOMContentLoaded',async()=>{
- if(!sb){msg('Supabase no está disponible.','error');return;}
+ if(!sb){
+   const diag={
+     supabaseGlobal:typeof window.supabase,
+     createClient:typeof window.supabase?.createClient,
+     url:window.GM_SUPABASE_URL||'',
+     keyPresent:!!window.GM_SUPABASE_ANON_KEY,
+     gmClient:!!window.gmSupabase
+   };
+   console.error('DIAGNÓSTICO SUPABASE LOGIN',diag);
+   msg('Error de inicialización Supabase · global: '+diag.supabaseGlobal+' · createClient: '+diag.createClient+' · URL: '+(diag.url?'OK':'NO')+' · KEY: '+(diag.keyPresent?'OK':'NO')+' · CLIENTE: '+(diag.gmClient?'OK':'NO'),'error');
+   return;
+ }
+ msg('Validando conexión con Supabase…','info');
+ try{
+   const {data,error}=await sb.rpc('cc_admin_bootstrap_status');
+   if(error)throw error;
+   if(!data?.ok)throw new Error(data?.error||'La base respondió sin estado válido');
+   msg('Supabase conectado correctamente. Puedes iniciar sesión.','ok');
+ }catch(e){
+   console.error('PRUEBA CONEXIÓN SUPABASE LOGIN',e);
+   msg('Cliente Supabase cargado, pero la base no respondió: '+(e?.message||String(e)),'error');
+   return;
+ }
  await bootstrapStatus();
  document.getElementById('ccRememberSession').checked=localStorage.getItem('cc_remember_session')!=='0';
  document.getElementById('ccLoginForm').addEventListener('submit',e=>{e.preventDefault();const remember=document.getElementById('ccRememberSession').checked;localStorage.setItem('cc_remember_session',remember?'1':'0');if(remember)sessionStorage.setItem('cc_session_current','1');login(document.getElementById('ccLoginEmail').value,document.getElementById('ccLoginPassword').value);});
