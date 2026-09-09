@@ -572,7 +572,7 @@ table{max-width:none}
 <button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CAJA" onclick="ccFiltrarInventarioTipo('CAJA')">Cajas</button>
 <button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CARRO" onclick="ccFiltrarInventarioTipo('CARRO')">Carros</button>
 <div id="ccInvTipoExtra" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-</div><div class="cc-toolbar"><div><strong>Inventario de unidades</strong><div class="cc-note">Catálogo general de unidades: cajas, carros y los demás tipos configurados.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-light" onclick="ccAbrirImportarUnidades()"><i class="fa-solid fa-file-import mr-1"></i>Importar unidades</button><button class="cc-btn cc-btn-light" type="button" onclick="ccDescargarTemplateUnidades()"><i class="fa-solid fa-file-excel mr-1"></i>Descargar template</button><button class="cc-btn cc-btn-primary" onclick="ccNuevaCaja()"><i class="fa-solid fa-plus mr-1"></i>Agregar unidad</button></div></div><div class="cc-inv-kpis" id="ccInventarioKpis"></div><div class="cc-inv-toolbar"><input class="cc-inv-search" id="ccInventarioSearch" oninput="ccInventarioSearchDebounced()" placeholder="Buscar por caja, cliente, tipo, origen..." type="search"/><button class="cc-btn cc-btn-light" onclick="document.getElementById('ccInventarioSearch').value='';ccRenderInventario()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div><div class="cc-inv-wrap"><table class="cc-inv-table"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>UNIDAD / ECONÓMICO</th><th>DESCRIPCIÓN</th><th>TAMAÑO</th><th>TIPO</th><th>ORIGEN</th><th>PLACAS</th><th>CLIENTE</th><th>ESTATUS</th><th>CAPACIDAD</th><th>OBSERVACIONES</th><th>ACCIONES</th></tr></thead><tbody id="ccInventarioBody"></tbody></table></div>
+</div><div class="cc-toolbar"><div><strong>Inventario de unidades</strong><div class="cc-note">Catálogo general de unidades: cajas, carros y los demás tipos configurados.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-light" onclick="ccAbrirImportarUnidades()"><i class="fa-solid fa-file-import mr-1"></i>Importar unidades</button><button class="cc-btn cc-btn-light" type="button" onclick="ccDescargarTemplateUnidades()"><i class="fa-solid fa-file-excel mr-1"></i>Descargar template</button><button class="cc-btn cc-btn-primary" onclick="ccNuevaCaja()"><i class="fa-solid fa-plus mr-1"></i>Agregar unidad</button></div></div><div class="cc-inv-kpis" id="ccInventarioKpis"></div><div class="cc-inv-toolbar"><input class="cc-inv-search" id="ccInventarioSearch" oninput="ccInventarioSearchDebounced()" placeholder="Buscar por caja, cliente, tipo, origen..." type="search"/><button class="cc-btn cc-btn-light" onclick="document.getElementById('ccInventarioSearch').value='';ccRenderInventario()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div><div class="cc-inv-wrap"><table class="cc-inv-table"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>UNIDAD / ECONÓMICO</th><th>DESCRIPCIÓN</th><th>TAMAÑO</th><th>TIPO</th><th>ORIGEN</th><th>PLACAS</th><th>CLIENTE</th><th>ESTATUS</th><th>CAPACIDAD</th><th>ÚLTIMA UBICACIÓN</th><th>OBSERVACIONES</th><th>ACCIONES</th></tr></thead><tbody id="ccInventarioBody"></tbody></table></div>
 
 </div>
 <div class="cc-panel" id="ccPanelProforma">
@@ -5835,6 +5835,66 @@ window.ccAbrirMapaUbicaciones=async function(){
     alert('No se pudo cargar el mapa.\\n\\n'+(err.message||err));
   }
 };
+
+
+let ccInventarioUbicaciones=new Map();
+let ccInventarioUbicacionesCargadasEn=0;
+let ccInventarioUbicacionesLoading=false;
+const ccReverseGeoCache=new Map();
+let ccReverseGeoLastRequest=0;
+function ccDireccionCacheKey(lat,lng){return Number(lat).toFixed(5)+','+Number(lng).toFixed(5);}
+function ccLeerDireccionCache(lat,lng){
+ const k=ccDireccionCacheKey(lat,lng);
+ if(ccReverseGeoCache.has(k))return ccReverseGeoCache.get(k);
+ try{const v=localStorage.getItem('cc_geo_'+k);if(v){ccReverseGeoCache.set(k,v);return v;}}catch(_){}
+ return '';
+}
+async function ccReverseGeocode(lat,lng){
+ const cached=ccLeerDireccionCache(lat,lng);if(cached)return cached;
+ const wait=Math.max(0,1050-(Date.now()-ccReverseGeoLastRequest));
+ if(wait)await new Promise(r=>setTimeout(r,wait));
+ ccReverseGeoLastRequest=Date.now();
+ try{
+  const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lng)+'&zoom=18&addressdetails=1&accept-language=es';
+  const r=await fetch(url,{headers:{Accept:'application/json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json(),dir=String(j&&j.display_name||'').trim();
+  if(dir){const k=ccDireccionCacheKey(lat,lng);ccReverseGeoCache.set(k,dir);try{localStorage.setItem('cc_geo_'+k,dir);}catch(_){}}
+  return dir;
+ }catch(e){console.warn('GEOCODIFICACION INVERSA:',e);return '';}
+}
+function ccEtiquetaUbicacion(r){
+ if(!r)return {texto:'Sin ubicación',geocerca:false};
+ const lat=Number(r.latitud),lng=Number(r.longitud);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng))return {texto:'Sin ubicación',geocerca:false};
+ const g=ccGeocercaDePunto(lat,lng);
+ if(g)return {texto:g.nombre||'Geocerca',geocerca:true};
+ const directa=String(r.direccion||r.address||r.displayName||'').trim();
+ return {texto:directa||ccLeerDireccionCache(lat,lng)||'Consultando dirección…',geocerca:false};
+}
+async function ccActualizarDireccionCelda(r){
+ if(!r)return;
+ const lat=Number(r.latitud),lng=Number(r.longitud);
+ if(!Number.isFinite(lat)||!Number.isFinite(lng)||ccGeocercaDePunto(lat,lng))return;
+ const dir=String(r.direccion||r.address||r.displayName||'').trim()||await ccReverseGeocode(lat,lng);
+ const el=document.querySelector('[data-cc-location-unit="'+String(r.unidadId||'').replace(/"/g,'')+'"]');
+ if(el&&dir)el.innerHTML='<i class="fa-solid fa-location-dot" style="color:#2563eb;margin-right:5px"></i><span>'+esc(dir)+'</span><div style="font-size:9px;color:#94a3b8;margin-top:3px">'+esc(new Date(r.fechaHora).toLocaleString())+'</div>';
+}
+async function ccCargarUbicacionesInventario(force=false){
+ if(ccInventarioUbicacionesLoading)return;
+ if(!force&&Date.now()-ccInventarioUbicacionesCargadasEn<30000&&ccInventarioUbicaciones.size)return;
+ ccInventarioUbicacionesLoading=true;
+ try{
+  const {data,error}=await gmSupabase.rpc('cc_ultima_ubicacion_todas');
+  if(error)throw error;
+  const rows=Array.isArray(data&&data.registros)?data.registros:[];
+  ccInventarioUbicaciones=new Map(rows.map(r=>[String(r.unidadId),r]));
+  ccInventarioUbicacionesCargadasEn=Date.now();
+  if(document.getElementById('ccPanelInventario')?.classList.contains('active'))ccRenderInventario();
+ }catch(e){console.warn('UBICACIONES INVENTARIO:',e);}
+ finally{ccInventarioUbicacionesLoading=false;}
+}
+window.ccCargarUbicacionesInventario=ccCargarUbicacionesInventario;
 
 let ccInventarioSearchTimer=null;
 window.ccInventarioSearchDebounced=function(){
