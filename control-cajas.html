@@ -5721,7 +5721,134 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
+<style id="gm-module-gateway-css">
+body.gm-portal-module #gmSideMenu{display:none!important}
+body.gm-portal-module:not(.gm-control-mode) main{margin-left:0!important;width:100%!important;max-width:none!important}
+body.gm-portal-module:not(.gm-control-mode) header{padding-right:72px!important}
+body.cc-auth-locked #gmPortalCorner,body.cc-auth-locked #gmModuleGateway{display:none!important}
+#gmModuleGateway{position:fixed;inset:0;z-index:10080;background:
+radial-gradient(circle at 15% 20%,rgba(37,99,235,.22),transparent 34%),
+radial-gradient(circle at 85% 78%,rgba(14,165,233,.16),transparent 30%),
+linear-gradient(145deg,#08111f,#0f1f38 55%,#12284a);display:none;align-items:center;justify-content:center;padding:24px;overflow:auto}
+#gmModuleGateway.open{display:flex}
+.gm-gateway-shell{width:min(980px,100%);color:#fff}
+.gm-gateway-top{text-align:center;margin-bottom:28px}
+.gm-gateway-logo{width:58px;height:58px;border-radius:18px;margin:0 auto 14px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);font-size:25px;box-shadow:0 18px 50px rgba(37,99,235,.32)}
+.gm-gateway-top h1{font-size:clamp(28px,4vw,42px);line-height:1.05;font-weight:950;letter-spacing:-.04em;margin:0}
+.gm-gateway-top p{margin:10px 0 0;color:#cbd5e1;font-size:13px}
+.gm-gateway-user{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 11px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.07);border-radius:999px;font-size:10px;font-weight:800;color:#dbeafe}
+.gm-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.gm-module-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.075);backdrop-filter:blur(14px);border-radius:22px;padding:26px;cursor:pointer;text-align:left;color:#fff;transition:transform .18s ease,border-color .18s ease,background .18s ease;min-height:230px}
+.gm-module-card:hover{transform:translateY(-4px);border-color:rgba(96,165,250,.65);background:rgba(255,255,255,.11)}
+.gm-module-card .icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:22px;background:#2563eb;margin-bottom:24px;box-shadow:0 12px 30px rgba(37,99,235,.28)}
+.gm-module-card.cajas .icon{background:#0f766e;box-shadow:0 12px 30px rgba(15,118,110,.28)}
+.gm-module-card h2{font-size:22px;font-weight:950;margin:0 0 8px}
+.gm-module-card p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:0;max-width:360px}
+.gm-module-card .go{position:absolute;right:22px;bottom:20px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+.gm-module-foot{text-align:center;margin-top:18px;color:#94a3b8;font-size:10px}
+#gmPortalCorner{position:fixed;top:12px;right:14px;z-index:10070;display:none;align-items:flex-start;gap:8px}
+#gmPortalCorner.show{display:flex}
+.gm-corner-trigger{width:42px;height:42px;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:rgba(15,23,42,.94);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.28);backdrop-filter:blur(12px)}
+.gm-corner-menu{display:none;width:205px;background:rgba(15,23,42,.97);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:7px;box-shadow:0 18px 48px rgba(15,23,42,.35);backdrop-filter:blur(14px)}
+#gmPortalCorner.open .gm-corner-menu{display:block}
+.gm-corner-user{padding:8px 9px 10px;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:5px}
+.gm-corner-user strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gm-corner-user small{font-size:9px;color:#93c5fd}
+.gm-corner-menu button{width:100%;display:flex;align-items:center;gap:9px;border:0;background:transparent;color:#e2e8f0;padding:9px;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;text-align:left}
+.gm-corner-menu button:hover{background:#1e293b;color:#fff}
+.gm-corner-menu button.danger{color:#fecaca}.gm-corner-menu button.danger:hover{background:#7f1d1d;color:#fff}
+body.gm-control-mode #ccBackDashboard{display:none!important}
+@media(max-width:720px){#gmModuleGateway{padding:16px}.gm-module-grid{grid-template-columns:1fr}.gm-module-card{min-height:180px;padding:21px}.gm-module-card .icon{margin-bottom:15px}.gm-gateway-top{margin-bottom:20px}}
+</style>
+<div id="gmModuleGateway" aria-modal="true" role="dialog">
+  <div class="gm-gateway-shell">
+    <div class="gm-gateway-top">
+      <div class="gm-gateway-logo"><i class="fa-solid fa-truck-fast"></i></div>
+      <h1>Tráfico App</h1>
+      <p>Selecciona el módulo con el que deseas trabajar.</p>
+      <div class="gm-gateway-user"><i class="fa-solid fa-user"></i><span id="gmGatewayUser">Usuario</span></div>
+    </div>
+    <div class="gm-module-grid" id="gmGatewayCards">
+      <button type="button" class="gm-module-card" id="gmGatewayDashboard" onclick="gmPortalOpenModule('dashboard')">
+        <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+        <h2>Dashboard</h2>
+        <p>Operación, indicadores, análisis gerencial, viajes, clientes y seguimiento general.</p>
+        <span class="go"><i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+      <button type="button" class="gm-module-card cajas" id="gmGatewayCajas" onclick="gmPortalOpenModule('cajas')">
+        <div class="icon"><i class="fa-solid fa-trailer"></i></div>
+        <h2>Control de Cajas</h2>
+        <p>Inventario, rentas, historial, mantenimiento, ubicación, anticipos y configuración de cajas.</p>
+        <span class="go"><i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+    </div>
+    <div class="gm-module-foot">Solo se muestran los módulos habilitados para tu usuario.</div>
+  </div>
+</div>
+<div id="gmPortalCorner">
+  <div class="gm-corner-menu">
+    <div class="gm-corner-user"><strong id="gmCornerUser">Usuario</strong><small id="gmCornerRole">ACTIVO</small></div>
+    <button type="button" id="gmCornerChange" onclick="gmPortalShowChooser()"><i class="fa-solid fa-table-cells-large"></i> Cambiar de módulo</button>
+    <button type="button" id="gmCornerSettings" onclick="gmPortalOpenSettings()"><i class="fa-solid fa-gear"></i> Configuración</button>
+    <button type="button" id="gmCornerUsers" style="display:none" onclick="gmPortalCloseMenu();ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i> Usuarios y permisos</button>
+    <button type="button" class="danger" onclick="gmPortalCloseMenu();ccLogout()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+  </div>
+  <button type="button" class="gm-corner-trigger" aria-label="Menú de usuario" onclick="document.getElementById('gmPortalCorner').classList.toggle('open')"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+</div>
+<script id="gm-module-gateway-js">
+(function(){
+  function gateway(){return document.getElementById('gmModuleGateway')}
+  function corner(){return document.getElementById('gmPortalCorner')}
+  function access(){return window.CC_ACCESS||{}}
+  function can(path){return typeof window.ccPerm==='function'&&window.ccPerm(path)}
+  function syncIdentity(){
+    const a=access(),name=a.nombre||a.email||'Usuario',role=(a.rol||'USUARIO')+(a.activo?' · ACTIVO':'');
+    const gu=document.getElementById('gmGatewayUser'),cu=document.getElementById('gmCornerUser'),cr=document.getElementById('gmCornerRole');
+    if(gu)gu.textContent=name;if(cu)cu.textContent=name;if(cr)cr.textContent=role;
+    const users=document.getElementById('gmCornerUsers');if(users)users.style.display=a.rol==='ADMIN'?'':'none';
+    const settings=document.getElementById('gmCornerSettings');if(settings)settings.style.display=can('configuracion.ver')?'':'none';
+  }
+  window.gmPortalCloseMenu=function(){corner()?.classList.remove('open')};
+  window.gmPortalShowChooser=function(){
+    const d=can('dashboard.ver'),c=can('control_cajas.ver');
+    const db=document.getElementById('gmGatewayDashboard'),cc=document.getElementById('gmGatewayCajas');
+    if(db)db.style.display=d?'':'none';if(cc)cc.style.display=c?'':'none';
+    if(!(d&&c)){window.gmPortalOpenModule(d?'dashboard':'cajas');return}
+    syncIdentity();gateway()?.classList.add('open');corner()?.classList.remove('show','open');
+    document.body.classList.remove('gm-portal-module');
+  };
+  window.gmPortalOpenModule=function(module){
+    gateway()?.classList.remove('open');
+    document.body.classList.add('gm-portal-module');
+    if(module==='cajas'){
+      if(!can('control_cajas.ver'))return window.gmPortalShowChooser();
+      if(typeof window.gmMostrarControlCajas==='function')window.gmMostrarControlCajas();
+    }else{
+      if(!can('dashboard.ver'))return window.gmPortalShowChooser();
+      if(typeof window.gmMostrarDashboard==='function')window.gmMostrarDashboard();
+    }
+    syncIdentity();corner()?.classList.add('show');corner()?.classList.remove('open');
+    try{sessionStorage.setItem('gm_current_module',module)}catch(e){}
+  };
+  window.gmPortalOpenSettings=function(){
+    gmPortalCloseMenu();
+    if(!can('configuracion.ver')){alert('Tu usuario no tiene permiso para configuración.');return}
+    gmPortalOpenModule('cajas');
+    setTimeout(()=>{if(typeof window.ccTab==='function'){const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('configuracion'"));window.ccTab('configuracion',btn);}},50);
+  };
+  window.gmPortalAfterAccess=function(state){
+    syncIdentity();
+    const d=!!state?.dashboard,c=!!state?.control;
+    if(d&&c){window.gmPortalShowChooser();return}
+    if(d){window.gmPortalOpenModule('dashboard');return}
+    if(c){window.gmPortalOpenModule('cajas');if(typeof window.firstControlTab==='function')window.firstControlTab();return}
+    gateway()?.classList.remove('open');corner()?.classList.remove('show');alert('Tu usuario no tiene módulos habilitados.');
+  };
+  document.addEventListener('click',function(e){const el=corner();if(el&&el.classList.contains('open')&&!el.contains(e.target))el.classList.remove('open')});
+})();
+</script>
+
+</body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
@@ -7303,7 +7430,8 @@ function applyAccess(){
   ['ccGuardarTarifa','configuracion.editar'],['ccNuevoCliente','configuracion.editar'],['ccNuevoResponsable','configuracion.editar']
  ].forEach(x=>protect(x[0],x[1]));
 
- if(!dashboard&&control){gmMostrarControlCajas();firstControlTab();}
+ if(typeof window.gmPortalAfterAccess==='function'){window.gmPortalAfterAccess({dashboard,control});}
+ else if(!dashboard&&control){gmMostrarControlCajas();firstControlTab();}
  else if(dashboard){gmMostrarDashboard();}
  else if(!control){document.body.classList.add('gm-control-mode');alert('Tu usuario no tiene módulos habilitados.');}
 }
