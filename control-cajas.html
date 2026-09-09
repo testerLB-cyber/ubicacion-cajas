@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dashboard de Control Logístico GM Transport</title>
+<title>Dashboard de Control Logístico Tráfico App</title>
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com">
 async function generarVideoResumen() {
@@ -512,7 +512,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <div id="ccLoginGate">
   <div class="cc-login-card">
     <div class="cc-login-brand">
-      <h2><i class="fa-solid fa-truck-fast"></i> GM Transport</h2>
+      <h2><i class="fa-solid fa-truck-fast"></i> Tráfico App</h2>
       <p>Acceso seguro · Control Logístico</p>
     </div>
     <div class="cc-login-body">
@@ -536,7 +536,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
   </div>
 </div>
 <aside aria-label="Menú lateral" id="gmSideMenu">
-<div class="gm-side-brand"><i class="fa-solid fa-truck-fast mr-2"></i>GM Transport<small>Control Logístico</small></div>
+<div class="gm-side-brand"><i class="fa-solid fa-truck-fast mr-2"></i>Tráfico App<small>Control Logístico</small></div>
 <div class="gm-side-section">Menú principal</div>
 <button class="active" id="gmSideDashboard" onclick="gmMostrarDashboard()"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
 <button id="gmSideCajas" onclick="gmMostrarControlCajas()"><i class="fa-solid fa-trailer"></i><span>Control de Cajas</span></button>
@@ -558,7 +558,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 </div>
 <div>
 <h1 class="text-lg font-bold tracking-wide text-white flex items-center gap-2">
-            GM Transport <span class="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-normal">Control Logístico</span>
+            Tráfico App <span class="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-normal">Control Logístico</span>
 </h1>
 <p class="text-xs text-slate-400">Sistema inteligente de analítica y operaciones por cliente</p>
 </div>
@@ -728,7 +728,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <div class="cc-config-card"><div class="cc-config-section-head"><div><h4>📤 Correo remitente</h4><p>Datos del correo desde donde se enviarán automáticamente los avisos de mantenimiento.</p></div><span id="ccMailConfigBadge" class="cc-badge cc-off">Sin configurar</span></div>
 <div class="cc-config-alert"><i class="fa-solid fa-shield-halved mr-1"></i>La contraseña de aplicación de Gmail se guarda cifrada en <b>Supabase Vault</b> y nunca se vuelve a mostrar en el HTML. El envío sale directamente desde tu cuenta Gmail mediante SMTP.</div>
 <div class="cc-grid" style="margin-top:14px">
-<div class="cc-field"><label>Nombre del remitente</label><input id="ccMailSenderName" placeholder="GM Transport · Control de Cajas"></div>
+<div class="cc-field"><label>Nombre del remitente</label><input id="ccMailSenderName" placeholder="Tráfico App · Control de Cajas"></div>
 <div class="cc-field"><label>Correo Gmail remitente</label><input id="ccMailSenderEmail" type="email" placeholder="tucuenta@gmail.com"></div>
 <div class="cc-field"><label>Responder a (opcional)</label><input id="ccMailReplyTo" type="email" placeholder="taller@tuempresa.com"></div>
 <div class="cc-field"><label>Contraseña de aplicación de Gmail</label><input id="ccMailApiKey" type="password" autocomplete="new-password" placeholder="16 caracteres · deja vacío para conservar la actual"><div class="cc-note" id="ccMailKeyStatus">Contraseña de aplicación no configurada.</div></div>
@@ -1424,7 +1424,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 </main>
 <!-- Footer Corporativo Inferior -->
 <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400 mt-auto">
-      GM Transport Control Logístico © 2026 — Dashboard Operativo de Rendimiento y Tráfico
+      Tráfico App Control Logístico © 2026 — Dashboard Operativo de Rendimiento y Tráfico
     </footer>
 </div>
 <script>
@@ -2783,7 +2783,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
         function footer(pageNo) {
           setLine(C.line); doc.line(M, H-9, W-M, H-9);
           doc.setFont('helvetica','normal'); doc.setFontSize(6.5); setText(C.muted);
-          doc.text('GM Transport  •  Reporte de Operaciones', M, H-4.5);
+          doc.text('Tráfico App  •  Reporte de Operaciones', M, H-4.5);
           doc.text(`Página ${pageNo}`, W-M, H-4.5, {align:'right'});
         }
 
@@ -3972,7 +3972,7 @@ main{margin-left:248px!important;max-width:none!important;width:auto!important;p
         <a href="#operadorSection"><i class="fa-solid fa-users"></i>Operadores</a>
         <a href="#vistaGerencial"><i class="fa-solid fa-chart-line"></i>Radiografía gerencial</a>`;
       header.appendChild(nav);
-      const foot=document.createElement('div');foot.id='gmV4SidebarFooter';foot.innerHTML='GM Transport<br><span style="color:#94a3b8">Centro de control operativo</span>';header.appendChild(foot);
+      const foot=document.createElement('div');foot.id='gmV4SidebarFooter';foot.innerHTML='Tráfico App<br><span style="color:#94a3b8">Centro de control operativo</span>';header.appendChild(foot);
     }
     if(!document.getElementById('gmV4Hero')){
       const hero=document.createElement('section');hero.id='gmV4Hero';hero.innerHTML=`
@@ -6219,7 +6219,7 @@ window.ccRenderHistorial=function(){
 };
 window.ccLimpiarHistorial=function(){['ccHistCaja','ccHistCliente','ccHistDesde','ccHistHasta'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});ccRenderHistorial();};
 window.ccExportarExcelHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const rows=d.eventos.map((e,i)=>({'#':i+1,'Fecha entrada a renta':e.entrada,'Fecha salida de renta':e.salida,'Caja':e.caja,'Cliente':e.cliente,'Responsable':e.responsable,'Evento':e.tipo,'Estatus':e.estatus||'','Método':e.metodo||'','Días rentados':e.dias,'Detalle / Observaciones':e.detalle||''}));const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:5},{wch:20},{wch:20},{wch:16},{wch:28},{wch:24},{wch:14},{wch:20},{wch:12},{wch:14},{wch:14},{wch:18},{wch:55}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Historial Renta');XLSX.writeFile(wb,`Historial_Cajas_Renta_${new Date().toISOString().slice(0,10)}.xlsx`);ccAudit({operacionId:ccAuditId('EXP'),accion:'EXPORTAR_HISTORIAL_EXCEL',modulo:'HISTORIAL',submodulo:'EXPORTACION',detalle:'Historial de renta exportado a Excel'});}catch(e){console.error(e);alert('No fue posible exportar el historial a Excel.');}};
-window.ccGenerarPDFHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});const box=d.box?(cajas.find(x=>x.id===d.box)?.numero||''):'Todas las cajas';const cliente=d.cliente?(clientes.find(x=>x.id===d.cliente)?.nombre||''):'Todos los clientes';doc.setFillColor(15,23,42);doc.rect(0,0,280,25,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('HISTORIAL DE CAJAS DE RENTA',14,11);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Caja: ${box} | Cliente: ${cliente} | Rango: ${d.desde||'Histórico'} al ${d.hasta||'Histórico'}`,14,18);doc.setTextColor(15,23,42);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(`Periodos de renta: ${d.periodos} | Días rentados: ${d.totalDias}`,14,33);doc.autoTable({startY:39,head:[['Entrada renta','Salida renta','Unidad','Cliente','Responsable','Evento','Estatus','Método','Días','Detalle']],body:d.eventos.map(e=>[e.entrada,e.salida,e.caja,e.cliente,e.responsable,e.tipo,e.estatus||'—',e.metodo||'—',e.dias,e.detalle]),theme:'striped',styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[30,64,175],textColor:255,fontStyle:'bold',fontSize:7},margin:{left:8,right:8,top:39,bottom:10},didDrawPage:function(){const h=doc.internal.pageSize.getHeight();doc.setFontSize(7);doc.setTextColor(100,116,139);doc.text('Historial de cajas — GM Transport',8,h-6);doc.text(`Página ${doc.internal.getNumberOfPages()}`,250,h-6);}});doc.save(`Historial_Cajas_Renta_${new Date().toISOString().slice(0,10)}.pdf`);ccAudit({operacionId:ccAuditId('EXP'),accion:'EXPORTAR_HISTORIAL_PDF',modulo:'HISTORIAL',submodulo:'EXPORTACION',detalle:'Historial de renta exportado a PDF'});}catch(e){console.error(e);alert('No fue posible generar el PDF del historial.');}};
+window.ccGenerarPDFHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});const box=d.box?(cajas.find(x=>x.id===d.box)?.numero||''):'Todas las cajas';const cliente=d.cliente?(clientes.find(x=>x.id===d.cliente)?.nombre||''):'Todos los clientes';doc.setFillColor(15,23,42);doc.rect(0,0,280,25,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('HISTORIAL DE CAJAS DE RENTA',14,11);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Caja: ${box} | Cliente: ${cliente} | Rango: ${d.desde||'Histórico'} al ${d.hasta||'Histórico'}`,14,18);doc.setTextColor(15,23,42);doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(`Periodos de renta: ${d.periodos} | Días rentados: ${d.totalDias}`,14,33);doc.autoTable({startY:39,head:[['Entrada renta','Salida renta','Unidad','Cliente','Responsable','Evento','Estatus','Método','Días','Detalle']],body:d.eventos.map(e=>[e.entrada,e.salida,e.caja,e.cliente,e.responsable,e.tipo,e.estatus||'—',e.metodo||'—',e.dias,e.detalle]),theme:'striped',styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[30,64,175],textColor:255,fontStyle:'bold',fontSize:7},margin:{left:8,right:8,top:39,bottom:10},didDrawPage:function(){const h=doc.internal.pageSize.getHeight();doc.setFontSize(7);doc.setTextColor(100,116,139);doc.text('Historial de cajas — Tráfico App',8,h-6);doc.text(`Página ${doc.internal.getNumberOfPages()}`,250,h-6);}});doc.save(`Historial_Cajas_Renta_${new Date().toISOString().slice(0,10)}.pdf`);ccAudit({operacionId:ccAuditId('EXP'),accion:'EXPORTAR_HISTORIAL_PDF',modulo:'HISTORIAL',submodulo:'EXPORTACION',detalle:'Historial de renta exportado a PDF'});}catch(e){console.error(e);alert('No fue posible generar el PDF del historial.');}};
 window.ccUnitCategory=function(x){
     return String(x?.categoriaUnidad||x?.tipoUnidadNombre||'CAJA').toUpperCase();
 };
@@ -6662,7 +6662,7 @@ window.ccGenerarPDFProforma=function(){
  doc.setFillColor(15,23,42);doc.rect(0,0,280,24,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('PROFORMA DE RENTA DE UNIDADES',14,11);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text(`Periodo: ${data.desde} al ${data.hasta} | Emisión: ${emision}`,14,18);
  doc.setTextColor(15,23,42);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(`Clientes: ${data.rows.length} | Unidades: ${data.unidadesCount} | Días rentados: ${data.totalDias} | TOTAL A COBRAR: $${data.total.toLocaleString('es-MX',{minimumFractionDigits:2})}`,14,32);
  const rows=[];data.detalle.forEach((x,i)=>rows.push([i+1,x.cliente,x.unidad,x.tipo,x.responsable,x.dias,x.metodo,`$${x.tarifa.toLocaleString('es-MX',{minimumFractionDigits:2})}`,x.periodos,`$${x.importe.toLocaleString('es-MX',{minimumFractionDigits:2})}`]));
- doc.autoTable({startY:38,head:[['#','CLIENTE','UNIDAD RENTADA','TIPO','RESPONSABLE','DÍAS','COBRO','TARIFA','PERIODOS','IMPORTE']],body:rows,theme:'striped',styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[30,64,175],textColor:255,fontStyle:'bold',halign:'center'},margin:{left:8,right:8,top:38,bottom:12},didDrawPage:function(){const hh=doc.internal.pageSize.getHeight();doc.setFontSize(7);doc.setTextColor(100,116,139);doc.text('Proforma de renta — GM Transport',8,hh-6);doc.text(`Página ${doc.internal.getNumberOfPages()}`,250,hh-6);}});
+ doc.autoTable({startY:38,head:[['#','CLIENTE','UNIDAD RENTADA','TIPO','RESPONSABLE','DÍAS','COBRO','TARIFA','PERIODOS','IMPORTE']],body:rows,theme:'striped',styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[30,64,175],textColor:255,fontStyle:'bold',halign:'center'},margin:{left:8,right:8,top:38,bottom:12},didDrawPage:function(){const hh=doc.internal.pageSize.getHeight();doc.setFontSize(7);doc.setTextColor(100,116,139);doc.text('Proforma de renta — Tráfico App',8,hh-6);doc.text(`Página ${doc.internal.getNumberOfPages()}`,250,hh-6);}});
  doc.save(`Proforma_Renta_Unidades_${data.desde}_${data.hasta}.pdf`);
  }catch(e){console.error(e);alert('No fue posible generar el PDF de la proforma.');}
 };
