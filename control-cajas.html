@@ -262,14 +262,36 @@ body.cc-only-control #controlCajasSection .cc-panel{padding:20px}
 #gmSideMenu button.active{background:#2563eb;color:#fff;box-shadow:0 7px 18px rgba(37,99,235,.25)}
 #gmSideMenu .gm-side-section{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:900;padding:8px 10px 5px}
 body:not(.gm-control-mode) #controlCajasSection{display:none!important}
-body.gm-control-mode{overflow:hidden!important}
+body.gm-control-mode{overflow:hidden!important;height:100vh!important}
 body.gm-control-mode header{display:none!important}
 body.gm-control-mode #gmSideMenu{display:none!important}
-body.gm-control-mode > .min-h-screen{min-height:100vh!important}
-body.gm-control-mode main{margin:0!important;width:100vw!important;max-width:none!important;min-height:100vh!important;padding:0!important;display:block!important}
+body.gm-control-mode footer{display:none!important}
+body.gm-control-mode > .min-h-screen{min-height:0!important;height:100vh!important;overflow:hidden!important}
+body.gm-control-mode main{margin:0!important;width:100vw!important;max-width:none!important;height:100vh!important;min-height:0!important;padding:0!important;display:block!important;overflow:hidden!important}
 body.gm-control-mode main > *:not(#controlCajasSection){display:none!important}
-body.gm-control-mode #controlCajasSection{display:block!important;width:100vw!important;max-width:none!important;margin:0!important;min-height:100vh!important}
-body.gm-control-mode #controlCajasSection .cc-wrap{min-height:100vh!important;height:100vh!important;border-radius:0!important;border:0!important}
+body.gm-control-mode #controlCajasSection{
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:10020!important;
+  width:100vw!important;
+  max-width:none!important;
+  height:100vh!important;
+  min-height:100vh!important;
+  margin:0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  background:#f8fafc!important;
+}
+body.gm-control-mode #controlCajasSection .cc-wrap{
+  min-height:100vh!important;
+  height:auto!important;
+  overflow:visible!important;
+  border-radius:0!important;
+  border:0!important;
+  background:#fff!important;
+}
 body.gm-control-mode #ccBackDashboard{display:flex!important}
 #ccBackDashboard{display:none;position:fixed;top:14px;right:16px;z-index:10050;align-items:center;gap:7px;background:rgba(15,23,42,.92);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 13px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.22)}
 #ccBackDashboard:hover{background:#2563eb}
@@ -6847,6 +6869,8 @@ function gmMostrarControlCajas(){
   document.getElementById('gmSideCajas')?.classList.add('active');
   document.body.scrollTop=0;
   document.documentElement.scrollTop=0;
+  const cc=document.getElementById('controlCajasSection');
+  if(cc)cc.scrollTop=0;
   if(typeof ccRenderAll==='function') ccRenderAll();
 }
 function gmMostrarDashboard(){
