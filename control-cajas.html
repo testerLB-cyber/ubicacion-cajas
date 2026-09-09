@@ -292,6 +292,25 @@ body.gm-control-mode #controlCajasSection .cc-wrap{
   border:0!important;
   background:#fff!important;
 }
+/* Aislamiento absoluto del Dashboard cuando Control de Cajas está activo */
+body.gm-control-mode #statusMessage,
+body.gm-control-mode #gmQuickNav,
+body.gm-control-mode #gmDateBar,
+body.gm-control-mode #vistaOperativa,
+body.gm-control-mode #vistaGerencial,
+body.gm-control-mode #kpiTractoCarroSection,
+body.gm-control-mode #transitoSection,
+body.gm-control-mode #pendientesSection,
+body.gm-control-mode #vigencia30Section,
+body.gm-control-mode #operadorSection,
+body.gm-control-mode .gm-dashboard-only,
+body.gm-control-mode main > :not(#controlCajasSection){
+  display:none!important;
+}
+body.gm-control-mode #controlCajasSection{
+  isolation:isolate!important;
+  contain:layout paint style!important;
+}
 body.gm-control-mode #ccBackDashboard{display:flex!important}
 #ccBackDashboard{display:none;position:fixed;top:14px;right:16px;z-index:10050;align-items:center;gap:7px;background:rgba(15,23,42,.92);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 13px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.22)}
 #ccBackDashboard:hover{background:#2563eb}
@@ -6863,7 +6882,38 @@ window.ccInitCloud=ccInitCloud;
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{ccInitCloud();},60));
 })();</script>
 <script id="gm-sidebar-cajas-js">
+function ccSetDashboardVisibility(hide){
+  const cc=document.getElementById('controlCajasSection');
+  const main=cc?.closest('main')||document.querySelector('main');
+  if(main){
+    [...main.children].forEach(el=>{
+      if(el===cc)return;
+      if(hide){
+        if(!el.hasAttribute('data-cc-prev-display'))el.setAttribute('data-cc-prev-display',el.style.display||'');
+        el.style.setProperty('display','none','important');
+      }else if(el.hasAttribute('data-cc-prev-display')){
+        const prev=el.getAttribute('data-cc-prev-display')||'';
+        el.style.removeProperty('display');
+        if(prev)el.style.display=prev;
+        el.removeAttribute('data-cc-prev-display');
+      }
+    });
+  }
+  ['statusMessage','gmQuickNav','gmDateBar','vistaOperativa','vistaGerencial','kpiTractoCarroSection','transitoSection','pendientesSection','vigencia30Section','operadorSection'].forEach(id=>{
+    const el=document.getElementById(id);if(!el||el===cc||cc?.contains(el))return;
+    if(hide){
+      if(!el.hasAttribute('data-cc-prev-display'))el.setAttribute('data-cc-prev-display',el.style.display||'');
+      el.style.setProperty('display','none','important');
+    }else if(el.hasAttribute('data-cc-prev-display')){
+      const prev=el.getAttribute('data-cc-prev-display')||'';
+      el.style.removeProperty('display');
+      if(prev)el.style.display=prev;
+      el.removeAttribute('data-cc-prev-display');
+    }
+  });
+}
 function gmMostrarControlCajas(){
+  ccSetDashboardVisibility(true);
   document.body.classList.add('gm-control-mode');
   document.getElementById('gmSideDashboard')?.classList.remove('active');
   document.getElementById('gmSideCajas')?.classList.add('active');
@@ -6875,6 +6925,7 @@ function gmMostrarControlCajas(){
 }
 function gmMostrarDashboard(){
   document.body.classList.remove('gm-control-mode');
+  ccSetDashboardVisibility(false);
   document.getElementById('gmSideCajas')?.classList.remove('active');
   document.getElementById('gmSideDashboard')?.classList.add('active');
   window.scrollTo({top:0,behavior:'auto'});
