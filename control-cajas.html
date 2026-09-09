@@ -508,7 +508,26 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 @media(max-width:700px){.cc-user-grid,.cc-perm-grid{grid-template-columns:1fr}.cc-user-card{max-height:96vh}}
 </style>
 <style id="cc-anticipos-css">.cc-ant-kpis{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;margin:10px 0 14px}.cc-ant-kpi{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}.cc-ant-kpi small{font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase}.cc-ant-kpi strong{display:block;font-size:21px;margin-top:3px}.cc-ant-nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.cc-ant-table{width:100%;min-width:900px;border-collapse:collapse;font-size:10px}.cc-ant-table th,.cc-ant-table td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.cc-ant-table th{position:sticky;top:0;background:#f8fafc;z-index:1}.cc-ant-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:900px){.cc-ant-kpis{grid-template-columns:repeat(2,1fr)}.cc-ant-report-grid{grid-template-columns:1fr}}</style>
-<style>#ccAntCompQR img,#ccAntCompQR canvas{max-width:100%;height:auto!important}@media(max-width:700px){#ccAntCompModal [style*="grid-template-columns:minmax(180px,240px) 1fr"]{grid-template-columns:1fr!important}}</style>
+<style>
+#ccAntCompQR img,#ccAntCompQR canvas{max-width:100%;height:auto!important}
+#ccAntCompModal .cc-comp-shell{background:#fff;width:min(980px,97vw);max-height:94vh;overflow:auto;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.35)}
+#ccAntCompModal .cc-comp-body{padding:18px}
+#ccAntCompModal .cc-comp-layout{display:grid;grid-template-columns:minmax(210px,250px) minmax(0,1fr);gap:18px;align-items:start}
+#ccAntCompModal .cc-comp-side{display:grid;gap:12px}
+#ccAntCompModal .cc-comp-qr{border:1px solid #dbeafe;background:#eff6ff;border-radius:14px;padding:12px;text-align:center}
+#ccAntCompModal .cc-comp-form-card{border:1px solid #e2e8f0;background:#fff;border-radius:14px;padding:14px}
+#ccAntCompModal .cc-comp-form-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e8f0}
+#ccAntCompModal .cc-comp-fields{display:grid;grid-template-columns:1.25fr .75fr;gap:10px}
+#ccAntCompModal .cc-comp-docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#ccAntCompModal .cc-comp-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+#ccAntCompModal .cc-comp-list{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}
+@media(max-width:760px){
+ #ccAntCompModal{padding:8px!important;align-items:flex-start!important}
+ #ccAntCompModal .cc-comp-shell{width:100%;max-height:98vh;border-radius:14px}
+ #ccAntCompModal .cc-comp-layout,#ccAntCompModal .cc-comp-fields,#ccAntCompModal .cc-comp-docs{grid-template-columns:1fr}
+ #ccAntCompModal .cc-comp-body{padding:12px}
+}
+</style>
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccLoginGate">
@@ -6952,7 +6971,7 @@ window.ccAntComprobar=async function(id){
   var cs=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'">'+h(x.concepto)+'</option>'}).join('');
   var oldComp=document.getElementById('ccAntCompModal');if(oldComp)oldComp.remove();
   var ov=document.createElement('div');ov.id='ccAntCompModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
-  ov.innerHTML='<div style="background:#fff;width:min(860px,97vw);max-height:94vh;overflow:auto;border-radius:16px"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between"><div><strong>Comprobación continua · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1">Captura aquí o usa el QR para continuar desde el celular.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px">×</button></div><div style="padding:18px"><div style="display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:16px;align-items:start;margin-bottom:16px"><div style="border:1px solid #dbeafe;background:#eff6ff;border-radius:14px;padding:12px;text-align:center"><strong style="display:block;margin-bottom:8px">Comprobar desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Foto opcional.</strong> Puedes guardar una comprobación sin adjuntar imagen. Si usas el QR, en el celular puedes tomar fotos y usar OCR opcional.</div></div><form id="ccCompForm"><div class="cc-grid"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf"><div class="cc-note">Si no adjuntas foto, se guarda únicamente la información capturada.</div></div><div class="cc-field" style="margin-top:9px"><label>Descripción / observaciones</label><textarea name="descripcion"></textarea></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="cc-btn cc-btn-primary" type="submit">Guardar y agregar otro</button></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompList" style="margin-top:15px"></div></div></div>';
+  ov.innerHTML='<div class="cc-comp-shell"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Comprobar anticipo · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">Captura los comprobantes aquí o continúa desde el celular mediante QR.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer">×</button></div><div class="cc-comp-body"><div class="cc-comp-layout"><div class="cc-comp-side"><div class="cc-comp-qr"><strong style="display:block;margin-bottom:8px">Comprobar desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px;width:100%" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Foto opcional.</strong><div style="margin-top:4px">Puedes guardar sin foto. El QR sirve para capturar evidencia desde el celular cuando la necesites.</div></div></div><div><form id="ccCompForm" class="cc-comp-form-card"><div class="cc-comp-form-title"><div><strong>Nuevo comprobante</strong><div class="cc-note">Registra un concepto por comprobante.</div></div></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf"><div class="cc-note">Si no adjuntas evidencia, la comprobación se guarda con los datos capturados.</div></div><div class="cc-field" style="margin-top:9px"><label>Descripción / observaciones</label><textarea name="descripcion" rows="3"></textarea></div><div class="cc-comp-actions"><button class="cc-btn cc-btn-primary" type="submit"><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar comprobante</button><span class="cc-note">Después de guardar puedes capturar otro.</span></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompList" class="cc-comp-list"></div></div></div></div></div>';
   document.body.appendChild(ov);
 
   var closeBtn=ov.querySelector('#ccCompClose');if(closeBtn)closeBtn.onclick=function(){ov.remove()};
@@ -6986,9 +7005,11 @@ window.ccAntComprobar=async function(id){
   var formEl=ov.querySelector('#ccCompForm');
   if(formEl)formEl.onsubmit=async function(ev){
     ev.preventDefault();
+    var submittedForm=ev.currentTarget||formEl;
     var msgEl=ov.querySelector('#ccCompMsg');
     try{
-      var fd=new FormData(ev.currentTarget),file=fd.get('archivo');
+      if(!submittedForm)throw new Error('No se encontró el formulario de comprobación.');
+      var fd=new FormData(submittedForm),file=fd.get('archivo');
       var conceptoId=String(fd.get('conceptoId')||'');
       if(!conceptoId)throw new Error('Selecciona un concepto.');
       var cx=(D.conceptos||[]).find(function(x){return x.id===conceptoId});
@@ -7014,7 +7035,7 @@ window.ccAntComprobar=async function(id){
         if(rr2&&rr2.data&&rr2.data.ok===false)throw new Error(rr2.data.error||'No se guardó');
       }
 
-      ev.currentTarget.reset();
+      if(submittedForm&&typeof submittedForm.reset==='function')submittedForm.reset();
       if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Comprobante guardado correctamente. Puedes capturar el siguiente.</span>';
       await refresh();
     }catch(err){
