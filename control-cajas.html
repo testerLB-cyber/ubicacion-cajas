@@ -528,6 +528,63 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
  #ccAntCompModal .cc-comp-body{padding:12px}
 }
 </style>
+
+<style id="gm-module-selector-css">
+body.gm-module-active #gmSideMenu{display:none!important}
+body.gm-module-active:not(.gm-control-mode) main{margin-left:0!important;width:100%!important;max-width:none!important}
+body.gm-module-active:not(.gm-control-mode) header{padding-right:70px!important}
+body.gm-module-chooser{overflow:hidden!important}
+body.cc-auth-locked #gmModuleSelector,
+body.cc-auth-locked #gmCornerMenu{display:none!important}
+
+#gmModuleSelector{
+  position:fixed;inset:0;z-index:10080;display:none;align-items:center;justify-content:center;
+  padding:24px;overflow:auto;color:#fff;
+  background:
+    radial-gradient(circle at 15% 20%,rgba(37,99,235,.24),transparent 33%),
+    radial-gradient(circle at 82% 75%,rgba(14,165,233,.17),transparent 30%),
+    linear-gradient(145deg,#07111f,#0d1d35 55%,#13294b);
+}
+#gmModuleSelector.open{display:flex}
+.gm-ms-shell{width:min(980px,100%)}
+.gm-ms-head{text-align:center;margin-bottom:28px}
+.gm-ms-logo{width:60px;height:60px;margin:0 auto 14px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);font-size:25px;box-shadow:0 18px 50px rgba(37,99,235,.32)}
+.gm-ms-head h2{font-size:clamp(28px,4vw,42px);font-weight:950;letter-spacing:-.04em;margin:0}
+.gm-ms-head p{margin:9px 0 0;color:#cbd5e1;font-size:13px}
+.gm-ms-user{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);border-radius:999px;font-size:10px;font-weight:800;color:#dbeafe}
+.gm-ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.gm-ms-card{position:relative;min-height:230px;padding:26px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(255,255,255,.075);backdrop-filter:blur(14px);color:#fff;text-align:left;cursor:pointer;transition:.18s;overflow:hidden}
+.gm-ms-card:hover{transform:translateY(-4px);background:rgba(255,255,255,.11);border-color:rgba(96,165,250,.65)}
+.gm-ms-icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:22px;background:#2563eb;margin-bottom:23px;box-shadow:0 12px 30px rgba(37,99,235,.28)}
+.gm-ms-card.cajas .gm-ms-icon{background:#0f766e;box-shadow:0 12px 30px rgba(15,118,110,.28)}
+.gm-ms-card h3{font-size:22px;font-weight:950;margin:0 0 8px}
+.gm-ms-card p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:0;max-width:360px}
+.gm-ms-go{position:absolute;right:22px;bottom:20px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1)}
+.gm-ms-foot{text-align:center;margin-top:18px;color:#94a3b8;font-size:10px}
+
+#gmCornerMenu{position:fixed;top:12px;right:14px;z-index:10070;display:none;align-items:flex-start;gap:8px}
+#gmCornerMenu.show{display:flex}
+.gm-corner-trigger{width:42px;height:42px;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:rgba(15,23,42,.94);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.28);backdrop-filter:blur(12px)}
+.gm-corner-panel{display:none;width:215px;padding:7px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(15,23,42,.97);color:#fff;box-shadow:0 18px 48px rgba(15,23,42,.35);backdrop-filter:blur(14px)}
+#gmCornerMenu.open .gm-corner-panel{display:block}
+.gm-corner-user{padding:8px 9px 10px;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:5px}
+.gm-corner-user strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gm-corner-user small{font-size:9px;color:#93c5fd}
+.gm-corner-panel button{width:100%;display:flex;align-items:center;gap:9px;border:0;background:transparent;color:#e2e8f0;padding:9px;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;text-align:left}
+.gm-corner-panel button:hover{background:#1e293b;color:#fff}
+.gm-corner-panel button.danger{color:#fecaca}
+.gm-corner-panel button.danger:hover{background:#7f1d1d;color:#fff}
+body.gm-control-mode #ccBackDashboard{display:none!important}
+
+@media(max-width:720px){
+  #gmModuleSelector{padding:16px}
+  .gm-ms-grid{grid-template-columns:1fr}
+  .gm-ms-card{min-height:180px;padding:21px}
+  .gm-ms-icon{margin-bottom:15px}
+  .gm-ms-head{margin-bottom:20px}
+}
+</style>
+
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccLoginGate">
@@ -556,6 +613,47 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
     </div>
   </div>
 </div>
+
+<div id="gmModuleSelector" role="dialog" aria-modal="true" aria-label="Seleccionar módulo">
+  <div class="gm-ms-shell">
+    <div class="gm-ms-head">
+      <div class="gm-ms-logo"><i class="fa-solid fa-truck-fast"></i></div>
+      <h2>Tráfico App</h2>
+      <p>Selecciona el módulo con el que deseas trabajar.</p>
+      <div class="gm-ms-user"><i class="fa-solid fa-user"></i><span id="gmSelectorUser">Usuario</span></div>
+    </div>
+    <div class="gm-ms-grid">
+      <button type="button" class="gm-ms-card" id="gmSelectorDashboard" onclick="gmPortalOpenModule('dashboard')">
+        <div class="gm-ms-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <h3>Dashboard</h3>
+        <p>Indicadores, operación, análisis gerencial, viajes, clientes y seguimiento general.</p>
+        <span class="gm-ms-go"><i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+      <button type="button" class="gm-ms-card cajas" id="gmSelectorCajas" onclick="gmPortalOpenModule('cajas')">
+        <div class="gm-ms-icon"><i class="fa-solid fa-trailer"></i></div>
+        <h3>Control de Cajas</h3>
+        <p>Inventario, rentas, mantenimiento, ubicación, anticipos, historial y configuración.</p>
+        <span class="gm-ms-go"><i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+    </div>
+    <div class="gm-ms-foot">Solo se muestran los módulos habilitados para tu usuario.</div>
+  </div>
+</div>
+
+<div id="gmCornerMenu">
+  <div class="gm-corner-panel">
+    <div class="gm-corner-user">
+      <strong id="gmCornerName">Usuario</strong>
+      <small id="gmCornerRole">ACTIVO</small>
+    </div>
+    <button type="button" id="gmCornerChange" onclick="gmPortalShowChooser()"><i class="fa-solid fa-table-cells-large"></i> Cambiar de módulo</button>
+    <button type="button" id="gmCornerConfig" onclick="gmPortalOpenConfig()"><i class="fa-solid fa-gear"></i> Configuración</button>
+    <button type="button" id="gmCornerUsers" style="display:none" onclick="gmPortalCloseCorner();ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i> Usuarios y permisos</button>
+    <button type="button" class="danger" onclick="gmPortalCloseCorner();ccLogout()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+  </div>
+  <button type="button" class="gm-corner-trigger" aria-label="Menú de usuario" onclick="document.getElementById('gmCornerMenu').classList.toggle('open')"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+</div>
+
 <aside aria-label="Menú lateral" id="gmSideMenu">
 <div class="gm-side-brand"><i class="fa-solid fa-truck-fast mr-2"></i>Tráfico App<small>Control Logístico</small></div>
 <div class="gm-side-section">Menú principal</div>
@@ -5722,7 +5820,97 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
+<script id="gm-module-selector-js">
+(function(){
+  const selector=()=>document.getElementById('gmModuleSelector');
+  const corner=()=>document.getElementById('gmCornerMenu');
+  const has=p=>typeof window.ccPerm==='function'&&window.ccPerm(p);
+
+  function syncUser(){
+    const a=window.CC_ACCESS||{};
+    const name=a.nombre||a.email||'Usuario';
+    const role=(a.rol||'USUARIO')+(a.activo?' · ACTIVO':'');
+    const s=document.getElementById('gmSelectorUser');
+    const n=document.getElementById('gmCornerName');
+    const r=document.getElementById('gmCornerRole');
+    if(s)s.textContent=name;if(n)n.textContent=name;if(r)r.textContent=role;
+    const users=document.getElementById('gmCornerUsers');
+    if(users)users.style.display=a.rol==='ADMIN'?'':'none';
+    const cfg=document.getElementById('gmCornerConfig');
+    if(cfg)cfg.style.display=(has('control_cajas.ver')&&has('configuracion.ver'))?'':'none';
+    const change=document.getElementById('gmCornerChange');
+    if(change)change.style.display=(has('dashboard.ver')&&has('control_cajas.ver'))?'':'none';
+  }
+
+  window.gmPortalCloseCorner=function(){corner()?.classList.remove('open')};
+
+  window.gmPortalShowChooser=function(){
+    const d=has('dashboard.ver'),c=has('control_cajas.ver');
+    if(!(d&&c)){
+      window.gmPortalOpenModule(d?'dashboard':'cajas');
+      return;
+    }
+    syncUser();
+    document.getElementById('gmSelectorDashboard').style.display=d?'':'none';
+    document.getElementById('gmSelectorCajas').style.display=c?'':'none';
+    document.body.classList.remove('gm-module-active');
+    document.body.classList.add('gm-module-chooser');
+    selector()?.classList.add('open');
+    corner()?.classList.remove('show','open');
+  };
+
+  window.gmPortalOpenModule=function(module){
+    selector()?.classList.remove('open');
+    document.body.classList.remove('gm-module-chooser');
+    document.body.classList.add('gm-module-active');
+
+    if(module==='cajas'){
+      if(!has('control_cajas.ver'))return;
+      if(typeof window.gmMostrarControlCajas==='function')window.gmMostrarControlCajas();
+      if(typeof window.firstControlTab==='function')window.firstControlTab();
+    }else{
+      if(!has('dashboard.ver'))return;
+      if(typeof window.gmMostrarDashboard==='function')window.gmMostrarDashboard();
+    }
+
+    syncUser();
+    corner()?.classList.add('show');
+    corner()?.classList.remove('open');
+  };
+
+  window.gmPortalOpenConfig=function(){
+    window.gmPortalCloseCorner();
+    if(!(has('control_cajas.ver')&&has('configuracion.ver'))){
+      alert('Tu usuario no tiene permiso para Configuración.');
+      return;
+    }
+    window.gmPortalOpenModule('cajas');
+    setTimeout(()=>{
+      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('configuracion'"));
+      if(typeof window.ccTab==='function')window.ccTab('configuracion',btn);
+    },50);
+  };
+
+  window.gmPortalAfterAccess=function(state){
+    syncUser();
+    const d=!!state?.dashboard,c=!!state?.control;
+    if(d&&c){window.gmPortalShowChooser();return;}
+    if(d){window.gmPortalOpenModule('dashboard');return;}
+    if(c){window.gmPortalOpenModule('cajas');return;}
+    selector()?.classList.remove('open');
+    corner()?.classList.remove('show');
+    alert('Tu usuario no tiene módulos habilitados.');
+  };
+
+  document.addEventListener('click',e=>{
+    const el=corner();
+    if(el&&el.classList.contains('open')&&!el.contains(e.target))el.classList.remove('open');
+  });
+})();
+</script>
+
+</body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
@@ -7288,9 +7476,15 @@ function applyAccess(){
   ['ccGuardarTarifa','configuracion.editar'],['ccNuevoCliente','configuracion.editar'],['ccNuevoResponsable','configuracion.editar']
  ].forEach(x=>protect(x[0],x[1]));
 
- if(!dashboard&&control){gmMostrarControlCajas();firstControlTab();}
- else if(dashboard){gmMostrarDashboard();}
- else if(!control){document.body.classList.add('gm-control-mode');alert('Tu usuario no tiene módulos habilitados.');}
+ if(typeof window.gmPortalAfterAccess==='function'){
+   window.gmPortalAfterAccess({dashboard,control});
+ }else if(!dashboard&&control){
+   gmMostrarControlCajas();firstControlTab();
+ }else if(dashboard){
+   gmMostrarDashboard();
+ }else if(!control){
+   document.body.classList.add('gm-control-mode');alert('Tu usuario no tiene módulos habilitados.');
+ }
 }
 window.ccApplyAccess=applyAccess;
 
