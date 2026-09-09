@@ -724,9 +724,10 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 </div>
 <div class="cc-panel" id="ccPanelHistorial">
 <div class="cc-hist-hero"><h3><i class="fa-solid fa-clock-rotate-left mr-2"></i>Historial / Reporte de renta</h3><p>Consulta todos los movimientos de renta registrados de las cajas. Aquí solo se muestra trazabilidad: cuándo entró a renta, cuándo salió, cliente, responsable, estatus y observaciones.</p></div>
-<div class="cc-hist-filters" style="grid-template-columns:repeat(2,minmax(180px,1fr))">
+<div class="cc-hist-filters" style="grid-template-columns:repeat(3,minmax(180px,1fr))">
 <div><label>Caja</label><select id="ccHistCaja" onchange="ccRenderHistorialDebounced()"><option value="">Todas las cajas</option></select></div>
 <div><label>Cliente</label><select id="ccHistCliente" onchange="ccRenderHistorialDebounced()"><option value="">Todos los clientes</option></select></div>
+<div><label>Responsable</label><select id="ccHistResponsable" onchange="ccRenderHistorialDebounced()"><option value="">Todos los responsables</option></select></div>
 <button class="cc-btn cc-btn-light" type="button" onclick="ccLimpiarHistorial()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
 </div>
 <div class="cc-hist-kpis" id="ccHistKpis"></div>
@@ -827,7 +828,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <label style="font-weight:800;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="ccRentaTipoFiltro" value="CAJA" checked onchange="ccFiltrarRentaTipo('CAJA')"> Cajas</label>
 <label style="font-weight:800;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="ccRentaTipoFiltro" value="CARRO" onchange="ccFiltrarRentaTipo('CARRO')"> Carros</label>
 </div>
-<div class="cc-toolbar"><div><strong>Control de cajas de renta</strong><div class="cc-note">Matriz diaria de ocupación. Puedes consultar todas las rentas o filtrar por responsable.</div></div><button class="cc-btn cc-btn-primary" onclick="ccNuevaRenta()"><i class="fa-solid fa-plus mr-1"></i>Nueva caja de renta</button></div>
+<div class="cc-toolbar"><div><strong>Control de cajas de renta</strong><div class="cc-note">Operación diaria de rentas. Por defecto se muestran solo activas; activa el check para incluir rentas finalizadas.</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;cursor:pointer"><input id="ccRentaMostrarHistorico" type="checkbox" onchange="ccRenderRenta()"> Incluir histórico</label><button class="cc-btn cc-btn-primary" onclick="ccNuevaRenta()"><i class="fa-solid fa-plus mr-1"></i>Nueva caja de renta</button></div></div>
 <div class="cc-renta-filters cc-renta-filters-compact">
 <div>
 <label for="ccRentaClienteFilter">Cliente</label>
@@ -846,29 +847,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <tbody id="ccMatrixBody"></tbody>
 </table>
 </div>
-<div class="cc-note">Arriba se muestran únicamente rentas activas. Al sacar una unidad de renta, su registro permanece en el histórico por cliente.</div>
-
-<div class="cc-config-card" style="margin-top:16px">
-  <div class="cc-toolbar">
-    <div>
-      <strong>Histórico de rentas por cliente</strong>
-      <div class="cc-note">Conserva entradas y salidas de renta aunque la caja ya no esté activa.</div>
-    </div>
-    <button class="cc-btn cc-btn-light" type="button" onclick="ccRentaHistoricoLimpiar()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
-  </div>
-  <div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(140px,1fr))">
-    <div><label>Cliente</label><select id="ccRentaHistCliente" onchange="ccRenderRentaHistorico()"><option value="">Todos</option></select></div>
-    <div><label>Desde</label><input id="ccRentaHistDesde" type="date" onchange="ccRenderRentaHistorico()"></div>
-    <div><label>Hasta</label><input id="ccRentaHistHasta" type="date" onchange="ccRenderRentaHistorico()"></div>
-    <div><label>Estatus</label><select id="ccRentaHistEstatus" onchange="ccRenderRentaHistorico()"><option value="">Todos</option><option value="ACTIVA">Activas</option><option value="FINALIZADA">Finalizadas</option></select></div>
-  </div>
-  <div id="ccRentaHistKpis" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
-  <div class="cc-inv-wrap" style="max-height:50vh;overflow:auto">
-    <table class="cc-table-list" style="min-width:980px">
-      <thead><tr><th>CLIENTE</th><th>UNIDAD</th><th>ENTRADA</th><th>SALIDA</th><th>DÍAS</th><th>MÉTODO</th><th>RESPONSABLE</th><th>ESTATUS</th></tr></thead>
-      <tbody id="ccRentaHistBody"></tbody>
-    </table>
-  </div>
+<div class="cc-note">Con el check <b>Incluir histórico</b> puedes consultar también rentas finalizadas en la misma tabla, sin perder la operación activa.</div>
 </div>
 </div>
 </section>
@@ -6127,54 +6106,35 @@ window.ccActualizarTarifaRenta=function(){const metodo=document.getElementById('
 window.ccRenderRenta=function(){
   const head=document.getElementById('ccMatrixHead'),body=document.getElementById('ccMatrixBody');
   if(!head||!body)return;
-
-  const selResp=document.getElementById('ccRentaResponsableFilter');
-  const selCli=document.getElementById('ccRentaClienteFilter');
+  const selResp=document.getElementById('ccRentaResponsableFilter'),selCli=document.getElementById('ccRentaClienteFilter');
   const curResp=selResp?.value||'',curCli=selCli?.value||'';
-
-  if(selResp){
-    selResp.innerHTML='<option value="">Todos los responsables</option>'+
-      responsables.filter(x=>x.estatus!=='INACTIVO').map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
-    selResp.value=curResp;
-  }
-  if(selCli){
-    selCli.innerHTML='<option value="">Todos los clientes</option>'+
-      clientes.filter(x=>x.estatus!=='INACTIVO').map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
-    selCli.value=curCli;
-  }
-
-  const responsableId=selResp?.value||'';
-  const clienteId=selCli?.value||'';
-  const tipoUnidad=window.ccRentaTipoFiltroActual||'CAJA';
-  const hoy=iso(new Date());
-
-  const rows=rentas.filter(r=>{
-    const unidad=cajas.find(x=>x.id===r.cajaId);
+  if(selResp){selResp.innerHTML='<option value="">Todos los responsables</option>'+responsables.filter(x=>x.estatus!=='INACTIVO').map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');selResp.value=curResp;}
+  if(selCli){selCli.innerHTML='<option value="">Todos los clientes</option>'+clientes.filter(x=>x.estatus!=='INACTIVO').map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');selCli.value=curCli;}
+  const responsableId=selResp?.value||'',clienteId=selCli?.value||'',tipoUnidad=window.ccRentaTipoFiltroActual||'CAJA',hoy=iso(new Date()),mostrarHistorico=!!document.getElementById('ccRentaMostrarHistorico')?.checked;
+  const cajaMap=new Map(cajas.map(x=>[x.id,x])),cliMap=new Map(clientes.map(x=>[x.id,x])),respMap=new Map(responsables.map(x=>[x.id,x]));
+  let rows=rentas.filter(r=>{
+    if(r.estatus==='CANCELADA')return false;
+    const unidad=cajaMap.get(r.cajaId);
     const coincideTipo=tipoUnidad==='TODOS'||String(unidad?.categoriaUnidad||unidad?.tipoUnidadNombre||'CAJA').toUpperCase()===String(tipoUnidad).toUpperCase();
-    const coincideResponsable=!responsableId||r.responsableId===responsableId;
-    const coincideCliente=!clienteId||r.clienteId===clienteId;
-    const activa=r.estatus!=='FINALIZADA'&&r.estatus!=='CANCELADA'&&rentFor(r.id,hoy);
-    return coincideTipo&&coincideResponsable&&coincideCliente&&activa;
+    if(!coincideTipo)return false;
+    if(responsableId&&r.responsableId!==responsableId)return false;
+    if(clienteId&&r.clienteId!==clienteId)return false;
+    const activa=r.estatus!=='FINALIZADA'&&rentFor(r.id,hoy);
+    return mostrarHistorico?true:activa;
+  }).sort((a,b)=>{
+    const aa=(a.estatus!=='FINALIZADA'&&rentFor(a.id,hoy))?1:0,bb=(b.estatus!=='FINALIZADA'&&rentFor(b.id,hoy))?1:0;
+    if(aa!==bb)return bb-aa;
+    return String(b.fechaInicio||'').localeCompare(String(a.fechaInicio||''));
   });
 
   head.innerHTML=`<tr>
-    <th>#</th>
-    <th>UNIDAD</th>
-    <th>DESCRIPCIÓN</th>
-    <th>CLIENTE</th>
-    <th>RESPONSABLE</th>
-    <th>FECHA INICIO</th>
-    <th>FECHA FIN</th>
-    <th>MÉTODO</th>
-    <th>ESTATUS</th>
-    <th>ACCIÓN</th>
+    <th>#</th><th>UNIDAD</th><th>DESCRIPCIÓN</th><th>CLIENTE</th><th>RESPONSABLE</th><th>FECHA INICIO</th><th>FECHA FIN</th><th>MÉTODO</th><th>ESTATUS</th><th>ACCIÓN</th>
   </tr>`;
 
   body.innerHTML=rows.length?rows.map((r,i)=>{
-    const unidad=cajas.find(x=>x.id===r.cajaId);
-    const cli=clientes.find(x=>x.id===r.clienteId);
-    const resp=responsables.find(x=>x.id===r.responsableId);
-    const fechaFin=(r.indeterminada==='SI'||!r.fechaFin)?'Indeterminada':r.fechaFin;
+    const unidad=cajaMap.get(r.cajaId),cli=cliMap.get(r.clienteId),resp=respMap.get(r.responsableId);
+    const activa=r.estatus!=='FINALIZADA'&&rentFor(r.id,hoy);
+    const fechaFin=activa?((r.indeterminada==='SI'||!r.fechaFin)?'Indeterminada':r.fechaFin):(r.fechaFin||'—');
     return `<tr>
       <td>${i+1}</td>
       <td><strong>${esc(unidad?.numero||'—')}</strong></td>
@@ -6184,22 +6144,24 @@ window.ccRenderRenta=function(){
       <td>${esc(r.fechaInicio||'—')}</td>
       <td>${esc(fechaFin||'—')}</td>
       <td>${esc(r.metodoCobro||'—')}</td>
-      <td><span class="cc-badge cc-ok">ACTIVA</span></td>
-      <td><div style="display:flex;gap:5px;flex-wrap:nowrap"><button class="cc-btn cc-btn-light cc-renta-edit-btn" onclick="ccNuevaRenta('${r.id}')"><i class="fa-solid fa-pen mr-1"></i>Editar</button><button class="cc-btn cc-btn-danger cc-renta-exit-btn" onclick="ccSacarDeRenta('${r.id}')"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sacar de renta</button></div></td>
+      <td><span class="cc-badge ${activa?'cc-ok':''}">${activa?'ACTIVA':'FINALIZADA'}</span></td>
+      <td>${activa?`<div style="display:flex;gap:5px;flex-wrap:nowrap"><button class="cc-btn cc-btn-light cc-renta-edit-btn" onclick="ccNuevaRenta('${r.id}')"><i class="fa-solid fa-pen mr-1"></i>Editar</button><button class="cc-btn cc-btn-danger cc-renta-exit-btn" onclick="ccSacarDeRenta('${r.id}')"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sacar de renta</button></div>`:'<span class="cc-note">Histórico</span>'}</td>
     </tr>`;
-  }).join(''):`<tr><td colspan="10" style="padding:24px;text-align:center;color:#94a3b8">No hay rentas activas con los filtros seleccionados.</td></tr>`;
+  }).join(''):`<tr><td colspan="10" style="padding:24px;text-align:center;color:#94a3b8">${mostrarHistorico?'No hay rentas con los filtros seleccionados.':'No hay rentas activas con los filtros seleccionados.'}</td></tr>`;
 
   const unidadesTipo=cajas.filter(x=>tipoUnidad==='TODOS'||String(x.categoriaUnidad||x.tipoUnidadNombre||'CAJA').toUpperCase()===String(tipoUnidad).toUpperCase());
-  const activas=rows.length;
+  const activasFiltradas=rentas.filter(r=>{
+    const unidad=cajaMap.get(r.cajaId);
+    const tipoOk=tipoUnidad==='TODOS'||String(unidad?.categoriaUnidad||unidad?.tipoUnidadNombre||'CAJA').toUpperCase()===String(tipoUnidad).toUpperCase();
+    return tipoOk&&r.estatus!=='FINALIZADA'&&r.estatus!=='CANCELADA'&&rentFor(r.id,hoy)&&(!responsableId||r.responsableId===responsableId)&&(!clienteId||r.clienteId===clienteId);
+  });
+  const finalizadasFiltradas=rows.filter(r=>r.estatus==='FINALIZADA'||!rentFor(r.id,hoy)).length;
   document.getElementById('ccRentaSummary').innerHTML=`
-    <div class="cc-card"><small>Rentas activas</small><strong style="display:block;font-size:20px">${activas}</strong></div>
-    <div class="cc-card"><small>Clientes visibles</small><strong style="display:block;font-size:20px">${new Set(rows.map(r=>r.clienteId).filter(Boolean)).size}</strong></div>
-    <div class="cc-card"><small>Responsables visibles</small><strong style="display:block;font-size:20px">${new Set(rows.map(r=>r.responsableId).filter(Boolean)).size}</strong></div>
-    <div class="cc-card"><small>Disponibles</small><strong style="display:block;font-size:20px;color:#b91c1c">${Math.max(0,unidadesTipo.filter(x=>x.estatus!=='MANTENIMIENTO'&&x.estatus!=='INACTIVO').length-activas)}</strong></div>`;
-  ccRenderRentaHistorico();
-};
-
-window.ccRenderRentaHistorico=function(){
+    <div class="cc-card"><small>Rentas activas</small><strong style="display:block;font-size:20px">${activasFiltradas.length}</strong></div>
+    <div class="cc-card"><small>Clientes activos</small><strong style="display:block;font-size:20px">${new Set(activasFiltradas.map(r=>r.clienteId).filter(Boolean)).size}</strong></div>
+    <div class="cc-card"><small>Históricos visibles</small><strong style="display:block;font-size:20px">${mostrarHistorico?finalizadasFiltradas:0}</strong></div>
+    <div class="cc-card"><small>Disponibles</small><strong style="display:block;font-size:20px;color:#b91c1c">${Math.max(0,unidadesTipo.filter(x=>x.estatus!=='MANTENIMIENTO'&&x.estatus!=='INACTIVO').length-activasFiltradas.length)}</strong></div>`;
+};window.ccRenderRentaHistorico=function(){
   const body=document.getElementById('ccRentaHistBody');if(!body)return;
   const cliSel=document.getElementById('ccRentaHistCliente');
   if(cliSel){
@@ -6268,14 +6230,15 @@ window.ccRenderHistorialDebounced=function(){
   ccHistRenderTimer=setTimeout(()=>ccRenderHistorial(),80);
 };
 window.ccRenderHistorial=function(){
- const boxSel=document.getElementById('ccHistCaja'),cliSel=document.getElementById('ccHistCliente'),body=document.getElementById('ccHistBody');
- if(!boxSel||!cliSel||!body)return;
- const bc=boxSel.value||'',cl=cliSel.value||'';
+ const boxSel=document.getElementById('ccHistCaja'),cliSel=document.getElementById('ccHistCliente'),respSel=document.getElementById('ccHistResponsable'),body=document.getElementById('ccHistBody');
+ if(!boxSel||!cliSel||!respSel||!body)return;
+ const bc=boxSel.value||'',cl=cliSel.value||'',rp=respSel.value||'';
  const key=`${cajas.length}|${clientes.length}`;
  if(window.ccHistCatalogKey!==key){
    const oldB=bc,oldC=cl;
    boxSel.innerHTML='<option value="">Todas las cajas</option>'+cajas.map(x=>`<option value="${x.id}">${esc(x.numero||'Sin número')} — ${esc(x.descripcion||'')}</option>`).join('');
    cliSel.innerHTML='<option value="">Todos los clientes</option>'+clientes.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
+   respSel.innerHTML='<option value="">Todos los responsables</option>'+responsables.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
    boxSel.value=oldB;cliSel.value=oldC;window.ccHistCatalogKey=key;
  }
  const cajaMap=new Map(cajas.map(x=>[x.id,x])),clienteMap=new Map(clientes.map(x=>[x.id,x])),respMap=new Map(responsables.map(x=>[x.id,x]));
@@ -6283,6 +6246,7 @@ window.ccRenderHistorial=function(){
    if(r.estatus==='CANCELADA')return false;
    if(bc&&r.cajaId!==bc)return false;
    if(cl&&r.clienteId!==cl)return false;
+   if(rp&&r.responsableId!==rp)return false;
    return true;
  }).map(r=>{
    const abierta=r.indeterminada==='SI'||!r.fechaFin;
@@ -6311,9 +6275,9 @@ window.ccRenderHistorial=function(){
 
  const k=document.getElementById('ccHistKpis');
  if(k)k.innerHTML=`<div class="cc-hist-kpi"><small>Movimientos</small><strong>${rows.length}</strong></div><div class="cc-hist-kpi"><small>Cajas</small><strong>${new Set(rows.map(x=>x.caja)).size}</strong></div><div class="cc-hist-kpi"><small>Clientes</small><strong>${new Set(rows.map(x=>x.cliente)).size}</strong></div><div class="cc-hist-kpi"><small>Activas</small><strong>${rows.filter(x=>x.estatus==='ACTIVA').length}</strong></div>`;
- window.ccHistorialData={eventos:rows,rows,box:bc,cliente:cl};
+ window.ccHistorialData={eventos:rows,rows,box:bc,cliente:cl,responsable:rp};
 };
-window.ccLimpiarHistorial=function(){['ccHistCaja','ccHistCliente'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});ccRenderHistorial();};
+window.ccLimpiarHistorial=function(){['ccHistCaja','ccHistCliente','ccHistResponsable'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});ccRenderHistorial();};
 window.ccExportarExcelHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const rows=(d.rows||[]).map((x,i)=>({'#':i+1,'Entrada a renta':x.entrada,'Salida de renta':x.salida,'Caja':x.caja,'Cliente':x.cliente,'Responsable':x.responsable,'Estatus':x.estatus,'Observaciones':x.observaciones||''}));const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:5},{wch:16},{wch:16},{wch:14},{wch:26},{wch:24},{wch:14},{wch:45}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Historial Renta');XLSX.writeFile(wb,`Historial_Renta_${new Date().toISOString().slice(0,10)}.xlsx`);}catch(e){console.error(e);alert('No fue posible exportar el historial a Excel.');}};
 window.ccGenerarPDFHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});const box=d.box?(cajas.find(x=>x.id===d.box)?.numero||''):'Todas las cajas';const cliente=d.cliente?(clientes.find(x=>x.id===d.cliente)?.nombre||''):'Todos los clientes';doc.setFillColor(15,23,42);doc.rect(0,0,280,24,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text('HISTORIAL DE MOVIMIENTOS DE RENTA',14,11);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`Caja: ${box} | Cliente: ${cliente}`,14,18);doc.setTextColor(15,23,42);doc.autoTable({startY:30,head:[['Entrada','Salida','Caja','Cliente','Responsable','Estatus','Observaciones']],body:(d.rows||[]).map(x=>[x.entrada,x.salida,x.caja,x.cliente,x.responsable,x.estatus,x.observaciones||'']),theme:'striped',styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:[30,64,175],textColor:255,fontStyle:'bold'},margin:{left:8,right:8,bottom:10}});doc.save(`Historial_Renta_${new Date().toISOString().slice(0,10)}.pdf`);}catch(e){console.error(e);alert('No fue posible generar el PDF del historial.');}};
 window.ccUnitCategory=function(x){
