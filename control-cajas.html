@@ -261,7 +261,9 @@ body.cc-only-control #controlCajasSection .cc-panel{padding:20px}
 #gmSideMenu button:hover{background:#172033;color:#fff}
 #gmSideMenu button.active{background:#2563eb;color:#fff;box-shadow:0 7px 18px rgba(37,99,235,.25)}
 #gmSideMenu .gm-side-section{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:900;padding:8px 10px 5px}
+#controlCajasSection{display:none!important}
 body:not(.gm-control-mode) #controlCajasSection{display:none!important}
+body.gm-control-mode #controlCajasSection{display:block!important;position:fixed!important;inset:0!important;z-index:10020!important;width:100vw!important;height:100vh!important;max-width:none!important;margin:0!important;overflow:auto!important;background:#fff!important}
 body.gm-control-mode{overflow:hidden!important}
 body.gm-control-mode header{display:none!important}
 body.gm-control-mode #gmSideMenu{display:none!important}
@@ -6840,12 +6842,22 @@ window.ccInitCloud=ccInitCloud;
 document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{ccInitCloud();},60));
 })();</script>
 <script id="gm-sidebar-cajas-js">
+function ccMountControlCajasOutsideDashboard(){
+  const cc=document.getElementById('controlCajasSection');
+  if(!cc)return;
+  if(cc.parentElement!==document.body){
+    document.body.appendChild(cc);
+  }
+}
 function gmMostrarControlCajas(){
+  ccMountControlCajasOutsideDashboard();
   document.body.classList.add('gm-control-mode');
   document.getElementById('gmSideDashboard')?.classList.remove('active');
   document.getElementById('gmSideCajas')?.classList.add('active');
   document.body.scrollTop=0;
   document.documentElement.scrollTop=0;
+  const cc=document.getElementById('controlCajasSection');
+  if(cc)cc.scrollTop=0;
   if(typeof ccRenderAll==='function') ccRenderAll();
 }
 function gmMostrarDashboard(){
@@ -6855,8 +6867,14 @@ function gmMostrarDashboard(){
   window.scrollTo({top:0,behavior:'auto'});
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  ccMountControlCajasOutsideDashboard();
   document.getElementById('gmSideDashboard')?.classList.add('active');
   document.getElementById('gmSideCajas')?.classList.remove('active');
+  const quick=[...document.querySelectorAll('#gmQuickNav a')].find(a=>(a.getAttribute('href')||'')==='#controlCajasSection');
+  if(quick){
+    quick.setAttribute('href','#');
+    quick.onclick=function(ev){ev.preventDefault();gmMostrarControlCajas();};
+  }
 });
 </script>
 
