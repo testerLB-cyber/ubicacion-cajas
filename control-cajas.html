@@ -6728,6 +6728,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
+<script id="cc-db-location-preservation-note">
+/* Backend actualizado 2026-09-09:
+   cc_save_all() conserva IDs/QR de unidades mediante UPSERT.
+   Las ubicaciones de cc_ubicaciones_cajas ya no se eliminan por guardados normales. */
+window.CC_LOCATION_PRESERVATION_FIX=true;
+</script>
 <script id="cc-performance-tuning">
 window.CC_PERFORMANCE_MODE=true;
 </script>
