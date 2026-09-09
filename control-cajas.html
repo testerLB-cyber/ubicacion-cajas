@@ -5509,12 +5509,18 @@ window.ccMostrarQrUnidad=async function(id){
       }catch(_){}
     }
 
-    if(!u.qrToken){
+    let unit=cajas.find(x=>x.id===id);
+    if(!unit?.qrToken){
+      showStatus?.('Generando token QR para la unidad...','info');
+      const {data,error}=await gmSupabase.rpc('cc_ensure_unit_qr_token',{p_unidad_id:id});
+      if(error)throw error;
+      if(data?.ok===false)throw new Error(data.error||'No se pudo generar el token QR.');
       await ccReloadFromDatabase();
+      unit=cajas.find(x=>x.id===id);
+      if(unit&&!unit.qrToken)unit.qrToken=String(data?.token||'');
     }
 
-    const unit=cajas.find(x=>x.id===id);
-    if(!unit?.qrToken)throw new Error('La unidad todavía no tiene token QR.');
+    if(!unit?.qrToken)throw new Error('No fue posible generar el token QR de esta unidad.');
 
     const token=String(unit.qrToken||'').trim();
     if(!/^[a-f0-9]{36}$/i.test(token)){
