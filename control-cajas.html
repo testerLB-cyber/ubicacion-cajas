@@ -6198,133 +6198,89 @@ window.ccRenderHistorialDebounced=function(){
   ccHistRenderTimer=setTimeout(()=>ccRenderHistorial(),80);
 };
 window.ccRenderHistorial=function(){
- const boxSel=document.getElementById('ccHistCaja'),
-       cliSel=document.getElementById('ccHistCliente'),
-       body=document.getElementById('ccHistBody');
+ const boxSel=document.getElementById('ccHistCaja'),cliSel=document.getElementById('ccHistCliente'),body=document.getElementById('ccHistBody');
  if(!boxSel||!cliSel||!body)return;
 
- const bc=boxSel.value,
-       cl=cliSel.value,
-       desde=document.getElementById('ccHistDesde')?.value||'',
-       hasta=document.getElementById('ccHistHasta')?.value||'';
-
- // Catálogos: solo reconstruir selects cuando cambió la cantidad de datos.
+ const bc=boxSel.value,cl=cliSel.value,desde=document.getElementById('ccHistDesde')?.value||'',hasta=document.getElementById('ccHistHasta')?.value||'';
  const catalogKey=`${cajas.length}|${clientes.length}`;
  if(window.ccHistCatalogKey!==catalogKey){
    const oldB=bc,oldC=cl;
-   boxSel.innerHTML='<option value="">Todas las cajas</option>'+
-     cajas.map(x=>`<option value="${x.id}">${esc(x.numero||'Sin número')} — ${esc(x.descripcion||'')}</option>`).join('');
-   cliSel.innerHTML='<option value="">Todos los clientes</option>'+
-     clientes.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
-   boxSel.value=oldB;
-   cliSel.value=oldC;
-   window.ccHistCatalogKey=catalogKey;
+   boxSel.innerHTML='<option value="">Todas las cajas</option>'+cajas.map(x=>`<option value="${x.id}">${esc(x.numero||'Sin número')} — ${esc(x.descripcion||'')}</option>`).join('');
+   cliSel.innerHTML='<option value="">Todos los clientes</option>'+clientes.map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join('');
+   boxSel.value=oldB;cliSel.value=oldC;window.ccHistCatalogKey=catalogKey;
  }
 
- const hoy=iso(new Date());
- const fDesde=desde||'';
- const fHasta=hasta||hoy;
+ const hoy=iso(new Date()),fDesde=desde||'',fHasta=hasta||hoy;
+ const cajaMap=new Map(cajas.map(x=>[x.id,x])),clienteMap=new Map(clientes.map(x=>[x.id,x])),responsableMap=new Map(responsables.map(x=>[x.id,x]));
+ const mantenimientos=Array.isArray(configuracion.mantenimientoHistorial)?configuracion.mantenimientoHistorial:[];
+ const eventos=[],rentaEventos=[];
 
- // Mapas O(1): evita find() repetido por cada renta.
- const cajaMap=new Map(cajas.map(x=>[x.id,x]));
- const clienteMap=new Map(clientes.map(x=>[x.id,x]));
- const responsableMap=new Map(responsables.map(x=>[x.id,x]));
+ function tarifaInfo(r,dias){
+   const t=configuracion.tarifasRenta?.[r.clienteId]||{};
+   const metodo=String(r.metodoCobro||'DIARIO').toUpperCase();
+   let tarifa=0,periodos=0,importe=0;
+   if(metodo==='MENSUAL'){tarifa=Number(t.mensual||0);periodos=dias?Math.ceil(dias/30):0;importe=periodos*tarifa}
+   else if(metodo==='SEMANAL'){tarifa=Number(t.semanal||0);periodos=dias?Math.ceil(dias/7):0;importe=periodos*tarifa}
+   else {tarifa=Number(t.diario||0);periodos=dias;importe=dias*tarifa}
+   return {tarifa,periodos,importe,metodo};
+ }
 
- const eventos=[];
  for(const r of rentas){
-   if(bc&&r.cajaId!==bc)continue;
-   if(cl&&r.clienteId!==cl)continue;
+   if(bc&&r.cajaId!==bc)continue;if(cl&&r.clienteId!==cl)continue;
+   const inicio=String(r.fechaInicio||''),finReal=(r.indeterminada==='SI'||!r.fechaFin)?hoy:String(r.fechaFin||'');
+   if(fDesde&&finReal&&finReal<fDesde)continue;if(fHasta&&inicio&&inicio>fHasta)continue;
+   const box=cajaMap.get(r.cajaId),cli=clienteMap.get(r.clienteId),resp=responsableMap.get(r.responsableId),dias=ccHistOverlapDays(r,fDesde,fHasta),tf=tarifaInfo(r,dias);
+   const activa=(r.indeterminada==='SI'||!r.fechaFin)&&String(r.estatus||'').toUpperCase()!=='FINALIZADA';
+   const salida=activa?'ABIERTA':(r.fechaFin||'—'),estatus=activa?'ACTIVA':'FINALIZADA';
+   const ev={orden:inicio,entrada:inicio||'—',salida,caja:box?.numero||'—',cajaId:r.cajaId,cliente:cli?.nombre||'Sin cliente',clienteId:r.clienteId,responsable:resp?.nombre||'Sin responsable',tipo:'RENTA',estatus,metodo:tf.metodo,dias,tarifa:tf.tarifa,periodosCobro:tf.periodos,importe:tf.importe,detalle:(r.observaciones||'Renta registrada')+(tf.tarifa>0?` · Estimado ${tf.periodos} periodo(s) x $${tf.tarifa.toFixed(2)}`:' · Sin tarifa configurada')};
+   eventos.push(ev);rentaEventos.push(ev);
+ }
 
-   const inicio=String(r.fechaInicio||'');
-   const finReal=(r.indeterminada==='SI'||!r.fechaFin)?hoy:String(r.fechaFin||'');
-
-   if(fDesde&&finReal&&finReal<fDesde)continue;
-   if(fHasta&&inicio&&inicio>fHasta)continue;
-
-   const box=cajaMap.get(r.cajaId);
-   const cli=clienteMap.get(r.clienteId);
-   const resp=responsableMap.get(r.responsableId);
-   const dias=ccHistOverlapDays(r,fDesde,fHasta);
-   const tarifa=Number(configuracion.tarifasRenta?.[r.clienteId]||0);
-   const salidaRenta=r.indeterminada==='SI'?'ABIERTA':(r.fechaFin||'—');
-   const estatusRenta=r.mantenimientoActivo?'EN MANTENIMIENTO':(salidaRenta==='ABIERTA'?'ACTIVA':'FINALIZADA');
-
-   eventos.push({
-     orden:inicio,
-     entrada:inicio||'—',
-     salida:salidaRenta,
-     caja:box?.numero||'—',
-     cajaId:r.cajaId,
-     cliente:cli?.nombre||'Sin cliente',
-     responsable:resp?.nombre||'Sin responsable',
-     tipo:'RENTA',
-     estatus:estatusRenta,
-     metodo:r.metodoCobro||'DIARIO',
-     dias,
-     tarifa,
-     importe:dias*tarifa,
-     detalle:r.observaciones||'Renta registrada'+(r.indeterminada==='SI'?' · renta indeterminada':'')+(r.mantenimientoActivo?' · conserva renta, unidad en mantenimiento':'')
-   });
+ for(const mh of mantenimientos){
+   const cajaId=mh.cajaId||mh.caja_id||'',clienteId=mh.clienteId||mh.cliente_id||'';
+   if(bc&&cajaId!==bc)continue;if(cl&&clienteId!==cl)continue;
+   const salidaRaw=mh.fechaSalida||mh.fecha_salida||'',libRaw=mh.fechaLiberacion||mh.fecha_liberacion||'';
+   const fecha=String(salidaRaw).slice(0,10),lib=String(libRaw).slice(0,10);
+   if(fDesde&&fecha&&fecha<fDesde)continue;if(fHasta&&fecha&&fecha>fHasta)continue;
+   const box=cajaMap.get(cajaId),cli=clienteMap.get(clienteId),estado=String(mh.estatus||'MANTENIMIENTO').toUpperCase();
+   eventos.push({orden:fecha||salidaRaw,entrada:fecha||'—',salida:lib||'—',caja:box?.numero||mh.numero||'—',cajaId,cliente:cli?.nombre||(clienteId?'Cliente no localizado':'—'),clienteId,responsable:'—',tipo:'MANTENIMIENTO',estatus:estado,metodo:'—',dias:0,tarifa:0,periodosCobro:0,importe:0,detalle:[mh.motivo?('Motivo: '+mh.motivo):'',mh.reparacion?('Reparación: '+mh.reparacion):''].filter(Boolean).join(' · ')||'Evento de mantenimiento'});
  }
 
  eventos.sort((a,b)=>String(b.orden).localeCompare(String(a.orden)));
-
- // Limitar únicamente el pintado inicial; datos completos permanecen en ccHistorialData para PDF/Excel.
- const MAX_DOM_ROWS=300;
- const visibles=eventos.slice(0,MAX_DOM_ROWS);
-
+ const MAX_DOM_ROWS=300,visibles=eventos.slice(0,MAX_DOM_ROWS);
  body.innerHTML=visibles.length?visibles.map(e=>`<tr>
-   <td>${esc(e.entrada)}</td>
-   <td>${esc(e.salida)}</td>
-   <td><strong>${esc(e.caja)}</strong></td>
-   <td><span class="cc-client-badge">${esc(e.cliente)}</span></td>
-   <td>${esc(e.responsable)}</td>   <td><span class="cc-hist-badge ${e.salida==='ABIERTA'?'cc-hist-rent':'cc-hist-finish'}">RENTA</span></td>
-   <td><span class="cc-hist-badge ${e.estatus==='ACTIVA'?'cc-hist-rent':e.estatus==='FINALIZADA'?'cc-hist-finish':'cc-hist-maint'}">${esc(e.estatus||'—')}</span></td>
-   <td>${esc(e.metodo||'—')}</td>
-   <td>${e.dias}</td>
-   <td>${esc(e.detalle)}</td>
+   <td>${esc(e.entrada)}</td><td>${esc(e.salida)}</td><td><strong>${esc(e.caja)}</strong></td>
+   <td>${e.cliente&&e.cliente!=='—'?'<span class="cc-client-badge">'+esc(e.cliente)+'</span>':'—'}</td><td>${esc(e.responsable)}</td>
+   <td><span class="cc-hist-badge ${e.tipo==='MANTENIMIENTO'?'cc-hist-maint':e.estatus==='ACTIVA'?'cc-hist-rent':'cc-hist-finish'}">${esc(e.tipo)}</span></td>
+   <td><span class="cc-hist-badge ${e.estatus==='ACTIVA'?'cc-hist-rent':e.estatus==='FINALIZADA'||e.estatus==='LIBERADA'?'cc-hist-finish':'cc-hist-maint'}">${esc(e.estatus||'—')}</span></td>
+   <td>${esc(e.metodo||'—')}</td><td>${e.dias||0}</td><td>${esc(e.detalle)}</td>
  </tr>`).join(''):'<tr><td colspan="10" style="padding:35px;text-align:center;color:#94a3b8">No hay historial con los filtros seleccionados.</td></tr>';
+ if(eventos.length>MAX_DOM_ROWS)body.insertAdjacentHTML('beforeend',`<tr><td colspan="10" style="padding:10px;text-align:center;color:#64748b;background:#f8fafc">Mostrando ${MAX_DOM_ROWS} de ${eventos.length} movimientos. PDF y Excel consideran todos los registros filtrados.</td></tr>`);
 
- if(eventos.length>MAX_DOM_ROWS){
-   body.insertAdjacentHTML('beforeend',`<tr><td colspan="10" style="padding:10px;text-align:center;color:#64748b;background:#f8fafc">Mostrando ${MAX_DOM_ROWS} de ${eventos.length} movimientos. Usa filtros para reducir el listado. PDF y Excel consideran todos los registros filtrados.</td></tr>`);
+ const clientesAgg=new Map();
+ for(const e of rentaEventos){
+   let v=clientesAgg.get(e.cliente);if(!v){v={cajas:new Set(),periodos:0,dias:0,importe:0,activas:0};clientesAgg.set(e.cliente,v)}
+   v.cajas.add(e.caja);v.periodos++;v.dias+=e.dias;v.importe+=e.importe;if(e.estatus==='ACTIVA')v.activas++;
  }
-
- const clientesMap=new Map();
- for(const e of eventos){
-   let v=clientesMap.get(e.cliente);
-   if(!v){v={cajas:new Set(),periodos:0,dias:0,importe:0};clientesMap.set(e.cliente,v);}
-   v.cajas.add(e.caja);
-   v.periodos++;
-   v.dias+=e.dias;
-   v.importe+=e.importe;
- }
- const cr=[...clientesMap.entries()].sort((a,b)=>b[1].importe-a[1].importe);
-
+ const cr=[...clientesAgg.entries()].sort((a,b)=>b[1].dias-a[1].dias);
  const clientBody=document.getElementById('ccHistClientBody');
- if(clientBody)clientBody.innerHTML=cr.length?cr.map(([n,v])=>`<tr><td><strong>${esc(n)}</strong></td><td>${v.cajas.size}</td><td>${v.periodos}</td><td>${v.dias}</td><td>Consulta importes en Proforma</td></tr>`).join(''):'<tr><td colspan="5" style="padding:25px;text-align:center;color:#94a3b8">Sin rentas para mostrar.</td></tr>';
+ if(clientBody)clientBody.innerHTML=cr.length?cr.map(([n,v])=>`<tr><td><strong>${esc(n)}</strong></td><td>${v.cajas.size}</td><td>${v.periodos}</td><td>${v.dias}</td><td>${v.activas} activa(s) · ${v.importe>0?('$'+v.importe.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})):'Sin tarifa'}</td></tr>`).join(''):'<tr><td colspan="5" style="padding:25px;text-align:center;color:#94a3b8">Sin rentas para mostrar.</td></tr>';
 
- let totalDias=0,totalImp=0;
- const cajasSet=new Set();
- for(const e of eventos){totalDias+=e.dias;totalImp+=e.importe;cajasSet.add(e.caja);}
- const periodos=eventos.length;
-
+ let totalDias=0,totalImp=0,activas=0,finalizadas=0;const cajasSet=new Set();
+ for(const e of rentaEventos){totalDias+=e.dias;totalImp+=e.importe;cajasSet.add(e.caja);if(e.estatus==='ACTIVA')activas++;else finalizadas++}
+ const mantEventos=eventos.filter(e=>e.tipo==='MANTENIMIENTO').length;
  const kpis=document.getElementById('ccHistKpis');
- if(kpis)kpis.innerHTML=`<div class="cc-hist-kpi"><small>Cajas</small><strong>${cajasSet.size}</strong></div><div class="cc-hist-kpi"><small>Periodos de renta</small><strong>${periodos}</strong></div><div class="cc-hist-kpi"><small>Días rentados</small><strong>${totalDias}</strong></div><div class="cc-hist-kpi"><small>Movimientos de renta</small><strong>${periodos}</strong></div>`;
+ if(kpis)kpis.innerHTML=`<div class="cc-hist-kpi"><small>Cajas con historial</small><strong>${cajasSet.size}</strong></div><div class="cc-hist-kpi"><small>Rentas activas</small><strong>${activas}</strong></div><div class="cc-hist-kpi"><small>Rentas finalizadas</small><strong>${finalizadas}</strong></div><div class="cc-hist-kpi"><small>Días rentados</small><strong>${totalDias}</strong></div><div class="cc-hist-kpi"><small>Mantenimientos</small><strong>${mantEventos}</strong></div><div class="cc-hist-kpi"><small>Estimado de renta</small><strong>${totalImp>0?'$'+totalImp.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'$0.00'}</strong></div>`;
 
- const selected=cajaMap.get(bc);
- const detail=document.getElementById('ccHistCajaDetail');
+ const selected=cajaMap.get(bc),detail=document.getElementById('ccHistCajaDetail');
  if(detail){
    if(selected){
-     let periodosCaja=0;
-     const clientesCaja=new Set();
-     for(const r of rentas){if(r.cajaId===selected.id){periodosCaja++;if(r.clienteId)clientesCaja.add(r.clienteId);}}
-     detail.innerHTML=`<div class="cc-meta"><b>Caja:</b> ${esc(selected.numero||'—')}<br><b>Descripción:</b> ${esc(selected.descripcion||'—')}<br><b>Tipo:</b> ${esc(selected.tipo||'—')}<br><b>Origen:</b> ${esc(selected.origen||'—')}<br><b>Placas:</b> ${esc(selected.placas||'—')}<br><b>Estatus actual:</b> ${esc(selected.estatus||'—')}<br><b>Periodos históricos:</b> ${periodosCaja}<br><b>Clientes históricos:</b> ${clientesCaja.size}</div>`;
-   }else{
-     detail.innerHTML='<div class="cc-meta">Selecciona una caja para ver su radiografía individual. Actualmente se muestran todas las cajas.</div>';
-   }
+     const rents=rentaEventos.filter(x=>x.cajaId===selected.id),mts=eventos.filter(x=>x.cajaId===selected.id&&x.tipo==='MANTENIMIENTO'),clients=new Set(rents.map(x=>x.clienteId).filter(Boolean)),diasCaja=rents.reduce((a,x)=>a+x.dias,0),impCaja=rents.reduce((a,x)=>a+x.importe,0);
+     const activa=rents.find(x=>x.estatus==='ACTIVA');
+     detail.innerHTML=`<div class="cc-meta"><b>Caja:</b> ${esc(selected.numero||'—')}<br><b>Descripción:</b> ${esc(selected.descripcion||'—')}<br><b>Tipo:</b> ${esc(selected.tipo||selected.tipoUnidadNombre||'—')}<br><b>Origen:</b> ${esc(selected.origen||'—')}<br><b>Placas:</b> ${esc(selected.placas||selected.placasMx||selected.placasUsa||'—')}<br><b>Estatus actual:</b> ${esc(selected.estatus||'—')}<br><b>Renta actual:</b> ${activa?esc(activa.cliente)+' · desde '+esc(activa.entrada):'Sin renta activa'}<br><b>Periodos históricos:</b> ${rents.length}<br><b>Días rentados:</b> ${diasCaja}<br><b>Clientes históricos:</b> ${clients.size}<br><b>Eventos de mantenimiento:</b> ${mts.length}<br><b>Estimado del rango:</b> ${impCaja>0?'$'+impCaja.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'$0.00'}</div>`;
+   }else detail.innerHTML='<div class="cc-meta">Selecciona una caja para ver su radiografía individual. Los indicadores superiores reflejan los registros reales cargados desde Supabase según los filtros aplicados.</div>';
  }
-
- window.ccHistorialData={eventos,rents:eventos,cr,totalDias,totalImp,cajasSet,periodos,desde,hasta,box:bc,cliente:cl};
+ window.ccHistorialData={eventos,rents:rentaEventos,cr,totalDias,totalImp,cajasSet,periodos:rentaEventos.length,activas,finalizadas,mantenimientos:mantEventos,desde,hasta,box:bc,cliente:cl};
 };
 window.ccLimpiarHistorial=function(){['ccHistCaja','ccHistCliente','ccHistDesde','ccHistHasta'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});ccRenderHistorial();};
 window.ccExportarExcelHistorial=function(){const d=window.ccHistorialData;if(!d){ccRenderHistorial();return;}try{const rows=d.eventos.map((e,i)=>({'#':i+1,'Fecha entrada a renta':e.entrada,'Fecha salida de renta':e.salida,'Caja':e.caja,'Cliente':e.cliente,'Responsable':e.responsable,'Evento':e.tipo,'Estatus':e.estatus||'','Método':e.metodo||'','Días rentados':e.dias,'Detalle / Observaciones':e.detalle||''}));const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:5},{wch:20},{wch:20},{wch:16},{wch:28},{wch:24},{wch:14},{wch:20},{wch:12},{wch:14},{wch:14},{wch:18},{wch:55}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Historial Renta');XLSX.writeFile(wb,`Historial_Cajas_Renta_${new Date().toISOString().slice(0,10)}.xlsx`);ccAudit({operacionId:ccAuditId('EXP'),accion:'EXPORTAR_HISTORIAL_EXCEL',modulo:'HISTORIAL',submodulo:'EXPORTACION',detalle:'Historial de renta exportado a Excel'});}catch(e){console.error(e);alert('No fue posible exportar el historial a Excel.');}};
