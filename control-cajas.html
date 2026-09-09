@@ -5621,7 +5621,10 @@ window.ccMostrarQrUnidad=async function(id){
     if(!unit?.qrToken)throw new Error('No fue posible generar el token QR de esta unidad.');
 
     const token=String(unit.qrToken||'').trim();
-    if(!/^[a-f0-9]{36}$/i.test(token)){
+    // Acepta UUID estándar de Supabase (con guiones) y tokens heredados de 32 hexadecimales.
+    const uuidOk=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+    const legacyOk=/^[0-9a-f]{32}$/i.test(token);
+    if(!(uuidOk||legacyOk)){
       throw new Error('El token QR de esta unidad no tiene un formato válido.');
     }
 
