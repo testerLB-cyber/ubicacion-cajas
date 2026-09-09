@@ -7099,7 +7099,7 @@ window.ccAntConfigDestino=function(){
  modal('Configurar concepto por destino','<div class="cc-grid"><div class="cc-field"><label>Destino *</label><select name="destinoId" required>'+ds+'</select></div><div class="cc-field"><label>Tipo de unidad de Anticipos *</label><select name="tipoUnidadAnticipoId" required>'+ts+'</select></div><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cc+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0" step="0.01" required></div></div><label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input name="esDefault" type="checkbox"> Incluir por default al crear el anticipo</label>',async fd=>{var x=Object.fromEntries(fd.entries());x.esDefault=fd.has('esDefault');x.estatus='ACTIVO';var r=await sb().rpc('cc_ant_save_destination_concept',{p_item:x});if(r.error)throw r.error})
 };
 
-function ccAntPublicUrl(page,token){return location.origin+location.pathname.replace(/[^/]+$/,'')+page+'?t='+encodeURIComponent(token)}
+function ccAntPublicUrl(page,token){var sep=String(page).includes('?')?'&':'?';return location.origin+location.pathname.replace(/[^/]+$/,'')+page+sep+'t='+encodeURIComponent(token)}
 window.ccAntCopy=async function(txt,msg){try{await navigator.clipboard.writeText(txt);if(typeof showStatus==='function')showStatus(msg||'Enlace copiado','success')}catch(e){prompt('Copia el enlace:',txt)}}
 window.ccAntFileData=function(file){return new Promise(function(res,rej){if(!file)return res('');var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=rej;r.readAsDataURL(file)})}
 window.ccAntPDF=async function(a){
