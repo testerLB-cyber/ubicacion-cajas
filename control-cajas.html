@@ -518,7 +518,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
     <div class="cc-login-body">
       <form id="ccLoginForm">
         <div class="cc-login-field"><label>Correo</label><input id="ccLoginEmail" type="email" autocomplete="username" required></div>
-        <div class="cc-login-field"><label>Contraseña</label><input id="ccLoginPassword" type="password" autocomplete="current-password" required></div>
+        <div class="cc-login-field"><label>Contraseña</label><input id="ccLoginPassword" type="password" autocomplete="current-password" required></div><label style="display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;color:#475569;margin:-2px 0 12px;cursor:pointer"><input id="ccRememberSession" type="checkbox" checked style="width:auto"> Mantener sesión iniciada en este dispositivo</label>
         <button id="ccLoginBtn" class="cc-login-btn" type="submit"><i class="fa-solid fa-lock"></i> Iniciar sesión</button>
       </form>
       <div id="ccLoginMsg" class="cc-login-msg"></div>
@@ -6913,8 +6913,12 @@ function applyAccess(){
 window.ccApplyAccess=applyAccess;
 
 function permissionsHtml(perms={}){
- return '<div class="cc-perm-grid">'+PERM_SCHEMA.map(([module,label,items])=>'<div class="cc-perm-group"><strong>'+label+'</strong>'+items.map(([key,txt])=>'<label class="cc-perm-check"><input type="checkbox" data-perm="'+module+'.'+key+'" '+(getPath(perms,module+'.'+key)?'checked':'')+'> '+txt+'</label>').join('')+'</div>').join('')+'</div>';
+ return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button type="button" class="cc-btn cc-btn-light" onclick="ccToggleAllPermissions(this,true)"><i class="fa-solid fa-square-check"></i> Habilitar todo</button><button type="button" class="cc-btn cc-btn-light" onclick="ccToggleAllPermissions(this,false)">Quitar todo</button></div><div class="cc-perm-grid">'+PERM_SCHEMA.map(([module,label,items])=>'<div class="cc-perm-group" data-perm-group="'+module+'"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong>'+label+'</strong><label class="cc-perm-check" style="font-weight:900"><input type="checkbox" data-perm-all="'+module+'" onchange="ccTogglePermissionGroup(this)"> Todo</label></div>'+items.map(([key,txt])=>'<label class="cc-perm-check"><input type="checkbox" data-perm="'+module+'.'+key+'" onchange="ccSyncPermissionGroup(this)" '+(getPath(perms,module+'.'+key)?'checked':'')+'> '+txt+'</label>').join('')+'</div>').join('')+'</div>';
 }
+window.ccTogglePermissionGroup=function(el){const g=el.closest('[data-perm-group]');if(g)g.querySelectorAll('[data-perm]').forEach(x=>x.checked=el.checked);};
+window.ccSyncPermissionGroup=function(el){const g=el.closest('[data-perm-group]');if(!g)return;const all=g.querySelector('[data-perm-all]'),items=[...g.querySelectorAll('[data-perm]')];if(all)all.checked=items.length>0&&items.every(x=>x.checked);};
+window.ccToggleAllPermissions=function(btn,on){const root=btn.closest('.cc-user-body')||document;root.querySelectorAll('[data-perm],[data-perm-all]').forEach(x=>x.checked=on);};
+function ccSyncAllPermissionGroups(root){(root||document).querySelectorAll('[data-perm-group]').forEach(g=>{const all=g.querySelector('[data-perm-all]'),items=[...g.querySelectorAll('[data-perm]')];if(all)all.checked=items.length>0&&items.every(x=>x.checked);});}
 function readPermissions(root){
  const out={};PERM_SCHEMA.forEach(([m,,items])=>{out[m]={};items.forEach(([k])=>{out[m][k]=!!root.querySelector('[data-perm="'+m+'.'+k+'"]')?.checked;});});return out;
 }
@@ -6932,7 +6936,7 @@ window.ccCreateUserModal=function(){
  document.getElementById('ccUserEditModal')?.remove();
  const ov=document.createElement('div');ov.id='ccUserEditModal';ov.className='cc-user-modal';
  ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Nuevo usuario</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccNewUserName"></div><div class="cc-field"><label>Correo</label><input id="ccNewUserEmail" type="email"></div><div class="cc-field"><label>Contraseña inicial</label><input id="ccNewUserPassword" type="password" minlength="8"></div></div><div style="margin:14px 0 8px;font-weight:900">Permisos</div><div id="ccNewPerms">'+permissionsHtml({})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick="ccSaveNewUser()">Crear usuario</button></div></div></div>';
- document.body.appendChild(ov);
+ document.body.appendChild(ov);ccSyncAllPermissionGroups(ov);
 };
 window.ccSaveNewUser=async function(){
  const root=document.getElementById('ccUserEditModal'),email=document.getElementById('ccNewUserEmail')?.value.trim(),password=document.getElementById('ccNewUserPassword')?.value||'',nombre=document.getElementById('ccNewUserName')?.value.trim()||'';
@@ -6946,7 +6950,7 @@ window.ccEditUserModal=function(json){
  const u=typeof json==='string'?JSON.parse(json):json;document.getElementById('ccUserEditModal')?.remove();
  const ov=document.createElement('div');ov.id='ccUserEditModal';ov.className='cc-user-modal';
  ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Permisos · '+(u.email||'')+'</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccEditUserName" value="'+String(u.nombre||'').replace(/"/g,'&quot;')+'"></div><div class="cc-field"><label>Estatus</label><select id="ccEditUserActive"><option value="1" '+(u.activo?'selected':'')+'>ACTIVO</option><option value="0" '+(!u.activo?'selected':'')+'>DESACTIVADO</option></select></div></div><div style="margin:14px 0 8px;font-weight:900">Permisos</div><div id="ccEditPerms">'+permissionsHtml(u.permisos||{})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick=\'ccSaveEditedUser('+JSON.stringify(u.userId)+')\'>Guardar permisos</button></div></div></div>';
- document.body.appendChild(ov);
+ document.body.appendChild(ov);ccSyncAllPermissionGroups(ov);
 };
 window.ccSaveEditedUser=async function(userId){
  const nombre=document.getElementById('ccEditUserName')?.value.trim()||'',activo=document.getElementById('ccEditUserActive')?.value==='1',permisos=readPermissions(document.getElementById('ccEditPerms'));
@@ -6968,7 +6972,8 @@ window.ccDeleteAppUser=async function(userId,email){
 document.addEventListener('DOMContentLoaded',async()=>{
  if(!sb){msg('Supabase no está disponible.','error');return;}
  await bootstrapStatus();
- document.getElementById('ccLoginForm').addEventListener('submit',e=>{e.preventDefault();login(document.getElementById('ccLoginEmail').value,document.getElementById('ccLoginPassword').value);});
+ document.getElementById('ccRememberSession').checked=localStorage.getItem('cc_remember_session')!=='0';
+ document.getElementById('ccLoginForm').addEventListener('submit',e=>{e.preventDefault();const remember=document.getElementById('ccRememberSession').checked;localStorage.setItem('cc_remember_session',remember?'1':'0');if(remember)sessionStorage.setItem('cc_session_current','1');login(document.getElementById('ccLoginEmail').value,document.getElementById('ccLoginPassword').value);});
  document.getElementById('ccBootstrapForm').addEventListener('submit',async e=>{
   e.preventDefault();const nombre=document.getElementById('ccBootstrapName').value.trim(),email=document.getElementById('ccBootstrapEmail').value.trim(),password=document.getElementById('ccBootstrapPassword').value;
   msg('Activando usuario maestro…','info');
@@ -6978,8 +6983,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
   else msg('Cuenta creada. Revisa el correo de confirmación y después inicia sesión.','ok');
   await bootstrapStatus();
  });
+ const remember=localStorage.getItem('cc_remember_session')!=='0';
+ if(!remember&&!sessionStorage.getItem('cc_session_current')){await sb.auth.signOut().catch(()=>{});}
  const {data}=await sb.auth.getSession();
- if(data?.session){try{await loadAccess();}catch(e){await sb.auth.signOut();msg(e.message||String(e),'error');}}
+ if(data?.session){sessionStorage.setItem('cc_session_current','1');try{await loadAccess();}catch(e){await sb.auth.signOut();msg(e.message||String(e),'error');}}
 });
 })();
 </script>
