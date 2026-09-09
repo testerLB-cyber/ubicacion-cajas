@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tráfico App · Subir comprobantes</title>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-body{font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0}.wrap{max-width:560px;margin:auto;padding:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 12px 35px rgba(15,23,42,.08)}header{background:#0f172a;color:#fff;padding:18px}header h2{margin:0;font-size:20px}header div{font-size:11px;color:#cbd5e1;margin-top:4px}main{padding:18px}.upload{border:2px dashed #93c5fd;background:#eff6ff;border-radius:16px;padding:22px;text-align:center}.upload strong{display:block;font-size:16px;margin-bottom:6px}.upload p{font-size:12px;color:#64748b;margin:0 0 14px}.file-btn{display:inline-flex;align-items:center;justify-content:center;background:#2563eb;color:#fff;border-radius:12px;padding:13px 16px;font-weight:800;cursor:pointer}.file-btn input{display:none}.preview{margin-top:14px}.preview img{max-width:100%;max-height:360px;border-radius:12px;border:1px solid #e2e8f0}.msg{padding:12px;border-radius:10px;margin-top:12px;font-size:12px}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.info{background:#e0f2fe;color:#075985}.history{margin-top:16px}.item{padding:10px 0;border-bottom:1px solid #e2e8f0}.item b{display:block}.muted{font-size:10px;color:#64748b;margin-top:3px}
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0}.wrap{max-width:560px;margin:auto;padding:14px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 12px 35px rgba(15,23,42,.08)}header{background:#0f172a;color:#fff;padding:18px}header h2{margin:0;font-size:20px}header div{font-size:11px;color:#cbd5e1;margin-top:4px}main{padding:18px}.upload{border:2px dashed #93c5fd;background:#eff6ff;border-radius:16px;padding:22px;text-align:center}.upload strong{display:block;font-size:16px;margin-bottom:6px}.upload p{font-size:12px;color:#64748b;margin:0 0 14px}.file-btn{display:inline-flex;align-items:center;justify-content:center;background:#2563eb;color:#fff;border-radius:12px;padding:13px 16px;font-weight:800;cursor:pointer}.file-btn input{display:none}.preview{margin-top:14px}.preview img{max-width:100%;max-height:360px;border-radius:12px;border:1px solid #e2e8f0}.file-box{padding:12px;border-radius:10px;background:#fff;border:1px solid #cbd5e1;font-size:12px;color:#475569}.msg{padding:12px;border-radius:10px;margin-top:12px;font-size:12px}.ok{background:#dcfce7;color:#166534}.err{background:#fee2e2;color:#991b1b}.info{background:#e0f2fe;color:#075985}.history{margin-top:16px}.item{padding:10px 0;border-bottom:1px solid #e2e8f0}.item b{display:block}.muted{font-size:10px;color:#64748b;margin-top:3px}
 </style>
 </head>
 <body>
@@ -15,8 +14,8 @@ body{font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0}.wra
 <main id="main">
   <div class="upload">
     <strong>Tomar foto o subir comprobante</strong>
-    <p>La imagen se enviará como borrador a la app. El OCR intentará leer el importe total y los artículos.</p>
-    <label class="file-btn">Tomar / subir foto<input id="file" type="file" accept="image/*" capture="environment"></label>
+    <p>Selecciona una foto o PDF. Se enviará inmediatamente como borrador a la app para llenar los datos manualmente.</p>
+    <label class="file-btn">Tomar / subir archivo<input id="file" type="file" accept="image/*,application/pdf" capture="environment"></label>
     <div id="preview" class="preview"></div>
   </div>
   <div id="msg"></div>
@@ -27,44 +26,25 @@ body{font-family:Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0}.wra
 const ENDPOINT="https://nbogdhriavzqetnlrrau.supabase.co/functions/v1/cc-anticipo-public";
 const KEY="sb_publishable_B_qEegIG45rnH1xuXEDyBA_DZnwn3yy";
 const token=new URLSearchParams(location.search).get('t')||'';
-let A=null, sent=[];
+let A=null,sent=[];
 async function api(body){const r=await fetch(ENDPOINT,{method:'POST',headers:{'content-type':'application/json','apikey':KEY},body:JSON.stringify(body)});const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Error');return j}
 function fileData(file){return new Promise((res,rej)=>{const rd=new FileReader();rd.onload=()=>res(rd.result);rd.onerror=rej;rd.readAsDataURL(file)})}
-function extractTotal(text){
-  const lines=String(text||'').split(/\n/).map(x=>x.trim()).filter(Boolean);
-  const preferred=lines.filter(x=>/\b(total|importe\s*total|gran\s*total|amount\s*due|total\s*mxn)\b/i.test(x));
-  const parse=line=>{const vals=(line.match(/(?:\$\s*)?\d{1,7}(?:[,.]\d{3})*(?:[,.]\d{2})/g)||[]).map(v=>Number(v.replace(/\$/g,'').replace(/\s/g,'').replace(/,(?=\d{3}\b)/g,'').replace(',','.'))).filter(Number.isFinite);return vals.length?vals[vals.length-1]:null};
-  for(let i=preferred.length-1;i>=0;i--){const v=parse(preferred[i]);if(v&&v>0)return v}
-  const all=(String(text||'').match(/(?:\$\s*)?\d{1,7}(?:[,.]\d{3})*(?:[,.]\d{2})/g)||[]).map(v=>Number(v.replace(/\$/g,'').replace(/\s/g,'').replace(/,(?=\d{3}\b)/g,'').replace(',','.'))).filter(v=>Number.isFinite(v)&&v>0);
-  return all.length?Math.max(...all):null;
-}
-function extractItems(text){
-  const skip=/\b(total|subtotal|iva|impuesto|cambio|efectivo|tarjeta|visa|mastercard|fecha|hora|ticket|folio|rfc|cajero|gracias|www\.|tel[eé]fono|importe)\b/i;
-  const lines=String(text||'').split(/\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(x=>x.length>2);
-  const useful=lines.filter(x=>!skip.test(x)&&/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(x)&&!/^\d+[\s.,$-]*$/.test(x)).slice(0,12);
-  return useful.join(' · ').slice(0,700);
-}
-function renderHistory(){document.getElementById('history').innerHTML=sent.length?sent.map((x,i)=>'<div class="item"><b>Comprobante '+(i+1)+' enviado</b><div class="muted">'+(x.total?'Total OCR: $'+Number(x.total).toFixed(2):'Total por revisar en la app')+(x.desc?' · '+x.desc.slice(0,90):'')+'</div></div>').join(''):'<div class="muted" style="padding-top:8px">Todavía no has enviado fotos.</div>'}
+function renderHistory(){document.getElementById('history').innerHTML=sent.length?sent.map((x,i)=>'<div class="item"><b>Comprobante '+(i+1)+' enviado</b><div class="muted">'+x.name+'</div></div>').join(''):'<div class="muted" style="padding-top:8px">Todavía no has enviado archivos.</div>'}
 async function load(){try{const j=await api({action:'get',token});if(j.tipo!=='COMPROBACION')throw new Error('Este enlace no corresponde a comprobación.');A=j.anticipo;document.getElementById('folio').textContent=(A.folio||'')+' · '+(A.operador||'');renderHistory()}catch(e){document.getElementById('main').innerHTML='<div class="msg err">'+e.message+'</div>'}}
-async function uploadPhoto(file){
-  const msg=document.getElementById('msg'),pv=document.getElementById('preview');
-  try{
-    msg.className='msg info';msg.textContent='Preparando imagen...';
-    const data=await fileData(file);pv.innerHTML='<img src="'+data+'" alt="Comprobante">';
-    let text='',total=null,desc='';
-    try{
-      msg.textContent='Leyendo comprobante con OCR...';
-      const r=await Tesseract.recognize(file,'spa+eng',{logger:x=>{if(x.status==='recognizing text')msg.textContent='Leyendo comprobante '+Math.round((x.progress||0)*100)+'%'}});
-      text=r.data.text||'';total=extractTotal(text);desc=extractItems(text);
-    }catch(ocrErr){console.warn('OCR',ocrErr)}
-    msg.textContent='Enviando borrador a la app...';
-    await api({action:'stage_photo',token,fileData:data,fileName:file.name||'comprobante.jpg',mime:file.type||'image/jpeg',ocrTotal:total,ocrDescripcion:desc,ocrTexto:text});
-    sent.push({total,desc});renderHistory();
-    msg.className='msg ok';msg.textContent='Comprobante enviado a la app correctamente. Puedes tomar otra foto.';
-    document.getElementById('file').value='';setTimeout(()=>{pv.innerHTML=''},1200);
-  }catch(e){msg.className='msg err';msg.textContent=e.message||String(e)}
+async function uploadFile(file){
+ const msg=document.getElementById('msg'),pv=document.getElementById('preview');
+ try{
+  msg.className='msg info';msg.textContent='Subiendo comprobante...';
+  const data=await fileData(file);
+  if(file.type&&file.type.indexOf('image/')===0)pv.innerHTML='<img src="'+data+'" alt="Comprobante">';
+  else pv.innerHTML='<div class="file-box">'+(file.name||'Documento PDF')+'</div>';
+  await api({action:'stage_photo',token,fileData:data,fileName:file.name||'comprobante',mime:file.type||'application/octet-stream',ocrTotal:null,ocrDescripcion:'',ocrTexto:''});
+  sent.push({name:file.name||'Comprobante'});renderHistory();
+  msg.className='msg ok';msg.textContent='Comprobante enviado a la app. Puedes subir otro.';
+  document.getElementById('file').value='';setTimeout(()=>{pv.innerHTML=''},700);
+ }catch(e){msg.className='msg err';msg.textContent=e.message||String(e)}
 }
-document.getElementById('file').addEventListener('change',function(){const file=this.files&&this.files[0];if(file)uploadPhoto(file)});
+document.getElementById('file').addEventListener('change',function(){const file=this.files&&this.files[0];if(file)uploadFile(file)});
 load();
 </script>
 </body></html>
