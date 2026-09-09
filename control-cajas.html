@@ -6971,104 +6971,97 @@ window.ccAntComprobar=async function(id){
   var cs=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'">'+h(x.concepto)+'</option>'}).join('');
   var oldComp=document.getElementById('ccAntCompModal');if(oldComp)oldComp.remove();
   var ov=document.createElement('div');ov.id='ccAntCompModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
-  ov.innerHTML='<div class="cc-comp-shell"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Comprobar anticipo · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">Captura continua: agrega varios comprobantes y guarda todos al final.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer">×</button></div><div class="cc-comp-body"><div class="cc-comp-layout"><div class="cc-comp-side"><div class="cc-comp-qr"><strong style="display:block;margin-bottom:8px">Capturar fotos desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div class="cc-note" style="margin-top:8px">El QR abre únicamente la captura de evidencias de este anticipo. Nada se guarda hasta presionar Guardar.</div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px;width:100%" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Captura temporal.</strong><div style="margin-top:4px">Las imágenes y datos permanecen como borrador hasta el guardado final.</div></div></div><div><form id="ccCompForm" class="cc-comp-form-card"><div class="cc-comp-form-title"><div><strong>Agregar comprobante al borrador</strong><div class="cc-note">Puedes capturar tantos comprobantes como necesites para este anticipo.</div></div></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf"><div class="cc-note">El archivo se mantiene temporalmente en esta ventana hasta guardar todos.</div></div><div class="cc-field" style="margin-top:9px"><label>Descripción / observaciones</label><textarea name="descripcion" rows="3"></textarea></div><div class="cc-comp-actions"><button class="cc-btn cc-btn-primary" type="submit"><i class="fa-solid fa-plus mr-1"></i>Agregar al borrador</button><span class="cc-note">Este botón todavía no guarda en la base.</span></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompDrafts" class="cc-comp-list"></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="cc-btn cc-btn-dark" id="ccCompSaveAll" type="button" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar comprobación</button></div><div id="ccCompList" class="cc-comp-list"></div></div></div></div></div>';
+  ov.innerHTML='<div class="cc-comp-shell"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Comprobar anticipo · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">Captura continua. Las fotos del QR aparecerán aquí automáticamente.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer">×</button></div><div class="cc-comp-body"><div class="cc-comp-layout"><div class="cc-comp-side"><div class="cc-comp-qr"><strong style="display:block;margin-bottom:8px">Tomar fotos desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div class="cc-note" style="margin-top:8px">El enlace solo permite tomar/subir fotos. El OCR intenta leer el total y los artículos.</div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px;width:100%" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Borrador temporal.</strong><div style="margin-top:4px">Nada se convierte en comprobación definitiva hasta presionar Guardar comprobación.</div></div></div><div><form id="ccCompForm" class="cc-comp-form-card"><div class="cc-comp-form-title"><div><strong>Captura manual en la app</strong><div class="cc-note">También puedes agregar comprobantes directamente desde aquí.</div></div></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf"></div><div class="cc-field" style="margin-top:9px"><label>Descripción / artículos</label><textarea name="descripcion" rows="3"></textarea></div><div class="cc-comp-actions"><button class="cc-btn cc-btn-primary" type="submit"><i class="fa-solid fa-plus mr-1"></i>Agregar al borrador</button></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompDrafts" class="cc-comp-list"></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="cc-btn cc-btn-dark" id="ccCompSaveAll" type="button" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar comprobación</button></div><div id="ccCompList" class="cc-comp-list"></div></div></div></div></div>';
   document.body.appendChild(ov);
 
-  var closeBtn=ov.querySelector('#ccCompClose');if(closeBtn)closeBtn.onclick=function(){ov.remove()};
-  var mobileToken='',mobileUrl='',copyBtn=ov.querySelector('#ccCompLink'),qrBox=ov.querySelector('#ccAntCompQR'),linkText=ov.querySelector('#ccAntCompLinkText');
-  var drafts=[];
+  var mobileToken='',mobileUrl='',drafts=[],pollTimer=null,copyBtn=ov.querySelector('#ccCompLink'),qrBox=ov.querySelector('#ccAntCompQR'),linkText=ov.querySelector('#ccAntCompLinkText');
+  var closeBtn=ov.querySelector('#ccCompClose');if(closeBtn)closeBtn.onclick=function(){if(pollTimer)clearInterval(pollTimer);ov.remove()};
+
+  function syncDraftInputs(){
+    ov.querySelectorAll('[data-draft-index]').forEach(function(card){
+      var i=Number(card.getAttribute('data-draft-index')),d=drafts[i];if(!d)return;
+      var q=function(n){return card.querySelector('[data-f="'+n+'"]')};
+      if(q('conceptoId')){d.conceptoId=q('conceptoId').value;var op=q('conceptoId').options[q('conceptoId').selectedIndex];d.concepto=op?op.textContent:'Comprobante'}
+      if(q('monto'))d.monto=Number(q('monto').value||0);
+      if(q('descripcion'))d.descripcion=q('descripcion').value;
+      if(q('tipoDocumento'))d.tipoDocumento=q('tipoDocumento').value;
+      if(q('folioDocumento'))d.folioDocumento=q('folioDocumento').value;
+    });
+  }
 
   function renderDrafts(){
-    var el=ov.querySelector('#ccCompDrafts'),btn=ov.querySelector('#ccCompSaveAll');
-    if(!el)return;
-    el.innerHTML='<strong>Borrador actual</strong>'+(drafts.length?drafts.map(function(x,i){return '<div style="padding:8px 0;border-bottom:1px solid #e2e8f0"><b>#'+(i+1)+' · '+h(x.concepto)+'</b><span style="float:right;font-weight:900">'+m(x.monto)+'</span><div style="font-size:9px;color:#64748b;margin-top:3px">'+h(x.fileName||'Sin archivo')+' · '+h(x.tipoDocumento||'TICKET')+'</div><button type="button" class="cc-btn cc-btn-light" style="margin-top:6px;padding:5px 8px" data-rm="'+i+'">Quitar</button></div>'}).join(''):'<div class="cc-note" style="padding:8px 0">Todavía no agregas comprobantes.</div>');
-    el.querySelectorAll('[data-rm]').forEach(function(b){b.onclick=function(){drafts.splice(Number(b.getAttribute('data-rm')),1);renderDrafts()}});
-    if(btn)btn.disabled=!drafts.length;
+    var el=ov.querySelector('#ccCompDrafts'),btn=ov.querySelector('#ccCompSaveAll');if(!el)return;
+    if(!drafts.length){el.innerHTML='<strong>Borrador actual</strong><div class="cc-note" style="padding:10px 0">Esperando comprobantes. Las fotos enviadas desde el QR aparecerán aquí automáticamente.</div>';if(btn)btn.disabled=true;return}
+    el.innerHTML='<strong>Borrador actual · '+drafts.length+' comprobante(s)</strong>'+drafts.map(function(d,i){
+      var opts=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'"'+(x.conceptoId===d.conceptoId?' selected':'')+'>'+h(x.concepto)+'</option>'}).join('');
+      var img=d.previewUrl?'<img src="'+h(d.previewUrl)+'" style="width:110px;max-height:140px;object-fit:contain;border-radius:9px;border:1px solid #e2e8f0;background:#fff">':'<div style="width:110px;height:90px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#64748b">Sin vista previa</div>';
+      return '<div data-draft-index="'+i+'" style="display:grid;grid-template-columns:120px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #e2e8f0">'+img+'<div><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px"><b>#'+(i+1)+(d.draftId?' · Desde celular':' · Captura app')+'</b><button type="button" class="cc-btn cc-btn-light" style="padding:5px 8px" data-rm="'+i+'">Quitar</button></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select data-f="conceptoId">'+opts+'</select></div><div class="cc-field"><label>Importe total *</label><input data-f="monto" type="number" min="0.01" step="0.01" value="'+h(d.monto||'')+'"></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select data-f="tipoDocumento"><option'+(d.tipoDocumento==='TICKET'?' selected':'')+'>TICKET</option><option'+(d.tipoDocumento==='FACTURA'?' selected':'')+'>FACTURA</option><option'+(d.tipoDocumento==='RECIBO'?' selected':'')+'>RECIBO</option><option'+(d.tipoDocumento==='OTRO'?' selected':'')+'>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input data-f="folioDocumento" value="'+h(d.folioDocumento||'')+'"></div></div><div class="cc-field" style="margin-top:8px"><label>Descripción / artículos</label><textarea data-f="descripcion" rows="3">'+h(d.descripcion||'')+'</textarea></div>'+(d.draftId?'<div class="cc-note" style="margin-top:6px">OCR: importe y artículos precargados. Revísalos antes de guardar.</div>':'')+'</div></div>'
+    }).join('');
+    el.querySelectorAll('[data-rm]').forEach(function(b){b.onclick=async function(){syncDraftInputs();var idx=Number(b.getAttribute('data-rm')),d=drafts[idx];if(d&&d.draftId&&mobileToken){try{await sb().functions.invoke('cc-anticipo-public',{body:{action:'draft_delete',token:mobileToken,draftId:d.draftId}})}catch(e){console.warn(e)}}drafts.splice(idx,1);renderDrafts()}});
+    if(btn)btn.disabled=false;
+  }
+
+  async function pullMobileDrafts(){
+    if(!mobileToken||!document.body.contains(ov))return;
+    try{
+      syncDraftInputs();
+      var rr=await sb().functions.invoke('cc-anticipo-public',{body:{action:'draft_list',token:mobileToken}});
+      if(rr&&rr.error)throw rr.error;var items=(rr&&rr.data&&rr.data.items)||[],added=false;
+      items.forEach(function(x){
+        if(drafts.some(function(d){return d.draftId===x.id}))return;
+        var def=ds[0]||{};
+        drafts.push({draftId:x.id,previewUrl:x.previewUrl||'',fileName:x.file_name||'',mime:x.mime||'',conceptoId:def.conceptoId||'',concepto:def.concepto||'Comprobante',monto:Number(x.ocr_total||0)||'',descripcion:String(x.ocr_descripcion||''),tipoDocumento:'TICKET',folioDocumento:'',ocrTexto:String(x.ocr_texto||''),ocrMonto:Number(x.ocr_total||0)||'',observaciones:'Captura desde celular'});
+        added=true;
+      });
+      if(added){renderDrafts();var msgEl=ov.querySelector('#ccCompMsg');if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Nueva foto recibida desde el celular. Revisa importe y descripción.</span>'}
+    }catch(e){console.warn('Borradores celular',e)}
   }
 
   (async function(){
     try{
       var lk=await sb().rpc('cc_ant_generate_link',{p_anticipo_id:id,p_tipo:'COMPROBACION',p_hours:168});
-      if(lk&&lk.error)throw lk.error;
-      mobileToken=String(lk&&lk.data&&lk.data.token?lk.data.token:'');
-      if(!mobileToken)throw new Error('No se recibió token de comprobación.');
-      mobileUrl=ccAntPublicUrl('comprobar-anticipo.html',mobileToken);
-      if(linkText)linkText.textContent=mobileUrl;
+      if(lk&&lk.error)throw lk.error;mobileToken=String(lk&&lk.data&&lk.data.token?lk.data.token:'');if(!mobileToken)throw new Error('No se recibió token de comprobación.');
+      mobileUrl=ccAntPublicUrl('comprobar-anticipo.html',mobileToken);if(linkText)linkText.textContent=mobileUrl;
       if(copyBtn){copyBtn.disabled=false;copyBtn.onclick=function(){ccAntCopy(mobileUrl,'Enlace de captura copiado')}}
       if(typeof window.ccEnsureQRCode==='function'){await window.ccEnsureQRCode();if(qrBox&&window.QRCode){qrBox.innerHTML='';var level=(window.QRCode.CorrectLevel&&window.QRCode.CorrectLevel.M)||0;new window.QRCode(qrBox,{text:mobileUrl,width:190,height:190,correctLevel:level})}}
-    }catch(err){
-      console.warn('QR comprobación:',err);
-      if(qrBox)qrBox.innerHTML='<div style="padding:60px 10px;color:#b45309;font-size:10px">No se pudo generar el QR.<br>La captura interna sigue disponible.</div>';
-      if(linkText)linkText.textContent='QR no disponible';
-    }
+      await pullMobileDrafts();pollTimer=setInterval(pullMobileDrafts,2500);
+    }catch(err){console.warn('QR comprobación:',err);if(qrBox)qrBox.innerHTML='<div style="padding:60px 10px;color:#b45309;font-size:10px">No se pudo generar el QR.<br>La captura interna sigue disponible.</div>';if(linkText)linkText.textContent='QR no disponible'}
   })();
 
   async function refresh(){
-    await ccAntLoad(true);
-    a=(D.anticipos||[]).find(function(x){return x.id===id})||a;
-    var list=(D.comprobaciones||[]).filter(function(x){return x.anticipo_id===id&&x.estatus==='ACTIVO'});
-    var listEl=ov.querySelector('#ccCompList');
-    if(listEl)listEl.innerHTML='<strong>Comprobantes ya guardados</strong>'+list.map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid #e2e8f0">'+f(x.fecha)+' · '+h(x.concepto)+' <b style="float:right">'+m(x.monto)+'</b><div style="font-size:9px;color:#64748b">'+(x.evidencia_url?'Con evidencia':'Sin foto')+'</div></div>'}).join('');
+    await ccAntLoad(true);a=(D.anticipos||[]).find(function(x){return x.id===id})||a;
+    var list=(D.comprobaciones||[]).filter(function(x){return x.anticipo_id===id&&x.estatus==='ACTIVO'}),listEl=ov.querySelector('#ccCompList');
+    if(listEl)listEl.innerHTML='<strong>Comprobantes ya guardados</strong>'+list.map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid #e2e8f0">'+f(x.fecha)+' · '+h(x.concepto)+' <b style="float:right">'+m(x.monto)+'</b></div>'}).join('');
   }
 
   var formEl=ov.querySelector('#ccCompForm');
   if(formEl)formEl.onsubmit=async function(ev){
-    ev.preventDefault();
-    var submittedForm=ev.currentTarget||formEl;
-    var msgEl=ov.querySelector('#ccCompMsg');
+    ev.preventDefault();var submittedForm=ev.currentTarget||formEl,msgEl=ov.querySelector('#ccCompMsg');
     try{
-      var fd=new FormData(submittedForm),file=fd.get('archivo');
-      var conceptoId=String(fd.get('conceptoId')||'');
-      var cx=(D.conceptos||[]).find(function(x){return x.id===conceptoId});
-      var concepto=cx&&cx.nombre?cx.nombre:'Comprobante';
-      var monto=Number(fd.get('monto'));
-      if(!conceptoId)throw new Error('Selecciona un concepto.');
-      if(!(monto>0))throw new Error('Captura un monto válido.');
-      var data='';
-      if(file&&file.size)data=await ccAntFileData(file);
+      var fd=new FormData(submittedForm),file=fd.get('archivo'),conceptoId=String(fd.get('conceptoId')||''),cx=(D.conceptos||[]).find(function(x){return x.id===conceptoId}),concepto=cx&&cx.nombre?cx.nombre:'Comprobante',monto=Number(fd.get('monto'));
+      if(!conceptoId)throw new Error('Selecciona un concepto.');if(!(monto>0))throw new Error('Captura un monto válido.');
+      var data='';if(file&&file.size)data=await ccAntFileData(file);
       drafts.push({conceptoId:conceptoId,concepto:concepto,descripcion:String(fd.get('descripcion')||concepto),monto:monto,tipoDocumento:String(fd.get('tipoDocumento')||'TICKET'),folioDocumento:String(fd.get('folioDocumento')||''),fileData:data,fileName:(file&&file.size)?(file.name||'comprobante.jpg'):'',mime:(file&&file.size)?(file.type||'image/jpeg'):'',ocrTexto:'',ocrMonto:'',observaciones:'Captura interna'});
-      if(submittedForm&&typeof submittedForm.reset==='function')submittedForm.reset();
-      if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Agregado al borrador. Puedes capturar otro comprobante.</span>';
-      renderDrafts();
-    }catch(err){
-      var txt=err&&err.message?err.message:String(err);
-      if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt);
-    }
+      if(submittedForm&&typeof submittedForm.reset==='function')submittedForm.reset();if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Agregado al borrador. Puedes capturar otro comprobante.</span>';renderDrafts();
+    }catch(err){var txt=err&&err.message?err.message:String(err);if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt)}
   };
 
   var saveAll=ov.querySelector('#ccCompSaveAll');
   if(saveAll)saveAll.onclick=async function(){
-    var msgEl=ov.querySelector('#ccCompMsg');
-    if(!drafts.length)return;
+    var msgEl=ov.querySelector('#ccCompMsg');if(!drafts.length)return;
     try{
-      saveAll.disabled=true;
-      if(!mobileToken){
-        var lk2=await sb().rpc('cc_ant_generate_link',{p_anticipo_id:id,p_tipo:'COMPROBACION',p_hours:168});
-        if(lk2&&lk2.error)throw lk2.error;
-        mobileToken=String(lk2&&lk2.data&&lk2.data.token?lk2.data.token:'');
-      }
-      if(!mobileToken)throw new Error('No fue posible preparar el guardado.');
+      syncDraftInputs();
+      var invalid=drafts.find(function(d){return !d.conceptoId||!(Number(d.monto)>0)});
+      if(invalid)throw new Error('Revisa que todos los comprobantes tengan concepto e importe total.');
+      saveAll.disabled=true;if(!mobileToken)throw new Error('No fue posible preparar el guardado.');
       var rr=await sb().functions.invoke('cc-anticipo-public',{body:{action:'proof_batch',token:mobileToken,items:drafts}});
-      if(rr&&rr.error)throw rr.error;
-      if(rr&&rr.data&&rr.data.ok===false)throw new Error(rr.data.error||'No se guardó');
-      var qty=drafts.length;
-      drafts=[];
-      renderDrafts();
-      if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">'+qty+' comprobante(s) guardado(s) correctamente.</span>';
-      await refresh();
-    }catch(err){
-      saveAll.disabled=false;
-      var txt=err&&err.message?err.message:String(err);
-      if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt);
-    }
+      if(rr&&rr.error)throw rr.error;if(rr&&rr.data&&rr.data.ok===false)throw new Error(rr.data.error||'No se guardó');
+      var qty=drafts.length;drafts=[];renderDrafts();if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">'+qty+' comprobante(s) guardado(s) correctamente.</span>';await refresh();
+    }catch(err){saveAll.disabled=false;var txt=err&&err.message?err.message:String(err);if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt)}
   };
 
-  renderDrafts();
-  await refresh();
- }catch(err){
-   console.error('Abrir comprobación:',err);
-   alert('No fue posible abrir la comprobación.\n\n'+(err&&err.message?err.message:String(err)));
- }
+  renderDrafts();await refresh();
+ }catch(err){console.error('Abrir comprobación:',err);alert('No fue posible abrir la comprobación.\n\n'+(err&&err.message?err.message:String(err)))}
 };
 window.ccAntMovimientoCaja=function(){var qs=(D.cuentas||[]).filter(x=>x.estatus==='ACTIVO').map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');modal('Movimiento de caja','<div class="cc-grid"><div class="cc-field"><label>Cuenta *</label><select name="cuentaId">'+qs+'</select></div><div class="cc-field"><label>Tipo *</label><select name="tipo"><option>DEPOSITO</option><option>AJUSTE_ENTRADA</option><option>AJUSTE_SALIDA</option></select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" step="0.01" min="0" required></div><div class="cc-field"><label>Fecha *</label><input name="fecha" type="date" value="'+new Date().toISOString().slice(0,10)+'" required></div></div><div class="cc-field"><label>Referencia</label><input name="referencia"></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>',async fd=>{var x=Object.fromEntries(fd.entries());x.fecha=new Date(x.fecha+'T12:00:00').toISOString();var r=await sb().rpc('cc_ant_add_cash_movement',{p_item:x});if(r.error)throw r.error})};
 window.ccAntDevolucion=function(id){var a=(D.anticipos||[]).find(x=>x.id===id);if(!a)return;modal('Devolución · '+a.folio,'<div class="cc-field"><label>Monto *</label><input name="monto" type="number" step="0.01" min="0" required></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>',async fd=>{var x={cuentaId:a.cuentaId,anticipoId:id,tipo:'DEVOLUCION',monto:Number(fd.get('monto')),fecha:new Date().toISOString(),referencia:a.folio,observaciones:String(fd.get('observaciones')||'')};var r=await sb().rpc('cc_ant_add_cash_movement',{p_item:x});if(r.error)throw r.error})};
