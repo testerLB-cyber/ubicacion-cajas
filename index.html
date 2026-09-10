@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Actualizar ubicación de caja</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
@@ -28,7 +31,8 @@
 </div>
 <script>
 const EDGE='https://nbogdhriavzqetnlrrau.supabase.co/functions/v1/cc-location';
-const q=new URLSearchParams(location.search).get('q')||'';
+const params=new URLSearchParams(location.search);
+const q=(params.get('q')||params.get('token')||params.get('t')||'').trim();
 const unit=document.getElementById('unit'),status=document.getElementById('status'),retry=document.getElementById('retry');
 let saving=false;
 function setStatus(msg,type=''){status.innerHTML=msg;status.className='status'+(type?' '+type:'');}
@@ -63,10 +67,20 @@ async function init(){
     const d=await r.json();
     if(!r.ok||!d.ok)throw new Error(d.error||'No se pudo validar la unidad');
     unit.querySelector('strong').textContent=d.unidad||'Unidad';
-    unit.querySelector('span').textContent=d.descripcion||'';
+    const detalle=[d.descripcion||'',d.tipoUnidad||d.categoria||'',d.estatus?('Estatus: '+d.estatus):''].filter(Boolean).join(' · ');
+    unit.querySelector('span').textContent=detalle;
     setStatus('Unidad validada. Solicitando ubicación...');
     guardarAutomatico();
-  }catch(e){setStatus('No se pudo validar este QR.<br>'+(e.message||e),'err');}
+  }catch(e){
+    const raw=String(e.message||e||'');
+    const friendly=raw.includes('TOKEN_INVALIDO')
+      ? 'El token del QR no es válido.'
+      : raw.includes('UNIDAD_NO_ENCONTRADA')
+        ? 'El QR es válido, pero no corresponde a una unidad registrada.'
+        : raw;
+    setStatus('No se pudo validar este QR.<br>'+friendly,'err');
+    showRetry();
+  }
 }
 retry.onclick=guardarAutomatico;
 init();
