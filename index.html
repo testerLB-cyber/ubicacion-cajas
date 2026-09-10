@@ -2,88 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Actualizar ubicación de caja</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#0f172a;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
-.card{width:min(520px,100%);background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(15,23,42,.14);overflow:hidden}
-.head{background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;padding:22px}.head h1{margin:0;font-size:22px}.head p{margin:6px 0 0;color:#bfdbfe;font-size:13px}
-.body{padding:22px}.unit{padding:14px;border:1px solid #dbeafe;background:#eff6ff;border-radius:14px;margin-bottom:16px}.unit strong{font-size:20px;display:block}.unit span{font-size:12px;color:#475569}
-.status{padding:16px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:14px;font-weight:700;text-align:center;margin-bottom:14px}
-.ok{background:#dcfce7;border-color:#86efac;color:#166534}.err{background:#fee2e2;border-color:#fecaca;color:#991b1b}
-.retry{display:none;width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:800;cursor:pointer;background:#2563eb;color:#fff}
-.meta{font-size:11px;color:#64748b;margin-top:12px;line-height:1.5;text-align:center}
-.check{font-size:36px;display:block;margin-bottom:6px}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="0; url=app-correcta.html">
+<title>Tráfico App</title>
+<script>location.replace('app-correcta.html'+location.search+location.hash);</script>
 </head>
-<body>
-<div class="card">
-  <div class="head"><h1>Ubicación de unidad</h1><p>GM Transport · Control de Cajas</p></div>
-  <div class="body">
-    <div id="unit" class="unit"><strong>Validando QR...</strong><span></span></div>
-    <div id="status" class="status">Preparando actualización automática...</div>
-    <button id="retry" class="retry">Intentar nuevamente</button>
-    <div class="meta">Al permitir el acceso a ubicación, se actualizará automáticamente. El sistema conserva las últimas 5 ubicaciones de esta unidad.</div>
-  </div>
-</div>
-<script>
-const EDGE='https://nbogdhriavzqetnlrrau.supabase.co/functions/v1/cc-location';
-const params=new URLSearchParams(location.search);
-const q=(params.get('q')||params.get('token')||params.get('t')||'').trim();
-const unit=document.getElementById('unit'),status=document.getElementById('status'),retry=document.getElementById('retry');
-let saving=false;
-function setStatus(msg,type=''){status.innerHTML=msg;status.className='status'+(type?' '+type:'');}
-function showRetry(){retry.style.display='block';}
-async function guardarAutomatico(){
-  if(saving)return;
-  if(!navigator.geolocation){setStatus('Este navegador no permite obtener ubicación.','err');showRetry();return;}
-  saving=true;retry.style.display='none';
-  setStatus('Solicitando ubicación del teléfono...');
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    try{
-      setStatus('Ubicación detectada. Actualizando...');
-      const body={q,lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
-      const r=await fetch(EDGE,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-      const d=await r.json();
-      if(!r.ok||!d.ok)throw new Error(d.error||'No se pudo guardar');
-      const precision=Math.round(Number(pos.coords.accuracy)||0);
-      setStatus('<span class="check">✓</span>UBICACIÓN ACTUALIZADA'+(precision?' · Precisión '+precision+' m':''),'ok');
-    }catch(e){
-      setStatus('No se pudo actualizar la ubicación.<br>'+(e.message||e),'err');
-      showRetry();
-    }finally{saving=false;}
-  },err=>{
-    const m=err.code===1?'Necesitas permitir el acceso a ubicación para actualizar esta unidad.':err.code===2?'No fue posible determinar la ubicación del teléfono.':'Se agotó el tiempo para obtener la ubicación.';
-    setStatus(m,'err');saving=false;showRetry();
-  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
-}
-async function init(){
-  if(!q){setStatus('QR inválido: falta el identificador de la unidad.','err');return;}
-  try{
-    const r=await fetch(EDGE+'?q='+encodeURIComponent(q),{cache:'no-store'});
-    const d=await r.json();
-    if(!r.ok||!d.ok)throw new Error(d.error||'No se pudo validar la unidad');
-    unit.querySelector('strong').textContent=d.unidad||'Unidad';
-    const detalle=[d.descripcion||'',d.tipoUnidad||d.categoria||'',d.estatus?('Estatus: '+d.estatus):''].filter(Boolean).join(' · ');
-    unit.querySelector('span').textContent=detalle;
-    setStatus('Unidad validada. Solicitando ubicación...');
-    guardarAutomatico();
-  }catch(e){
-    const raw=String(e.message||e||'');
-    const friendly=raw.includes('TOKEN_INVALIDO')
-      ? 'El token del QR no es válido.'
-      : raw.includes('UNIDAD_NO_ENCONTRADA')
-        ? 'El QR es válido, pero no corresponde a una unidad registrada.'
-        : raw;
-    setStatus('No se pudo validar este QR.<br>'+friendly,'err');
-    showRetry();
-  }
-}
-retry.onclick=guardarAutomatico;
-init();
-</script>
-</body>
+<body></body>
 </html>
