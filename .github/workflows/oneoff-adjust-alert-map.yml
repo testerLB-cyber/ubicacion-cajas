@@ -16,8 +16,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Patch app-correcta.html
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
           p = Path('app-correcta.html')
           s = p.read_text(encoding='utf-8')
@@ -51,7 +52,7 @@ jobs:
               raise SystemExit('No se encontró el inicio del loop del mapa')
           s = s.replace(old_loop, new_loop, 1)
 
-          old_marker = """      const marker=L.marker([lat,lng],{icon}).addTo(map);"""
+          old_marker = "      const marker=L.marker([lat,lng],{icon}).addTo(map);"
           new_marker = """      const coordKey=lat.toFixed(7)+','+lng.toFixed(7);
       const sameTotal=ccCoordCounts.get(coordKey)||1;
       const sameIndex=ccCoordSeen.get(coordKey)||0;
@@ -70,13 +71,14 @@ jobs:
           s = s.replace(old_marker, new_marker, 1)
 
           p.write_text(s, encoding='utf-8')
+          PY
 
       - name: Verify changes
         shell: bash
         run: |
-          grep -q '#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;' app-correcta.html
-          grep -q 'const ccCoordCounts=new Map();' app-correcta.html
-          grep -q 'L.marker(\[markerLat,markerLng\]' app-correcta.html
+          grep -Fq '#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;' app-correcta.html
+          grep -Fq 'const ccCoordCounts=new Map();' app-correcta.html
+          grep -Fq 'L.marker([markerLat,markerLng]' app-correcta.html
 
       - name: Commit patch
         shell: bash
