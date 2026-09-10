@@ -7213,7 +7213,8 @@ const PERM_SCHEMA=[
  ['mantenimiento','Mantenimiento',[['ver','Ver mantenimiento'],['editar_registros','Editar registros'],['ver_dot','Ver Control DOT'],['editar_dot','Editar registros DOT']]],
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
- ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
+ ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar'],['crear','Crear usuarios']]],
+ ['logs','Log de actividad',[['ver','Ver log de actividad']]]
 ];
 function getPath(obj,path){return String(path).split('.').reduce((a,k)=>a&&a[k],obj);}
 window.ccPerm=function(path){return window.CC_ACCESS?.rol==='ADMIN'||getPath(window.CC_ACCESS?.permisos||{},path)===true;};
@@ -7284,9 +7285,9 @@ function applyAccess(){
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
  if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
- const isAdmin=a.rol==='ADMIN';
- document.getElementById('ccAdminSideSection').style.display=isAdmin?'':'none';
- document.getElementById('gmSideUsers').style.display=isAdmin?'':'none';
+ const isAdmin=a.rol==='ADMIN', canUsers=isAdmin||a.permisos?.['usuarios.crear']===true||ccPerm('usuarios.ver');
+ document.getElementById('ccAdminSideSection').style.display=canUsers?'':'none';
+ document.getElementById('gmSideUsers').style.display=canUsers?'':'none';
  const session=document.getElementById('ccSessionBox');if(session)session.style.display='block';
  document.getElementById('ccSessionName').textContent=a.nombre||a.email||'Usuario';
  document.getElementById('ccSessionRole').textContent=a.rol+(a.activo?' · ACTIVO':' · INACTIVO');
@@ -7330,13 +7331,13 @@ function readPermissions(root){
 }
 function closeUserModal(){document.getElementById('ccUserAdminModal')?.remove();}
 window.ccOpenUserAdmin=async function(){
- if(window.CC_ACCESS?.rol!=='ADMIN'){alert('Solo ADMIN puede administrar usuarios.');return;}
+ if(window.CC_ACCESS?.rol!=='ADMIN'&&window.CC_ACCESS?.permisos?.['usuarios.crear']!==true&&!ccPerm('usuarios.ver')){alert('Tu usuario no tiene permiso para acceder a usuarios.');return;}
  const {data,error}=await sb.rpc('cc_admin_list_users');if(error||!data?.ok){alert(error?.message||data?.error||'No se pudieron cargar usuarios');return;}
  closeUserModal();
  const ov=document.createElement('div');ov.id='ccUserAdminModal';ov.className='cc-user-modal';
  const users=data.usuarios||[];
  const escU=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Usuarios y permisos</b><div style="font-size:10px;color:#bfdbfe">'+users.length+' usuario(s) registrado(s)</div></div><div style="display:flex;gap:7px"><button class="cc-btn cc-btn-primary" onclick="ccCreateUserModal()"><i class="fa-solid fa-user-plus"></i> Nuevo usuario</button><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccUserAdminModal\').remove()">Cerrar</button></div></div><div class="cc-user-body"><div style="overflow:auto"><table style="width:100%;min-width:760px;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden"><thead><tr style="background:#e2e8f0;color:#334155;text-align:left"><th style="padding:10px">Nombre</th><th style="padding:10px">Correo</th><th style="padding:10px">Rol</th><th style="padding:10px">Estatus</th><th style="padding:10px">Acciones</th></tr></thead><tbody>'+users.map(u=>'<tr style="border-top:1px solid #e2e8f0"><td style="padding:10px;font-weight:900">'+escU(u.nombre||'—')+'</td><td style="padding:10px">'+escU(u.email)+'</td><td style="padding:10px">'+(u.rol==='ADMIN'?'<span class="cc-badge cc-ok">ADMIN</span>':'USUARIO')+'</td><td style="padding:10px">'+(u.activo?'<span class="cc-badge cc-ok">ACTIVO</span>':'<span class="cc-badge" style="background:#fee2e2;color:#991b1b">INHABILITADO</span>')+'</td><td style="padding:10px"><div class="cc-user-actions">'+(u.rol==='ADMIN'?'<span style="font-size:10px;color:#64748b">Usuario maestro protegido</span>':'<button class="cc-btn cc-btn-light" onclick=\'ccEditUserModal('+JSON.stringify(JSON.stringify(u))+')\'><i class="fa-solid fa-pen"></i> Editar</button><button class="cc-btn cc-btn-light" onclick=\'ccToggleUserActive('+JSON.stringify(u.userId)+','+JSON.stringify(u.nombre||u.email)+','+JSON.stringify(!u.activo)+')\'>'+(u.activo?'<i class="fa-solid fa-user-slash"></i> Inhabilitar':'<i class="fa-solid fa-user-check"></i> Habilitar')+'</button><button class="cc-btn cc-btn-light" onclick=\'ccSetUserPassword('+JSON.stringify(u.userId)+')\'><i class="fa-solid fa-key"></i> Contraseña</button><button class="cc-btn cc-btn-danger" onclick=\'ccDeleteAppUser('+JSON.stringify(u.userId)+','+JSON.stringify(u.email)+')\'><i class="fa-solid fa-trash"></i> Eliminar</button>')+'</div></td></tr>').join('')+'</tbody></table></div></div></div>';
+ ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Usuarios y permisos</b><div style="font-size:10px;color:#bfdbfe">'+users.length+' usuario(s) registrado(s)</div></div><div style="display:flex;gap:7px"><button class="cc-btn cc-btn-primary" id="ccNewUserBtn" onclick="ccCreateUserModal()"><i class="fa-solid fa-user-plus"></i> Nuevo usuario</button><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccUserAdminModal\').remove()">Cerrar</button></div></div><div class="cc-user-body"><div style="overflow:auto"><table style="width:100%;min-width:760px;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden"><thead><tr style="background:#e2e8f0;color:#334155;text-align:left"><th style="padding:10px">Nombre</th><th style="padding:10px">Correo</th><th style="padding:10px">Rol</th><th style="padding:10px">Estatus</th><th style="padding:10px">Acciones</th></tr></thead><tbody>'+users.map(u=>'<tr style="border-top:1px solid #e2e8f0"><td style="padding:10px;font-weight:900">'+escU(u.nombre||'—')+'</td><td style="padding:10px">'+escU(u.email)+'</td><td style="padding:10px">'+(u.rol==='ADMIN'?'<span class="cc-badge cc-ok">ADMIN</span>':'USUARIO')+'</td><td style="padding:10px">'+(u.activo?'<span class="cc-badge cc-ok">ACTIVO</span>':'<span class="cc-badge" style="background:#fee2e2;color:#991b1b">INHABILITADO</span>')+'</td><td style="padding:10px"><div class="cc-user-actions">'+(u.rol==='ADMIN'?'<span style="font-size:10px;color:#64748b">Usuario maestro protegido</span>':'<button class="cc-btn cc-btn-light" onclick=\'ccEditUserModal('+JSON.stringify(JSON.stringify(u))+')\'><i class="fa-solid fa-pen"></i> Editar</button><button class="cc-btn cc-btn-light" onclick=\'ccToggleUserActive('+JSON.stringify(u.userId)+','+JSON.stringify(u.nombre||u.email)+','+JSON.stringify(!u.activo)+')\'>'+(u.activo?'<i class="fa-solid fa-user-slash"></i> Inhabilitar':'<i class="fa-solid fa-user-check"></i> Habilitar')+'</button><button class="cc-btn cc-btn-light" onclick=\'ccSetUserPassword('+JSON.stringify(u.userId)+')\'><i class="fa-solid fa-key"></i> Contraseña</button><button class="cc-btn cc-btn-danger" onclick=\'ccDeleteAppUser('+JSON.stringify(u.userId)+','+JSON.stringify(u.email)+')\'><i class="fa-solid fa-trash"></i> Eliminar</button>')+'</div></td></tr>').join('')+'</tbody></table></div></div></div>';
  document.body.appendChild(ov);
 };
 window.ccToggleUserActive=async function(userId,nombre,activar){
