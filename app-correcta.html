@@ -7230,7 +7230,13 @@ window.ccAntExportarPDF=function(){if(!ccPerm('anticipos.reportes'))return;var r
 </script>
 <script id="cc-auth-security-js">
 (function(){
-const sb=window.gmSupabase;
+let sb=window.gmSupabase;
+if(!sb && window.supabase && typeof window.supabase.createClient==='function' && window.GM_SUPABASE_URL && window.GM_SUPABASE_ANON_KEY){
+ try{
+  sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  window.gmSupabase=sb;
+ }catch(e){console.error('RECUPERACION SUPABASE:',e);}
+}
 window.CC_ACCESS=null;
 window.CC_AUTH_READY=false;
 
