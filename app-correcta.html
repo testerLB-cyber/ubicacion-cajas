@@ -5724,7 +5724,116 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
+<style id="cc-global-alerts-css">
+#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:18px;z-index:18000;width:54px;height:54px;border:0;border-radius:50%;background:#0f172a;color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.28);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:20px}
+#ccGlobalAlertsBtn:hover{transform:translateY(-1px)}
+#ccGlobalAlertsBadge{position:absolute;right:-3px;top:-3px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;display:none;align-items:center;justify-content:center;border:2px solid #fff}
+.cc-alert-modal{position:fixed;inset:0;z-index:21000;background:rgba(15,23,42,.76);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px}
+.cc-alert-card{width:min(980px,98vw);max-height:92vh;overflow:auto;background:#f8fafc;border-radius:18px;box-shadow:0 25px 75px rgba(0,0,0,.35)}
+.cc-alert-head{position:sticky;top:0;z-index:3;background:#0f172a;color:#fff;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cc-alert-body{padding:14px}.cc-alert-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.cc-alert-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:10px}.cc-alert-kpi small{display:block;font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase}.cc-alert-kpi strong{display:block;font-size:20px;margin-top:4px}
+.cc-alert-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;border-radius:11px;padding:10px 11px;margin:7px 0}
+.cc-alert-row.high{border-left-color:#dc2626}.cc-alert-row.low{border-left-color:#2563eb}.cc-alert-row strong{font-size:11px}.cc-alert-row span{display:block;font-size:9px;color:#64748b;margin-top:3px}
+@media(max-width:650px){#ccGlobalAlertsBtn{right:12px;bottom:12px}.cc-alert-summary{grid-template-columns:repeat(2,1fr)}}
+</style>
+<button id="ccGlobalAlertsBtn" type="button" title="Centro de alertas" aria-label="Centro de alertas">
+  <i class="fa-solid fa-bell"></i><span id="ccGlobalAlertsBadge">0</span>
+</button>
+<script id="cc-global-alerts-js">
+(function(){
+let ccGlobalAlerts=[],ccAlertsTimer=null,ccAlertsLoading=false;
+
+function ccAlertEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ccAlertPerm(path){
+  try{return typeof window.ccPerm==='function'&&window.ccPerm(path);}catch(_){return false;}
+}
+function ccAlertAllowed(a){
+  if(window.CC_ACCESS?.rol==='ADMIN')return true;
+  switch(String(a.tipo||'').toUpperCase()){
+    case 'MANTENIMIENTO':
+    case 'EMAIL_MANTENIMIENTO':
+      return ccAlertPerm('mantenimiento.ver')||ccAlertPerm('inventario.mantenimiento');
+    case 'DOT':
+      return ccAlertPerm('mantenimiento.ver_dot')||ccAlertPerm('mantenimiento.ver');
+    case 'RENTA_VENCIDA':
+    case 'RENTA_POR_VENCER':
+      return ccAlertPerm('rentas.ver')||ccAlertPerm('historial.ver')||ccAlertPerm('proforma.ver');
+    case 'SIN_UBICACION':
+      return ccAlertPerm('mapa.ver')||ccAlertPerm('inventario.ver');
+    default:
+      return ccAlertPerm('control_cajas.ver')||ccAlertPerm('dashboard.ver');
+  }
+}
+function ccAlertDestinationPerm(dest){
+  const d=String(dest||'').toLowerCase();
+  if(d==='mantenimiento')return ccAlertPerm('mantenimiento.ver');
+  if(d==='renta')return ccAlertPerm('rentas.ver');
+  if(d==='mapa')return ccAlertPerm('mapa.ver');
+  if(d==='inventario')return ccAlertPerm('inventario.ver');
+  return ccAlertPerm('control_cajas.ver');
+}
+function ccAlertGo(dest){
+  try{
+    if(typeof window.gmMostrarControlCajas==='function')window.gmMostrarControlCajas();
+    setTimeout(()=>{
+      const d=String(dest||'').toLowerCase();
+      const tab=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+d+"'"));
+      if(tab&&typeof window.ccTab==='function')window.ccTab(d,tab);
+    },80);
+  }catch(e){console.warn('NAVEGACION ALERTA',e);}
+  document.getElementById('ccGlobalAlertsModal')?.remove();
+}
+async function ccLoadGlobalAlerts(silent=true){
+  if(ccAlertsLoading||!window.CC_AUTH_READY||!window.gmSupabase)return;
+  ccAlertsLoading=true;
+  try{
+    const {data,error}=await window.gmSupabase.rpc('cc_alert_center');
+    if(error)throw error;
+    ccGlobalAlerts=(data?.ok&&Array.isArray(data.alertas)?data.alertas:[]).filter(ccAlertAllowed);
+    const btn=document.getElementById('ccGlobalAlertsBtn'),badge=document.getElementById('ccGlobalAlertsBadge');
+    if(btn)btn.style.display='flex';
+    if(badge){
+      badge.textContent=ccGlobalAlerts.length>99?'99+':String(ccGlobalAlerts.length);
+      badge.style.display=ccGlobalAlerts.length?'flex':'none';
+    }
+  }catch(e){
+    if(!silent)alert('No se pudieron cargar las alertas. '+(e.message||e));
+    console.warn('CENTRO DE ALERTAS:',e);
+  }finally{ccAlertsLoading=false;}
+}
+window.ccOpenGlobalAlerts=async function(){
+  await ccLoadGlobalAlerts(false);
+  document.getElementById('ccGlobalAlertsModal')?.remove();
+  const ov=document.createElement('div');ov.id='ccGlobalAlertsModal';ov.className='cc-alert-modal';
+  const high=ccGlobalAlerts.filter(a=>Number(a.prioridad)>=3).length;
+  const med=ccGlobalAlerts.filter(a=>Number(a.prioridad)===2).length;
+  const maint=ccGlobalAlerts.filter(a=>['MANTENIMIENTO','EMAIL_MANTENIMIENTO','DOT'].includes(String(a.tipo||'').toUpperCase())).length;
+  const rent=ccGlobalAlerts.filter(a=>String(a.tipo||'').toUpperCase().startsWith('RENTA')).length;
+  ov.innerHTML='<div class="cc-alert-card"><div class="cc-alert-head"><div><b>CENTRO DE ALERTAS</b><div style="font-size:9px;color:#bfdbfe">Solo se muestran alertas de módulos permitidos para tu usuario</div></div><div style="display:flex;gap:7px"><button class="cc-btn cc-btn-light" data-refresh>Actualizar</button><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div></div><div class="cc-alert-body">'+
+    '<div class="cc-alert-summary"><div class="cc-alert-kpi"><small>Total visibles</small><strong>'+ccGlobalAlerts.length+'</strong></div><div class="cc-alert-kpi"><small>Prioridad alta</small><strong>'+high+'</strong></div><div class="cc-alert-kpi"><small>Mantenimiento / DOT</small><strong>'+maint+'</strong></div><div class="cc-alert-kpi"><small>Rentas</small><strong>'+rent+'</strong></div></div>'+
+    (ccGlobalAlerts.length?ccGlobalAlerts.map(a=>'<div class="cc-alert-row '+(Number(a.prioridad)>=3?'high':Number(a.prioridad)<=1?'low':'')+'"><div><strong>'+ccAlertEsc(a.unidad||'GENERAL')+' · '+ccAlertEsc(a.titulo||a.tipo||'Alerta')+'</strong><span>'+ccAlertEsc(a.detalle||'')+'</span></div>'+(ccAlertDestinationPerm(a.destino)?'<button class="cc-btn cc-btn-light" data-dest="'+ccAlertEsc(a.destino||'')+'">Abrir</button>':'')+'</div>').join(''):'<div class="cc-note" style="padding:18px;text-align:center">✓ No hay alertas visibles para tu usuario en este momento.</div>')+
+    '</div></div>';
+  document.body.appendChild(ov);
+  ov.querySelector('[data-close]').onclick=()=>ov.remove();
+  ov.querySelector('[data-refresh]').onclick=async()=>{ov.remove();await window.ccOpenGlobalAlerts();};
+  ov.querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>ccAlertGo(b.dataset.dest));
+};
+document.addEventListener('DOMContentLoaded',()=>{
+  const btn=document.getElementById('ccGlobalAlertsBtn');if(btn)btn.onclick=window.ccOpenGlobalAlerts;
+  const boot=()=>{
+    if(window.CC_AUTH_READY&&window.gmSupabase){
+      ccLoadGlobalAlerts(true);
+      if(!ccAlertsTimer)ccAlertsTimer=setInterval(()=>ccLoadGlobalAlerts(true),120000);
+    }else setTimeout(boot,700);
+  };
+  setTimeout(boot,900);
+});
+})();
+</script>
+
+</body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
