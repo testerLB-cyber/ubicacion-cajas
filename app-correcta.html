@@ -4297,10 +4297,27 @@ window.GM_SUPABASE_ANON_KEY = window.GM_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1Ni
 /* GM CONTROL DE CAJAS · SUPABASE NORMALIZADO v2.0 · SIN GOOGLE SHEETS */(function(){
 const SUPABASE_URL=window.GM_SUPABASE_URL;
 const SUPABASE_ANON_KEY=window.GM_SUPABASE_ANON_KEY;
-const gmSupabase=(window.supabase&&SUPABASE_URL&&SUPABASE_ANON_KEY&&SUPABASE_URL.indexOf('__SUPABASE_')===-1&&SUPABASE_ANON_KEY.indexOf('__SUPABASE_')===-1)
-  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
-  : null;
-window.gmSupabase=gmSupabase;
+function ccCreateSupabaseClient(){
+  if(window.gmSupabase) return window.gmSupabase;
+  if(!window.supabase || typeof window.supabase.createClient!=='function'){
+    console.error('SUPABASE SDK NO DISPONIBLE');
+    return null;
+  }
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY){
+    console.error('SUPABASE URL/KEY NO DISPONIBLES');
+    return null;
+  }
+  try{
+    window.gmSupabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+    });
+    return window.gmSupabase;
+  }catch(err){
+    console.error('ERROR CREANDO CLIENTE SUPABASE:',err);
+    return null;
+  }
+}
+const gmSupabase=ccCreateSupabaseClient();
 window.CC_AUTH_REQUIRED=true;
 let cajas=[], responsables=[], rentas=[], matriz={}, clientes=[], configuracion={correosMantenimiento:[],correoEnvio:{proveedor:'RESEND',nombreRemitente:'',correoRemitente:'',replyTo:''},mantenimientoHistorial:[],tarifasRenta:{},geocercas:[],tiposUnidad:[{id:'tipo_caja',nombre:'CAJA',categoria:'CAJA',estatus:'ACTIVO'},{id:'tipo_carro',nombre:'CARRO',categoria:'CARRO',estatus:'ACTIVO'}]};
 let ccCloudReady=false,ccRevision=0,ccSaveInFlight=false,ccSaveQueued=false;
@@ -7177,7 +7194,15 @@ window.ccAntExportarPDF=function(){if(!ccPerm('anticipos.reportes'))return;var r
 </script>
 <script id="cc-auth-security-js">
 (function(){
-const sb=window.gmSupabase;
+let sb=window.gmSupabase;
+if(!sb && window.supabase && typeof window.supabase.createClient==='function' && window.GM_SUPABASE_URL && window.GM_SUPABASE_ANON_KEY){
+  try{
+    sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+    });
+    window.gmSupabase=sb;
+  }catch(err){console.error('RECUPERACION SUPABASE:',err);}
+}
 window.CC_ACCESS=null;
 window.CC_AUTH_READY=false;
 
