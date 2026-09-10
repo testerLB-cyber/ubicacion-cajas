@@ -1,0 +1,10 @@
+name: action-check
+on:
+  push:
+    paths:
+      - '.github/workflows/zz-action-check.yml'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
