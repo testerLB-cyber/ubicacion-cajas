@@ -528,63 +528,6 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
  #ccAntCompModal .cc-comp-body{padding:12px}
 }
 </style>
-
-<style id="gm-module-selector-css">
-body.gm-module-active #gmSideMenu{display:none!important}
-body.gm-module-active:not(.gm-control-mode) main{margin-left:0!important;width:100%!important;max-width:none!important}
-body.gm-module-active:not(.gm-control-mode) header{padding-right:70px!important}
-body.gm-module-chooser{overflow:hidden!important}
-body.cc-auth-locked #gmModuleSelector,
-body.cc-auth-locked #gmCornerMenu{display:none!important}
-
-#gmModuleSelector{
-  position:fixed;inset:0;z-index:10080;display:none;align-items:center;justify-content:center;
-  padding:24px;overflow:auto;color:#fff;
-  background:
-    radial-gradient(circle at 15% 20%,rgba(37,99,235,.24),transparent 33%),
-    radial-gradient(circle at 82% 75%,rgba(14,165,233,.17),transparent 30%),
-    linear-gradient(145deg,#07111f,#0d1d35 55%,#13294b);
-}
-#gmModuleSelector.open{display:flex}
-.gm-ms-shell{width:min(980px,100%)}
-.gm-ms-head{text-align:center;margin-bottom:28px}
-.gm-ms-logo{width:60px;height:60px;margin:0 auto 14px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#38bdf8);font-size:25px;box-shadow:0 18px 50px rgba(37,99,235,.32)}
-.gm-ms-head h2{font-size:clamp(28px,4vw,42px);font-weight:950;letter-spacing:-.04em;margin:0}
-.gm-ms-head p{margin:9px 0 0;color:#cbd5e1;font-size:13px}
-.gm-ms-user{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);border-radius:999px;font-size:10px;font-weight:800;color:#dbeafe}
-.gm-ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-.gm-ms-card{position:relative;min-height:230px;padding:26px;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(255,255,255,.075);backdrop-filter:blur(14px);color:#fff;text-align:left;cursor:pointer;transition:.18s;overflow:hidden}
-.gm-ms-card:hover{transform:translateY(-4px);background:rgba(255,255,255,.11);border-color:rgba(96,165,250,.65)}
-.gm-ms-icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:22px;background:#2563eb;margin-bottom:23px;box-shadow:0 12px 30px rgba(37,99,235,.28)}
-.gm-ms-card.cajas .gm-ms-icon{background:#0f766e;box-shadow:0 12px 30px rgba(15,118,110,.28)}
-.gm-ms-card h3{font-size:22px;font-weight:950;margin:0 0 8px}
-.gm-ms-card p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:0;max-width:360px}
-.gm-ms-go{position:absolute;right:22px;bottom:20px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1)}
-.gm-ms-foot{text-align:center;margin-top:18px;color:#94a3b8;font-size:10px}
-
-#gmCornerMenu{position:fixed;top:12px;right:14px;z-index:10070;display:none;align-items:flex-start;gap:8px}
-#gmCornerMenu.show{display:flex}
-.gm-corner-trigger{width:42px;height:42px;border:1px solid rgba(255,255,255,.2);border-radius:13px;background:rgba(15,23,42,.94);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 10px 28px rgba(15,23,42,.28);backdrop-filter:blur(12px)}
-.gm-corner-panel{display:none;width:215px;padding:7px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(15,23,42,.97);color:#fff;box-shadow:0 18px 48px rgba(15,23,42,.35);backdrop-filter:blur(14px)}
-#gmCornerMenu.open .gm-corner-panel{display:block}
-.gm-corner-user{padding:8px 9px 10px;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:5px}
-.gm-corner-user strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gm-corner-user small{font-size:9px;color:#93c5fd}
-.gm-corner-panel button{width:100%;display:flex;align-items:center;gap:9px;border:0;background:transparent;color:#e2e8f0;padding:9px;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer;text-align:left}
-.gm-corner-panel button:hover{background:#1e293b;color:#fff}
-.gm-corner-panel button.danger{color:#fecaca}
-.gm-corner-panel button.danger:hover{background:#7f1d1d;color:#fff}
-body.gm-control-mode #ccBackDashboard{display:none!important}
-
-@media(max-width:720px){
-  #gmModuleSelector{padding:16px}
-  .gm-ms-grid{grid-template-columns:1fr}
-  .gm-ms-card{min-height:180px;padding:21px}
-  .gm-ms-icon{margin-bottom:15px}
-  .gm-ms-head{margin-bottom:20px}
-}
-</style>
-
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccLoginGate">
@@ -613,52 +556,11 @@ body.gm-control-mode #ccBackDashboard{display:none!important}
     </div>
   </div>
 </div>
-
-<div id="gmModuleSelector" role="dialog" aria-modal="true" aria-label="Seleccionar módulo">
-  <div class="gm-ms-shell">
-    <div class="gm-ms-head">
-      <div class="gm-ms-logo"><i class="fa-solid fa-truck-fast"></i></div>
-      <h2>Tráfico App</h2>
-      <p>Selecciona el módulo con el que deseas trabajar.</p>
-      <div class="gm-ms-user"><i class="fa-solid fa-user"></i><span id="gmSelectorUser">Usuario</span></div>
-    </div>
-    <div class="gm-ms-grid">
-      <button type="button" class="gm-ms-card" id="gmSelectorDashboard" onclick="gmPortalOpenModule('dashboard')">
-        <div class="gm-ms-icon"><i class="fa-solid fa-chart-line"></i></div>
-        <h3>Dashboard</h3>
-        <p>Indicadores, operación, análisis gerencial, viajes, clientes y seguimiento general.</p>
-        <span class="gm-ms-go"><i class="fa-solid fa-arrow-right"></i></span>
-      </button>
-      <button type="button" class="gm-ms-card cajas" id="gmSelectorCajas" onclick="gmPortalOpenModule('cajas')">
-        <div class="gm-ms-icon"><i class="fa-solid fa-trailer"></i></div>
-        <h3>Control de Cajas</h3>
-        <p>Inventario, rentas, mantenimiento, ubicación, anticipos, historial y configuración.</p>
-        <span class="gm-ms-go"><i class="fa-solid fa-arrow-right"></i></span>
-      </button>
-    </div>
-    <div class="gm-ms-foot">Solo se muestran los módulos habilitados para tu usuario.</div>
-  </div>
-</div>
-
-<div id="gmCornerMenu">
-  <div class="gm-corner-panel">
-    <div class="gm-corner-user">
-      <strong id="gmCornerName">Usuario</strong>
-      <small id="gmCornerRole">ACTIVO</small>
-    </div>
-    <button type="button" id="gmCornerChange" onclick="gmPortalShowChooser()"><i class="fa-solid fa-table-cells-large"></i> Cambiar de módulo</button>
-    <button type="button" id="gmCornerConfig" onclick="gmPortalOpenConfig()"><i class="fa-solid fa-gear"></i> Configuración</button>
-    <button type="button" id="gmCornerUsers" style="display:none" onclick="gmPortalCloseCorner();ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i> Usuarios y permisos</button>
-    <button type="button" class="danger" onclick="gmPortalCloseCorner();ccLogout()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
-  </div>
-  <button type="button" class="gm-corner-trigger" aria-label="Menú de usuario" onclick="document.getElementById('gmCornerMenu').classList.toggle('open')"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-</div>
-
 <aside aria-label="Menú lateral" id="gmSideMenu">
 <div class="gm-side-brand"><i class="fa-solid fa-truck-fast mr-2"></i>Tráfico App<small>Control Logístico</small></div>
 <div class="gm-side-section">Menú principal</div>
 <button class="active" id="gmSideDashboard" onclick="gmMostrarDashboard()"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
-<button id="gmSideCajas" onclick="gmMostrarControlCajas()"><i class="fa-solid fa-trailer"></i><span>Control de Cajas</span></button>
+<button id="gmSideCajas" onclick="gmMostrarControlCajas()"><i class="fa-solid fa-trailer"></i><span>Operaciones</span></button>
 <div class="gm-side-section" id="ccAdminSideSection" style="display:none">Administración</div>
 <button id="gmSideUsers" style="display:none" onclick="ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i><span>Usuarios y permisos</span></button>
 <div id="ccSessionBox" style="display:none;margin:12px 8px 0;padding:10px;border-top:1px solid rgba(148,163,184,.18);font-size:10px;color:#cbd5e1">
@@ -803,7 +705,7 @@ body.gm-control-mode #ccBackDashboard{display:none!important}
 <button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CAJA" onclick="ccFiltrarInventarioTipo('CAJA')">Cajas</button>
 <button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CARRO" onclick="ccFiltrarInventarioTipo('CARRO')">Carros</button>
 <div id="ccInvTipoExtra" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-</div><div class="cc-toolbar"><div><strong>Inventario de unidades</strong><div class="cc-note">Catálogo general de unidades: cajas, carros y los demás tipos configurados.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-light" onclick="ccAbrirImportarUnidades()"><i class="fa-solid fa-file-import mr-1"></i>Importar unidades</button><button class="cc-btn cc-btn-light" type="button" onclick="ccDescargarTemplateUnidades()"><i class="fa-solid fa-file-excel mr-1"></i>Descargar template</button><button class="cc-btn cc-btn-primary" onclick="ccNuevaCaja()"><i class="fa-solid fa-plus mr-1"></i>Agregar unidad</button></div></div><div class="cc-inv-kpis" id="ccInventarioKpis"></div><div class="cc-inv-toolbar"><input class="cc-inv-search" id="ccInventarioSearch" oninput="ccInventarioSearchDebounced()" placeholder="Buscar por caja, cliente, tipo, origen..." type="search"/><button class="cc-btn cc-btn-light" onclick="document.getElementById('ccInventarioSearch').value='';ccRenderInventario()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div><div class="cc-inv-wrap"><table class="cc-inv-table"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>UNIDAD / ECONÓMICO</th><th>DESCRIPCIÓN</th><th>TAMAÑO</th><th>TIPO</th><th>ORIGEN</th><th>PLACAS</th><th>CLIENTE</th><th>ESTATUS</th><th>CAPACIDAD</th><th>ÚLTIMA UBICACIÓN</th><th>OBSERVACIONES</th><th>ACCIONES</th></tr></thead><tbody id="ccInventarioBody"></tbody></table></div>
+</div><div class="cc-toolbar"><div><strong>Inventario de unidades</strong><div class="cc-note">Catálogo general de unidades: cajas, carros y los demás tipos configurados.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-dark" onclick="ccOpenDossierSearch()"><i class="fa-solid fa-folder-open mr-1"></i>Expedientes</button><button class="cc-btn cc-btn-light" onclick="ccAbrirImportarUnidades()"><i class="fa-solid fa-file-import mr-1"></i>Importar unidades</button><button class="cc-btn cc-btn-light" type="button" onclick="ccDescargarTemplateUnidades()"><i class="fa-solid fa-file-excel mr-1"></i>Descargar template</button><button class="cc-btn cc-btn-primary" onclick="ccNuevaCaja()"><i class="fa-solid fa-plus mr-1"></i>Agregar unidad</button></div></div><div class="cc-inv-kpis" id="ccInventarioKpis"></div><div class="cc-inv-toolbar"><input class="cc-inv-search" id="ccInventarioSearch" oninput="ccInventarioSearchDebounced()" placeholder="Buscar por caja, cliente, tipo, origen..." type="search"/><button class="cc-btn cc-btn-light" onclick="document.getElementById('ccInventarioSearch').value='';ccRenderInventario()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div><div class="cc-inv-wrap"><table class="cc-inv-table"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>UNIDAD / ECONÓMICO</th><th>DESCRIPCIÓN</th><th>TAMAÑO</th><th>TIPO</th><th>ORIGEN</th><th>PLACAS</th><th>CLIENTE</th><th>ESTATUS</th><th>CAPACIDAD</th><th>ÚLTIMA UBICACIÓN</th><th>OBSERVACIONES</th><th>ACCIONES</th></tr></thead><tbody id="ccInventarioBody"></tbody></table></div>
 
 </div>
 <div class="cc-panel" id="ccPanelProforma">
@@ -892,6 +794,7 @@ body.gm-control-mode #ccBackDashboard{display:none!important}
 <button type="button" class="cc-config-nav-btn" data-config="destinatarios" onclick="ccConfigSection('destinatarios',this)"><i class="fa-solid fa-address-book"></i><span>Destinatarios</span><small>Catálogo de correos</small></button>
 <button type="button" class="cc-config-nav-btn" data-config="clientes" onclick="ccConfigSection('clientes',this)"><i class="fa-solid fa-building"></i><span>Clientes</span><small>Catálogo</small></button>
 <button type="button" class="cc-config-nav-btn" data-config="responsables" onclick="ccConfigSection('responsables',this)"><i class="fa-solid fa-user-tie"></i><span>Responsables</span><small>Catálogo</small></button><button type="button" class="cc-config-nav-btn" data-config="tarifas" onclick="ccConfigSection('tarifas',this)"><i class="fa-solid fa-dollar-sign"></i><span>Tarifas de renta</span><small>Tarifas por cliente · diario / semanal / mensual</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUnidad" onclick="ccConfigSection('tiposUnidad',this)"><i class="fa-solid fa-layer-group"></i><span>Tipos de unidad</span><small>Catálogo de unidades</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUsoCaja" onclick="ccConfigSection('tiposUsoCaja',this)"><i class="fa-solid fa-route"></i><span>Uso de cajas</span><small>Cruce · Foránea · Storage</small></button>
+<button type="button" class="cc-config-nav-btn" id="ccConfigLogBtn" data-config="log" onclick="ccConfigSection('log',this);ccLoadActivityLog()"><i class="fa-solid fa-clock-rotate-left"></i><span>Log de actividad</span><small>Auditoría de cambios</small></button>
 </div>
 <div class="cc-config-section" id="ccConfigRemitente">
 <div class="cc-config-card"><div class="cc-config-section-head"><div><h4>📤 Correo remitente</h4><p>Datos del correo desde donde se enviarán automáticamente los avisos de mantenimiento.</p></div><span id="ccMailConfigBadge" class="cc-badge cc-off">Sin configurar</span></div>
@@ -915,6 +818,27 @@ body.gm-control-mode #ccBackDashboard{display:none!important}
 <div class="cc-config-card"><div class="cc-config-section-head"><div><h4>👤 Catálogo de Responsables</h4><p>Responsables disponibles para las cajas de renta.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoResponsable()"><i class="fa-solid fa-plus mr-1"></i>Nuevo responsable</button></div>
 <div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>NOMBRE</th><th>PUESTO / ÁREA</th><th>TELÉFONO</th><th>CORREO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccResponsablesList"></tbody></table></div></div></div>
 <div class="cc-config-section" id="ccConfigTiposUnidad"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🚛 Catálogo de tipos de unidad</h4><p>Define los tipos que aparecerán al registrar o importar unidades. Los tipos CAJA y CARRO se crean automáticamente si no existen.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUnidad()"><i class="fa-solid fa-plus mr-1"></i>Nuevo tipo</button></div><div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>CATEGORÍA</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUnidadList"></tbody></table></div></div></div><div class="cc-config-section" id="ccConfigTiposUsoCaja"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🧭 Catálogo de tipo de uso de caja</h4><p>Define los usos disponibles al registrar una unidad categoría CAJA.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUsoCaja()"><i class="fa-solid fa-plus mr-1"></i>Nuevo uso</button></div><div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>El sistema inicia con <b>Cruce</b>, <b>Foránea</b>, <b>Cruce y Foránea</b> y <b>Storage</b>. Puedes agregar nuevos usos o desactivar los existentes.</div><div class="cc-inv-wrap" style="margin-top:12px"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE USO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUsoCajaList"></tbody></table></div></div></div>
+
+<div class="cc-config-section" id="ccConfigLog">
+  <div class="cc-config-card">
+    <div class="cc-config-section-head">
+      <div><h4>🕘 Log de actividad</h4><p>Registro de altas, modificaciones y eliminaciones realizadas en la base de datos.</p></div>
+      <button class="cc-btn cc-btn-light" onclick="ccLoadActivityLog()"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button>
+    </div>
+    <div class="cc-grid" style="margin-bottom:12px">
+      <div class="cc-field"><label>Usuario</label><input id="ccLogUsuario" placeholder="Buscar usuario..." oninput="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Módulo</label><input id="ccLogModulo" placeholder="Buscar módulo..." oninput="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Desde</label><input id="ccLogDesde" type="date" onchange="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Hasta</label><input id="ccLogHasta" type="date" onchange="ccRenderActivityLog()"></div>
+    </div>
+    <div class="cc-inv-wrap">
+      <table class="cc-table-list">
+        <thead><tr><th>FECHA / HORA</th><th>USUARIO</th><th>ACCIÓN</th><th>MÓDULO</th><th>REGISTRO</th><th>DESCRIPCIÓN</th></tr></thead>
+        <tbody id="ccActivityLogList"><tr><td colspan="6">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 <div class="cc-config-section" id="ccConfigTarifas">
 <div class="cc-config-card">
 <div class="cc-config-section-head"><div><h4>💰 Tarifas de renta por cliente</h4><p>Captura el precio por caja para renta diaria, semanal o mensual. La proforma usa el método elegido en cada renta.</p></div></div>
@@ -5823,95 +5747,20 @@ window.ccMostrarQrUnidad=async function(id){
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
       w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
-<script id="gm-module-selector-js">
-(function(){
-  const selector=()=>document.getElementById('gmModuleSelector');
-  const corner=()=>document.getElementById('gmCornerMenu');
-  const has=p=>typeof window.ccPerm==='function'&&window.ccPerm(p);
-
-  function syncUser(){
-    const a=window.CC_ACCESS||{};
-    const name=a.nombre||a.email||'Usuario';
-    const role=(a.rol||'USUARIO')+(a.activo?' · ACTIVO':'');
-    const s=document.getElementById('gmSelectorUser');
-    const n=document.getElementById('gmCornerName');
-    const r=document.getElementById('gmCornerRole');
-    if(s)s.textContent=name;if(n)n.textContent=name;if(r)r.textContent=role;
-    const users=document.getElementById('gmCornerUsers');
-    if(users)users.style.display=a.rol==='ADMIN'?'':'none';
-    const cfg=document.getElementById('gmCornerConfig');
-    if(cfg)cfg.style.display=(has('control_cajas.ver')&&has('configuracion.ver'))?'':'none';
-    const change=document.getElementById('gmCornerChange');
-    if(change)change.style.display=(has('dashboard.ver')&&has('control_cajas.ver'))?'':'none';
-  }
-
-  window.gmPortalCloseCorner=function(){corner()?.classList.remove('open')};
-
-  window.gmPortalShowChooser=function(){
-    const d=has('dashboard.ver'),c=has('control_cajas.ver');
-    if(!(d&&c)){
-      window.gmPortalOpenModule(d?'dashboard':'cajas');
-      return;
-    }
-    syncUser();
-    document.getElementById('gmSelectorDashboard').style.display=d?'':'none';
-    document.getElementById('gmSelectorCajas').style.display=c?'':'none';
-    document.body.classList.remove('gm-module-active');
-    document.body.classList.add('gm-module-chooser');
-    selector()?.classList.add('open');
-    corner()?.classList.remove('show','open');
-  };
-
-  window.gmPortalOpenModule=function(module){
-    selector()?.classList.remove('open');
-    document.body.classList.remove('gm-module-chooser');
-    document.body.classList.add('gm-module-active');
-
-    if(module==='cajas'){
-      if(!has('control_cajas.ver'))return;
-      if(typeof window.gmMostrarControlCajas==='function')window.gmMostrarControlCajas();
-      if(typeof window.firstControlTab==='function')window.firstControlTab();
-    }else{
-      if(!has('dashboard.ver'))return;
-      if(typeof window.gmMostrarDashboard==='function')window.gmMostrarDashboard();
-    }
-
-    syncUser();
-    corner()?.classList.add('show');
-    corner()?.classList.remove('open');
-  };
-
-  window.gmPortalOpenConfig=function(){
-    window.gmPortalCloseCorner();
-    if(!(has('control_cajas.ver')&&has('configuracion.ver'))){
-      alert('Tu usuario no tiene permiso para Configuración.');
-      return;
-    }
-    window.gmPortalOpenModule('cajas');
-    setTimeout(()=>{
-      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('configuracion'"));
-      if(typeof window.ccTab==='function')window.ccTab('configuracion',btn);
-    },50);
-  };
-
-  window.gmPortalAfterAccess=function(state){
-    syncUser();
-    const d=!!state?.dashboard,c=!!state?.control;
-    if(d&&c){window.gmPortalShowChooser();return;}
-    if(d){window.gmPortalOpenModule('dashboard');return;}
-    if(c){window.gmPortalOpenModule('cajas');return;}
-    selector()?.classList.remove('open');
-    corner()?.classList.remove('show');
-    alert('Tu usuario no tiene módulos habilitados.');
-  };
-
-  document.addEventListener('click',e=>{
-    const el=corner();
-    if(el&&el.classList.contains('open')&&!el.contains(e.target))el.classList.remove('open');
-  });
-})();
+<script id="cc-dossier-search">
+window.ccOpenDossierSearch=function(){
+ document.getElementById('ccDossierSearchModal')?.remove();
+ const ov=document.createElement('div');ov.id='ccDossierSearchModal';ov.className='cc-user-modal';
+ const options=(window.cajas||cajas||[]).slice().sort((a,b)=>String(a.numero).localeCompare(String(b.numero))).map(x=>'<option value="'+ccEsc(x.id)+'">'+ccEsc(x.numero)+' · '+ccEsc(x.descripcion||x.tipoUnidadNombre||'')+'</option>').join('');
+ ov.innerHTML='<div class="cc-user-card" style="width:min(760px,96vw)"><div class="cc-user-head"><div><b>Expedientes de unidades</b><div style="font-size:10px;color:#bfdbfe">Busca una caja, carro o unidad y abre todo su historial</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-field"><label>Buscar unidad</label><input id="ccDossierSearch" type="search" placeholder="Número, descripción, placas..." oninput="ccDossierFilter()"></div><div id="ccDossierResults" style="margin-top:12px"></div></div></div>';
+ document.body.appendChild(ov);ccDossierFilter();
+};
+window.ccDossierFilter=function(){
+ const el=document.getElementById('ccDossierResults');if(!el)return;const q=(document.getElementById('ccDossierSearch')?.value||'').trim().toLowerCase();
+ const arr=(window.cajas||cajas||[]).filter(x=>!q||[x.numero,x.descripcion,x.placasMx,x.placasUsa,x.origen,x.tipoUnidadNombre].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,40);
+ el.innerHTML=arr.length?arr.map(x=>'<button type="button" class="cc-btn cc-btn-light" style="width:100%;display:flex;justify-content:space-between;margin:5px 0;text-align:left" onclick="document.getElementById(\'ccDossierSearchModal\').remove();ccOpenUnitDossier(\''+ccEsc(x.id)+'\')"><span><b>'+ccEsc(x.numero)+'</b> · '+ccEsc(x.descripcion||x.tipoUnidadNombre||'')+'</span><span>'+ccEsc(x.origen||'')+' →</span></button>').join(''):'<div class="cc-note">No se encontraron unidades.</div>';
+};
 </script>
-
 </body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
@@ -6505,7 +6354,23 @@ window.ccFiltrarInventarioTipo=function(tipo){
     document.querySelectorAll('.ccInvTipoBtn').forEach(b=>{const active=b.dataset.tipo===window.ccInventarioTipoActual;b.classList.toggle('cc-btn-primary',active);b.classList.toggle('cc-btn-light',!active);});
     if(typeof ccRenderInventario==='function') ccRenderInventario();
 };
-window.ccRenderDashboard=function(){const tipoDash=window.ccDashboardTipoActual||'TODOS';const unidadesDash=cajas.filter(x=>ccTipoMatches(x,tipoDash));const cajasDash=unidadesDash.filter(x=>ccUnitCategory(x)==='CAJA');const carrosDash=unidadesDash.filter(x=>ccUnitCategory(x)==='CARRO');const el=document.getElementById('ccDashboardContent');if(!el)return;const hoy=iso(new Date()),total=unidadesDash.length,act=unidadesDash.filter(x=>x.estatus!=='INACTIVO').length,mant=unidadesDash.filter(x=>x.estatus==='MANTENIMIENTO').length,rentadas=unidadesDash.filter(x=>x.estatus!=='MANTENIMIENTO'&&x.estatus!=='INACTIVO'&&rentas.some(r=>r.cajaId===x.id&&rentFor(r.id,hoy))).length,disponibles=Math.max(0,act-mant-rentadas),mex=unidadesDash.filter(x=>(x.origen||'MEXICANA')==='MEXICANA').length,usa=unidadesDash.filter(x=>x.origen==='USA').length,clientesAct=clientes.filter(c=>c.estatus!=='INACTIVO').length;const cliMap={};rentas.filter(r=>rentFor(r.id,hoy)).forEach(r=>{const n=clientes.find(c=>c.id===r.clienteId)?.nombre||'SIN CLIENTE';cliMap[n]=(cliMap[n]||0)+1;});const max=Math.max(1,...Object.values(cliMap));const util=act?((rentadas/act)*100):0;el.innerHTML=`<div class="cc-pro-hero"><div style="font-size:9px;font-weight:900;letter-spacing:.16em;color:#93c5fd">CENTRO DE CONTROL · UNIDADES</div><h3>Control total de tus unidades.</h3><p>Vista ejecutiva para saber en segundos cuántas cajas tienes, cuántas están rentadas, disponibles o fuera de servicio por mantenimiento, y qué clientes concentran las rentas.</p><div class="cc-pro-pills"><span class="cc-pro-pill">${total} unidades registradas</span><span class="cc-pro-pill">${clientesAct} clientes activos</span><span class="cc-pro-pill">${mant} en mantenimiento</span><span class="cc-pro-pill">Corte: ${fmtDate(hoy)}</span></div></div><div class="cc-pro-kpis"><div class="cc-pro-kpi total"><small>Total inventario</small><strong>${total}</strong><span>unidades registradas</span></div><div class="cc-pro-kpi rent"><small>Rentadas hoy</small><strong>${rentadas}</strong><span>${util.toFixed(0)}% del inventario activo</span></div><div class="cc-pro-kpi free"><small>Disponibles</small><strong>${disponibles}</strong><span>listas para asignar</span></div><div class="cc-pro-kpi maint"><small>Mantenimiento</small><strong>${mant}</strong><span>fuera de servicio</span></div><div class="cc-pro-kpi"><small>Mexicanas</small><strong>${mex}</strong><span>del inventario</span></div><div class="cc-pro-kpi"><small>USA</small><strong>${usa}</strong><span>del inventario</span></div></div><div class="cc-pro-grid"><div class="cc-pro-card"><h4>Rentas por cliente</h4><div class="sub">Cajas con renta activa al día de hoy</div>${Object.keys(cliMap).length?Object.entries(cliMap).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="cc-pro-bar"><span title="${esc(n)}">${esc(n)}</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:${(v/max)*100}%"></span></span><b>${v}</b></div>`).join(''):'<div class="cc-note">No hay rentas activas hoy.</div>'}</div><div class="cc-pro-card"><h4>Salud del inventario</h4><div class="sub">Distribución actual de las cajas activas</div><div class="cc-pro-mini-grid"><div class="cc-pro-mini"><small>Disponibles</small><strong>${disponibles}</strong></div><div class="cc-pro-mini"><small>Rentadas</small><strong>${rentadas}</strong></div><div class="cc-pro-mini"><small>Mantenimiento</small><strong>${mant}</strong></div></div><div class="cc-pro-bar"><span>Disponibilidad</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:${act?disponibles/act*100:0}%"></span></span><b>${act?Math.round(disponibles/act*100):0}%</b></div><div class="cc-pro-bar"><span>Utilización</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:${Math.min(100,util)}%"></span></span><b>${util.toFixed(0)}%</b></div><div class="cc-pro-actions"><button class="primary" onclick="ccTab('inventario',document.querySelector('#controlCajasSection .cc-tab:nth-child(2)'))">Ver inventario</button><button class="warn" onclick="ccTab('mantenimiento',document.querySelector('#controlCajasSection .cc-tab:nth-child(6)'))">Ver mantenimiento</button></div></div></div><div class="cc-pro-card" style="margin-top:14px"><h4>Alertas de control</h4><div class="sub">Indicadores que requieren atención</div>${mant?`<div class="cc-pro-alert"><div><strong>🔧 ${mant} caja(s) fuera de servicio</strong><span>Revisar mantenimiento y fecha de liberación.</span></div><button class="cc-btn cc-btn-light" onclick="ccTab('mantenimiento',document.querySelector('#controlCajasSection .cc-tab:nth-child(6)'))">Revisar</button></div>`:''}${!disponibles&&act?`<div class="cc-pro-alert"><div><strong>⚠️ Sin cajas disponibles</strong><span>Todas las cajas activas están rentadas o en mantenimiento.</span></div></div>`:''}${!mant&&!(!disponibles&&act)?`<div style="font-size:11px;color:#64748b;padding:12px;background:#f8fafc;border-radius:10px">✓ No hay alertas críticas de inventario en este momento.</div>`:''}</div>`;};
+window.ccRenderDashboard=function(){
+ const tipoDash=window.ccDashboardTipoActual||'TODOS',unidades=cajas.filter(x=>ccTipoMatches(x,tipoDash)),hoy=iso(new Date());
+ const activas=unidades.filter(x=>x.estatus!=='INACTIVO'), mant=activas.filter(x=>x.estatus==='MANTENIMIENTO');
+ const rentadas=activas.filter(x=>x.estatus!=='MANTENIMIENTO'&&rentas.some(r=>r.cajaId===x.id&&rentFor(r.id,hoy)));
+ const disponibles=activas.filter(x=>x.estatus!=='MANTENIMIENTO'&&!rentas.some(r=>r.cajaId===x.id&&rentFor(r.id,hoy)));
+ const mex=unidades.filter(x=>(x.origen||'MEXICANA').toUpperCase()==='MEXICANA'), usa=unidades.filter(x=>(x.origen||'').toUpperCase()==='USA');
+ const mxRent=mex.filter(x=>rentadas.some(r=>r.id===x.id)).length, usRent=usa.filter(x=>rentadas.some(r=>r.id===x.id)).length;
+ const util=activas.length?rentadas.length/activas.length*100:0, disp=activas.length?disponibles.length/activas.length*100:0;
+ const cli={};rentas.filter(r=>rentFor(r.id,hoy)).forEach(r=>{const n=clientes.find(c=>c.id===r.clienteId)?.nombre||'SIN CLIENTE';cli[n]=(cli[n]||0)+1});const maxCli=Math.max(1,...Object.values(cli));
+ const el=document.getElementById('ccDashboardContent');if(!el)return;
+ const originCard=(title,arr,rented)=>{const active=arr.filter(x=>x.estatus!=='INACTIVO').length,maintenance=arr.filter(x=>x.estatus==='MANTENIMIENTO').length,free=Math.max(0,active-rented-maintenance),pct=active?Math.round(rented/active*100):0;return '<div class="cc-pro-card"><h4>'+title+'</h4><div class="sub">Situación operativa en tiempo real</div><div class="cc-pro-mini-grid"><div class="cc-pro-mini"><small>Total</small><strong>'+arr.length+'</strong></div><div class="cc-pro-mini"><small>Rentadas</small><strong>'+rented+'</strong></div><div class="cc-pro-mini"><small>Disponibles</small><strong>'+free+'</strong></div></div><div class="cc-pro-bar"><span>Utilización</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:'+pct+'%"></span></span><b>'+pct+'%</b></div><div class="cc-pro-bar"><span>Mantenimiento</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:'+(active?maintenance/active*100:0)+'%"></span></span><b>'+maintenance+'</b></div></div>'};
+ el.innerHTML='<div class="cc-pro-hero"><div style="font-size:9px;font-weight:900;letter-spacing:.16em;color:#93c5fd">OPERACIONES · BUSINESS INTELLIGENCE</div><h3>Radiografía operativa de flota.</h3><p>Lectura ejecutiva de disponibilidad, utilización, origen de equipo, rentas, mantenimiento y concentración por cliente directamente con la información sincronizada en Supabase.</p><div class="cc-pro-pills"><span class="cc-pro-pill">'+unidades.length+' unidades</span><span class="cc-pro-pill">'+mex.length+' mexicanas</span><span class="cc-pro-pill">'+usa.length+' USA</span><span class="cc-pro-pill">Corte '+fmtDate(hoy)+'</span></div></div>'+
+ '<div class="cc-pro-kpis"><div class="cc-pro-kpi total"><small>Flota total</small><strong>'+unidades.length+'</strong><span>'+activas.length+' activas</span></div><div class="cc-pro-kpi rent"><small>Utilización</small><strong>'+util.toFixed(0)+'%</strong><span>'+rentadas.length+' rentadas</span></div><div class="cc-pro-kpi free"><small>Disponibilidad</small><strong>'+disp.toFixed(0)+'%</strong><span>'+disponibles.length+' listas</span></div><div class="cc-pro-kpi maint"><small>Fuera de servicio</small><strong>'+mant.length+'</strong><span>requieren seguimiento</span></div><div class="cc-pro-kpi"><small>Cajas mexicanas</small><strong>'+mex.length+'</strong><span>'+mxRent+' rentadas</span></div><div class="cc-pro-kpi"><small>Cajas USA</small><strong>'+usa.length+'</strong><span>'+usRent+' rentadas</span></div></div>'+
+ '<div class="cc-pro-grid">'+originCard('🇲🇽 Equipo mexicano',mex,mxRent)+originCard('🇺🇸 Equipo USA',usa,usRent)+'</div>'+
+ '<div class="cc-pro-grid" style="margin-top:14px"><div class="cc-pro-card"><h4>Concentración por cliente</h4><div class="sub">Rentas activas hoy</div>'+(Object.keys(cli).length?Object.entries(cli).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,v])=>'<div class="cc-pro-bar"><span title="'+esc(n)+'">'+esc(n)+'</span><span class="cc-pro-track"><span class="cc-pro-fill" style="width:'+(v/maxCli*100)+'%"></span></span><b>'+v+'</b></div>').join(''):'<div class="cc-note">Sin rentas activas.</div>')+'</div>'+
+ '<div class="cc-pro-card"><h4>Acciones gerenciales</h4><div class="sub">Accesos para revisar excepciones</div><div class="cc-pro-mini-grid"><div class="cc-pro-mini"><small>Disponibles</small><strong>'+disponibles.length+'</strong></div><div class="cc-pro-mini"><small>Mantenimiento</small><strong>'+mant.length+'</strong></div><div class="cc-pro-mini"><small>Clientes activos</small><strong>'+clientes.filter(x=>x.estatus!=="INACTIVO").length+'</strong></div></div><div class="cc-pro-actions"><button class="primary" onclick="ccOpenAlertCenter()">Centro de alertas</button><button onclick="ccOpenDossierSearch()">Expedientes</button></div></div></div>';
+};
 window.ccConfigSection=function(section,btn){
 document.querySelectorAll('#ccPanelConfiguracion .cc-config-nav-btn').forEach(b=>b.classList.remove('active'));
 document.querySelectorAll('#ccPanelConfiguracion .cc-config-section').forEach(x=>x.classList.remove('active'));
@@ -7379,7 +7244,8 @@ const PERM_SCHEMA=[
  ['mantenimiento','Mantenimiento',[['ver','Ver mantenimiento'],['editar_registros','Editar registros'],['ver_dot','Ver Control DOT'],['editar_dot','Editar registros DOT']]],
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
- ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
+ ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar'],['crear','Crear usuarios']]],
+ ['logs','Log de actividad',[['ver','Ver log de actividad']]]
 ];
 function getPath(obj,path){return String(path).split('.').reduce((a,k)=>a&&a[k],obj);}
 window.ccPerm=function(path){return window.CC_ACCESS?.rol==='ADMIN'||getPath(window.CC_ACCESS?.permisos||{},path)===true;};
@@ -7450,9 +7316,9 @@ function applyAccess(){
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
  if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
- const isAdmin=a.rol==='ADMIN';
- document.getElementById('ccAdminSideSection').style.display=isAdmin?'':'none';
- document.getElementById('gmSideUsers').style.display=isAdmin?'':'none';
+ const isAdmin=a.rol==='ADMIN', canUsers=isAdmin||a.permisos?.['usuarios.crear']===true||ccPerm('usuarios.ver');
+ document.getElementById('ccAdminSideSection').style.display=canUsers?'':'none';
+ document.getElementById('gmSideUsers').style.display=canUsers?'':'none';
  const session=document.getElementById('ccSessionBox');if(session)session.style.display='block';
  document.getElementById('ccSessionName').textContent=a.nombre||a.email||'Usuario';
  document.getElementById('ccSessionRole').textContent=a.rol+(a.activo?' · ACTIVO':' · INACTIVO');
@@ -7478,15 +7344,9 @@ function applyAccess(){
   ['ccGuardarTarifa','configuracion.editar'],['ccNuevoCliente','configuracion.editar'],['ccNuevoResponsable','configuracion.editar']
  ].forEach(x=>protect(x[0],x[1]));
 
- if(typeof window.gmPortalAfterAccess==='function'){
-   window.gmPortalAfterAccess({dashboard,control});
- }else if(!dashboard&&control){
-   gmMostrarControlCajas();firstControlTab();
- }else if(dashboard){
-   gmMostrarDashboard();
- }else if(!control){
-   document.body.classList.add('gm-control-mode');alert('Tu usuario no tiene módulos habilitados.');
- }
+ if(!dashboard&&control){gmMostrarControlCajas();firstControlTab();}
+ else if(dashboard){gmMostrarDashboard();}
+ else if(!control){document.body.classList.add('gm-control-mode');alert('Tu usuario no tiene módulos habilitados.');}
 }
 window.ccApplyAccess=applyAccess;
 
@@ -7502,13 +7362,13 @@ function readPermissions(root){
 }
 function closeUserModal(){document.getElementById('ccUserAdminModal')?.remove();}
 window.ccOpenUserAdmin=async function(){
- if(window.CC_ACCESS?.rol!=='ADMIN'){alert('Solo ADMIN puede administrar usuarios.');return;}
+ if(window.CC_ACCESS?.rol!=='ADMIN'&&window.CC_ACCESS?.permisos?.['usuarios.crear']!==true&&!ccPerm('usuarios.ver')){alert('Tu usuario no tiene permiso para acceder a usuarios.');return;}
  const {data,error}=await sb.rpc('cc_admin_list_users');if(error||!data?.ok){alert(error?.message||data?.error||'No se pudieron cargar usuarios');return;}
  closeUserModal();
  const ov=document.createElement('div');ov.id='ccUserAdminModal';ov.className='cc-user-modal';
  const users=data.usuarios||[];
  const escU=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Usuarios y permisos</b><div style="font-size:10px;color:#bfdbfe">'+users.length+' usuario(s) registrado(s)</div></div><div style="display:flex;gap:7px"><button class="cc-btn cc-btn-primary" onclick="ccCreateUserModal()"><i class="fa-solid fa-user-plus"></i> Nuevo usuario</button><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccUserAdminModal\').remove()">Cerrar</button></div></div><div class="cc-user-body"><div style="overflow:auto"><table style="width:100%;min-width:760px;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden"><thead><tr style="background:#e2e8f0;color:#334155;text-align:left"><th style="padding:10px">Nombre</th><th style="padding:10px">Correo</th><th style="padding:10px">Rol</th><th style="padding:10px">Estatus</th><th style="padding:10px">Acciones</th></tr></thead><tbody>'+users.map(u=>'<tr style="border-top:1px solid #e2e8f0"><td style="padding:10px;font-weight:900">'+escU(u.nombre||'—')+'</td><td style="padding:10px">'+escU(u.email)+'</td><td style="padding:10px">'+(u.rol==='ADMIN'?'<span class="cc-badge cc-ok">ADMIN</span>':'USUARIO')+'</td><td style="padding:10px">'+(u.activo?'<span class="cc-badge cc-ok">ACTIVO</span>':'<span class="cc-badge" style="background:#fee2e2;color:#991b1b">INHABILITADO</span>')+'</td><td style="padding:10px"><div class="cc-user-actions">'+(u.rol==='ADMIN'?'<span style="font-size:10px;color:#64748b">Usuario maestro protegido</span>':'<button class="cc-btn cc-btn-light" onclick=\'ccEditUserModal('+JSON.stringify(JSON.stringify(u))+')\'><i class="fa-solid fa-pen"></i> Editar</button><button class="cc-btn cc-btn-light" onclick=\'ccToggleUserActive('+JSON.stringify(u.userId)+','+JSON.stringify(u.nombre||u.email)+','+JSON.stringify(!u.activo)+')\'>'+(u.activo?'<i class="fa-solid fa-user-slash"></i> Inhabilitar':'<i class="fa-solid fa-user-check"></i> Habilitar')+'</button><button class="cc-btn cc-btn-light" onclick=\'ccSetUserPassword('+JSON.stringify(u.userId)+')\'><i class="fa-solid fa-key"></i> Contraseña</button><button class="cc-btn cc-btn-danger" onclick=\'ccDeleteAppUser('+JSON.stringify(u.userId)+','+JSON.stringify(u.email)+')\'><i class="fa-solid fa-trash"></i> Eliminar</button>')+'</div></td></tr>').join('')+'</tbody></table></div></div></div>';
+ ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Usuarios y permisos</b><div style="font-size:10px;color:#bfdbfe">'+users.length+' usuario(s) registrado(s)</div></div><div style="display:flex;gap:7px"><button class="cc-btn cc-btn-primary" id="ccNewUserBtn" onclick="ccCreateUserModal()"><i class="fa-solid fa-user-plus"></i> Nuevo usuario</button><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccUserAdminModal\').remove()">Cerrar</button></div></div><div class="cc-user-body"><div style="overflow:auto"><table style="width:100%;min-width:760px;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden"><thead><tr style="background:#e2e8f0;color:#334155;text-align:left"><th style="padding:10px">Nombre</th><th style="padding:10px">Correo</th><th style="padding:10px">Rol</th><th style="padding:10px">Estatus</th><th style="padding:10px">Acciones</th></tr></thead><tbody>'+users.map(u=>'<tr style="border-top:1px solid #e2e8f0"><td style="padding:10px;font-weight:900">'+escU(u.nombre||'—')+'</td><td style="padding:10px">'+escU(u.email)+'</td><td style="padding:10px">'+(u.rol==='ADMIN'?'<span class="cc-badge cc-ok">ADMIN</span>':'USUARIO')+'</td><td style="padding:10px">'+(u.activo?'<span class="cc-badge cc-ok">ACTIVO</span>':'<span class="cc-badge" style="background:#fee2e2;color:#991b1b">INHABILITADO</span>')+'</td><td style="padding:10px"><div class="cc-user-actions">'+(u.rol==='ADMIN'?'<span style="font-size:10px;color:#64748b">Usuario maestro protegido</span>':'<button class="cc-btn cc-btn-light" onclick=\'ccEditUserModal('+JSON.stringify(JSON.stringify(u))+')\'><i class="fa-solid fa-pen"></i> Editar</button><button class="cc-btn cc-btn-light" onclick=\'ccToggleUserActive('+JSON.stringify(u.userId)+','+JSON.stringify(u.nombre||u.email)+','+JSON.stringify(!u.activo)+')\'>'+(u.activo?'<i class="fa-solid fa-user-slash"></i> Inhabilitar':'<i class="fa-solid fa-user-check"></i> Habilitar')+'</button><button class="cc-btn cc-btn-light" onclick=\'ccSetUserPassword('+JSON.stringify(u.userId)+')\'><i class="fa-solid fa-key"></i> Contraseña</button><button class="cc-btn cc-btn-danger" onclick=\'ccDeleteAppUser('+JSON.stringify(u.userId)+','+JSON.stringify(u.email)+')\'><i class="fa-solid fa-trash"></i> Eliminar</button>')+'</div></td></tr>').join('')+'</tbody></table></div></div></div>';
  document.body.appendChild(ov);
 };
 window.ccToggleUserActive=async function(userId,nombre,activar){
@@ -7558,29 +7418,7 @@ window.ccDeleteAppUser=async function(userId,email){
 };
 
 document.addEventListener('DOMContentLoaded',async()=>{
- if(!sb){
-   const diag={
-     supabaseGlobal:typeof window.supabase,
-     createClient:typeof window.supabase?.createClient,
-     url:window.GM_SUPABASE_URL||'',
-     keyPresent:!!window.GM_SUPABASE_ANON_KEY,
-     gmClient:!!window.gmSupabase
-   };
-   console.error('DIAGNÓSTICO SUPABASE LOGIN',diag);
-   msg('Error de inicialización Supabase · global: '+diag.supabaseGlobal+' · createClient: '+diag.createClient+' · URL: '+(diag.url?'OK':'NO')+' · KEY: '+(diag.keyPresent?'OK':'NO')+' · CLIENTE: '+(diag.gmClient?'OK':'NO'),'error');
-   return;
- }
- msg('Validando conexión con Supabase…','info');
- try{
-   const {data,error}=await sb.rpc('cc_admin_bootstrap_status');
-   if(error)throw error;
-   if(!data?.ok)throw new Error(data?.error||'La base respondió sin estado válido');
-   msg('Supabase conectado correctamente. Puedes iniciar sesión.','ok');
- }catch(e){
-   console.error('PRUEBA CONEXIÓN SUPABASE LOGIN',e);
-   msg('Cliente Supabase cargado, pero la base no respondió: '+(e?.message||String(e)),'error');
-   return;
- }
+ if(!sb){msg('Supabase no está disponible.','error');return;}
  await bootstrapStatus();
  document.getElementById('ccRememberSession').checked=localStorage.getItem('cc_remember_session')!=='0';
  document.getElementById('ccLoginForm').addEventListener('submit',e=>{e.preventDefault();const remember=document.getElementById('ccRememberSession').checked;localStorage.setItem('cc_remember_session',remember?'1':'0');if(remember)sessionStorage.setItem('cc_session_current','1');login(document.getElementById('ccLoginEmail').value,document.getElementById('ccLoginPassword').value);});
@@ -7609,6 +7447,141 @@ window.CC_LOCATION_PRESERVATION_FIX=true;
 </script>
 <script id="cc-performance-tuning">
 window.CC_PERFORMANCE_MODE=true;
+</script>
+
+
+<script id="cc-final-features-js">
+(function(){
+  const escLog=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  window.ccActivityLogs=[];
+
+  window.ccCanViewLogs=function(){
+    const a=window.CC_ACCESS||{};
+    return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true||a.permisos?.logs?.ver===true;
+  };
+
+  window.ccLoadActivityLog=async function(){
+    const body=document.getElementById('ccActivityLogList');
+    if(!window.ccCanViewLogs()){
+      if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';
+      return;
+    }
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
+      if(error)throw error;
+      if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
+      window.ccActivityLogs=data.logs||[];
+      window.ccRenderActivityLog();
+    }catch(e){
+      if(body)body.innerHTML='<tr><td colspan="6">'+escLog(e?.message||e)+'</td></tr>';
+    }
+  };
+
+  window.ccRenderActivityLog=function(){
+    const body=document.getElementById('ccActivityLogList'); if(!body)return;
+    const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
+    const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
+    const d1=document.getElementById('ccLogDesde')?.value||'';
+    const d2=document.getElementById('ccLogHasta')?.value||'';
+    const rows=(window.ccActivityLogs||[]).filter(x=>{
+      const day=String(x.fecha_hora||'').slice(0,10);
+      return (!u||String(x.usuario||'').toLowerCase().includes(u))
+        &&(!m||String(x.modulo||'').toLowerCase().includes(m))
+        &&(!d1||day>=d1)&&(!d2||day<=d2);
+    });
+    body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+escLog(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+escLog(x.usuario||'SISTEMA')+'</td><td><b>'+escLog(x.accion||'')+'</b></td><td>'+escLog(x.modulo||'')+'</td><td>'+escLog(x.id_registro||'')+'</td><td>'+escLog(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
+  };
+
+  window.ccOpenAlertCenter=async function(){
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_alert_center'); if(error)throw error;
+      const arr=data?.alertas||[];
+      const rows=arr.length?arr.map(a=>{
+        const pr=a.prioridad>=3?'ALTA':'MEDIA';
+        return '<tr><td><b>'+pr+'</b></td><td><b>'+escLog(a.unidad||'—')+'</b></td><td>'+escLog(a.titulo||'')+'</td><td>'+escLog(a.detalle||'')+'</td><td><button class="cc-btn cc-btn-light" data-dest="'+escLog(a.destino||'inventario')+'">Abrir</button></td></tr>';
+      }).join(''):'<tr><td colspan="5">✓ No hay alertas prioritarias.</td></tr>';
+      const ov=document.createElement('div'); ov.id='ccAlertCenterModal'; ov.className='cc-user-modal';
+      ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Centro de alertas</b><div style="font-size:10px;color:#bfdbfe">Pendientes que requieren atención</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-user-body"><div style="overflow:auto"><table class="cc-table-list"><thead><tr><th>PRIORIDAD</th><th>UNIDAD</th><th>ALERTA</th><th>DETALLE</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';
+      document.body.appendChild(ov);
+      ov.querySelector('[data-close]').onclick=()=>ov.remove();
+      ov.querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>{
+        const dest=b.dataset.dest||'inventario'; ov.remove();
+        if(typeof gmMostrarControlCajas==='function')gmMostrarControlCajas();
+        setTimeout(()=>{
+          const tab=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+dest+"'"));
+          if(tab&&typeof ccTab==='function')ccTab(dest,tab);
+        },50);
+      });
+    }catch(e){alert(e?.message||e);}
+  };
+
+  window.ccOpenUnitDossier=async function(id){
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_unit_dossier',{p_unidad_id:id});
+      if(error)throw error; if(!data?.ok)throw new Error(data?.error||'No disponible');
+      const u=data.unidad||{},rent=data.rentas||[],loc=data.ubicaciones||[],man=data.mantenimiento||[],act=data.actividad||[];
+      const block=(title,html,empty)=>'<h4 style="margin:18px 0 8px;font-weight:950">'+title+'</h4>'+(html||empty);
+      const ov=document.createElement('div'); ov.id='ccUnitDossierModal'; ov.className='cc-user-modal';
+      ov.innerHTML='<div class="cc-user-card" style="max-width:1050px"><div class="cc-user-head"><div><b>Expediente · '+escLog(u.numero||'Unidad')+'</b><div style="font-size:10px;color:#bfdbfe">'+escLog(u.descripcion||'')+' · '+escLog(u.estatus||'')+'</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-user-body">'
+      +block('Rentas',rent.map(x=>'<div class="cc-config-alert"><b>'+escLog(x.cliente||'Cliente')+'</b> · '+escLog(x.fecha_inicio||'')+' → '+escLog(x.fecha_fin||'Indeterminada')+' · '+escLog(x.responsable||'')+'</div>').join(''),'<div class="cc-note">Sin rentas.</div>')
+      +block('Ubicaciones QR',loc.map(x=>'<div class="cc-config-alert">'+escLog(new Date(x.fecha_hora).toLocaleString())+' · '+Number(x.latitud).toFixed(5)+', '+Number(x.longitud).toFixed(5)+'</div>').join(''),'<div class="cc-note">Sin ubicaciones.</div>')
+      +block('Mantenimiento / incidencias',man.map(x=>'<div class="cc-config-alert"><b>'+escLog(x.estatus||'')+'</b> · '+escLog(x.motivo||'')+' · '+escLog(x.reparacion||'')+'</div>').join(''),'<div class="cc-note">Sin incidencias.</div>')
+      +block('Actividad',act.map(x=>'<div class="cc-config-alert">'+escLog(new Date(x.fecha_hora).toLocaleString())+' · <b>'+escLog(x.usuario||'SISTEMA')+'</b> · '+escLog(x.descripcion||x.accion||'')+'</div>').join(''),'<div class="cc-note">Sin actividad.</div>')
+      +'</div></div>';
+      document.body.appendChild(ov); ov.querySelector('[data-close]').onclick=()=>ov.remove();
+    }catch(e){alert(e?.message||e);}
+  };
+
+  window.ccGrantCreateUsers=async function(userId,name,current){
+    if(!window.CC_ACCESS?.superAdmin){alert('Solo el Super Admin puede otorgar este permiso.');return;}
+    const allow=!current;
+    if(!confirm((allow?'Otorgar':'Quitar')+' permiso para crear usuarios a '+name+'?'))return;
+    const {data,error}=await window.gmSupabase.rpc('cc_admin_set_create_users_permission',{p_user_id:userId,p_allow:allow});
+    if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo actualizar');return;}
+    alert('Permiso actualizado.'); if(typeof ccOpenUserAdmin==='function')ccOpenUserAdmin();
+  };
+
+  const originalOpenUsers=window.ccOpenUserAdmin;
+  if(typeof originalOpenUsers==='function'){
+    window.ccOpenUserAdmin=async function(){
+      await originalOpenUsers();
+      setTimeout(async()=>{
+        const modal=document.getElementById('ccUserAdminModal'); if(!modal)return;
+        const createBtn=modal.querySelector('button[onclick="ccCreateUserModal()"]');
+        const canCreate=!!window.CC_ACCESS?.superAdmin || window.CC_ACCESS?.permisos?.['usuarios.crear']===true || window.CC_ACCESS?.permisos?.usuarios?.crear===true;
+        if(createBtn&&!canCreate)createBtn.style.display='none';
+
+        if(window.CC_ACCESS?.superAdmin){
+          try{
+            const {data}=await window.gmSupabase.rpc('cc_admin_list_users');
+            const users=data?.usuarios||[];
+            const trs=[...modal.querySelectorAll('tbody tr')];
+            users.filter(u=>!u.superAdmin).forEach((u,i)=>{
+              const tr=trs.find(x=>x.textContent.includes(u.email)); if(!tr)return;
+              const actions=tr.querySelector('.cc-user-actions'); if(!actions)return;
+              const cur=u.permisos?.['usuarios.crear']===true || u.permisos?.usuarios?.crear===true;
+              const b=document.createElement('button'); b.className='cc-btn cc-btn-light';
+              b.innerHTML='<i class="fa-solid fa-user-plus"></i> '+(cur?'Quitar crear usuarios':'Permitir crear usuarios');
+              b.onclick=()=>window.ccGrantCreateUsers(u.userId,u.nombre||u.email,cur);
+              actions.appendChild(b);
+            });
+          }catch(e){console.warn('PERMISO CREAR USUARIOS',e);}
+        }
+      },120);
+    };
+  }
+
+  function syncFeatureVisibility(){
+    const logBtn=document.getElementById('ccConfigLogBtn');
+    if(logBtn)logBtn.style.display=window.ccCanViewLogs()?'':'none';
+    const tabs=document.querySelector('#controlCajasSection .cc-tabs');
+    if(tabs&&!document.getElementById('ccAlertCenterBtn')){
+      const b=document.createElement('button'); b.id='ccAlertCenterBtn'; b.className='cc-tab';
+      b.innerHTML='<i class="fa-solid fa-bell mr-1"></i>Centro de alertas'; b.onclick=window.ccOpenAlertCenter; tabs.appendChild(b);
+    }
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(syncFeatureVisibility,1200));
+})();
 </script>
 
 </body>
