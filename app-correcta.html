@@ -794,6 +794,7 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <button type="button" class="cc-config-nav-btn" data-config="destinatarios" onclick="ccConfigSection('destinatarios',this)"><i class="fa-solid fa-address-book"></i><span>Destinatarios</span><small>Catálogo de correos</small></button>
 <button type="button" class="cc-config-nav-btn" data-config="clientes" onclick="ccConfigSection('clientes',this)"><i class="fa-solid fa-building"></i><span>Clientes</span><small>Catálogo</small></button>
 <button type="button" class="cc-config-nav-btn" data-config="responsables" onclick="ccConfigSection('responsables',this)"><i class="fa-solid fa-user-tie"></i><span>Responsables</span><small>Catálogo</small></button><button type="button" class="cc-config-nav-btn" data-config="tarifas" onclick="ccConfigSection('tarifas',this)"><i class="fa-solid fa-dollar-sign"></i><span>Tarifas de renta</span><small>Tarifas por cliente · diario / semanal / mensual</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUnidad" onclick="ccConfigSection('tiposUnidad',this)"><i class="fa-solid fa-layer-group"></i><span>Tipos de unidad</span><small>Catálogo de unidades</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUsoCaja" onclick="ccConfigSection('tiposUsoCaja',this)"><i class="fa-solid fa-route"></i><span>Uso de cajas</span><small>Cruce · Foránea · Storage</small></button>
+<button type="button" class="cc-config-nav-btn" id="ccConfigLogBtn" data-config="log" onclick="ccConfigSection('log',this);ccLoadActivityLog()"><i class="fa-solid fa-clock-rotate-left"></i><span>Log de actividad</span><small>Auditoría de cambios</small></button>
 </div>
 <div class="cc-config-section" id="ccConfigRemitente">
 <div class="cc-config-card"><div class="cc-config-section-head"><div><h4>📤 Correo remitente</h4><p>Datos del correo desde donde se enviarán automáticamente los avisos de mantenimiento.</p></div><span id="ccMailConfigBadge" class="cc-badge cc-off">Sin configurar</span></div>
@@ -817,6 +818,18 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <div class="cc-config-card"><div class="cc-config-section-head"><div><h4>👤 Catálogo de Responsables</h4><p>Responsables disponibles para las cajas de renta.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoResponsable()"><i class="fa-solid fa-plus mr-1"></i>Nuevo responsable</button></div>
 <div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>NOMBRE</th><th>PUESTO / ÁREA</th><th>TELÉFONO</th><th>CORREO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccResponsablesList"></tbody></table></div></div></div>
 <div class="cc-config-section" id="ccConfigTiposUnidad"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🚛 Catálogo de tipos de unidad</h4><p>Define los tipos que aparecerán al registrar o importar unidades. Los tipos CAJA y CARRO se crean automáticamente si no existen.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUnidad()"><i class="fa-solid fa-plus mr-1"></i>Nuevo tipo</button></div><div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>CATEGORÍA</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUnidadList"></tbody></table></div></div></div><div class="cc-config-section" id="ccConfigTiposUsoCaja"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🧭 Catálogo de tipo de uso de caja</h4><p>Define los usos disponibles al registrar una unidad categoría CAJA.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUsoCaja()"><i class="fa-solid fa-plus mr-1"></i>Nuevo uso</button></div><div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>El sistema inicia con <b>Cruce</b>, <b>Foránea</b>, <b>Cruce y Foránea</b> y <b>Storage</b>. Puedes agregar nuevos usos o desactivar los existentes.</div><div class="cc-inv-wrap" style="margin-top:12px"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE USO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUsoCajaList"></tbody></table></div></div></div>
+
+<div class="cc-config-section" id="ccConfigLog">
+<div class="cc-config-card">
+<div class="cc-config-section-head"><div><h4>🕘 Log de actividad</h4><p>Registro de altas, modificaciones y eliminaciones realizadas en la base de datos.</p></div><button class="cc-btn cc-btn-light" onclick="ccLoadActivityLog()"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button></div>
+<div class="cc-grid" style="margin-bottom:12px">
+<div class="cc-field"><label>Usuario</label><input id="ccLogUsuario" placeholder="Buscar usuario..." oninput="ccRenderActivityLog()"></div>
+<div class="cc-field"><label>Módulo</label><input id="ccLogModulo" placeholder="Buscar módulo..." oninput="ccRenderActivityLog()"></div>
+<div class="cc-field"><label>Desde</label><input id="ccLogDesde" type="date" onchange="ccRenderActivityLog()"></div>
+<div class="cc-field"><label>Hasta</label><input id="ccLogHasta" type="date" onchange="ccRenderActivityLog()"></div>
+</div>
+<div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>FECHA / HORA</th><th>USUARIO</th><th>ACCIÓN</th><th>MÓDULO</th><th>REGISTRO</th><th>DESCRIPCIÓN</th></tr></thead><tbody id="ccActivityLogList"><tr><td colspan="6">Cargando...</td></tr></tbody></table></div>
+</div></div>
 <div class="cc-config-section" id="ccConfigTarifas">
 <div class="cc-config-card">
 <div class="cc-config-section-head"><div><h4>💰 Tarifas de renta por cliente</h4><p>Captura el precio por caja para renta diaria, semanal o mensual. La proforma usa el método elegido en cada renta.</p></div></div>
@@ -5724,7 +5737,44 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
+<script id="cc-activity-log-ui">
+window.ccActivityLogs=[];
+window.ccCanViewLogs=function(){
+ const a=window.CC_ACCESS||{};
+ return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true;
+};
+window.ccLoadActivityLog=async function(){
+ const body=document.getElementById('ccActivityLogList');
+ if(!ccCanViewLogs()){if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';return;}
+ try{
+  const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
+  window.ccActivityLogs=data.logs||[];
+  ccRenderActivityLog();
+ }catch(e){if(body)body.innerHTML='<tr><td colspan="6">'+ccEsc(String(e.message||e))+'</td></tr>';}
+};
+window.ccRenderActivityLog=function(){
+ const body=document.getElementById('ccActivityLogList');if(!body)return;
+ const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
+ const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
+ const d1=document.getElementById('ccLogDesde')?.value||'', d2=document.getElementById('ccLogHasta')?.value||'';
+ const rows=(window.ccActivityLogs||[]).filter(x=>{
+  const day=String(x.fecha_hora||'').slice(0,10);
+  return (!u||String(x.usuario||'').toLowerCase().includes(u))&&(!m||String(x.modulo||'').toLowerCase().includes(m))&&(!d1||day>=d1)&&(!d2||day<=d2);
+ });
+ body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+ccEsc(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+ccEsc(x.usuario||'SISTEMA')+'</td><td><b>'+ccEsc(x.accion||'')+'</b></td><td>'+ccEsc(x.modulo||'')+'</td><td>'+ccEsc(x.id_registro||'')+'</td><td>'+ccEsc(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
+};
+document.addEventListener('DOMContentLoaded',()=>{
+ setTimeout(()=>{
+  const b=document.getElementById('ccConfigLogBtn');
+  if(b)b.style.display=ccCanViewLogs()?'':'none';
+ },1200);
+});
+</script>
+
+</body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
