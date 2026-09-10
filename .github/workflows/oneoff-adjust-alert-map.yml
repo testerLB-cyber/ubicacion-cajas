@@ -1,0 +1,88 @@
+name: One-off adjust alerts and overlapping map markers
+
+on:
+  push:
+    paths:
+      - '.github/workflows/oneoff-adjust-alert-map.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch app-correcta.html
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app-correcta.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_css = "#ccGlobalAlertsBtn{position:fixed;right:18px;top:82px;"
+          new_css = "#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;"
+          if old_css not in s:
+              raise SystemExit('No se encontró la posición actual del botón Alertas')
+          s = s.replace(old_css, new_css, 1)
+          s = s.replace("@media(max-width:700px){#ccGlobalAlertsBtn{right:10px;top:74px;", "@media(max-width:700px){#ccGlobalAlertsBtn{right:10px;bottom:14px;", 1)
+
+          old_loop = """    const bounds=[];
+    const now=Date.now();
+    for(const r of rows){"""
+          new_loop = """    const bounds=[];
+    const now=Date.now();
+
+    // Distribuye visualmente marcadores con las mismas coordenadas sin modificar
+    // la ubicación real guardada en Supabase.
+    const ccCoordCounts=new Map();
+    for(const x of rows){
+      const xLat=Number(x.latitud),xLng=Number(x.longitud);
+      if(!Number.isFinite(xLat)||!Number.isFinite(xLng))continue;
+      const key=xLat.toFixed(7)+','+xLng.toFixed(7);
+      ccCoordCounts.set(key,(ccCoordCounts.get(key)||0)+1);
+    }
+    const ccCoordSeen=new Map();
+
+    for(const r of rows){"""
+          if old_loop not in s:
+              raise SystemExit('No se encontró el inicio del loop del mapa')
+          s = s.replace(old_loop, new_loop, 1)
+
+          old_marker = """      const marker=L.marker([lat,lng],{icon}).addTo(map);"""
+          new_marker = """      const coordKey=lat.toFixed(7)+','+lng.toFixed(7);
+      const sameTotal=ccCoordCounts.get(coordKey)||1;
+      const sameIndex=ccCoordSeen.get(coordKey)||0;
+      ccCoordSeen.set(coordKey,sameIndex+1);
+      let markerLat=lat,markerLng=lng;
+      if(sameTotal>1){
+        const angle=(Math.PI*2*sameIndex)/sameTotal;
+        const offsetMeters=9+Math.min(sameTotal,8);
+        markerLat=lat+(offsetMeters/111320)*Math.sin(angle);
+        const lngScale=111320*Math.max(.2,Math.cos(lat*Math.PI/180));
+        markerLng=lng+(offsetMeters/lngScale)*Math.cos(angle);
+      }
+      const marker=L.marker([markerLat,markerLng],{icon}).addTo(map);"""
+          if old_marker not in s:
+              raise SystemExit('No se encontró la creación del marcador principal')
+          s = s.replace(old_marker, new_marker, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Verify changes
+        shell: bash
+        run: |
+          grep -q '#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;' app-correcta.html
+          grep -q 'const ccCoordCounts=new Map();' app-correcta.html
+          grep -q 'L.marker(\[markerLat,markerLng\]' app-correcta.html
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app-correcta.html
+          git commit -m 'Mueve alertas y separa marcadores coincidentes en mapa'
+          git push
