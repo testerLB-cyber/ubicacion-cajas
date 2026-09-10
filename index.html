@@ -6,9 +6,17 @@
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="expires" content="0">
-<meta http-equiv="refresh" content="0; url=app-correcta.html">
 <title>Tráfico App</title>
-<script>location.replace('app-correcta.html'+location.search+location.hash);</script>
+<script>
+(function(){
+  const p=new URLSearchParams(location.search);
+  const q=(p.get('q')||p.get('token')||p.get('t')||'').trim();
+  const target=q
+    ? 'ubicacion.html?q='+encodeURIComponent(q)
+    : 'app-correcta.html'+location.search+location.hash;
+  location.replace(target);
+})();
+</script>
 </head>
 <body></body>
 </html>
