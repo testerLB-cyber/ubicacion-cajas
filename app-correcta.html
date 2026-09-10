@@ -5737,97 +5737,7 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
-<script id="cc-activity-log-ui">
-window.ccActivityLogs=[];
-window.ccCanViewLogs=function(){
- const a=window.CC_ACCESS||{};
- return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true;
-};
-window.ccLoadActivityLog=async function(){
- const body=document.getElementById('ccActivityLogList');
- if(!ccCanViewLogs()){if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';return;}
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
-  if(error)throw error;
-  if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
-  window.ccActivityLogs=data.logs||[];
-  ccRenderActivityLog();
- }catch(e){if(body)body.innerHTML='<tr><td colspan="6">'+ccEsc(String(e.message||e))+'</td></tr>';}
-};
-window.ccRenderActivityLog=function(){
- const body=document.getElementById('ccActivityLogList');if(!body)return;
- const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
- const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
- const d1=document.getElementById('ccLogDesde')?.value||'', d2=document.getElementById('ccLogHasta')?.value||'';
- const rows=(window.ccActivityLogs||[]).filter(x=>{
-  const day=String(x.fecha_hora||'').slice(0,10);
-  return (!u||String(x.usuario||'').toLowerCase().includes(u))&&(!m||String(x.modulo||'').toLowerCase().includes(m))&&(!d1||day>=d1)&&(!d2||day<=d2);
- });
- body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+ccEsc(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+ccEsc(x.usuario||'SISTEMA')+'</td><td><b>'+ccEsc(x.accion||'')+'</b></td><td>'+ccEsc(x.modulo||'')+'</td><td>'+ccEsc(x.id_registro||'')+'</td><td>'+ccEsc(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
-};
-document.addEventListener('DOMContentLoaded',()=>{
- setTimeout(()=>{
-  const b=document.getElementById('ccConfigLogBtn');
-  if(b)b.style.display=ccCanViewLogs()?'':'none';
- },1200);
-});
-</script>
-
-
-<script id="cc-final-improvements">
-window.ccOpenAlertCenter=async function(){
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_alert_center');if(error)throw error;
-  const arr=data?.alertas||[];
-  const rows=arr.length?arr.map((a,i)=>'<tr><td><span class="cc-badge '+(a.prioridad>=3?'cc-off':'cc-ok')+'">'+(a.prioridad>=3?'ALTA':'MEDIA')+'</span></td><td><b>'+ccEsc(a.unidad||'—')+'</b></td><td>'+ccEsc(a.titulo||'')+'</td><td>'+ccEsc(a.detalle||'')+'</td><td><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccAlertCenterModal\').remove();gmMostrarControlCajas();setTimeout(()=>ccTab(\''+ccEsc(a.destino||'inventario')+'\'),50)">Abrir</button></td></tr>').join(''):'<tr><td colspan="5">✓ No hay alertas prioritarias.</td></tr>';
-  const ov=document.createElement('div');ov.id='ccAlertCenterModal';ov.className='cc-user-modal';ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Centro de alertas</b><div style="font-size:10px;color:#bfdbfe">Pendientes que requieren atención</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div style="overflow:auto"><table class="cc-table-list"><thead><tr><th>PRIORIDAD</th><th>UNIDAD</th><th>ALERTA</th><th>DETALLE</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';document.body.appendChild(ov);
- }catch(e){alert(e.message||e);}
-};
-window.ccOpenUnitDossier=async function(id){
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_unit_dossier',{p_unidad_id:id});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'No disponible');
-  const u=data.unidad||{}, rent=data.rentas||[], loc=data.ubicaciones||[], man=data.mantenimiento||[], act=data.actividad||[];
-  const sec=(title,rows,empty)=>'<h4 style="margin:18px 0 8px;font-weight:950">'+title+'</h4>'+(rows||empty);
-  const ov=document.createElement('div');ov.id='ccUnitDossierModal';ov.className='cc-user-modal';
-  ov.innerHTML='<div class="cc-user-card" style="max-width:1050px"><div class="cc-user-head"><div><b>Expediente · '+ccEsc(u.numero||'Unidad')+'</b><div style="font-size:10px;color:#bfdbfe">'+ccEsc(u.descripcion||'')+' · '+ccEsc(u.estatus||'')+'</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body">'+
-   sec('Rentas',rent.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.cliente||'Cliente')+'</b> · '+ccEsc(x.fecha_inicio||'')+' → '+ccEsc(x.fecha_fin||'Indeterminada')+' · '+ccEsc(x.responsable||'')+'</div>').join(''),'<div class="cc-note">Sin rentas.</div>')+
-   sec('Ubicaciones QR',loc.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · '+Number(x.latitud).toFixed(5)+', '+Number(x.longitud).toFixed(5)+'</div>').join(''),'<div class="cc-note">Sin ubicaciones.</div>')+
-   sec('Mantenimiento / incidencias',man.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.estatus||'')+'</b> · '+ccEsc(x.motivo||'')+' · '+ccEsc(x.reparacion||'')+'</div>').join(''),'<div class="cc-note">Sin incidencias.</div>')+
-   sec('Actividad',act.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · <b>'+ccEsc(x.usuario||'SISTEMA')+'</b> · '+ccEsc(x.descripcion||x.accion||'')+'</div>').join(''),'<div class="cc-note">Sin actividad.</div>')+
-  '</div></div>';document.body.appendChild(ov);
- }catch(e){alert(e.message||e);}
-};
-window.ccGrantCreateUsers=async function(userId,name,current){
- if(!window.CC_ACCESS?.superAdmin){alert('Solo el Super Admin puede otorgar este permiso.');return;}
- const allow=!current;if(!confirm((allow?'Otorgar':'Quitar')+' permiso para crear usuarios a '+name+'?'))return;
- const {data,error}=await window.gmSupabase.rpc('cc_admin_set_create_users_permission',{p_user_id:userId,p_allow:allow});if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo actualizar');return;}alert('Permiso actualizado.');ccOpenUserAdmin();
-};
-(function(){
- const old=window.ccOpenUserAdmin;
- if(typeof old==='function')window.ccOpenUserAdmin=async function(){
-   await old();
-   setTimeout(()=>{
-    const modal=document.getElementById('ccUserAdminModal');if(!modal)return;
-    const btn=modal.querySelector('button[onclick="ccCreateUserModal()"]');
-    if(btn&&!window.CC_ACCESS?.superAdmin&&window.CC_ACCESS?.permisos?.['usuarios.crear']!==true)btn.style.display='none';
-    if(window.CC_ACCESS?.superAdmin){
-      modal.querySelectorAll('tbody tr').forEach(tr=>{
-       const edit=tr.querySelector('button[onclick^="ccEditUserModal"]');if(!edit)return;
-       const txt=edit.getAttribute('onclick')||'';
-       const m=txt.match(/ccEditUserModal\((.+)\)/);if(!m)return;
-       try{const u=JSON.parse(JSON.parse(m[1]));if(u.superAdmin)return;const cur=u.permisos?.['usuarios.crear']===true;const b=document.createElement('button');b.className='cc-btn cc-btn-light';b.innerHTML='<i class="fa-solid fa-user-plus"></i> '+(cur?'Quitar crear usuarios':'Permitir crear usuarios');b.onclick=()=>ccGrantCreateUsers(u.userId,u.nombre||u.email,cur);edit.parentElement.appendChild(b);}catch{}
-      });
-    }
-   },100);
- };
-})();
-document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
- const header=document.querySelector('#controlCajasSection .cc-tabs');
- if(header&&!document.getElementById('ccAlertCenterBtn')){const b=document.createElement('button');b.id='ccAlertCenterBtn';b.className='cc-tab';b.innerHTML='<i class="fa-solid fa-bell mr-1"></i>Centro de alertas';b.onclick=ccOpenAlertCenter;header.appendChild(b);}
-},1000));
-</script>
-</body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
@@ -7496,6 +7406,97 @@ window.CC_LOCATION_PRESERVATION_FIX=true;
 </script>
 <script id="cc-performance-tuning">
 window.CC_PERFORMANCE_MODE=true;
+</script>
+
+
+<script id="cc-activity-log-ui">
+window.ccActivityLogs=[];
+window.ccCanViewLogs=function(){
+ const a=window.CC_ACCESS||{};
+ return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true;
+};
+window.ccLoadActivityLog=async function(){
+ const body=document.getElementById('ccActivityLogList');
+ if(!ccCanViewLogs()){if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';return;}
+ try{
+  const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
+  window.ccActivityLogs=data.logs||[];
+  ccRenderActivityLog();
+ }catch(e){if(body)body.innerHTML='<tr><td colspan="6">'+ccEsc(String(e.message||e))+'</td></tr>';}
+};
+window.ccRenderActivityLog=function(){
+ const body=document.getElementById('ccActivityLogList');if(!body)return;
+ const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
+ const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
+ const d1=document.getElementById('ccLogDesde')?.value||'', d2=document.getElementById('ccLogHasta')?.value||'';
+ const rows=(window.ccActivityLogs||[]).filter(x=>{
+  const day=String(x.fecha_hora||'').slice(0,10);
+  return (!u||String(x.usuario||'').toLowerCase().includes(u))&&(!m||String(x.modulo||'').toLowerCase().includes(m))&&(!d1||day>=d1)&&(!d2||day<=d2);
+ });
+ body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+ccEsc(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+ccEsc(x.usuario||'SISTEMA')+'</td><td><b>'+ccEsc(x.accion||'')+'</b></td><td>'+ccEsc(x.modulo||'')+'</td><td>'+ccEsc(x.id_registro||'')+'</td><td>'+ccEsc(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
+};
+document.addEventListener('DOMContentLoaded',()=>{
+ setTimeout(()=>{
+  const b=document.getElementById('ccConfigLogBtn');
+  if(b)b.style.display=ccCanViewLogs()?'':'none';
+ },1200);
+});
+</script>
+
+
+<script id="cc-final-improvements">
+window.ccOpenAlertCenter=async function(){
+ try{
+  const {data,error}=await window.gmSupabase.rpc('cc_alert_center');if(error)throw error;
+  const arr=data?.alertas||[];
+  const rows=arr.length?arr.map((a,i)=>'<tr><td><span class="cc-badge '+(a.prioridad>=3?'cc-off':'cc-ok')+'">'+(a.prioridad>=3?'ALTA':'MEDIA')+'</span></td><td><b>'+ccEsc(a.unidad||'—')+'</b></td><td>'+ccEsc(a.titulo||'')+'</td><td>'+ccEsc(a.detalle||'')+'</td><td><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccAlertCenterModal\').remove();gmMostrarControlCajas();setTimeout(()=>ccTab(\''+ccEsc(a.destino||'inventario')+'\'),50)">Abrir</button></td></tr>').join(''):'<tr><td colspan="5">✓ No hay alertas prioritarias.</td></tr>';
+  const ov=document.createElement('div');ov.id='ccAlertCenterModal';ov.className='cc-user-modal';ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Centro de alertas</b><div style="font-size:10px;color:#bfdbfe">Pendientes que requieren atención</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div style="overflow:auto"><table class="cc-table-list"><thead><tr><th>PRIORIDAD</th><th>UNIDAD</th><th>ALERTA</th><th>DETALLE</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';document.body.appendChild(ov);
+ }catch(e){alert(e.message||e);}
+};
+window.ccOpenUnitDossier=async function(id){
+ try{
+  const {data,error}=await window.gmSupabase.rpc('cc_unit_dossier',{p_unidad_id:id});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'No disponible');
+  const u=data.unidad||{}, rent=data.rentas||[], loc=data.ubicaciones||[], man=data.mantenimiento||[], act=data.actividad||[];
+  const sec=(title,rows,empty)=>'<h4 style="margin:18px 0 8px;font-weight:950">'+title+'</h4>'+(rows||empty);
+  const ov=document.createElement('div');ov.id='ccUnitDossierModal';ov.className='cc-user-modal';
+  ov.innerHTML='<div class="cc-user-card" style="max-width:1050px"><div class="cc-user-head"><div><b>Expediente · '+ccEsc(u.numero||'Unidad')+'</b><div style="font-size:10px;color:#bfdbfe">'+ccEsc(u.descripcion||'')+' · '+ccEsc(u.estatus||'')+'</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body">'+
+   sec('Rentas',rent.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.cliente||'Cliente')+'</b> · '+ccEsc(x.fecha_inicio||'')+' → '+ccEsc(x.fecha_fin||'Indeterminada')+' · '+ccEsc(x.responsable||'')+'</div>').join(''),'<div class="cc-note">Sin rentas.</div>')+
+   sec('Ubicaciones QR',loc.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · '+Number(x.latitud).toFixed(5)+', '+Number(x.longitud).toFixed(5)+'</div>').join(''),'<div class="cc-note">Sin ubicaciones.</div>')+
+   sec('Mantenimiento / incidencias',man.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.estatus||'')+'</b> · '+ccEsc(x.motivo||'')+' · '+ccEsc(x.reparacion||'')+'</div>').join(''),'<div class="cc-note">Sin incidencias.</div>')+
+   sec('Actividad',act.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · <b>'+ccEsc(x.usuario||'SISTEMA')+'</b> · '+ccEsc(x.descripcion||x.accion||'')+'</div>').join(''),'<div class="cc-note">Sin actividad.</div>')+
+  '</div></div>';document.body.appendChild(ov);
+ }catch(e){alert(e.message||e);}
+};
+window.ccGrantCreateUsers=async function(userId,name,current){
+ if(!window.CC_ACCESS?.superAdmin){alert('Solo el Super Admin puede otorgar este permiso.');return;}
+ const allow=!current;if(!confirm((allow?'Otorgar':'Quitar')+' permiso para crear usuarios a '+name+'?'))return;
+ const {data,error}=await window.gmSupabase.rpc('cc_admin_set_create_users_permission',{p_user_id:userId,p_allow:allow});if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo actualizar');return;}alert('Permiso actualizado.');ccOpenUserAdmin();
+};
+(function(){
+ const old=window.ccOpenUserAdmin;
+ if(typeof old==='function')window.ccOpenUserAdmin=async function(){
+   await old();
+   setTimeout(()=>{
+    const modal=document.getElementById('ccUserAdminModal');if(!modal)return;
+    const btn=modal.querySelector('button[onclick="ccCreateUserModal()"]');
+    if(btn&&!window.CC_ACCESS?.superAdmin&&window.CC_ACCESS?.permisos?.['usuarios.crear']!==true)btn.style.display='none';
+    if(window.CC_ACCESS?.superAdmin){
+      modal.querySelectorAll('tbody tr').forEach(tr=>{
+       const edit=tr.querySelector('button[onclick^="ccEditUserModal"]');if(!edit)return;
+       const txt=edit.getAttribute('onclick')||'';
+       const m=txt.match(/ccEditUserModal\((.+)\)/);if(!m)return;
+       try{const u=JSON.parse(JSON.parse(m[1]));if(u.superAdmin)return;const cur=u.permisos?.['usuarios.crear']===true;const b=document.createElement('button');b.className='cc-btn cc-btn-light';b.innerHTML='<i class="fa-solid fa-user-plus"></i> '+(cur?'Quitar crear usuarios':'Permitir crear usuarios');b.onclick=()=>ccGrantCreateUsers(u.userId,u.nombre||u.email,cur);edit.parentElement.appendChild(b);}catch{}
+      });
+    }
+   },100);
+ };
+})();
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
+ const header=document.querySelector('#controlCajasSection .cc-tabs');
+ if(header&&!document.getElementById('ccAlertCenterBtn')){const b=document.createElement('button');b.id='ccAlertCenterBtn';b.className='cc-tab';b.innerHTML='<i class="fa-solid fa-bell mr-1"></i>Centro de alertas';b.onclick=ccOpenAlertCenter;header.appendChild(b);}
+},1000));
 </script>
 
 </body>
