@@ -5974,6 +5974,17 @@ window.ccCargarMapaUnidades=async function(force=false){
 
     const bounds=[];
     const now=Date.now();
+
+    // Separa visualmente marcadores con coordenadas idénticas, sin cambiar el GPS guardado.
+    const ccCoordCounts=new Map();
+    for(const x of rows){
+      const xLat=Number(x.latitud),xLng=Number(x.longitud);
+      if(!Number.isFinite(xLat)||!Number.isFinite(xLng))continue;
+      const key=xLat.toFixed(7)+','+xLng.toFixed(7);
+      ccCoordCounts.set(key,(ccCoordCounts.get(key)||0)+1);
+    }
+    const ccCoordSeen=new Map();
+
     for(const r of rows){
       const lat=Number(r.latitud),lng=Number(r.longitud);
       if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;
@@ -5990,7 +6001,19 @@ window.ccCargarMapaUnidades=async function(force=false){
         iconAnchor:[21,24],
         popupAnchor:[0,-26]
       });
-      const marker=L.marker([lat,lng],{icon}).addTo(map);
+      const coordKey=lat.toFixed(7)+','+lng.toFixed(7);
+      const sameTotal=ccCoordCounts.get(coordKey)||1;
+      const sameIndex=ccCoordSeen.get(coordKey)||0;
+      ccCoordSeen.set(coordKey,sameIndex+1);
+      let markerLat=lat,markerLng=lng;
+      if(sameTotal>1){
+        const angle=(Math.PI*2*sameIndex)/sameTotal;
+        const offsetMeters=10+Math.min(sameTotal,8);
+        markerLat=lat+(offsetMeters/111320)*Math.sin(angle);
+        const lngScale=111320*Math.max(.2,Math.cos(lat*Math.PI/180));
+        markerLng=lng+(offsetMeters/lngScale)*Math.cos(angle);
+      }
+      const marker=L.marker([markerLat,markerLng],{icon}).addTo(map);
       ccMapaUnidadesMarkers.set(r.unidadId,marker);
 
       marker.bindPopup(`<div style="font-family:Arial,sans-serif;font-size:12px;min-width:210px">
@@ -7423,7 +7446,7 @@ window.CC_PERFORMANCE_MODE=true;
 
 
 <style id="cc-global-alerts-css">
-#ccGlobalAlertsBtn{position:fixed;right:18px;top:82px;z-index:18000;height:42px;min-width:42px;padding:0 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:#0f172a;color:#fff;box-shadow:0 12px 28px rgba(15,23,42,.24);cursor:pointer;display:none;align-items:center;justify-content:center;gap:7px;font-size:15px}
+#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;z-index:18000;height:42px;min-width:42px;padding:0 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:#0f172a;color:#fff;box-shadow:0 12px 28px rgba(15,23,42,.24);cursor:pointer;display:none;align-items:center;justify-content:center;gap:7px;font-size:15px}
 #ccGlobalAlertsBtn:hover{transform:translateY(-1px);background:#1e293b}
 #ccGlobalAlertsBtn .cc-alert-label{font-size:10px;font-weight:900;letter-spacing:.02em}
 #ccGlobalAlertsBadge{position:absolute;right:-5px;top:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:9px;font-weight:900;display:none;align-items:center;justify-content:center;border:2px solid #fff}
@@ -7434,7 +7457,7 @@ window.CC_PERFORMANCE_MODE=true;
 .cc-alert-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:10px}.cc-alert-kpi small{display:block;font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase}.cc-alert-kpi strong{display:block;font-size:20px;margin-top:4px}
 .cc-alert-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;border-radius:11px;padding:10px 11px;margin:7px 0}
 .cc-alert-row.high{border-left-color:#dc2626}.cc-alert-row.low{border-left-color:#2563eb}.cc-alert-row strong{font-size:11px}.cc-alert-row span{display:block;font-size:9px;color:#64748b;margin-top:3px}
-@media(max-width:700px){#ccGlobalAlertsBtn{right:10px;top:74px;padding:0 10px}.cc-alert-label{display:none}.cc-alert-summary{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){#ccGlobalAlertsBtn{right:10px;bottom:14px;padding:0 10px}.cc-alert-label{display:none}.cc-alert-summary{grid-template-columns:repeat(2,1fr)}}
 </style>
 <button id="ccGlobalAlertsBtn" type="button" title="Centro de alertas" aria-label="Centro de alertas">
   <i class="fa-solid fa-bell"></i><span class="cc-alert-label">Alertas</span><span id="ccGlobalAlertsBadge">0</span>
