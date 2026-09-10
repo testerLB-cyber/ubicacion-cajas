@@ -820,16 +820,25 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 <div class="cc-config-section" id="ccConfigTiposUnidad"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🚛 Catálogo de tipos de unidad</h4><p>Define los tipos que aparecerán al registrar o importar unidades. Los tipos CAJA y CARRO se crean automáticamente si no existen.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUnidad()"><i class="fa-solid fa-plus mr-1"></i>Nuevo tipo</button></div><div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>CATEGORÍA</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUnidadList"></tbody></table></div></div></div><div class="cc-config-section" id="ccConfigTiposUsoCaja"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🧭 Catálogo de tipo de uso de caja</h4><p>Define los usos disponibles al registrar una unidad categoría CAJA.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUsoCaja()"><i class="fa-solid fa-plus mr-1"></i>Nuevo uso</button></div><div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>El sistema inicia con <b>Cruce</b>, <b>Foránea</b>, <b>Cruce y Foránea</b> y <b>Storage</b>. Puedes agregar nuevos usos o desactivar los existentes.</div><div class="cc-inv-wrap" style="margin-top:12px"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE USO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUsoCajaList"></tbody></table></div></div></div>
 
 <div class="cc-config-section" id="ccConfigLog">
-<div class="cc-config-card">
-<div class="cc-config-section-head"><div><h4>🕘 Log de actividad</h4><p>Registro de altas, modificaciones y eliminaciones realizadas en la base de datos.</p></div><button class="cc-btn cc-btn-light" onclick="ccLoadActivityLog()"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button></div>
-<div class="cc-grid" style="margin-bottom:12px">
-<div class="cc-field"><label>Usuario</label><input id="ccLogUsuario" placeholder="Buscar usuario..." oninput="ccRenderActivityLog()"></div>
-<div class="cc-field"><label>Módulo</label><input id="ccLogModulo" placeholder="Buscar módulo..." oninput="ccRenderActivityLog()"></div>
-<div class="cc-field"><label>Desde</label><input id="ccLogDesde" type="date" onchange="ccRenderActivityLog()"></div>
-<div class="cc-field"><label>Hasta</label><input id="ccLogHasta" type="date" onchange="ccRenderActivityLog()"></div>
+  <div class="cc-config-card">
+    <div class="cc-config-section-head">
+      <div><h4>🕘 Log de actividad</h4><p>Registro de altas, modificaciones y eliminaciones realizadas en la base de datos.</p></div>
+      <button class="cc-btn cc-btn-light" onclick="ccLoadActivityLog()"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button>
+    </div>
+    <div class="cc-grid" style="margin-bottom:12px">
+      <div class="cc-field"><label>Usuario</label><input id="ccLogUsuario" placeholder="Buscar usuario..." oninput="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Módulo</label><input id="ccLogModulo" placeholder="Buscar módulo..." oninput="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Desde</label><input id="ccLogDesde" type="date" onchange="ccRenderActivityLog()"></div>
+      <div class="cc-field"><label>Hasta</label><input id="ccLogHasta" type="date" onchange="ccRenderActivityLog()"></div>
+    </div>
+    <div class="cc-inv-wrap">
+      <table class="cc-table-list">
+        <thead><tr><th>FECHA / HORA</th><th>USUARIO</th><th>ACCIÓN</th><th>MÓDULO</th><th>REGISTRO</th><th>DESCRIPCIÓN</th></tr></thead>
+        <tbody id="ccActivityLogList"><tr><td colspan="6">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
 </div>
-<div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>FECHA / HORA</th><th>USUARIO</th><th>ACCIÓN</th><th>MÓDULO</th><th>REGISTRO</th><th>DESCRIPCIÓN</th></tr></thead><tbody id="ccActivityLogList"><tr><td colspan="6">Cargando...</td></tr></tbody></table></div>
-</div></div>
 <div class="cc-config-section" id="ccConfigTarifas">
 <div class="cc-config-card">
 <div class="cc-config-section-head"><div><h4>💰 Tarifas de renta por cliente</h4><p>Captura el precio por caja para renta diaria, semanal o mensual. La proforma usa el método elegido en cada renta.</p></div></div>
@@ -6136,7 +6145,7 @@ window.ccInventarioSearchDebounced=function(){
   clearTimeout(ccInventarioSearchTimer);
   ccInventarioSearchTimer=setTimeout(()=>ccRenderInventario(),140);
 };
-window.ccRenderInventario=function(){ccCargarUbicacionesInventario(false);const tipoInv=window.ccInventarioTipoActual||'TODOS';const body=document.getElementById('ccInventarioBody'),kpis=document.getElementById('ccInventarioKpis');if(!body)return;const q=(document.getElementById('ccInventarioSearch')?.value||'').toLowerCase();const hoy=iso(new Date());const clienteMap=new Map(clientes.map(c=>[c.id,c.nombre]));const rentaActivaMap=new Map();for(const r of rentas){if(r.cajaId&&rentFor(r.id,hoy))rentaActivaMap.set(r.cajaId,r);}const data=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&[x.tipoUnidadNombre,x.numero,x.descripcion,x.tamano,x.tipo,x.origen,x.placas,x.capacidad,x.observaciones,clientes.find(c=>c.id===x.clienteId)?.nombre||''].join(' ').toLowerCase().includes(q));const activos=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&x.estatus!=='INACTIVO').length,rentadas=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&rentas.some(r=>r.cajaId===x.id&&rentFor(r.id,hoy))).length,disponibles=Math.max(0,activos-rentadas),carros=cajas.filter(x=>String(x.categoriaUnidad||x.tipoUnidadNombre||'CAJA').toUpperCase()==='CARRO').length;kpis.innerHTML=`<div class="cc-inv-kpi"><small>Total unidades</small><strong>${cajas.filter(x=>ccTipoMatches(x,tipoInv)).length}</strong></div><div class="cc-inv-kpi"><small>Activas</small><strong>${activos}</strong></div><div class="cc-inv-kpi"><small>Cajas rentadas hoy</small><strong>${rentadas}</strong></div><div class="cc-inv-kpi"><small>Disponibles</small><strong>${disponibles}</strong></div><div class="cc-inv-kpi"><small>Carros</small><strong>${cajas.filter(x=>ccTipoMatches(x,'CARRO')).length}</strong></div>`;body.innerHTML=data.length?data.map((x,i)=>{const esCaja=String(x.categoriaUnidad||x.tipoUnidadNombre||'CAJA').toUpperCase()==='CAJA';const esCarro=[x.categoriaUnidad,x.tipoUnidadNombre,x.tipo].some(v=>String(v||'').trim().toUpperCase().includes('CARRO'));const renta=esCaja?(rentaActivaMap.get(x.id)||null):null;const cliente=clienteMap.get(x.clienteId)||clienteMap.get(renta?.clienteId)||'—';const est=x.estatus==='MANTENIMIENTO'?'MANTENIMIENTO':x.estatus==='INACTIVO'?'INACTIVO':renta?'RENTADA':'DISPONIBLE';const cls=est==='MANTENIMIENTO'?'cc-status-mant':est==='INACTIVO'?'cc-inv-inactivo':est==='RENTADA'?'cc-inv-renta':'cc-inv-disponible';const esStorage=esCaja&&String(x.tipoUsoCaja||'').trim().toUpperCase()==='STORAGE';return `<tr class="${esStorage?'cc-storage-row':''}"><td>${i+1}</td><td><span class="cc-unit-type-badge">${esc(x.tipoUnidadNombre||'CAJA')}</span></td><td><button type="button" class="cc-link" title="Ver dimensiones de la unidad" onclick="ccMostrarMedidasUnidad('${x.id}')"><strong>${esc(x.numero||'—')}</strong></button></td><td>${esc(x.descripcion||'—')}</td><td>${esc(x.tamano||'—')}</td><td>${esc(x.tipo||'—')}${esCaja&&x.tipoUsoCaja?`<div style="font-size:9px;color:#7c3aed;font-weight:800;margin-top:3px">Uso: ${esc(x.tipoUsoCaja)}</div>`:''}</td><td><button type="button" class="cc-link" onclick="ccMostrarMedidasUnidad('${x.id}')">${(x.largoFt||x.anchoFt||x.altoFt||x.largo||x.ancho||x.alto)?`${(Number(x.largoFt||0)||Number(x.largo||0)/0.3048).toFixed(2)} × ${(Number(x.anchoFt||0)||Number(x.ancho||0)/0.3048).toFixed(2)} × ${(Number(x.altoFt||0)||Number(x.alto||0)/0.3048).toFixed(2)} ft`:'Ver dimensiones'}</button></td><td>${esc(x.origen||'—')}</td><td><div><b>MX:</b> ${esc(x.placasMx||x.placas||'—')}</div><div style="font-size:9px;color:#64748b"><b>USA:</b> ${esc(x.placasUsa||'—')}</div></td><td><span class="cc-client-badge">${esc(cliente)}</span></td><td><span class="cc-inv-badge ${cls}">${est}</span></td><td>${esc(x.capacidad||'—')}</td><td data-cc-location-unit="${esc(x.id)}" style="min-width:220px;max-width:340px;white-space:normal;line-height:1.35">${(()=>{const r=ccInventarioUbicaciones.get(String(x.id));const e=ccEtiquetaUbicacion(r);if(r&&!e.geocerca&&!String(r.direccion||r.address||r.displayName||'').trim()&&!ccLeerDireccionCache(Number(r.latitud),Number(r.longitud)))setTimeout(()=>ccActualizarDireccionCelda(r),0);if(!r)return '<span style="color:#94a3b8">Sin ubicación</span>';const contenido=(e.geocerca?'<i class="fa-solid fa-draw-polygon" style="color:#16a34a;margin-right:5px"></i><strong style="color:#166534">'+esc(e.texto)+'</strong>':'<i class="fa-solid fa-location-dot" style="color:#2563eb;margin-right:5px"></i><span>'+esc(e.texto)+'</span>')+'<div style="font-size:9px;color:#94a3b8;margin-top:3px">'+esc(new Date(r.fechaHora).toLocaleString())+'</div><div style="font-size:9px;color:#2563eb;font-weight:800;margin-top:3px">Toca para ver historial</div>';return '<button type="button" onclick="ccVerUbicacionesUnidad(\''+esc(x.id)+'\')" style="all:unset;cursor:pointer;display:block;width:100%" title="Ver ubicación actual y últimas 5">'+contenido+'</button>'})()}</td><td>${esc(x.observaciones||'—')}</td><td><button class="cc-btn cc-btn-light" onclick="ccEditarUnidadDirecto('${x.id}')">Editar</button>${x.estatus==='MANTENIMIENTO'?`<button class="cc-btn cc-btn-primary" onclick="ccLiberarMantenimiento('${x.id}')">Liberar</button>`:`<button class="cc-btn cc-btn-maintenance" title="Poner unidad fuera de servicio" onclick="ccPonerMantenimiento('${x.id}')"><i class="fa-solid fa-triangle-exclamation mr-1"></i>FUERA DE SERVICIO</button>`}<button class="cc-btn cc-btn-dot" title="Registrar entrada de la unidad a revisión DOT" onclick="ccAbrirDotRegistro('${x.id}')"><i class="fa-solid fa-clipboard-check mr-1"></i>DOT</button><button class="cc-btn cc-btn-light" title="Generar QR de ubicación" onclick="ccMostrarQrUnidad('${x.id}')"><i class="fa-solid fa-qrcode mr-1"></i>QR</button></td></tr>`}).join(''):`<tr><td colspan="15" style="padding:35px;text-align:center;color:#94a3b8">No hay unidades registradas.</td></tr>`;};
+window.ccRenderInventario=function(){ccCargarUbicacionesInventario(false);const tipoInv=window.ccInventarioTipoActual||'TODOS';const body=document.getElementById('ccInventarioBody'),kpis=document.getElementById('ccInventarioKpis');if(!body)return;const q=(document.getElementById('ccInventarioSearch')?.value||'').toLowerCase();const hoy=iso(new Date());const clienteMap=new Map(clientes.map(c=>[c.id,c.nombre]));const rentaActivaMap=new Map();for(const r of rentas){if(r.cajaId&&rentFor(r.id,hoy))rentaActivaMap.set(r.cajaId,r);}const data=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&[x.tipoUnidadNombre,x.numero,x.descripcion,x.tamano,x.tipo,x.origen,x.placas,x.capacidad,x.observaciones,clientes.find(c=>c.id===x.clienteId)?.nombre||''].join(' ').toLowerCase().includes(q));const activos=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&x.estatus!=='INACTIVO').length,rentadas=cajas.filter(x=>ccTipoMatches(x,tipoInv)&&rentas.some(r=>r.cajaId===x.id&&rentFor(r.id,hoy))).length,disponibles=Math.max(0,activos-rentadas),carros=cajas.filter(x=>String(x.categoriaUnidad||x.tipoUnidadNombre||'CAJA').toUpperCase()==='CARRO').length;kpis.innerHTML=`<div class="cc-inv-kpi"><small>Total unidades</small><strong>${cajas.filter(x=>ccTipoMatches(x,tipoInv)).length}</strong></div><div class="cc-inv-kpi"><small>Activas</small><strong>${activos}</strong></div><div class="cc-inv-kpi"><small>Cajas rentadas hoy</small><strong>${rentadas}</strong></div><div class="cc-inv-kpi"><small>Disponibles</small><strong>${disponibles}</strong></div><div class="cc-inv-kpi"><small>Carros</small><strong>${cajas.filter(x=>ccTipoMatches(x,'CARRO')).length}</strong></div>`;body.innerHTML=data.length?data.map((x,i)=>{const esCaja=String(x.categoriaUnidad||x.tipoUnidadNombre||'CAJA').toUpperCase()==='CAJA';const esCarro=[x.categoriaUnidad,x.tipoUnidadNombre,x.tipo].some(v=>String(v||'').trim().toUpperCase().includes('CARRO'));const renta=esCaja?(rentaActivaMap.get(x.id)||null):null;const cliente=clienteMap.get(x.clienteId)||clienteMap.get(renta?.clienteId)||'—';const est=x.estatus==='MANTENIMIENTO'?'MANTENIMIENTO':x.estatus==='INACTIVO'?'INACTIVO':renta?'RENTADA':'DISPONIBLE';const cls=est==='MANTENIMIENTO'?'cc-status-mant':est==='INACTIVO'?'cc-inv-inactivo':est==='RENTADA'?'cc-inv-renta':'cc-inv-disponible';const esStorage=esCaja&&String(x.tipoUsoCaja||'').trim().toUpperCase()==='STORAGE';return `<tr class="${esStorage?'cc-storage-row':''}"><td>${i+1}</td><td><span class="cc-unit-type-badge">${esc(x.tipoUnidadNombre||'CAJA')}</span></td><td><button type="button" class="cc-link" title="Ver dimensiones de la unidad" onclick="ccMostrarMedidasUnidad('${x.id}')"><strong>${esc(x.numero||'—')}</strong></button></td><td>${esc(x.descripcion||'—')}</td><td>${esc(x.tamano||'—')}</td><td>${esc(x.tipo||'—')}${esCaja&&x.tipoUsoCaja?`<div style="font-size:9px;color:#7c3aed;font-weight:800;margin-top:3px">Uso: ${esc(x.tipoUsoCaja)}</div>`:''}</td><td><button type="button" class="cc-link" onclick="ccMostrarMedidasUnidad('${x.id}')">${(x.largoFt||x.anchoFt||x.altoFt||x.largo||x.ancho||x.alto)?`${(Number(x.largoFt||0)||Number(x.largo||0)/0.3048).toFixed(2)} × ${(Number(x.anchoFt||0)||Number(x.ancho||0)/0.3048).toFixed(2)} × ${(Number(x.altoFt||0)||Number(x.alto||0)/0.3048).toFixed(2)} ft`:'Ver dimensiones'}</button></td><td>${esc(x.origen||'—')}</td><td><div><b>MX:</b> ${esc(x.placasMx||x.placas||'—')}</div><div style="font-size:9px;color:#64748b"><b>USA:</b> ${esc(x.placasUsa||'—')}</div></td><td><span class="cc-client-badge">${esc(cliente)}</span></td><td><span class="cc-inv-badge ${cls}">${est}</span></td><td>${esc(x.capacidad||'—')}</td><td data-cc-location-unit="${esc(x.id)}" style="min-width:220px;max-width:340px;white-space:normal;line-height:1.35">${(()=>{const r=ccInventarioUbicaciones.get(String(x.id));const e=ccEtiquetaUbicacion(r);if(r&&!e.geocerca&&!String(r.direccion||r.address||r.displayName||'').trim()&&!ccLeerDireccionCache(Number(r.latitud),Number(r.longitud)))setTimeout(()=>ccActualizarDireccionCelda(r),0);if(!r)return '<span style="color:#94a3b8">Sin ubicación</span>';const contenido=(e.geocerca?'<i class="fa-solid fa-draw-polygon" style="color:#16a34a;margin-right:5px"></i><strong style="color:#166534">'+esc(e.texto)+'</strong>':'<i class="fa-solid fa-location-dot" style="color:#2563eb;margin-right:5px"></i><span>'+esc(e.texto)+'</span>')+'<div style="font-size:9px;color:#94a3b8;margin-top:3px">'+esc(new Date(r.fechaHora).toLocaleString())+'</div><div style="font-size:9px;color:#2563eb;font-weight:800;margin-top:3px">Toca para ver historial</div>';return '<button type="button" onclick="ccVerUbicacionesUnidad(\''+esc(x.id)+'\')" style="all:unset;cursor:pointer;display:block;width:100%" title="Ver ubicación actual y últimas 5">'+contenido+'</button>'})()}</td><td>${esc(x.observaciones||'—')}</td><td><button class="cc-btn cc-btn-light" onclick="ccEditarUnidadDirecto('${x.id}')">Editar</button>${x.estatus==='MANTENIMIENTO'?`<button class="cc-btn cc-btn-primary" onclick="ccLiberarMantenimiento('${x.id}')">Liberar</button>`:`<button class="cc-btn cc-btn-maintenance" title="Poner unidad fuera de servicio" onclick="ccPonerMantenimiento('${x.id}')"><i class="fa-solid fa-triangle-exclamation mr-1"></i>FUERA DE SERVICIO</button>`}<button class="cc-btn cc-btn-dot" title="Registrar entrada de la unidad a revisión DOT" onclick="ccAbrirDotRegistro('${x.id}')"><i class="fa-solid fa-clipboard-check mr-1"></i>DOT</button><button class="cc-btn cc-btn-light" title="Generar QR de ubicación" onclick="ccMostrarQrUnidad('${x.id}')"><i class="fa-solid fa-qrcode mr-1"></i>QR</button><button class="cc-btn cc-btn-light" title="Ver expediente completo" onclick="ccOpenUnitDossier('${x.id}')"><i class="fa-solid fa-folder-open mr-1"></i>Expediente</button></td></tr>`}).join(''):`<tr><td colspan="15" style="padding:35px;text-align:center;color:#94a3b8">No hay unidades registradas.</td></tr>`;};
 window.ccRenderClientes=function(){const el=document.getElementById('ccClientesList');if(!el)return;el.innerHTML=clientes.length?clientes.map((x,i)=>`<tr><td>${i+1}</td><td><strong>${esc(x.nombre)}</strong></td><td>${esc(x.contacto||'—')}</td><td>${esc(x.telefono||'—')}</td><td>${esc(x.correo||'—')}</td><td><span class="cc-badge ${x.estatus==='ACTIVO'?'cc-ok':'cc-off'}">${esc(x.estatus)}</span></td><td><button class="cc-btn cc-btn-light" onclick="ccNuevoCliente('${x.id}')">Editar</button><button class="cc-btn cc-btn-danger" onclick="ccDeleteCliente('${x.id}')">Eliminar</button></td></tr>`).join(''):'<tr><td colspan="7" style="padding:30px;text-align:center;color:#94a3b8">No hay clientes registrados.</td></tr>';};
 window.ccRenderResponsables=function(){const el=document.getElementById('ccResponsablesList');if(!el)return;el.innerHTML=responsables.length?responsables.map((x,i)=>`<tr><td>${i+1}</td><td><strong>${esc(x.nombre)}</strong></td><td>${esc(x.puesto||'—')}</td><td>${esc(x.telefono||'—')}</td><td>${esc(x.correo||'—')}</td><td><span class="cc-badge ${x.estatus==='ACTIVO'?'cc-ok':'cc-off'}">${esc(x.estatus)}</span></td><td><button class="cc-btn cc-btn-light" onclick="ccNuevoResponsable('${x.id}')">Editar</button><button class="cc-btn cc-btn-danger" onclick="ccDeleteResponsable('${x.id}')">Eliminar</button></td></tr>`).join(''):'<tr><td colspan="7" style="padding:30px;text-align:center;color:#94a3b8">No hay responsables registrados.</td></tr>';};
 window.ccActualizarTarifaRenta=function(){const metodo=document.getElementById('ccMetodoCobro')?.value||'DIARIO',sel=document.getElementById('ccTarifaRenta'),total=document.getElementById('ccTotalTarifaRenta'),cliente=document.querySelector('#ccForm [name="clienteId"]')?.value;if(!sel||!total)return;const t=Object.assign({diario:0,semanal:0,mensual:0},(configuracion.tarifasRenta||{})[cliente]||{});const valor=Number(t[metodo.toLowerCase()]||0);const etiqueta=metodo==='MENSUAL'?'Tarifa mensual':metodo==='SEMANAL'?'Tarifa semanal':'Tarifa diaria';sel.innerHTML=`<option value="tarifa_${esc(cliente||'general')}" data-total="${valor}">${etiqueta} — $${valor.toFixed(2)}</option>`;total.value=valor.toFixed(2);};
@@ -7409,94 +7418,138 @@ window.CC_PERFORMANCE_MODE=true;
 </script>
 
 
-<script id="cc-activity-log-ui">
-window.ccActivityLogs=[];
-window.ccCanViewLogs=function(){
- const a=window.CC_ACCESS||{};
- return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true;
-};
-window.ccLoadActivityLog=async function(){
- const body=document.getElementById('ccActivityLogList');
- if(!ccCanViewLogs()){if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';return;}
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
-  if(error)throw error;
-  if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
-  window.ccActivityLogs=data.logs||[];
-  ccRenderActivityLog();
- }catch(e){if(body)body.innerHTML='<tr><td colspan="6">'+ccEsc(String(e.message||e))+'</td></tr>';}
-};
-window.ccRenderActivityLog=function(){
- const body=document.getElementById('ccActivityLogList');if(!body)return;
- const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
- const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
- const d1=document.getElementById('ccLogDesde')?.value||'', d2=document.getElementById('ccLogHasta')?.value||'';
- const rows=(window.ccActivityLogs||[]).filter(x=>{
-  const day=String(x.fecha_hora||'').slice(0,10);
-  return (!u||String(x.usuario||'').toLowerCase().includes(u))&&(!m||String(x.modulo||'').toLowerCase().includes(m))&&(!d1||day>=d1)&&(!d2||day<=d2);
- });
- body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+ccEsc(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+ccEsc(x.usuario||'SISTEMA')+'</td><td><b>'+ccEsc(x.accion||'')+'</b></td><td>'+ccEsc(x.modulo||'')+'</td><td>'+ccEsc(x.id_registro||'')+'</td><td>'+ccEsc(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
-};
-document.addEventListener('DOMContentLoaded',()=>{
- setTimeout(()=>{
-  const b=document.getElementById('ccConfigLogBtn');
-  if(b)b.style.display=ccCanViewLogs()?'':'none';
- },1200);
-});
-</script>
-
-
-<script id="cc-final-improvements">
-window.ccOpenAlertCenter=async function(){
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_alert_center');if(error)throw error;
-  const arr=data?.alertas||[];
-  const rows=arr.length?arr.map((a,i)=>'<tr><td><span class="cc-badge '+(a.prioridad>=3?'cc-off':'cc-ok')+'">'+(a.prioridad>=3?'ALTA':'MEDIA')+'</span></td><td><b>'+ccEsc(a.unidad||'—')+'</b></td><td>'+ccEsc(a.titulo||'')+'</td><td>'+ccEsc(a.detalle||'')+'</td><td><button class="cc-btn cc-btn-light" onclick="document.getElementById(\'ccAlertCenterModal\').remove();gmMostrarControlCajas();setTimeout(()=>ccTab(\''+ccEsc(a.destino||'inventario')+'\'),50)">Abrir</button></td></tr>').join(''):'<tr><td colspan="5">✓ No hay alertas prioritarias.</td></tr>';
-  const ov=document.createElement('div');ov.id='ccAlertCenterModal';ov.className='cc-user-modal';ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Centro de alertas</b><div style="font-size:10px;color:#bfdbfe">Pendientes que requieren atención</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div style="overflow:auto"><table class="cc-table-list"><thead><tr><th>PRIORIDAD</th><th>UNIDAD</th><th>ALERTA</th><th>DETALLE</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';document.body.appendChild(ov);
- }catch(e){alert(e.message||e);}
-};
-window.ccOpenUnitDossier=async function(id){
- try{
-  const {data,error}=await window.gmSupabase.rpc('cc_unit_dossier',{p_unidad_id:id});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'No disponible');
-  const u=data.unidad||{}, rent=data.rentas||[], loc=data.ubicaciones||[], man=data.mantenimiento||[], act=data.actividad||[];
-  const sec=(title,rows,empty)=>'<h4 style="margin:18px 0 8px;font-weight:950">'+title+'</h4>'+(rows||empty);
-  const ov=document.createElement('div');ov.id='ccUnitDossierModal';ov.className='cc-user-modal';
-  ov.innerHTML='<div class="cc-user-card" style="max-width:1050px"><div class="cc-user-head"><div><b>Expediente · '+ccEsc(u.numero||'Unidad')+'</b><div style="font-size:10px;color:#bfdbfe">'+ccEsc(u.descripcion||'')+' · '+ccEsc(u.estatus||'')+'</div></div><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body">'+
-   sec('Rentas',rent.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.cliente||'Cliente')+'</b> · '+ccEsc(x.fecha_inicio||'')+' → '+ccEsc(x.fecha_fin||'Indeterminada')+' · '+ccEsc(x.responsable||'')+'</div>').join(''),'<div class="cc-note">Sin rentas.</div>')+
-   sec('Ubicaciones QR',loc.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · '+Number(x.latitud).toFixed(5)+', '+Number(x.longitud).toFixed(5)+'</div>').join(''),'<div class="cc-note">Sin ubicaciones.</div>')+
-   sec('Mantenimiento / incidencias',man.map(x=>'<div class="cc-config-alert"><b>'+ccEsc(x.estatus||'')+'</b> · '+ccEsc(x.motivo||'')+' · '+ccEsc(x.reparacion||'')+'</div>').join(''),'<div class="cc-note">Sin incidencias.</div>')+
-   sec('Actividad',act.map(x=>'<div class="cc-config-alert">'+ccEsc(new Date(x.fecha_hora).toLocaleString())+' · <b>'+ccEsc(x.usuario||'SISTEMA')+'</b> · '+ccEsc(x.descripcion||x.accion||'')+'</div>').join(''),'<div class="cc-note">Sin actividad.</div>')+
-  '</div></div>';document.body.appendChild(ov);
- }catch(e){alert(e.message||e);}
-};
-window.ccGrantCreateUsers=async function(userId,name,current){
- if(!window.CC_ACCESS?.superAdmin){alert('Solo el Super Admin puede otorgar este permiso.');return;}
- const allow=!current;if(!confirm((allow?'Otorgar':'Quitar')+' permiso para crear usuarios a '+name+'?'))return;
- const {data,error}=await window.gmSupabase.rpc('cc_admin_set_create_users_permission',{p_user_id:userId,p_allow:allow});if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo actualizar');return;}alert('Permiso actualizado.');ccOpenUserAdmin();
-};
+<script id="cc-final-features-js">
 (function(){
- const old=window.ccOpenUserAdmin;
- if(typeof old==='function')window.ccOpenUserAdmin=async function(){
-   await old();
-   setTimeout(()=>{
-    const modal=document.getElementById('ccUserAdminModal');if(!modal)return;
-    const btn=modal.querySelector('button[onclick="ccCreateUserModal()"]');
-    if(btn&&!window.CC_ACCESS?.superAdmin&&window.CC_ACCESS?.permisos?.['usuarios.crear']!==true)btn.style.display='none';
-    if(window.CC_ACCESS?.superAdmin){
-      modal.querySelectorAll('tbody tr').forEach(tr=>{
-       const edit=tr.querySelector('button[onclick^="ccEditUserModal"]');if(!edit)return;
-       const txt=edit.getAttribute('onclick')||'';
-       const m=txt.match(/ccEditUserModal\((.+)\)/);if(!m)return;
-       try{const u=JSON.parse(JSON.parse(m[1]));if(u.superAdmin)return;const cur=u.permisos?.['usuarios.crear']===true;const b=document.createElement('button');b.className='cc-btn cc-btn-light';b.innerHTML='<i class="fa-solid fa-user-plus"></i> '+(cur?'Quitar crear usuarios':'Permitir crear usuarios');b.onclick=()=>ccGrantCreateUsers(u.userId,u.nombre||u.email,cur);edit.parentElement.appendChild(b);}catch{}
-      });
+  const escLog=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  window.ccActivityLogs=[];
+
+  window.ccCanViewLogs=function(){
+    const a=window.CC_ACCESS||{};
+    return a.rol==='ADMIN'||a.permisos?.['logs.ver']===true||a.permisos?.logs?.ver===true;
+  };
+
+  window.ccLoadActivityLog=async function(){
+    const body=document.getElementById('ccActivityLogList');
+    if(!window.ccCanViewLogs()){
+      if(body)body.innerHTML='<tr><td colspan="6">Sin permiso para consultar el log.</td></tr>';
+      return;
     }
-   },100);
- };
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_activity_log',{p_limit:1000});
+      if(error)throw error;
+      if(!data?.ok)throw new Error(data?.error||'No se pudo cargar el log');
+      window.ccActivityLogs=data.logs||[];
+      window.ccRenderActivityLog();
+    }catch(e){
+      if(body)body.innerHTML='<tr><td colspan="6">'+escLog(e?.message||e)+'</td></tr>';
+    }
+  };
+
+  window.ccRenderActivityLog=function(){
+    const body=document.getElementById('ccActivityLogList'); if(!body)return;
+    const u=(document.getElementById('ccLogUsuario')?.value||'').toLowerCase();
+    const m=(document.getElementById('ccLogModulo')?.value||'').toLowerCase();
+    const d1=document.getElementById('ccLogDesde')?.value||'';
+    const d2=document.getElementById('ccLogHasta')?.value||'';
+    const rows=(window.ccActivityLogs||[]).filter(x=>{
+      const day=String(x.fecha_hora||'').slice(0,10);
+      return (!u||String(x.usuario||'').toLowerCase().includes(u))
+        &&(!m||String(x.modulo||'').toLowerCase().includes(m))
+        &&(!d1||day>=d1)&&(!d2||day<=d2);
+    });
+    body.innerHTML=rows.length?rows.map(x=>'<tr><td>'+escLog(new Date(x.fecha_hora).toLocaleString())+'</td><td>'+escLog(x.usuario||'SISTEMA')+'</td><td><b>'+escLog(x.accion||'')+'</b></td><td>'+escLog(x.modulo||'')+'</td><td>'+escLog(x.id_registro||'')+'</td><td>'+escLog(x.descripcion||'')+'</td></tr>').join(''):'<tr><td colspan="6">Sin movimientos para estos filtros.</td></tr>';
+  };
+
+  window.ccOpenAlertCenter=async function(){
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_alert_center'); if(error)throw error;
+      const arr=data?.alertas||[];
+      const rows=arr.length?arr.map(a=>{
+        const pr=a.prioridad>=3?'ALTA':'MEDIA';
+        return '<tr><td><b>'+pr+'</b></td><td><b>'+escLog(a.unidad||'—')+'</b></td><td>'+escLog(a.titulo||'')+'</td><td>'+escLog(a.detalle||'')+'</td><td><button class="cc-btn cc-btn-light" data-dest="'+escLog(a.destino||'inventario')+'">Abrir</button></td></tr>';
+      }).join(''):'<tr><td colspan="5">✓ No hay alertas prioritarias.</td></tr>';
+      const ov=document.createElement('div'); ov.id='ccAlertCenterModal'; ov.className='cc-user-modal';
+      ov.innerHTML='<div class="cc-user-card"><div class="cc-user-head"><div><b>Centro de alertas</b><div style="font-size:10px;color:#bfdbfe">Pendientes que requieren atención</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-user-body"><div style="overflow:auto"><table class="cc-table-list"><thead><tr><th>PRIORIDAD</th><th>UNIDAD</th><th>ALERTA</th><th>DETALLE</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';
+      document.body.appendChild(ov);
+      ov.querySelector('[data-close]').onclick=()=>ov.remove();
+      ov.querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>{
+        const dest=b.dataset.dest||'inventario'; ov.remove();
+        if(typeof gmMostrarControlCajas==='function')gmMostrarControlCajas();
+        setTimeout(()=>{
+          const tab=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+dest+"'"));
+          if(tab&&typeof ccTab==='function')ccTab(dest,tab);
+        },50);
+      });
+    }catch(e){alert(e?.message||e);}
+  };
+
+  window.ccOpenUnitDossier=async function(id){
+    try{
+      const {data,error}=await window.gmSupabase.rpc('cc_unit_dossier',{p_unidad_id:id});
+      if(error)throw error; if(!data?.ok)throw new Error(data?.error||'No disponible');
+      const u=data.unidad||{},rent=data.rentas||[],loc=data.ubicaciones||[],man=data.mantenimiento||[],act=data.actividad||[];
+      const block=(title,html,empty)=>'<h4 style="margin:18px 0 8px;font-weight:950">'+title+'</h4>'+(html||empty);
+      const ov=document.createElement('div'); ov.id='ccUnitDossierModal'; ov.className='cc-user-modal';
+      ov.innerHTML='<div class="cc-user-card" style="max-width:1050px"><div class="cc-user-head"><div><b>Expediente · '+escLog(u.numero||'Unidad')+'</b><div style="font-size:10px;color:#bfdbfe">'+escLog(u.descripcion||'')+' · '+escLog(u.estatus||'')+'</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-user-body">'
+      +block('Rentas',rent.map(x=>'<div class="cc-config-alert"><b>'+escLog(x.cliente||'Cliente')+'</b> · '+escLog(x.fecha_inicio||'')+' → '+escLog(x.fecha_fin||'Indeterminada')+' · '+escLog(x.responsable||'')+'</div>').join(''),'<div class="cc-note">Sin rentas.</div>')
+      +block('Ubicaciones QR',loc.map(x=>'<div class="cc-config-alert">'+escLog(new Date(x.fecha_hora).toLocaleString())+' · '+Number(x.latitud).toFixed(5)+', '+Number(x.longitud).toFixed(5)+'</div>').join(''),'<div class="cc-note">Sin ubicaciones.</div>')
+      +block('Mantenimiento / incidencias',man.map(x=>'<div class="cc-config-alert"><b>'+escLog(x.estatus||'')+'</b> · '+escLog(x.motivo||'')+' · '+escLog(x.reparacion||'')+'</div>').join(''),'<div class="cc-note">Sin incidencias.</div>')
+      +block('Actividad',act.map(x=>'<div class="cc-config-alert">'+escLog(new Date(x.fecha_hora).toLocaleString())+' · <b>'+escLog(x.usuario||'SISTEMA')+'</b> · '+escLog(x.descripcion||x.accion||'')+'</div>').join(''),'<div class="cc-note">Sin actividad.</div>')
+      +'</div></div>';
+      document.body.appendChild(ov); ov.querySelector('[data-close]').onclick=()=>ov.remove();
+    }catch(e){alert(e?.message||e);}
+  };
+
+  window.ccGrantCreateUsers=async function(userId,name,current){
+    if(!window.CC_ACCESS?.superAdmin){alert('Solo el Super Admin puede otorgar este permiso.');return;}
+    const allow=!current;
+    if(!confirm((allow?'Otorgar':'Quitar')+' permiso para crear usuarios a '+name+'?'))return;
+    const {data,error}=await window.gmSupabase.rpc('cc_admin_set_create_users_permission',{p_user_id:userId,p_allow:allow});
+    if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo actualizar');return;}
+    alert('Permiso actualizado.'); if(typeof ccOpenUserAdmin==='function')ccOpenUserAdmin();
+  };
+
+  const originalOpenUsers=window.ccOpenUserAdmin;
+  if(typeof originalOpenUsers==='function'){
+    window.ccOpenUserAdmin=async function(){
+      await originalOpenUsers();
+      setTimeout(async()=>{
+        const modal=document.getElementById('ccUserAdminModal'); if(!modal)return;
+        const createBtn=modal.querySelector('button[onclick="ccCreateUserModal()"]');
+        const canCreate=!!window.CC_ACCESS?.superAdmin || window.CC_ACCESS?.permisos?.['usuarios.crear']===true || window.CC_ACCESS?.permisos?.usuarios?.crear===true;
+        if(createBtn&&!canCreate)createBtn.style.display='none';
+
+        if(window.CC_ACCESS?.superAdmin){
+          try{
+            const {data}=await window.gmSupabase.rpc('cc_admin_list_users');
+            const users=data?.usuarios||[];
+            const trs=[...modal.querySelectorAll('tbody tr')];
+            users.filter(u=>!u.superAdmin).forEach((u,i)=>{
+              const tr=trs.find(x=>x.textContent.includes(u.email)); if(!tr)return;
+              const actions=tr.querySelector('.cc-user-actions'); if(!actions)return;
+              const cur=u.permisos?.['usuarios.crear']===true || u.permisos?.usuarios?.crear===true;
+              const b=document.createElement('button'); b.className='cc-btn cc-btn-light';
+              b.innerHTML='<i class="fa-solid fa-user-plus"></i> '+(cur?'Quitar crear usuarios':'Permitir crear usuarios');
+              b.onclick=()=>window.ccGrantCreateUsers(u.userId,u.nombre||u.email,cur);
+              actions.appendChild(b);
+            });
+          }catch(e){console.warn('PERMISO CREAR USUARIOS',e);}
+        }
+      },120);
+    };
+  }
+
+  function syncFeatureVisibility(){
+    const logBtn=document.getElementById('ccConfigLogBtn');
+    if(logBtn)logBtn.style.display=window.ccCanViewLogs()?'':'none';
+    const tabs=document.querySelector('#controlCajasSection .cc-tabs');
+    if(tabs&&!document.getElementById('ccAlertCenterBtn')){
+      const b=document.createElement('button'); b.id='ccAlertCenterBtn'; b.className='cc-tab';
+      b.innerHTML='<i class="fa-solid fa-bell mr-1"></i>Centro de alertas'; b.onclick=window.ccOpenAlertCenter; tabs.appendChild(b);
+    }
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(syncFeatureVisibility,1200));
 })();
-document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
- const header=document.querySelector('#controlCajasSection .cc-tabs');
- if(header&&!document.getElementById('ccAlertCenterBtn')){const b=document.createElement('button');b.id='ccAlertCenterBtn';b.className='cc-tab';b.innerHTML='<i class="fa-solid fa-bell mr-1"></i>Centro de alertas';b.onclick=ccOpenAlertCenter;header.appendChild(b);}
-},1000));
 </script>
 
 </body>
