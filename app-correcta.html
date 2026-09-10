@@ -5607,11 +5607,11 @@ window.ccMostrarQrUnidad=async function(id){
 
   try{
     // URL canónica de GitHub Pages.
-    const URL_CANONICA='https://testerLB-cyber.github.io/ubicacion-cajas/';
+    const URL_CANONICA='https://testerLB-cyber.github.io/ubicacion-cajas/ubicacion.html';
     let base=String(configuracion.ubicacionPublicaUrl||URL_CANONICA).trim();
 
     // Corrige automáticamente cualquier URL anterior/incompleta.
-    if(!/^https:\/\/testerLB-cyber\.github\.io\/ubicacion-cajas\/?$/i.test(base)){
+    if(!/^https:\/\/testerLB-cyber\.github\.io\/ubicacion-cajas\/ubicacion\.html$/i.test(base)){
       base=URL_CANONICA;
       try{
         const {data,error}=await gmSupabase.rpc('cc_save_location_page_url',{p_url:base});
@@ -5642,12 +5642,12 @@ window.ccMostrarQrUnidad=async function(id){
     }
 
     // Construir la URL mediante URL() evita errores de slash, ? y espacios.
-    const target='https://testerlb-cyber.github.io/ubicacion-cajas/?q='+encodeURIComponent(token);
+    const target='https://testerlb-cyber.github.io/ubicacion-cajas/ubicacion.html?q='+encodeURIComponent(token);
 
     // Validación robusta de la URL final.
     const checkUrl=new URL(target);
     const hostOk=checkUrl.hostname.toLowerCase()==='testerlb-cyber.github.io';
-    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/ubicacion-cajas';
+    const pathOk=checkUrl.pathname==='/ubicacion-cajas/ubicacion.html';
     const tokenOk=checkUrl.searchParams.get('q')===token;
     if(!(checkUrl.protocol==='https:'&&hostOk&&pathOk&&tokenOk)){
       throw new Error('La liga QR no se construyó correctamente.');
