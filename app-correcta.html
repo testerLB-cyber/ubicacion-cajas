@@ -4297,21 +4297,10 @@ window.GM_SUPABASE_ANON_KEY = window.GM_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1Ni
 /* GM CONTROL DE CAJAS · SUPABASE NORMALIZADO v2.0 · SIN GOOGLE SHEETS */(function(){
 const SUPABASE_URL=window.GM_SUPABASE_URL;
 const SUPABASE_ANON_KEY=window.GM_SUPABASE_ANON_KEY;
-function ccInitSupabaseClient(){
-  if(window.gmSupabase) return window.gmSupabase;
-  if(!window.supabase || typeof window.supabase.createClient!=='function') return null;
-  if(!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  try{
-    window.gmSupabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-    });
-    return window.gmSupabase;
-  }catch(err){
-    console.error('ERROR INICIALIZANDO SUPABASE:',err);
-    return null;
-  }
-}
-const gmSupabase=ccInitSupabaseClient();
+const gmSupabase=(window.supabase&&SUPABASE_URL&&SUPABASE_ANON_KEY&&SUPABASE_URL.indexOf('__SUPABASE_')===-1&&SUPABASE_ANON_KEY.indexOf('__SUPABASE_')===-1)
+  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})
+  : null;
+window.gmSupabase=gmSupabase;
 window.CC_AUTH_REQUIRED=true;
 let cajas=[], responsables=[], rentas=[], matriz={}, clientes=[], configuracion={correosMantenimiento:[],correoEnvio:{proveedor:'RESEND',nombreRemitente:'',correoRemitente:'',replyTo:''},mantenimientoHistorial:[],tarifasRenta:{},geocercas:[],tiposUnidad:[{id:'tipo_caja',nombre:'CAJA',categoria:'CAJA',estatus:'ACTIVO'},{id:'tipo_carro',nombre:'CARRO',categoria:'CARRO',estatus:'ACTIVO'}]};
 let ccCloudReady=false,ccRevision=0,ccSaveInFlight=false,ccSaveQueued=false;
@@ -5607,11 +5596,11 @@ window.ccMostrarQrUnidad=async function(id){
 
   try{
     // URL canónica de GitHub Pages.
-    const URL_CANONICA='https://testerLB-cyber.github.io/ubicacion-cajas/ubicacion.html';
+    const URL_CANONICA='https://testerLB-cyber.github.io/ubicacion-cajas/';
     let base=String(configuracion.ubicacionPublicaUrl||URL_CANONICA).trim();
 
     // Corrige automáticamente cualquier URL anterior/incompleta.
-    if(!/^https:\/\/testerLB-cyber\.github\.io\/ubicacion-cajas\/ubicacion\.html$/i.test(base)){
+    if(!/^https:\/\/testerLB-cyber\.github\.io\/ubicacion-cajas\/?$/i.test(base)){
       base=URL_CANONICA;
       try{
         const {data,error}=await gmSupabase.rpc('cc_save_location_page_url',{p_url:base});
@@ -5642,12 +5631,12 @@ window.ccMostrarQrUnidad=async function(id){
     }
 
     // Construir la URL mediante URL() evita errores de slash, ? y espacios.
-    const target='https://testerlb-cyber.github.io/ubicacion-cajas/ubicacion.html?q='+encodeURIComponent(token);
+    const target='https://testerlb-cyber.github.io/ubicacion-cajas/?q='+encodeURIComponent(token);
 
     // Validación robusta de la URL final.
     const checkUrl=new URL(target);
     const hostOk=checkUrl.hostname.toLowerCase()==='testerlb-cyber.github.io';
-    const pathOk=checkUrl.pathname==='/ubicacion-cajas/ubicacion.html';
+    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/ubicacion-cajas';
     const tokenOk=checkUrl.searchParams.get('q')===token;
     if(!(checkUrl.protocol==='https:'&&hostOk&&pathOk&&tokenOk)){
       throw new Error('La liga QR no se construyó correctamente.');
@@ -5735,131 +5724,7 @@ window.ccMostrarQrUnidad=async function(id){
       const src=canvas?canvas.toDataURL('image/png'):img?.src;
       if(!src)return;
       const w=window.open('','_blank','width=650,height=760');
-      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p>
-<style id="cc-operations-bi-v2-css">
-.cc-bi-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.cc-bi-actions .cc-btn{padding:10px 14px}
-.cc-bi-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
-.cc-bi-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 5px 18px rgba(15,23,42,.05)}
-.cc-bi-kpi small{display:block;font-size:9px;font-weight:900;text-transform:uppercase;color:#64748b;letter-spacing:.04em}
-.cc-bi-kpi strong{display:block;font-size:26px;line-height:1;color:#0f172a;margin:7px 0 4px}
-.cc-bi-kpi span{font-size:9px;color:#64748b}
-.cc-bi-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;margin-bottom:12px}
-.cc-bi-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:15px;box-shadow:0 4px 16px rgba(15,23,42,.04)}
-.cc-bi-card h4{font-size:13px;font-weight:950;color:#0f172a;margin:0}
-.cc-bi-card .sub{font-size:9px;color:#64748b;margin:3px 0 12px}
-.cc-bi-alert-row{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #fee2e2;background:#fff7f7;padding:9px 10px;border-radius:10px;margin:7px 0}
-.cc-bi-alert-row.med{border-color:#fde68a;background:#fffdf2}
-.cc-bi-alert-row b{font-size:10px}.cc-bi-alert-row span{font-size:9px;color:#64748b;display:block;margin-top:2px}
-.cc-bi-bar{display:grid;grid-template-columns:minmax(100px,1fr) 2fr 34px;gap:8px;align-items:center;margin:8px 0;font-size:10px}
-.cc-bi-track{height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden}.cc-bi-fill{height:100%;background:#2563eb;border-radius:999px}
-.cc-bi-modal{position:fixed;inset:0;background:rgba(15,23,42,.76);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:14px}
-.cc-bi-modal-card{width:min(1120px,98vw);max-height:94vh;overflow:auto;background:#f8fafc;border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.35)}
-.cc-bi-modal-head{position:sticky;top:0;z-index:4;background:#0f172a;color:#fff;padding:15px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.cc-bi-modal-body{padding:16px}.cc-bi-search{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:11px 13px;font-size:13px;background:#fff}
-.cc-bi-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-.cc-bi-result{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:11px;cursor:pointer}
-.cc-bi-result:hover{border-color:#93c5fd;background:#eff6ff}
-.cc-bi-result strong{display:block;font-size:12px}.cc-bi-result span{font-size:9px;color:#64748b}
-.cc-dossier-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
-.cc-dossier-stat{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:10px}.cc-dossier-stat small{font-size:8px;color:#64748b;font-weight:900;text-transform:uppercase}.cc-dossier-stat strong{display:block;font-size:17px;margin-top:3px}
-.cc-dossier-section{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-top:10px}.cc-dossier-section h4{font-size:12px;font-weight:950;margin:0 0 8px}
-.cc-dossier-item{padding:8px 0;border-top:1px solid #eef2f7;font-size:10px;color:#334155}.cc-dossier-item:first-of-type{border-top:0}
-@media(max-width:1000px){.cc-bi-kpis{grid-template-columns:repeat(3,1fr)}.cc-bi-grid{grid-template-columns:1fr}}
-@media(max-width:650px){.cc-bi-kpis{grid-template-columns:repeat(2,1fr)}.cc-bi-results{grid-template-columns:1fr}.cc-dossier-grid{grid-template-columns:repeat(2,1fr)}}
-</style>
-<script id="cc-operations-bi-v2-js">
-(function(){
-const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const dt=v=>{try{return v?new Date(v).toLocaleString('es-MX'):'—'}catch(_){return '—'}};
-function activeRent(r,hoy){try{return typeof rentFor==='function'?rentFor(r.id,hoy):String(r.estatus||'ACTIVA').toUpperCase()!=='FINALIZADA'}catch(_){return false}}
-function getSb(){return window.gmSupabase||null}
-
-window.ccOpenGeneralUnitSearch=function(){
- document.getElementById('ccGeneralUnitSearchModal')?.remove();
- const ov=document.createElement('div');ov.id='ccGeneralUnitSearchModal';ov.className='cc-bi-modal';
- ov.innerHTML='<div class="cc-bi-modal-card"><div class="cc-bi-modal-head"><div><b>EXPEDIENTE GENERAL POR CAJA</b><div style="font-size:9px;color:#bfdbfe">Busca por número, descripción, placas, tipo, cliente o estatus</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-bi-modal-body"><input id="ccGeneralUnitSearchInput" class="cc-bi-search" placeholder="Ej. LB123, placa, descripción..." autocomplete="off"><div id="ccGeneralUnitSearchResults" class="cc-bi-results"></div></div></div>';
- document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();
- const input=ov.querySelector('#ccGeneralUnitSearchInput'),results=ov.querySelector('#ccGeneralUnitSearchResults');
- const render=()=>{
-   const q=input.value.trim().toLowerCase();
-   const arr=(window.cajas||typeof cajas!=='undefined'?cajas:[]).filter(x=>{
-     if(!q)return true;
-     const cli=(typeof clientes!=='undefined'?clientes:[]).find(c=>c.id===x.clienteId)?.nombre||'';
-     return [x.numero,x.descripcion,x.placasMx,x.placasUsa,x.tipoUnidadNombre,x.categoriaUnidad,x.tipo,x.origen,x.estatus,cli].some(v=>String(v||'').toLowerCase().includes(q));
-   }).slice(0,80);
-   results.innerHTML=arr.length?arr.map(x=>'<div class="cc-bi-result" data-id="'+e(x.id)+'"><strong>'+e(x.numero||x.descripcion||'Unidad')+'</strong><span>'+e(x.descripcion||'')+' · '+e(x.tipoUnidadNombre||x.categoriaUnidad||'')+' · '+e(x.estatus||'')+'</span></div>').join(''):'<div class="cc-note">No se encontraron unidades.</div>';
-   results.querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>window.ccOpenFullUnitDossier(r.dataset.id));
- };
- input.oninput=render;render();setTimeout(()=>input.focus(),50);
-};
-
-window.ccOpenFullUnitDossier=async function(id){
- const sb=getSb();if(!sb){alert('Supabase no está disponible.');return;}
- document.getElementById('ccFullUnitDossierModal')?.remove();
- const ov=document.createElement('div');ov.id='ccFullUnitDossierModal';ov.className='cc-bi-modal';
- ov.innerHTML='<div class="cc-bi-modal-card"><div class="cc-bi-modal-head"><b>Cargando expediente...</b><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-bi-modal-body"><div class="cc-note">Consultando historial completo en Supabase...</div></div></div>';
- document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();
- try{
-   const {data,error}=await sb.rpc('cc_unit_dossier',{p_unidad_id:id});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'No disponible');
-   const u=data.unidad||{},rs=data.rentas||[],loc=data.ubicaciones||[],man=data.mantenimiento||[],act=data.actividad||[];
-   const cli=(typeof clientes!=='undefined'?clientes:[]).find(c=>c.id===u.cliente_id)?.nombre||'—';
-   const body=ov.querySelector('.cc-bi-modal-body'),head=ov.querySelector('.cc-bi-modal-head b');
-   head.textContent='EXPEDIENTE · '+(u.numero||u.descripcion||'UNIDAD');
-   body.innerHTML=
-   '<div class="cc-dossier-grid">'+
-    '<div class="cc-dossier-stat"><small>Estatus actual</small><strong>'+e(u.estatus||'—')+'</strong></div>'+
-    '<div class="cc-dossier-stat"><small>Rentas registradas</small><strong>'+rs.length+'</strong></div>'+
-    '<div class="cc-dossier-stat"><small>Mantenimientos</small><strong>'+man.length+'</strong></div>'+
-    '<div class="cc-dossier-stat"><small>Ubicaciones recientes</small><strong>'+loc.length+'</strong></div>'+
-   '</div>'+
-   '<div class="cc-dossier-section"><h4>Ficha de la unidad</h4><div class="cc-dossier-item"><b>Número:</b> '+e(u.numero||'—')+' · <b>Descripción:</b> '+e(u.descripcion||'—')+' · <b>Tipo:</b> '+e(u.tipo_unidad_nombre||u.categoria_unidad||'—')+'</div><div class="cc-dossier-item"><b>Placas MX:</b> '+e(u.placas_mx||'—')+' · <b>Placas USA:</b> '+e(u.placas_usa||'—')+' · <b>Marca/Modelo:</b> '+e((u.marca||'')+' '+(u.modelo||''))+'</div><div class="cc-dossier-item"><b>Cliente asignado:</b> '+e(cli)+' · <b>Última actualización:</b> '+e(dt(u.updated_at))+'</div></div>'+
-   '<div class="cc-dossier-section"><h4>Historial de rentas</h4>'+(rs.length?rs.map(r=>'<div class="cc-dossier-item"><b>'+e(r.cliente||'Cliente')+'</b> · '+e(r.fecha_inicio||'—')+' → '+e(r.fecha_fin||'Indeterminada')+' · '+e(r.estatus||'')+' · Responsable: '+e(r.responsable||'—')+'</div>').join(''):'<div class="cc-note">Sin rentas registradas.</div>')+'</div>'+
-   '<div class="cc-dossier-section"><h4>Mantenimiento / incidencias</h4>'+(man.length?man.map(m=>'<div class="cc-dossier-item"><b>'+e(m.estatus||'')+'</b> · '+e(dt(m.fecha_salida))+' · '+e(m.motivo||'')+'<br>Reparación: '+e(m.reparacion||'Pendiente')+' · Liberación: '+e(dt(m.fecha_liberacion))+'</div>').join(''):'<div class="cc-note">Sin mantenimientos registrados.</div>')+'</div>'+
-   '<div class="cc-dossier-section"><h4>Últimas ubicaciones QR</h4>'+(loc.length?loc.map(l=>'<div class="cc-dossier-item">'+e(dt(l.fecha_hora))+' · '+Number(l.latitud).toFixed(5)+', '+Number(l.longitud).toFixed(5)+' · precisión '+(l.precision_metros==null?'—':Math.round(Number(l.precision_metros))+' m')+'</div>').join(''):'<div class="cc-note">Sin ubicaciones registradas.</div>')+'</div>'+
-   '<div class="cc-dossier-section"><h4>Actividad / auditoría</h4>'+(act.length?act.map(a=>'<div class="cc-dossier-item">'+e(dt(a.fecha_hora))+' · <b>'+e(a.usuario||'SISTEMA')+'</b> · '+e(a.modulo||'')+' · '+e(a.descripcion||a.accion||'')+'</div>').join(''):'<div class="cc-note">Sin actividad registrada.</div>')+'</div>';
- }catch(err){ov.querySelector('.cc-bi-modal-body').innerHTML='<div class="cc-config-alert">No se pudo cargar el expediente: '+e(err.message||err)+'</div>';}
-};
-
-window.ccOpenOperationsAlertCenter=async function(){
- const sb=getSb();if(!sb){alert('Supabase no está disponible.');return;}
- document.getElementById('ccOperationsAlertModal')?.remove();
- const ov=document.createElement('div');ov.id='ccOperationsAlertModal';ov.className='cc-bi-modal';
- ov.innerHTML='<div class="cc-bi-modal-card"><div class="cc-bi-modal-head"><div><b>CENTRO DE ALERTAS</b><div style="font-size:9px;color:#bfdbfe">Mantenimiento, rentas, ubicación QR, DOT y errores operativos</div></div><button class="cc-btn cc-btn-light" data-close>Cerrar</button></div><div class="cc-bi-modal-body"><div class="cc-note">Consultando alertas en Supabase...</div></div></div>';
- document.body.appendChild(ov);ov.querySelector('[data-close]').onclick=()=>ov.remove();
- try{
-   const {data,error}=await sb.rpc('cc_alert_center');if(error)throw error;if(!data?.ok)throw new Error(data?.error||'No disponible');
-   const arr=data.alertas||[],body=ov.querySelector('.cc-bi-modal-body');
-   body.innerHTML=arr.length?arr.map(a=>'<div class="cc-bi-alert-row '+(Number(a.prioridad)>=3?'':'med')+'"><div><b>'+(Number(a.prioridad)>=3?'ALTA':'MEDIA')+' · '+e(a.unidad||'—')+' · '+e(a.titulo||'')+'</b><span>'+e(a.detalle||'')+'</span></div>'+(a.unidad_id?'<button class="cc-btn cc-btn-light" data-id="'+e(a.unidad_id)+'">Expediente</button>':'')+'</div>').join(''):'<div class="cc-note">✓ No hay alertas prioritarias en este momento.</div>';
-   body.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>window.ccOpenFullUnitDossier(b.dataset.id));
- }catch(err){ov.querySelector('.cc-bi-modal-body').innerHTML='<div class="cc-config-alert">No se pudieron cargar las alertas: '+e(err.message||err)+'</div>';}
-};
-
-window.ccRenderDashboard=async function(){
- const el=document.getElementById('ccDashboardContent');if(!el)return;
- const tipoDash=window.ccDashboardTipoActual||'TODOS',unidades=(typeof cajas!=='undefined'?cajas:[]).filter(x=>typeof ccTipoMatches==='function'?ccTipoMatches(x,tipoDash):true),hoy=typeof iso==='function'?iso(new Date()):new Date().toISOString().slice(0,10);
- const activas=unidades.filter(x=>String(x.estatus||'').toUpperCase()!=='INACTIVO');
- const mant=activas.filter(x=>String(x.estatus||'').toUpperCase()==='MANTENIMIENTO');
- const rentadas=activas.filter(x=>String(x.estatus||'').toUpperCase()!=='MANTENIMIENTO'&&(typeof rentas!=='undefined'?rentas:[]).some(r=>r.cajaId===x.id&&activeRent(r,hoy)));
- const disponibles=activas.filter(x=>String(x.estatus||'').toUpperCase()!=='MANTENIMIENTO'&&!rentadas.some(r=>r.id===x.id));
- const util=activas.length?Math.round(rentadas.length/activas.length*100):0;
- const cli={};(typeof rentas!=='undefined'?rentas:[]).filter(r=>activeRent(r,hoy)).forEach(r=>{const n=(typeof clientes!=='undefined'?clientes:[]).find(c=>c.id===r.clienteId)?.nombre||'SIN CLIENTE';cli[n]=(cli[n]||0)+1});const maxCli=Math.max(1,...Object.values(cli));
- let alerts=[];
- try{const sb=getSb();if(sb){const {data}=await sb.rpc('cc_alert_center');if(data?.ok)alerts=data.alertas||[];}}catch(_){}
- const high=alerts.filter(a=>Number(a.prioridad)>=3).length,overdue=alerts.filter(a=>a.tipo==='RENTA_VENCIDA').length,noLoc=alerts.filter(a=>a.tipo==='SIN_UBICACION').length;
- el.innerHTML=
- '<div class="cc-pro-hero"><div style="font-size:9px;font-weight:900;letter-spacing:.16em;color:#93c5fd">OPERACIONES · BUSINESS INTELLIGENCE</div><h3>Centro ejecutivo de operación.</h3><p>Lectura consolidada de utilización, disponibilidad, rentas, mantenimiento, ubicación y excepciones operativas.</p><div class="cc-pro-pills"><span class="cc-pro-pill">'+unidades.length+' unidades</span><span class="cc-pro-pill">'+rentadas.length+' rentadas</span><span class="cc-pro-pill">'+alerts.length+' alertas</span><span class="cc-pro-pill">Corte '+e(hoy)+'</span></div></div>'+
- '<div class="cc-bi-actions"><button class="cc-btn cc-btn-primary" onclick="ccOpenGeneralUnitSearch()"><i class="fa-solid fa-magnifying-glass"></i> Buscar expediente por caja</button><button class="cc-btn cc-btn-dark" onclick="ccOpenOperationsAlertCenter()"><i class="fa-solid fa-bell"></i> Centro de alertas '+(alerts.length?'('+alerts.length+')':'')+'</button></div>'+
- '<div class="cc-bi-kpis"><div class="cc-bi-kpi"><small>Flota activa</small><strong>'+activas.length+'</strong><span>'+unidades.length+' registradas</span></div><div class="cc-bi-kpi"><small>Utilización</small><strong>'+util+'%</strong><span>'+rentadas.length+' rentadas</span></div><div class="cc-bi-kpi"><small>Disponibles</small><strong>'+disponibles.length+'</strong><span>listas para asignar</span></div><div class="cc-bi-kpi"><small>Mantenimiento</small><strong>'+mant.length+'</strong><span>fuera de servicio</span></div><div class="cc-bi-kpi"><small>Rentas vencidas</small><strong>'+overdue+'</strong><span>requieren seguimiento</span></div><div class="cc-bi-kpi"><small>Sin ubicación 7 días</small><strong>'+noLoc+'</strong><span>revisar QR / última posición</span></div></div>'+
- '<div class="cc-bi-grid"><div class="cc-bi-card"><h4>Concentración de rentas por cliente</h4><div class="sub">Rentas activas al día de hoy</div>'+(Object.keys(cli).length?Object.entries(cli).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,v])=>'<div class="cc-bi-bar"><span>'+e(n)+'</span><span class="cc-bi-track"><span class="cc-bi-fill" style="width:'+(v/maxCli*100)+'%"></span></span><b>'+v+'</b></div>').join(''):'<div class="cc-note">Sin rentas activas.</div>')+'</div>'+
- '<div class="cc-bi-card"><h4>Riesgos prioritarios</h4><div class="sub">Alertas generadas directamente desde Supabase</div><div class="cc-dossier-grid"><div class="cc-dossier-stat"><small>Alertas altas</small><strong>'+high+'</strong></div><div class="cc-dossier-stat"><small>Vencidas</small><strong>'+overdue+'</strong></div><div class="cc-dossier-stat"><small>Sin ubicación</small><strong>'+noLoc+'</strong></div><div class="cc-dossier-stat"><small>Mantenimiento</small><strong>'+mant.length+'</strong></div></div><button class="cc-btn cc-btn-dark" style="width:100%;margin-top:8px" onclick="ccOpenOperationsAlertCenter()">Abrir centro de alertas</button></div></div>'+
- '<div class="cc-bi-grid"><div class="cc-bi-card"><h4>Últimas alertas</h4><div class="sub">Excepciones que requieren atención</div>'+(alerts.length?alerts.slice(0,6).map(a=>'<div class="cc-bi-alert-row '+(Number(a.prioridad)>=3?'':'med')+'"><div><b>'+e(a.unidad||'—')+' · '+e(a.titulo||'')+'</b><span>'+e(a.detalle||'')+'</span></div>'+(a.unidad_id?'<button class="cc-btn cc-btn-light" onclick="ccOpenFullUnitDossier(\''+e(a.unidad_id)+'\')">Ver</button>':'')+'</div>').join(''):'<div class="cc-note">✓ Sin alertas prioritarias.</div>')+'</div>'+
- '<div class="cc-bi-card"><h4>Acceso rápido a expediente</h4><div class="sub">Toda la información histórica de una unidad en un solo lugar</div><p style="font-size:10px;color:#475569;line-height:1.6">Consulta ficha de unidad, rentas, clientes y responsables, mantenimiento, liberaciones, últimas ubicaciones QR y auditoría de cambios.</p><button class="cc-btn cc-btn-primary" style="width:100%;margin-top:8px" onclick="ccOpenGeneralUnitSearch()">Buscar caja</button></div></div>';
-};
-})();
-</script>
-
-</body></html>`);
+      w.document.write(`<html><head><title>QR ${esc(unit.numero||'')}</title></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(unit.numero||'')}</h2><p>${esc(unit.descripcion||'')}</p><img src="${src}" style="width:360px;height:360px;image-rendering:pixelated"><p style="font-size:13px">Escanear para registrar ubicación</p><p style="font-size:10px;word-break:break-all">${esc(target)}</p></body></html>`);
       w.document.close();w.focus();setTimeout(()=>w.print(),300);
     };
 
@@ -7311,13 +7176,7 @@ window.ccAntExportarPDF=function(){if(!ccPerm('anticipos.reportes'))return;var r
 </script>
 <script id="cc-auth-security-js">
 (function(){
-let sb=window.gmSupabase;
-if(!sb && window.supabase && typeof window.supabase.createClient==='function' && window.GM_SUPABASE_URL && window.GM_SUPABASE_ANON_KEY){
-  try{
-    sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    window.gmSupabase=sb;
-  }catch(err){console.error('RECUPERACION SUPABASE:',err);}
-}
+const sb=window.gmSupabase;
 window.CC_ACCESS=null;
 window.CC_AUTH_READY=false;
 
