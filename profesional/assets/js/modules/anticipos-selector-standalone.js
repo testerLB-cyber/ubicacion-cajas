@@ -1,16 +1,53 @@
-/* Tráfico App Profesional · Selector independiente Operador/Beneficiario v7 */
+/* Tráfico App Profesional · Selector independiente Operador/Beneficiario v8 */
 (function(){
-  if(window.__ccAntSelectorStandaloneV7)return;
-  window.__ccAntSelectorStandaloneV7=true;
+  if(window.__ccAntSelectorStandaloneV8)return;
+  window.__ccAntSelectorStandaloneV8=true;
 
   const baseOperatorFallback = typeof window.ccAntNuevoAnticipo==='function' ? window.ccAntNuevoAnticipo : null;
+  function close(){ document.getElementById('ccAntSelectorStandaloneV8')?.remove(); document.getElementById('ccAntSelectorStandaloneV7')?.remove(); }
 
-  function close(){ document.getElementById('ccAntSelectorStandaloneV7')?.remove(); }
+  function esperarFuncion(nombre, timeout=5000){
+    return new Promise(resolve=>{
+      const ini=Date.now();
+      const tick=()=>{
+        if(typeof window[nombre]==='function') return resolve(window[nombre]);
+        if(Date.now()-ini>=timeout) return resolve(null);
+        setTimeout(tick,100);
+      };
+      tick();
+    });
+  }
+
+  async function abrirOperador(){
+    close();
+    const fn=await esperarFuncion('ccAntOpenOperatorForm',3000);
+    if(fn) return fn();
+    if(typeof baseOperatorFallback==='function') return baseOperatorFallback();
+    alert('No se pudo abrir el formulario de Operador.');
+  }
+
+  async function abrirBeneficiario(){
+    close();
+    const fn=await esperarFuncion('ccAntOpenBeneficiaryForm',5000);
+    if(fn) return fn();
+    /* Compatibilidad con el flujo profesional anterior: abre su selector interno y elige Beneficiario. */
+    const chooser=typeof window.ccAntChooseTypeFinal==='function' ? window.ccAntChooseTypeFinal : null;
+    if(chooser){
+      chooser();
+      setTimeout(()=>{
+        const botones=[...document.querySelectorAll('[data-ben],[data-type="BEN"]')];
+        const b=botones[botones.length-1];
+        if(b) b.click(); else alert('No se pudo abrir el formulario de Beneficiario.');
+      },80);
+      return;
+    }
+    alert('No se pudo inicializar el formulario de Beneficiario. Verifica que el módulo de Anticipos haya terminado de cargar.');
+  }
 
   function openSelector(){
     close();
     const ov=document.createElement('div');
-    ov.id='ccAntSelectorStandaloneV7';
+    ov.id='ccAntSelectorStandaloneV8';
     ov.style='position:fixed;inset:0;background:rgba(15,23,42,.84);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px';
     ov.innerHTML=`<div style="background:#fff;width:min(640px,96vw);border-radius:18px;overflow:hidden;box-shadow:0 30px 90px rgba(15,23,42,.5)">
       <div style="background:#0f172a;color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center">
@@ -34,36 +71,26 @@
     document.body.appendChild(ov);
     ov.querySelector('[data-close]').onclick=close;
     ov.querySelector('[data-cancel]').onclick=close;
-    ov.querySelector('[data-op]').onclick=()=>{
-      close();
-      if(typeof window.ccAntOpenOperatorForm==='function') return window.ccAntOpenOperatorForm();
-      if(typeof baseOperatorFallback==='function') return baseOperatorFallback();
-      alert('No se pudo abrir el formulario de Operador.');
-    };
-    ov.querySelector('[data-ben]').onclick=()=>{
-      close();
-      if(typeof window.ccAntOpenBeneficiaryForm==='function') return window.ccAntOpenBeneficiaryForm();
-      alert('No se pudo abrir el formulario de Beneficiario. Recarga la versión profesional.');
-    };
+    ov.querySelector('[data-op]').onclick=abrirOperador;
+    ov.querySelector('[data-ben]').onclick=abrirBeneficiario;
   }
 
+  window.ccAntSelectorStandaloneV8=openSelector;
   window.ccAntSelectorStandaloneV7=openSelector;
 
   function bind(){
     const btn=document.getElementById('ccAntNuevoBtn');
     if(!btn)return false;
-    btn.setAttribute('onclick','return ccAntSelectorStandaloneV7(event)');
-    btn.onclick=function(ev){ev?.preventDefault?.();ev?.stopPropagation?.();return openSelector();};
-    btn.dataset.selectorAnticipo='standalone-v7';
+    btn.removeAttribute('onclick');
+    btn.onclick=function(ev){ev?.preventDefault?.();ev?.stopPropagation?.();openSelector();return false;};
+    btn.dataset.selectorAnticipo='standalone-v8';
     return true;
   }
-
   function install(){
     bind();
     [300,800,1500,3000,6000].forEach(ms=>setTimeout(bind,ms));
     const root=document.getElementById('ccPanelAnticipos')||document.body;
     new MutationObserver(bind).observe(root,{childList:true,subtree:true});
   }
-
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
 })();
