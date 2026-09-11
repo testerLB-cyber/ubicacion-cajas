@@ -22,7 +22,7 @@ const PERM_SCHEMA=[
  ['mantenimiento','Mantenimiento',[['ver','Ver mantenimiento'],['editar_registros','Editar registros'],['ver_dot','Ver Control DOT'],['editar_dot','Editar registros DOT']]],
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
- ['hojas_servicio','Control de Hojas de Servicio',[['ver','Ver módulo'],['generar','Generar folios'],['asignar_responsable','Asignar a responsable'],['asignar_operador','Asignar a operadores'],['catalogos','Catálogos']]],
+ ['hojas_servicio','Control de Hojas de Servicio',[['ver','Ver módulo'],['generar','Generar folios'],['asignar_responsable','Asignar a responsable'],['asignar_operador','Asignar a operadores'],['comprobar','Comprobar uso / devolución'],['catalogos','Catálogos']]],
  ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
 ];
