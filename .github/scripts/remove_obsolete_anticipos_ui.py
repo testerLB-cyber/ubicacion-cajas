@@ -36,6 +36,19 @@ html, n_caja_btn = re.subn(r'<button class="cc-btn cc-btn-light" data-antv="caja
 # Vistas antiguas completas.
 html, n_conf_view = remove_div_by_id(html, 'ccAntViewConfirmar')
 html, n_caja_view = remove_div_by_id(html, 'ccAntViewCaja')
+
+# Estilo compacto y estable para las acciones de la lista de anticipos.
+compact_css = '''
+<style id="ccAntCompactActionsStyle">
+#ccAntBody td:last-child{min-width:340px;vertical-align:middle}
+#ccAntBody td:last-child>div{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;align-items:center;white-space:nowrap;overflow-x:auto;overflow-y:hidden;padding:2px 0;scrollbar-width:thin}
+#ccAntBody td:last-child .cc-btn{font-size:9px!important;line-height:1.1!important;padding:4px 7px!important;min-height:24px!important;border-radius:6px!important;white-space:nowrap!important;flex:0 0 auto!important}
+#ccAntBody td:last-child .cc-btn i{font-size:9px!important;margin-right:3px!important}
+@media (max-width:900px){#ccAntBody td:last-child{min-width:300px}#ccAntBody td:last-child .cc-btn{font-size:8.5px!important;padding:4px 6px!important}}
+</style>
+'''
+if 'id="ccAntCompactActionsStyle"' not in html:
+    html = html.replace('</head>', compact_css + '</head>', 1)
 INDEX.write_text(html, encoding='utf-8')
 
 flow = FLOW.read_text(encoding='utf-8')
@@ -78,8 +91,10 @@ if "document.getElementById('ccAntCajaBtn').style" in core:
     raise SystemExit('Sigue referencia insegura a ccAntCajaBtn')
 if "document.getElementById('ccAntView'+v.charAt(0).toUpperCase()+v.slice(1)).style" in core:
     raise SystemExit('Sigue navegación insegura de Anticipos')
+if 'id="ccAntCompactActionsStyle"' not in html:
+    raise SystemExit('No se agregó estilo compacto a acciones de Anticipos')
 
-print('Cleanup definitivo Anticipos aplicado y referencias nulas corregidas:', {
+print('Cleanup definitivo Anticipos + acciones compactas aplicado:', {
     'top': n_top,
     'confirmar_btn': n_conf_btn,
     'caja_btn': n_caja_btn,
