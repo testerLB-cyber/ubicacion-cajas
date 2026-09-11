@@ -17,6 +17,7 @@ on:
       - '.github/scripts/add_anticipos_comprobantes_ui.py'
       - '.github/scripts/add_anticipos_caja_chica_ui.py'
       - '.github/scripts/add_anticipos_cuentas_corrected_ui.py'
+      - '.github/scripts/add_anticipos_catalogos_cleanup_ui.py'
       - '.github/scripts/add_user_notifications_ui.py'
       - '.github/workflows/create-professional-copy.yml'
 
@@ -45,6 +46,9 @@ jobs:
       - name: Corregir modelo a cuentas y beneficiarios
         run: python3 .github/scripts/add_anticipos_cuentas_corrected_ui.py
 
+      - name: Integrar responsables y comprobantes en catalogos
+        run: python3 .github/scripts/add_anticipos_catalogos_cleanup_ui.py
+
       - name: Agregar notificaciones por usuario
         run: python3 .github/scripts/add_user_notifications_ui.py
 
@@ -59,6 +63,7 @@ jobs:
           grep -q 'profesional-modular-v4' profesional/index.html
           grep -q 'Gestión de comprobantes desde Comprobar y listado' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Modelo corregido: cuentas + operador/responsable' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Responsables y tipos de comprobante dentro de Catálogos' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Notificaciones por usuario + comprobaciones por enlace' profesional/assets/js/modules/alerts-center.js
           grep -q "\['notificaciones','Notificaciones'" profesional/assets/js/security/auth-permissions.js
 
