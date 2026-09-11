@@ -889,22 +889,46 @@ async function ccAntPostCreateComun(r){
   }catch(e){console.warn('Post-create anticipo',e);}
 }
 
-/* Tráfico App Profesional · Fix selector + flujo común v2 */
+/* Tráfico App Profesional · Selector definitivo bloqueado v4 */
 (function(){
- if(window.__ccAntSelectorFlujoComunV2)return;window.__ccAntSelectorFlujoComunV2=true;
- function restoreChooser(){
-   if(typeof window.ccAntChooseTypeFinal==='function')window.ccAntNuevoAnticipo=window.ccAntChooseTypeFinal;
+ if(window.__ccAntSelectorDefinitivoV4)return;window.__ccAntSelectorDefinitivoV4=true;
+ let chooser=null;
+ function resolve(){
+   if(typeof window.ccAntChooseTypeFinal==='function')chooser=window.ccAntChooseTypeFinal;
+   return chooser;
  }
- function syncFilters(){
-   // Solo presentación: Operadores y Beneficiarios se separan en listados.
-   // Las acciones siguen siendo las mismas funciones base del módulo.
-   const main=document.getElementById('ccAntTipoPersonaSwitch');
-   const pend=document.getElementById('ccAntPendTipoPersonaSwitch');
-   if(main)main.dataset.flujoComun='1';
-   if(pend)pend.dataset.flujoComun='1';
+ function lock(){
+   const fn=resolve();
+   if(typeof fn!=='function')return false;
+   try{
+     Object.defineProperty(window,'ccAntNuevoAnticipo',{
+       configurable:true,
+       enumerable:true,
+       get(){return fn;},
+       set(v){
+         // La versión profesional tiene un único punto de entrada para Nuevo anticipo.
+         // Ignorar overrides tardíos de overlays anteriores.
+         if(v===fn)return;
+       }
+     });
+     window.ccAntNuevoAnticipo=fn;
+     return true;
+   }catch(e){
+     window.ccAntNuevoAnticipo=fn;
+     return false;
+   }
  }
- function install(){restoreChooser();syncFilters();setTimeout(restoreChooser,600);setTimeout(restoreChooser,1800);}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,2800));else setTimeout(install,2800);
+ function mark(){
+   document.querySelectorAll('#ccAntTipoPersonaSwitch,#ccAntPendTipoPersonaSwitch').forEach(el=>el.dataset.selectorFinal='v4');
+ }
+ function install(){
+   if(!lock())return setTimeout(install,250);
+   mark();
+   setTimeout(lock,500);
+   setTimeout(lock,1500);
+   setTimeout(lock,4000);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,3000));else setTimeout(install,3000);
 })();
 
 
