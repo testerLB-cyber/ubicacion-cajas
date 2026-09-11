@@ -1,0 +1,77 @@
+{
+  "base": "app-correcta.html",
+  "modules": [
+    {
+      "order": 1,
+      "file": "assets/js/core/dashboard-operaciones.js",
+      "description": "Dashboard operativo, carga Excel, KPIs y reportes",
+      "bytes": 117780
+    },
+    {
+      "order": 2,
+      "file": "assets/js/ui/dashboard-shell.js",
+      "description": "Shell visual, navegación lateral y carga unificada de archivos",
+      "bytes": 6128
+    },
+    {
+      "order": 3,
+      "file": "assets/js/modules/gerencial-analytics.js",
+      "description": "Radiografía gerencial, alertas analíticas y drill-downs",
+      "bytes": 15025
+    },
+    {
+      "order": 4,
+      "file": "assets/js/vendor/supabase-sdk.js",
+      "description": "SDK Supabase embebido de la versión funcional",
+      "bytes": 107916
+    },
+    {
+      "order": 5,
+      "file": "assets/js/config/supabase-config.js",
+      "description": "Configuración pública URL/anon key de Supabase",
+      "bytes": 658
+    },
+    {
+      "order": 6,
+      "file": "assets/js/modules/control-cajas-core.js",
+      "description": "Núcleo de Control de Cajas, inventario, rentas, mantenimiento, DOT, mapa y configuración",
+      "bytes": 217902
+    },
+    {
+      "order": 7,
+      "file": "assets/js/ui/app-navigation.js",
+      "description": "Cambio entre Dashboard y Control de Cajas",
+      "bytes": 816
+    },
+    {
+      "order": 8,
+      "file": "assets/js/modules/anticipos.js",
+      "description": "Módulo de anticipos, caja, comprobaciones, saldos y reportes",
+      "bytes": 72560
+    },
+    {
+      "order": 9,
+      "file": "assets/js/security/auth-permissions.js",
+      "description": "Autenticación, perfiles, permisos y protección de acciones",
+      "bytes": 20654
+    },
+    {
+      "order": 10,
+      "file": "assets/js/core/location-preservation.js",
+      "description": "Bandera de preservación de IDs/QR y ubicaciones",
+      "bytes": 227
+    },
+    {
+      "order": 11,
+      "file": "assets/js/core/performance-flags.js",
+      "description": "Banderas de rendimiento",
+      "bytes": 33
+    },
+    {
+      "order": 12,
+      "file": "assets/js/modules/alerts-center.js",
+      "description": "Centro global de alertas basado en permisos",
+      "bytes": 6871
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 <html lang="es">
 <head>
-<meta name="trafico-app-build" content="profesional-modular-v1"/>
+<meta name="trafico-app-build" content="profesional-modular-v2"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -1109,7 +1109,7 @@ async function handleReporteGeneracion() {
       Tráfico App Control Logístico © 2026 — Dashboard Operativo de Rendimiento y Tráfico
     </footer>
 </div>
-<script src="assets/js/script-001.js"></script>
+<script src="assets/js/core/dashboard-operaciones.js"></script>
 <!-- POPUP / VENTANA INDEPENDIENTE DEL CONTROL DE VIGENCIA -->
 <div aria-labelledby="vigencia30ModalTitle" aria-modal="true" id="vigencia30Modal" role="dialog">
 <div class="modal-card">
@@ -1204,7 +1204,7 @@ async function handleReporteGeneracion() {
 </div>
 <link rel="stylesheet" href="assets/css/style-024.css" id="gm-command-center-v4"/>
 <link rel="stylesheet" href="assets/css/style-025.css"/>
-<script src="assets/js/script-002.js"></script>
+<script src="assets/js/ui/dashboard-shell.js"></script>
 <link rel="stylesheet" href="assets/css/style-026.css"/>
 <div aria-hidden="true" class="gm-detail-modal" id="gmInteractiveModal">
 <div aria-modal="true" class="gm-detail-box" role="dialog">
@@ -1212,26 +1212,26 @@ async function handleReporteGeneracion() {
 <div class="gm-detail-body" id="gmModalBody"></div>
 </div>
 </div>
-<script src="assets/js/script-003.js"></script>
+<script src="assets/js/modules/gerencial-analytics.js"></script>
 <link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/>
-<script id="gm-supabase-inline" src="assets/js/script-004.js"></script>
-<script id="gm-supabase-config" src="assets/js/script-005.js"></script>
-<script id="gm-control-cajas-js" src="assets/js/script-006.js"></script>
-<script id="gm-sidebar-cajas-js" src="assets/js/script-007.js"></script>
+<script id="gm-supabase-inline" src="assets/js/vendor/supabase-sdk.js"></script>
+<script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>
+<script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js"></script>
+<script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/script-008.js"></script>
-<script id="cc-auth-security-js" src="assets/js/script-009.js"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js"></script>
+<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>
 
-<script id="cc-db-location-preservation-note" src="assets/js/script-010.js"></script>
-<script id="cc-performance-tuning" src="assets/js/script-011.js"></script>
+<script id="cc-db-location-preservation-note" src="assets/js/core/location-preservation.js"></script>
+<script id="cc-performance-tuning" src="assets/js/core/performance-flags.js"></script>
 
 
 <link rel="stylesheet" href="assets/css/style-028.css" id="cc-global-alerts-css"/>
 <button id="ccGlobalAlertsBtn" type="button" title="Centro de alertas" aria-label="Centro de alertas">
   <i class="fa-solid fa-bell"></i><span class="cc-alert-label">Alertas</span><span id="ccGlobalAlertsBadge">0</span>
 </button>
-<script id="cc-global-alerts-js" src="assets/js/script-012.js"></script>
+<script id="cc-global-alerts-js" src="assets/js/modules/alerts-center.js"></script>
 
 </body>
 </html>
