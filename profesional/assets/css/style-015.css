@@ -1,0 +1,23 @@
+#ccPanelInventario .cc-inv-table thead th{
+  background:#0f172a !important;
+  color:#ffffff !important;
+  border-bottom:1px solid #334155 !important;
+  text-shadow:none !important;
+}
+#ccPanelInventario .cc-inv-table thead th:nth-child(even){
+  background:#1e293b !important;
+}
+#ccPanelInventario .cc-inv-table .cc-status-disponible{
+  color:#166534 !important;
+  background:#dcfce7 !important;
+  border:1px solid #86efac !important;
+  font-weight:900 !important;
+  letter-spacing:.02em;
+}
+#ccPanelInventario .cc-inv-table tr.cc-storage-row .cc-status-disponible{
+  color:#166534 !important;
+  background:#bbf7d0 !important;
+}
+#ccPanelInventario .cc-inv-table tbody tr:hover td{
+  filter:brightness(.99);
+}

@@ -1,0 +1,1 @@
+window.CC_PERFORMANCE_MODE=true;

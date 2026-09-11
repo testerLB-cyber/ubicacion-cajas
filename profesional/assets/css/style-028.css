@@ -1,0 +1,12 @@
+#ccGlobalAlertsBtn{position:fixed;right:18px;bottom:22px;z-index:18000;height:42px;min-width:42px;padding:0 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:#0f172a;color:#fff;box-shadow:0 12px 28px rgba(15,23,42,.24);cursor:pointer;display:none;align-items:center;justify-content:center;gap:7px;font-size:15px}
+#ccGlobalAlertsBtn:hover{transform:translateY(-1px);background:#1e293b}
+#ccGlobalAlertsBtn .cc-alert-label{font-size:10px;font-weight:900;letter-spacing:.02em}
+#ccGlobalAlertsBadge{position:absolute;right:-5px;top:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:9px;font-weight:900;display:none;align-items:center;justify-content:center;border:2px solid #fff}
+.cc-alert-modal{position:fixed;inset:0;z-index:21000;background:rgba(15,23,42,.76);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px}
+.cc-alert-card{width:min(980px,98vw);max-height:92vh;overflow:auto;background:#f8fafc;border-radius:18px;box-shadow:0 25px 75px rgba(0,0,0,.35)}
+.cc-alert-head{position:sticky;top:0;z-index:3;background:#0f172a;color:#fff;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cc-alert-body{padding:14px}.cc-alert-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.cc-alert-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:10px}.cc-alert-kpi small{display:block;font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase}.cc-alert-kpi strong{display:block;font-size:20px;margin-top:4px}
+.cc-alert-row{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #f59e0b;border-radius:11px;padding:10px 11px;margin:7px 0}
+.cc-alert-row.high{border-left-color:#dc2626}.cc-alert-row.low{border-left-color:#2563eb}.cc-alert-row strong{font-size:11px}.cc-alert-row span{display:block;font-size:9px;color:#64748b;margin-top:3px}
+@media(max-width:700px){#ccGlobalAlertsBtn{right:10px;bottom:14px;padding:0 10px}.cc-alert-label{display:none}.cc-alert-summary{grid-template-columns:repeat(2,1fr)}}

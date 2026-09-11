@@ -1,0 +1,8 @@
+#ccRefreshVisibleBtn{
+  min-width:110px;
+  font-weight:800;
+}
+#ccRefreshVisibleBtn:disabled{
+  opacity:.7;
+  cursor:wait;
+}

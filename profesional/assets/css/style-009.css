@@ -1,0 +1,3 @@
+body.cc-only-control > main{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+body.cc-only-control{overflow-x:hidden}
+body.cc-only-control #controlCajasSection{box-sizing:border-box}

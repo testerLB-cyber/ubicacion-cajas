@@ -1,0 +1,18 @@
+#ccAntCompQR img,#ccAntCompQR canvas{max-width:100%;height:auto!important}
+#ccAntCompModal .cc-comp-shell{background:#fff;width:min(980px,97vw);max-height:94vh;overflow:auto;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.35)}
+#ccAntCompModal .cc-comp-body{padding:18px}
+#ccAntCompModal .cc-comp-layout{display:grid;grid-template-columns:minmax(210px,250px) minmax(0,1fr);gap:18px;align-items:start}
+#ccAntCompModal .cc-comp-side{display:grid;gap:12px}
+#ccAntCompModal .cc-comp-qr{border:1px solid #dbeafe;background:#eff6ff;border-radius:14px;padding:12px;text-align:center}
+#ccAntCompModal .cc-comp-form-card{border:1px solid #e2e8f0;background:#fff;border-radius:14px;padding:14px}
+#ccAntCompModal .cc-comp-form-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e8f0}
+#ccAntCompModal .cc-comp-fields{display:grid;grid-template-columns:1.25fr .75fr;gap:10px}
+#ccAntCompModal .cc-comp-docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#ccAntCompModal .cc-comp-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+#ccAntCompModal .cc-comp-list{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}
+@media(max-width:760px){
+ #ccAntCompModal{padding:8px!important;align-items:flex-start!important}
+ #ccAntCompModal .cc-comp-shell{width:100%;max-height:98vh;border-radius:14px}
+ #ccAntCompModal .cc-comp-layout,#ccAntCompModal .cc-comp-fields,#ccAntCompModal .cc-comp-docs{grid-template-columns:1fr}
+ #ccAntCompModal .cc-comp-body{padding:12px}
+}

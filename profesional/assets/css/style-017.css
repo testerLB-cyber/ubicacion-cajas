@@ -1,0 +1,13 @@
+#ccPanelHistorial .cc-hist-card .cc-inv-wrap{
+  max-height:56vh;
+  overflow:auto;
+  contain:layout paint;
+}
+#ccPanelHistorial .cc-hist-table tbody tr{
+  contain:layout style paint;
+}
+#ccPanelHistorial .cc-hist-table thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+}

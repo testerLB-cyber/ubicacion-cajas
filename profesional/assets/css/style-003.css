@@ -1,0 +1,47 @@
+:root{--gm-navy:#0b1220;--gm-blue:#2563eb;--gm-bg:#f5f7fb;--gm-border:#e5e7eb;--gm-text:#172033;--gm-muted:#64748b;--gm-radius:16px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:linear-gradient(180deg,#f8fafc 0,#f3f6fa 45%,#eef2f7 100%)!important;color:var(--gm-text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+header{background:rgba(11,18,32,.96)!important;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(15,23,42,.14)!important;padding:12px 22px!important;backdrop-filter:blur(14px)}
+header h1{font-size:18px!important;letter-spacing:-.02em!important}
+header .bg-blue-600{box-shadow:0 8px 20px rgba(37,99,235,.28)!important}
+header button,header label{border-radius:10px!important;transition:transform .15s ease,box-shadow .15s ease,background .15s ease!important}
+header button:hover,header label:hover{transform:translateY(-1px)}
+main{max-width:1500px!important;padding:20px 22px 34px!important}
+#statusMessage{border:1px solid rgba(59,130,246,.18)!important;border-left-width:4px!important;border-radius:12px!important;box-shadow:0 6px 18px rgba(15,23,42,.05)!important}
+#gmQuickNav{position:sticky;top:73px;z-index:40;display:flex;gap:6px;align-items:center;overflow:auto;padding:8px;background:rgba(255,255,255,.86);border:1px solid var(--gm-border);border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.06);backdrop-filter:blur(12px)}
+#gmQuickNav a{white-space:nowrap;text-decoration:none;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;padding:7px 11px;border-radius:9px;font-size:11px;font-weight:700;transition:.15s}
+#gmQuickNav a:hover{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+#gmQuickNav .nav-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:0 6px;font-weight:800}
+#gmDateBar{background:linear-gradient(135deg,#ffffff,#f8fbff)!important;border:1px solid #dbe4ef!important;border-radius:16px!important;box-shadow:0 8px 24px rgba(15,23,42,.055)!important}
+#gmDateBar .bg-blue-50{background:#eff6ff!important}
+#gmDateBar input{font-weight:700}
+#vistaOperativa,#vistaGerencial{gap:18px!important}
+#vistaOperativa>div,#vistaGerencial>div{scroll-margin-top:120px}
+#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important}
+#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8>div{min-height:94px;padding:14px 12px!important;border-radius:14px!important;box-shadow:0 5px 18px rgba(15,23,42,.045)!important;border-color:#e2e8f0!important;transition:transform .15s,box-shadow .15s}
+#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8>div:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(15,23,42,.08)!important}
+#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8 p[id^="kpi"]{font-size:25px!important;line-height:1!important}
+#vistaOperativa .bg-white.rounded-xl,#vistaGerencial .bg-white.rounded-xl{border-radius:16px!important;box-shadow:0 7px 24px rgba(15,23,42,.045)!important;border-color:#e2e8f0!important}
+#vistaOperativa h3,#vistaGerencial h3{letter-spacing:-.01em}
+#vistaOperativa table,#vistaGerencial table{font-variant-numeric:tabular-nums}
+#vistaOperativa thead th,#vistaGerencial thead th{font-size:10px!important;letter-spacing:.04em}
+#vistaOperativa tbody tr:hover,#vistaGerencial tbody tr:hover{background:#f8fbff!important}
+#vistaOperativa tbody td,#vistaGerencial tbody td{padding-top:9px!important;padding-bottom:9px!important}
+#vistaOperativa .overflow-x-auto,#vistaGerencial .overflow-x-auto{scrollbar-width:thin}
+#transitoSection{border-color:#bae6fd!important;background:linear-gradient(180deg,#fff,#f8fdff)!important}
+#pendientesSection{border-color:#fde68a!important;background:linear-gradient(180deg,#fff,#fffdf7)!important}
+#vigencia30Section{border-color:#fecdd3!important;background:linear-gradient(180deg,#fff,#fff9fa)!important}
+#operadorSection{border-color:#c7d2fe!important}
+#vistaGerencial>div:first-child{border-radius:18px!important;box-shadow:0 12px 30px rgba(15,23,42,.14)!important}
+#vistaGerencial .grid.grid-cols-1.sm\:grid-cols-2.lg\:grid-cols-4>div{border-radius:14px!important;box-shadow:0 7px 22px rgba(15,23,42,.05)!important}
+footer{background:rgba(255,255,255,.8)!important;border-top:1px solid #e2e8f0!important}
+/* Compacta textos secundarios para una lectura más limpia */
+#vistaOperativa .text-xs.text-slate-500.mt-0\.5,#vistaGerencial .text-xs.text-slate-500.mt-0\.5{line-height:1.35}
+/* Botones de acción consistentes */
+button{border-radius:10px}
+/* Modales */
+#vigencia30Modal .modal-card,#operadorDetalleModal>div{border-radius:18px!important}
+@media (max-width:1100px){#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:700px){main{padding:14px 12px 28px!important}#gmQuickNav{top:67px}.nav-title{display:none!important}#vistaOperativa .grid.grid-cols-2.sm\:grid-cols-4.lg\:grid-cols-8{grid-template-columns:repeat(2,minmax(0,1fr))!important}header{padding:10px 12px!important}header>div:last-child{justify-content:center}.overflow-x-auto{max-width:100%}}
+@media print{#gmQuickNav{display:none!important}}

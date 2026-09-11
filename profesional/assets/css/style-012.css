@@ -1,0 +1,14 @@
+#ccPanelInventario .cc-inv-table tbody tr.cc-storage-row > td{
+  background:#ffedd5 !important;
+  border-top-color:#fdba74 !important;
+  border-bottom-color:#fdba74 !important;
+}
+#ccPanelInventario .cc-inv-table tbody tr.cc-storage-row:hover > td{
+  background:#fed7aa !important;
+}
+#ccPanelInventario .cc-inv-table tbody tr.cc-storage-row > td:first-child{
+  box-shadow:inset 5px 0 0 #f97316;
+}
+#ccPanelInventario .cc-inv-table tbody tr.cc-storage-row .cc-unit-type-badge{
+  border-color:#fb923c;
+}

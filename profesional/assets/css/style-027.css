@@ -1,0 +1,25 @@
+.cc-config-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:4px 0 16px;padding:6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:14px}
+.cc-config-nav-btn{border:0;background:transparent;border-radius:10px;padding:12px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;color:#64748b;font-weight:800;transition:.18s}
+.cc-config-nav-btn i{font-size:16px}.cc-config-nav-btn span{font-size:12px}.cc-config-nav-btn small{font-size:9px;font-weight:600;color:#94a3b8}
+.cc-config-nav-btn.active{background:#fff;color:#0f172a;box-shadow:0 3px 12px rgba(15,23,42,.10)}
+.cc-config-nav-btn.active i{color:#2563eb}.cc-config-nav-btn.active small{color:#64748b}
+.cc-config-section{display:none}.cc-config-section.active{display:block}
+.cc-config-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.cc-config-section-head h4{margin:0 0 4px;font-size:15px;color:#0f172a}.cc-config-section-head p{margin:0;color:#64748b;font-size:11px}
+@media(max-width:700px){.cc-config-nav{grid-template-columns:1fr}.cc-config-nav-btn{justify-content:flex-start}.cc-config-section-head{flex-direction:column;align-items:stretch}}
+
+/* ===== GEOCERCAS / MAPA DE CAJAS ===== */
+.cc-map-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;align-items:stretch}
+.cc-geo-sidepanel{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;min-height:540px;max-height:72vh;display:flex;flex-direction:column}
+.cc-geo-side-title{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:900;color:#0f172a;background:#f8fafc}
+.cc-geo-list{padding:8px;overflow:auto;display:grid;gap:7px}
+.cc-geo-item{border:1px solid #e2e8f0;border-radius:10px;padding:9px;background:#fff;display:grid;gap:6px}
+.cc-geo-item-top{display:flex;align-items:center;gap:7px;justify-content:space-between}
+.cc-geo-name{font-size:11px;font-weight:900;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-geo-dot{width:10px;height:10px;border-radius:3px;background:#2563eb;display:inline-block;flex:0 0 auto}
+.cc-geo-mini-actions{display:flex;gap:4px}.cc-geo-mini-actions button{border:1px solid #cbd5e1;background:#fff;border-radius:6px;width:26px;height:24px;color:#475569;cursor:pointer}
+.cc-geo-type{font-size:9px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.cc-geo-empty{padding:24px 10px;text-align:center;color:#94a3b8;font-size:11px;line-height:1.5}
+.leaflet-draw-toolbar a{box-sizing:content-box!important}
+.cc-geo-toolbar .cc-actions{flex-wrap:wrap}
+@media(max-width:920px){.cc-map-layout{grid-template-columns:1fr}.cc-geo-sidepanel{min-height:0;max-height:240px}.cc-map-layout #ccMapaUnidadesContainer{min-height:480px!important;height:65vh!important}}

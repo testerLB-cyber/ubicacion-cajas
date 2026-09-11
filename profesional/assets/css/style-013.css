@@ -1,0 +1,10 @@
+.cc-renta-filters-compact{display:grid!important;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:10px;align-items:end}
+.cc-renta-filters-compact>div label{display:block;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;margin-bottom:4px}
+.cc-renta-filters-compact select{width:100%;min-width:0}
+.cc-renta-list-wrap{max-height:58vh;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+.cc-renta-list{width:100%;border-collapse:collapse;font-size:10px;min-width:1050px}
+.cc-renta-list th{position:sticky;top:0;z-index:2;background:#f8fafc;color:#475569;font-size:9px;padding:7px 8px;text-align:left;border-bottom:1px solid #cbd5e1;white-space:nowrap}
+.cc-renta-list td{padding:6px 8px;border-bottom:1px solid #eef2f7;vertical-align:middle}
+.cc-renta-list tbody tr:hover{background:#f8fbff}
+.cc-renta-exit-btn{font-size:9px!important;padding:4px 7px!important;white-space:nowrap}
+@media(max-width:800px){.cc-renta-filters-compact{grid-template-columns:1fr}}

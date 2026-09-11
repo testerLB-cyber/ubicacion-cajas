@@ -1,0 +1,10 @@
+body { font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; }
+    .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+    /* Estética personalizada para scrolls modernos */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  
+/* Proforma profesional */
+.cc-pro-summary{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;margin:0 0 14px}.cc-pro-summary-card{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 8px 22px rgba(15,23,42,.12)}.cc-pro-summary-card.light{background:#fff;color:#0f172a;border:1px solid #e2e8f0;box-shadow:none}.cc-pro-summary-card .label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:900;opacity:.75}.cc-pro-summary-card .value{font-size:26px;font-weight:950;margin-top:5px}.cc-pro-summary-card .sub{font-size:10px;margin-top:4px;opacity:.75}.cc-proforma-table tfoot td{background:#f8fafc;border-top:2px solid #0f172a;font-weight:950;padding:12px}.cc-money{font-weight:950;white-space:nowrap}.cc-method{display:inline-flex;padding:3px 7px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:8px;font-weight:900}.cc-client-total{font-weight:950;color:#0f172a;white-space:nowrap}@media(max-width:850px){.cc-pro-summary{grid-template-columns:1fr}}

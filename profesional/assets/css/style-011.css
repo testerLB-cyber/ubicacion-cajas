@@ -1,0 +1,19 @@
+#ccPanelInventario .cc-inv-wrap{
+  max-height:68vh;
+  overflow:auto !important;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+}
+#ccPanelInventario .cc-inv-table{
+  min-width:1500px;
+}
+#ccPanelInventario .cc-inv-table thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#f8fafc;
+}
+#ccPanelInventario .cc-inv-table td:last-child,
+#ccPanelInventario .cc-inv-table th:last-child{
+  min-width:260px;
+}

@@ -1,0 +1,4 @@
+.clickable-kpi { cursor: pointer; position: relative; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+      .clickable-kpi:hover { transform: translateY(-3px); box-shadow: 0 14px 28px rgba(15,23,42,.10); border-color: rgba(37,99,235,.35); }
+      .clickable-kpi:focus { outline: 3px solid rgba(59,130,246,.22); outline-offset: 2px; }
+      .clickable-kpi p b { color: #2563eb; font-weight: 800; }
