@@ -1,0 +1,13 @@
+/* Tráfico App · Fachada modular segura · Mantenimiento y DOT */
+(function(){
+  const root=window.TraficApp=window.TraficApp||{};
+  root.modules=root.modules||{};
+  root.modules.mantenimiento={
+    name:'mantenimiento-dot',
+    open(){
+      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('mantenimiento'"));
+      if(btn&&typeof window.ccTab==='function') return window.ccTab('mantenimiento',btn);
+    },
+    render(){if(typeof window.ccRenderMantenimiento==='function') return window.ccRenderMantenimiento();}
+  };
+})();
