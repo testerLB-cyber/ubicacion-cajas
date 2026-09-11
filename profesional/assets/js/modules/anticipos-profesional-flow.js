@@ -72,7 +72,6 @@
   window.ccProfVerComprobantes=verComprobantes;
 
   function mejorarListado(){
-    ocultarPendientesConfirmar();
     const body=document.getElementById('ccAntBody');
     const rows=Array.from(body?.querySelectorAll('tr')||[]);
     const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
@@ -93,7 +92,6 @@
   }
 
   function instalar(){
-    ocultarPendientesConfirmar();
     if(typeof window.ccAntRender!=='function')return;
     if(window.ccAntRender.__profCierreEnListado)return;
     const original=window.ccAntRender;
@@ -207,13 +205,7 @@
     if(!document.getElementById('ccAntBalances')){
       const k=document.getElementById('ccAntKpis');const b=document.createElement('div');b.id='ccAntBalances';b.className='cc-ant-kpis';b.style='margin-top:8px';k?.insertAdjacentElement('afterend',b);
     }
-    const defs=[['cajachica','Caja chica'],['cajaspro','Cajas y balances'],['traspasos','Traspasos'],['catalogospro','Responsables / comprobantes']];
-    defs.forEach(([id,name])=>{if(!nav.querySelector('[data-antv="'+id+'"]')){const b=document.createElement('button');b.className='cc-btn cc-btn-light';b.dataset.antv=id;b.textContent=name;b.onclick=()=>window.ccAntView(id,b);nav.appendChild(b)}});
     const mk=(id,html)=>{if(!document.getElementById(id)){const d=document.createElement('div');d.id=id;d.className='cc-ant-view';d.style.display='none';d.innerHTML=html;panel.appendChild(d)}};
-    mk('ccAntViewCajachica','<div class="cc-toolbar"><div><strong>Caja chica por responsable</strong><div class="cc-note">Control separado de entregas, comprobaciones y cierres a responsables.</div></div><button class="cc-btn cc-btn-primary" id="ccCajaChicaNuevo">Nueva caja chica</button></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>RESPONSABLE</th><th>CAJA</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccCajaChicaBody"></tbody></table></div>');
-    mk('ccAntViewCajaspro','<div class="cc-toolbar"><div><strong>Cajas y balances</strong><div class="cc-note">Cada caja puede habilitarse para operadores, caja chica o ambos.</div></div><button class="cc-btn cc-btn-primary" id="ccCajaNueva">Nueva caja</button></div><div id="ccCajasProCards" class="cc-ant-report-grid"></div>');
-    mk('ccAntViewTraspasos','<div class="cc-toolbar"><div><strong>Traspasos entre cajas</strong><div class="cc-note">La salida y entrada quedan enlazadas en historial.</div></div><button class="cc-btn cc-btn-primary" id="ccTraspasoNuevo">Nuevo traspaso</button></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FECHA</th><th>ORIGEN</th><th>DESTINO</th><th>MONTO</th><th>REFERENCIA</th><th>OBSERVACIONES</th></tr></thead><tbody id="ccTraspasosBody"></tbody></table></div>');
-    mk('ccAntViewCatalogospro','<div class="cc-ant-report-grid"><div class="cc-config-card"><div class="cc-toolbar"><strong>Responsables</strong><button class="cc-btn cc-btn-primary" id="ccRespNuevo">Agregar</button></div><div id="ccRespLista"></div></div><div class="cc-config-card"><div class="cc-toolbar"><strong>Tipos de comprobante</strong><button class="cc-btn cc-btn-primary" id="ccTipoCompNuevo">Agregar</button></div><div id="ccTipoCompLista"></div></div></div>');
     document.getElementById('ccCajaChicaNuevo').onclick=()=>nuevoAnticipo(true);
     document.getElementById('ccCajaNueva').onclick=()=>cajaForm();
     document.getElementById('ccTraspasoNuevo').onclick=traspasoForm;
@@ -816,3 +808,7 @@
  function install(){ensureNav();const old=window.ccAntView;if(typeof old==='function'&&!old.__movCajas){const w=function(v,b){if(v==='movcajas')return show();const r=old.apply(this,arguments);document.getElementById('ccAntViewMovcajas')&&(document.getElementById('ccAntViewMovcajas').style.display='none');return r};w.__movCajas=true;window.ccAntView=w;}load().then(render).catch(()=>{});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,1200));else setTimeout(install,1200);
 })();
+
+
+/* Tráfico App Profesional · Anticipos cleanup definitivo v1 */
+/* Controles obsoletos eliminados en build; no se crean ni se ocultan en runtime. */
