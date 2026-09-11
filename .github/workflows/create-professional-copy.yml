@@ -15,6 +15,7 @@ on:
       - '.github/scripts/build_professional.py'
       - '.github/scripts/add_professional_runtime.py'
       - '.github/scripts/add_anticipos_comprobantes_ui.py'
+      - '.github/scripts/add_anticipos_caja_chica_ui.py'
       - '.github/workflows/create-professional-copy.yml'
 
 permissions:
@@ -36,6 +37,9 @@ jobs:
       - name: Agregar gestion de comprobantes
         run: python3 .github/scripts/add_anticipos_comprobantes_ui.py
 
+      - name: Agregar caja chica y traspasos
+        run: python3 .github/scripts/add_anticipos_caja_chica_ui.py
+
       - name: Validar respaldo exacto
         run: cmp -s app-correcta.html profesional/source-original.html
 
@@ -46,6 +50,7 @@ jobs:
           test -f profesional/module-contracts.json
           grep -q 'profesional-modular-v4' profesional/index.html
           grep -q 'Gestión de comprobantes desde Comprobar y listado' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Caja chica, responsables, cajas y traspasos' profesional/assets/js/modules/anticipos-profesional-flow.js
 
       - name: Publicar solo carpeta profesional
         run: |
