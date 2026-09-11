@@ -1,4 +1,4 @@
-name: Crear copia profesional paralela
+name: Construir versión profesional paralela
 
 on:
   workflow_dispatch:
@@ -7,37 +7,153 @@ on:
       - main
     paths:
       - 'app-correcta.html'
+      - 'anticipo-operador.html'
+      - 'comprobacion-anticipo-completa.html'
+      - 'comprobar-anticipo.html'
+      - 'ubicacion.html'
+      - 'vendor/**'
       - '.github/workflows/create-professional-copy.yml'
 
 permissions:
   contents: write
 
 jobs:
-  copiar-version:
+  construir-profesional:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Crear versión paralela
+      - name: Preparar estructura paralela
+        shell: bash
         run: |
-          mkdir -p profesional
-          cp app-correcta.html profesional/index.html
-          cat > profesional/README.md <<'EOF'
-          # Tráfico App - Versión Profesional
+          set -euo pipefail
+          rm -rf profesional/assets profesional/index.html profesional/source-original.html profesional/vendor
+          mkdir -p profesional/assets/css profesional/assets/js
 
-          Esta carpeta contiene la versión paralela de reestructuración.
-          La aplicación principal actual no se modifica.
-          EOF
+          # Respaldo exacto de la versión funcional. Nunca se modifica app-correcta.html.
+          cp app-correcta.html profesional/source-original.html
 
-      - name: Publicar copia paralela
+          # Mantener páginas auxiliares en la misma ruta relativa dentro de la versión paralela.
+          for f in anticipo-operador.html comprobacion-anticipo-completa.html comprobar-anticipo.html ubicacion.html; do
+            if [ -f "$f" ]; then cp "$f" "profesional/$f"; fi
+          done
+          if [ -d vendor ]; then cp -R vendor profesional/vendor; fi
+
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          src = Path('app-correcta.html').read_text(encoding='utf-8')
+          css_dir = Path('profesional/assets/css')
+          js_dir = Path('profesional/assets/js')
+          css_dir.mkdir(parents=True, exist_ok=True)
+          js_dir.mkdir(parents=True, exist_ok=True)
+
+          css_count = 0
+          js_count = 0
+
+          style_re = re.compile(r'<style(?P<attrs>[^>]*)>(?P<body>.*?)</style\s*>', re.I | re.S)
+          script_re = re.compile(r'<script(?P<attrs>[^>]*)>(?P<body>.*?)</script\s*>', re.I | re.S)
+
+          def split_attrs(attrs):
+              return attrs.strip()
+
+          def style_replace(m):
+              global css_count
+              attrs = split_attrs(m.group('attrs'))
+              body = m.group('body')
+              css_count += 1
+              name = f'style-{css_count:03d}.css'
+              (css_dir / name).write_text(body.strip() + '\n', encoding='utf-8')
+
+              # Conservar id/media cuando existan porque pueden ser usados por JS o impresión.
+              id_m = re.search(r'\bid\s*=\s*(["\'])(.*?)\1', attrs, re.I | re.S)
+              media_m = re.search(r'\bmedia\s*=\s*(["\'])(.*?)\1', attrs, re.I | re.S)
+              extra = ''
+              if id_m: extra += f' id="{id_m.group(2)}"'
+              if media_m: extra += f' media="{media_m.group(2)}"'
+              return f'<link rel="stylesheet" href="assets/css/{name}"{extra}/>'
+
+          html = style_re.sub(style_replace, src)
+
+          def script_replace(m):
+              global js_count
+              attrs = split_attrs(m.group('attrs'))
+              body = m.group('body')
+
+              # Scripts externos o bloques de datos se conservan exactamente.
+              if re.search(r'\bsrc\s*=', attrs, re.I):
+                  return m.group(0)
+              type_m = re.search(r'\btype\s*=\s*(["\'])(.*?)\1', attrs, re.I | re.S)
+              script_type = (type_m.group(2).strip().lower() if type_m else '')
+              if script_type and script_type not in ('text/javascript','application/javascript','module'):
+                  return m.group(0)
+              if not body.strip():
+                  return m.group(0)
+
+              js_count += 1
+              name = f'script-{js_count:03d}.js'
+              (js_dir / name).write_text(body.strip() + '\n', encoding='utf-8')
+
+              kept = []
+              for attr_name in ('type','id','nomodule','defer','async'):
+                  if attr_name in ('nomodule','defer','async'):
+                      if re.search(rf'\b{attr_name}\b', attrs, re.I): kept.append(attr_name)
+                  else:
+                      mm = re.search(rf'\b{attr_name}\s*=\s*(["\'])(.*?)\1', attrs, re.I | re.S)
+                      if mm: kept.append(f'{attr_name}="{mm.group(2)}"')
+              attr_text = (' ' + ' '.join(kept)) if kept else ''
+              return f'<script{attr_text} src="assets/js/{name}"></script>'
+
+          html = script_re.sub(script_replace, html)
+
+          marker = '<meta name="trafico-app-build" content="profesional-modular-v1"/>'
+          if '<head>' in html:
+              html = html.replace('<head>', '<head>\n' + marker, 1)
+
+          Path('profesional/index.html').write_text(html, encoding='utf-8')
+
+          Path('profesional/README.md').write_text(f'''# Tráfico App - Versión Profesional Paralela
+
+Base funcional: `app-correcta.html`.
+
+- Producción original: no se modifica.
+- `source-original.html`: respaldo exacto del HTML funcional.
+- `index.html`: versión modular paralela.
+- `assets/css/`: {css_count} bloques de estilos extraídos conservando su orden.
+- `assets/js/`: {js_count} bloques JavaScript extraídos conservando su orden.
+- Páginas auxiliares y `vendor`: copiadas para mantener rutas relativas.
+
+La extracción mantiene en el HTML los scripts externos y los bloques de datos no JavaScript.
+''', encoding='utf-8')
+
+          print(f'CSS extraídos: {css_count}')
+          print(f'JS extraídos: {js_count}')
+          PY
+
+      - name: Validaciones de seguridad
+        shell: bash
         run: |
+          set -euo pipefail
+          test -s profesional/index.html
+          test -s profesional/source-original.html
+          cmp -s app-correcta.html profesional/source-original.html
+          grep -q 'trafico-app-build' profesional/index.html
+          test -d profesional/assets/css
+          test -d profesional/assets/js
+          echo "Versión profesional construida sin modificar app-correcta.html."
+
+      - name: Publicar versión profesional paralela
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add profesional/index.html profesional/README.md
+          git add profesional
           if git diff --cached --quiet; then
-            echo "La copia profesional ya está actualizada."
+            echo "La versión profesional ya está actualizada."
             exit 0
           fi
-          git commit -m "Crear versión profesional paralela"
+          git commit -m "Construir versión profesional modular desde app-correcta"
           git push
