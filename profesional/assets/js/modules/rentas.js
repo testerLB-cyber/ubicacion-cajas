@@ -1,0 +1,14 @@
+/* Tráfico App · Fachada modular segura · Rentas */
+(function(){
+  const root=window.TraficApp=window.TraficApp||{};
+  root.modules=root.modules||{};
+  root.modules.rentas={
+    name:'rentas',
+    open(){
+      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('renta'"));
+      if(btn&&typeof window.ccTab==='function') return window.ccTab('renta',btn);
+    },
+    render(){if(typeof window.ccRenderRenta==='function') return window.ccRenderRenta();},
+    history(){if(typeof window.ccRenderHistorial==='function') return window.ccRenderHistorial();}
+  };
+})();
