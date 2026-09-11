@@ -889,15 +889,28 @@ async function ccAntPostCreateComun(r){
   }catch(e){console.warn('Post-create anticipo',e);}
 }
 
-/* Tráfico App Profesional · Selector definitivo bloqueado v4 */
+/* Tráfico App Profesional · Selector definitivo directo v5 */
 (function(){
- if(window.__ccAntSelectorDefinitivoV4)return;window.__ccAntSelectorDefinitivoV4=true;
+ if(window.__ccAntSelectorDefinitivoV5)return;window.__ccAntSelectorDefinitivoV5=true;
  let chooser=null;
  function resolve(){
    if(typeof window.ccAntChooseTypeFinal==='function')chooser=window.ccAntChooseTypeFinal;
    return chooser;
  }
- function lock(){
+ function bindButton(){
+   const fn=resolve();
+   const btn=document.getElementById('ccAntNuevoBtn');
+   if(typeof fn!=='function'||!btn)return false;
+   btn.removeAttribute('onclick');
+   btn.onclick=function(ev){
+     ev?.preventDefault?.();
+     ev?.stopPropagation?.();
+     return fn();
+   };
+   btn.dataset.selectorAnticipo='operador-beneficiario-v5';
+   return true;
+ }
+ function lockGlobal(){
    const fn=resolve();
    if(typeof fn!=='function')return false;
    try{
@@ -905,30 +918,18 @@ async function ccAntPostCreateComun(r){
        configurable:true,
        enumerable:true,
        get(){return fn;},
-       set(v){
-         // La versión profesional tiene un único punto de entrada para Nuevo anticipo.
-         // Ignorar overrides tardíos de overlays anteriores.
-         if(v===fn)return;
-       }
+       set(v){ if(v===fn)return; }
      });
-     window.ccAntNuevoAnticipo=fn;
-     return true;
-   }catch(e){
-     window.ccAntNuevoAnticipo=fn;
-     return false;
-   }
- }
- function mark(){
-   document.querySelectorAll('#ccAntTipoPersonaSwitch,#ccAntPendTipoPersonaSwitch').forEach(el=>el.dataset.selectorFinal='v4');
+   }catch(e){ window.ccAntNuevoAnticipo=fn; }
+   return true;
  }
  function install(){
-   if(!lock())return setTimeout(install,250);
-   mark();
-   setTimeout(lock,500);
-   setTimeout(lock,1500);
-   setTimeout(lock,4000);
+   if(!lockGlobal()||!bindButton())return setTimeout(install,200);
+   [400,1200,3000,6000].forEach(ms=>setTimeout(()=>{lockGlobal();bindButton();},ms));
+   const root=document.getElementById('ccPanelAnticipos')||document.body;
+   new MutationObserver(()=>bindButton()).observe(root,{childList:true,subtree:true});
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,3000));else setTimeout(install,3000);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,1800));else setTimeout(install,1800);
 })();
 
 
