@@ -1,0 +1,43 @@
+name: Crear copia profesional paralela
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app-correcta.html'
+      - '.github/workflows/create-professional-copy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  copiar-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Crear versión paralela
+        run: |
+          mkdir -p profesional
+          cp app-correcta.html profesional/index.html
+          cat > profesional/README.md <<'EOF'
+          # Tráfico App - Versión Profesional
+
+          Esta carpeta contiene la versión paralela de reestructuración.
+          La aplicación principal actual no se modifica.
+          EOF
+
+      - name: Publicar copia paralela
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html profesional/README.md
+          if git diff --cached --quiet; then
+            echo "La copia profesional ya está actualizada."
+            exit 0
+          fi
+          git commit -m "Crear versión profesional paralela"
+          git push
