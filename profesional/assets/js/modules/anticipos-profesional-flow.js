@@ -396,16 +396,19 @@
 
 /* Tráfico App Profesional · Responsables y tipos de comprobante dentro de Catálogos */
 (function(){
-  if(window.__ccAntCatalogosCleanupV1)return;
-  window.__ccAntCatalogosCleanupV1=true;
+  if(window.__ccAntCatalogosCleanupV2)return;
+  window.__ccAntCatalogosCleanupV2=true;
   const sb=()=>window.gmSupabase;
   const esc=v=>String(v==null?'':v).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
 
-  function removeCajaChica(){
-    document.querySelector('.cc-ant-nav [data-antv="cajachica"]')?.remove();
-    const v=document.getElementById('ccAntViewCajachica');if(v)v.style.display='none';
-    document.querySelector('.cc-ant-nav [data-antv="catalogospro"]')?.remove();
-    const vp=document.getElementById('ccAntViewCatalogospro');if(vp)vp.style.display='none';
+  function cleanupNav(){
+    ['cajachica','cajaspro','traspasos','catalogospro'].forEach(id=>{
+      document.querySelector('.cc-ant-nav [data-antv="'+id+'"]')?.remove();
+      const viewId='ccAntView'+id.charAt(0).toUpperCase()+id.slice(1);
+      const v=document.getElementById(viewId);if(v)v.style.display='none';
+    });
+    const cajaBtn=document.querySelector('.cc-ant-nav [data-antv="caja"]');
+    if(cajaBtn)cajaBtn.textContent='Cuentas / movimientos';
   }
 
   function modal(title,html,onSubmit){
@@ -426,7 +429,7 @@
   }
 
   async function render(){
-    removeCajaChica();
+    cleanupNav();
     const root=document.getElementById('ccAntViewCatalogos');if(!root||!sb())return;
     let grid=root.querySelector('.cc-ant-report-grid');if(!grid){grid=document.createElement('div');grid.className='cc-ant-report-grid';root.appendChild(grid)}
     const r=await sb().rpc('cc_ant_prof_extra_list');if(r.error)throw r.error;const d=r.data||{};
@@ -439,6 +442,6 @@
     tipos.querySelector('[data-add-tipo]').onclick=()=>formTipo();tipos.querySelectorAll('[data-edit-tipo]').forEach(b=>b.onclick=()=>formTipo(ts.find(x=>x.id===b.dataset.editTipo)||{}));
   }
 
-  function install(){removeCajaChica();render().catch(e=>console.warn('Catálogos anticipos',e));if(typeof window.ccAntView==='function'&&!window.ccAntView.__catalogosRespTipo){const o=window.ccAntView,w=function(v,b){const r=o.apply(this,arguments);if(v==='catalogos')setTimeout(()=>render().catch(console.warn),0);removeCajaChica();return r};w.__catalogosRespTipo=true;window.ccAntView=w}}
+  function install(){cleanupNav();render().catch(e=>console.warn('Catálogos anticipos',e));if(typeof window.ccAntView==='function'&&!window.ccAntView.__catalogosRespTipo){const o=window.ccAntView,w=function(v,b){const r=o.apply(this,arguments);if(v==='catalogos')setTimeout(()=>render().catch(console.warn),0);cleanupNav();return r};w.__catalogosRespTipo=true;window.ccAntView=w}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);
 })();
