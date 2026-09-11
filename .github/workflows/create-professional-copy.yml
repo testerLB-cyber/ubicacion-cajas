@@ -22,6 +22,7 @@ on:
       - '.github/scripts/add_anticipos_utilerias_ui.py'
       - '.github/scripts/add_anticipos_beneficiarios_conceptos_ui.py'
       - '.github/scripts/restore_anticipos_operador_destino_ui.py'
+      - '.github/scripts/add_anticipos_movimientos_cajas_ui.py'
       - '.github/scripts/add_service_sheets_module.py'
       - '.github/scripts/run_service_sheets_module.py'
       - '.github/scripts/add_service_sheets_comprobacion_v2.py'
@@ -71,6 +72,9 @@ jobs:
       - name: Restaurar flujo por destino para operadores
         run: python3 .github/scripts/restore_anticipos_operador_destino_ui.py
 
+      - name: Agregar movimientos de cajas
+        run: python3 .github/scripts/add_anticipos_movimientos_cajas_ui.py
+
       - name: Agregar Control de Hojas de Servicio
         run: python3 .github/scripts/run_service_sheets_module.py
 
@@ -107,6 +111,7 @@ jobs:
           grep -q 'Utilerías de carga histórica de anticipos' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Beneficiarios por concepto v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Restaurar operador por destino v1' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Movimientos cajas v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Control de Hojas de Servicio · v1' profesional/assets/js/modules/service-sheets.js
           grep -q 'Hojas de Servicio v2 · responsables + comprobación' profesional/assets/js/modules/service-sheets.js
           grep -q 'Hojas de Servicio v3 · tablero de control' profesional/assets/js/modules/service-sheets.js
