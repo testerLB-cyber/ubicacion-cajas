@@ -7,8 +7,8 @@ marker='/* Tráfico App Profesional · Post-create común Operador/Beneficiario 
 if marker in s:
     print('post-create común v3 ya aplicado'); raise SystemExit(0)
 
-# Inserta helper común antes del selector definitivo profesional.
 anchors=[
+    '/* Tráfico App Profesional · Selector definitivo directo v5 */',
     '/* Tráfico App Profesional · Selector definitivo bloqueado v4 */',
     '/* Tráfico App Profesional · Fix selector + flujo común v2 */'
 ]
@@ -38,22 +38,17 @@ s=s.replace(anchor,helper+'\n'+anchor,1)
 
 old_b="const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:true,responsableId:String(fd.get('beneficiario')||''),cuentaId:String(fd.get('cuenta')||''),fecha:String(fd.get('fecha')||''),metodoDepositoId:String(fd.get('metodo')||''),montoEntregado:ent,referencia:String(fd.get('referencia')||''),observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;alert('Anticipo a beneficiario '+(r.data?.folio||'')+' creado.');"
 new_b="const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:true,responsableId:String(fd.get('beneficiario')||''),cuentaId:String(fd.get('cuenta')||''),fecha:String(fd.get('fecha')||''),metodoDepositoId:String(fd.get('metodo')||''),montoEntregado:ent,referencia:String(fd.get('referencia')||''),observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;await ccAntPostCreateComun(r);"
-if old_b not in s:
-    raise SystemExit('No se encontró creación de Beneficiario esperada')
+if old_b not in s: raise SystemExit('No se encontró creación de Beneficiario esperada')
 s=s.replace(old_b,new_b,1)
 
 old_o="const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:false,operadorId:String(fd.get('operador')||''),unidadId:String(fd.get('unidad')||''),destinoId:String(fd.get('destino')||''),tipoUnidadAnticipoId:String(fd.get('tipoUnidad')||''),cuentaId:String(fd.get('cuenta')||''),metodoDepositoId:String(fd.get('metodo')||''),fecha:String(fd.get('fecha')||''),viaje:String(fd.get('viaje')||''),referencia:String(fd.get('referencia')||''),montoEntregado:ent,observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;alert('Anticipo '+(r.data?.folio||'')+' creado.');"
 new_o="const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:false,operadorId:String(fd.get('operador')||''),unidadId:String(fd.get('unidad')||''),destinoId:String(fd.get('destino')||''),tipoUnidadAnticipoId:String(fd.get('tipoUnidad')||''),cuentaId:String(fd.get('cuenta')||''),metodoDepositoId:String(fd.get('metodo')||''),fecha:String(fd.get('fecha')||''),viaje:String(fd.get('viaje')||''),referencia:String(fd.get('referencia')||''),montoEntregado:ent,observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;await ccAntPostCreateComun(r);"
-if old_o not in s:
-    raise SystemExit('No se encontró creación de Operador esperada')
+if old_o not in s: raise SystemExit('No se encontró creación de Operador esperada')
 s=s.replace(old_o,new_o,1)
 
-if 'ccAntTipoPersonaSwitch' not in s or 'ccAntPendTipoPersonaSwitch' not in s:
-    raise SystemExit('Faltan selectores Operador/Beneficiario')
-if 'window.ccAntChooseTypeFinal=chooseType' not in s:
-    raise SystemExit('Falta selector final Nuevo anticipo')
-if 'Selector definitivo bloqueado v4' not in s:
-    raise SystemExit('Falta bloqueo definitivo del selector profesional')
+if 'ccAntTipoPersonaSwitch' not in s or 'ccAntPendTipoPersonaSwitch' not in s: raise SystemExit('Faltan selectores Operador/Beneficiario')
+if 'window.ccAntChooseTypeFinal=chooseType' not in s: raise SystemExit('Falta selector final Nuevo anticipo')
+if 'Selector definitivo directo v5' not in s: raise SystemExit('Falta selector directo v5')
 
 P.write_text(s,encoding='utf-8')
-print('Post-create común conectado para Operador y Beneficiario con selector v4')
+print('Post-create común conectado para Operador y Beneficiario con selector v5')
