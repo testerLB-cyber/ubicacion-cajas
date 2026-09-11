@@ -26,7 +26,10 @@ jobs:
       - name: Centralizar catalogos generales
         run: python3 .github/scripts/add_general_people_catalogs_ui.py
       - name: Validar centralizacion
-        run: grep -q 'Catálogos generales de personas v1' profesional/assets/js/modules/configuracion.js
+        run: |
+          grep -q 'Catálogos generales de personas v3 · menú Configuración' profesional/assets/js/modules/configuracion.js
+          grep -q 'data.gpcNav' profesional/assets/js/modules/configuracion.js || grep -q 'gpcNav' profesional/assets/js/modules/configuracion.js
+          ! grep -q 'Catálogos generales de personas v1' profesional/assets/js/modules/configuracion.js
       - name: Publicar cambio profesional
         run: |
           git config user.name "github-actions[bot]"
