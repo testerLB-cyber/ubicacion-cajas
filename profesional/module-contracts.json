@@ -1,0 +1,46 @@
+{
+  "inventario": {
+    "globals": [
+      "ccRenderInventario",
+      "ccEditarUnidadDirecto"
+    ],
+    "owner": "assets/js/modules/inventario.js"
+  },
+  "rentas": {
+    "globals": [
+      "ccRenderRenta",
+      "ccRenderHistorial"
+    ],
+    "owner": "assets/js/modules/rentas.js"
+  },
+  "mantenimiento": {
+    "globals": [
+      "ccRenderMantenimiento"
+    ],
+    "owner": "assets/js/modules/mantenimiento-dot.js"
+  },
+  "mapa": {
+    "globals": [
+      "ccCargarMapaUnidades"
+    ],
+    "owner": "assets/js/modules/mapa.js"
+  },
+  "configuracion": {
+    "globals": [
+      "ccRenderConfiguracion"
+    ],
+    "owner": "assets/js/modules/configuracion.js"
+  },
+  "anticipos": {
+    "globals": [
+      "ccAntLoad"
+    ],
+    "owner": "assets/js/modules/anticipos.js"
+  },
+  "auth": {
+    "globals": [
+      "ccPerm"
+    ],
+    "owner": "assets/js/security/auth-permissions.js"
+  }
+}
