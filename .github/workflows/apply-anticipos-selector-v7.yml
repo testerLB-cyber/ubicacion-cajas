@@ -1,0 +1,47 @@
+name: Aplicar selector independiente Anticipos v7
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/scripts/add_anticipos_selector_standalone_v7.py'
+      - '.github/workflows/apply-anticipos-selector-v7.yml'
+  workflow_run:
+    workflows:
+      - 'Construir version profesional paralela'
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+jobs:
+  selector-v7:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar selector independiente v7
+        run: python3 .github/scripts/add_anticipos_selector_standalone_v7.py
+      - name: Validar selector independiente
+        run: |
+          test -f profesional/assets/js/modules/anticipos-selector-standalone.js
+          grep -q 'Selector independiente Operador/Beneficiario v7' profesional/assets/js/modules/anticipos-selector-standalone.js
+          grep -q 'ccAntSelectorStandaloneV7' profesional/index.html
+          grep -q 'anticipos-selector-standalone.js?v=selector-v7' profesional/index.html
+      - name: Publicar selector v7
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional
+          if git diff --cached --quiet; then
+            echo "Selector v7 ya aplicado"
+            exit 0
+          fi
+          git commit -m "Aplicar selector independiente de anticipos v7"
+          git push
