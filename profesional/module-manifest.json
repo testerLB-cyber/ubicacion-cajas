@@ -34,7 +34,7 @@
     {
       "order": 6,
       "file": "assets/js/modules/control-cajas-core.js",
-      "description": "Núcleo de Control de Cajas, inventario, rentas, mantenimiento, DOT, mapa y configuración",
+      "description": "Núcleo compatible de Control de Cajas; conserva estado compartido y comportamiento original",
       "bytes": 217902
     },
     {
@@ -72,6 +72,28 @@
       "file": "assets/js/modules/alerts-center.js",
       "description": "Centro global de alertas basado en permisos",
       "bytes": 6871
+    }
+  ],
+  "facades": [
+    {
+      "file": "assets/js/modules/inventario.js",
+      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+    },
+    {
+      "file": "assets/js/modules/rentas.js",
+      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+    },
+    {
+      "file": "assets/js/modules/mantenimiento-dot.js",
+      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+    },
+    {
+      "file": "assets/js/modules/mapa.js",
+      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+    },
+    {
+      "file": "assets/js/modules/configuracion.js",
+      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
     }
   ]
 }

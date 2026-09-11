@@ -1,13 +1,2 @@
 /* Tráfico App · Fachada modular segura · Mapa y ubicación */
-(function(){
-  const root=window.TraficApp=window.TraficApp||{};
-  root.modules=root.modules||{};
-  root.modules.mapa={
-    name:'mapa',
-    open(){
-      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('mapa'"));
-      if(btn&&typeof window.ccTab==='function') return window.ccTab('mapa',btn);
-    },
-    render(){if(typeof window.ccCargarMapaUnidades==='function') return window.ccCargarMapaUnidades();}
-  };
-})();
+(function(){const root=window.TraficApp=window.TraficApp||{};root.modules=root.modules||{};root.modules.mapa={name:'mapa',open(){const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('mapa'"));if(btn&&typeof window.ccTab==='function')return window.ccTab('mapa',btn);},render(){if(typeof window.ccCargarMapaUnidades==='function')return window.ccCargarMapaUnidades();}};})();

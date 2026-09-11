@@ -1,15 +1,2 @@
 /* Tráfico App · Fachada modular segura · Inventario */
-(function(){
-  const root=window.TraficApp=window.TraficApp||{};
-  root.modules=root.modules||{};
-  const api={
-    name:'inventario',
-    ready(){return typeof window.ccTab==='function';},
-    open(){
-      const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('inventario'"));
-      if(btn&&typeof window.ccTab==='function') return window.ccTab('inventario',btn);
-    },
-    render(){if(typeof window.ccRenderInventario==='function') return window.ccRenderInventario();}
-  };
-  root.modules.inventario=api;
-})();
+(function(){const root=window.TraficApp=window.TraficApp||{};root.modules=root.modules||{};root.modules.inventario={name:'inventario',open(){const btn=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('inventario'"));if(btn&&typeof window.ccTab==='function')return window.ccTab('inventario',btn);},render(){if(typeof window.ccRenderInventario==='function')return window.ccRenderInventario();}};})();
