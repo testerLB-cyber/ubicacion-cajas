@@ -21,6 +21,7 @@ on:
       - '.github/scripts/add_anticipos_cuentas_catalogo_kpis_ui.py'
       - '.github/scripts/add_anticipos_utilerias_ui.py'
       - '.github/scripts/add_anticipos_beneficiarios_conceptos_ui.py'
+      - '.github/scripts/add_anticipos_tipo_flujo_ui.py'
       - '.github/scripts/restore_anticipos_operador_destino_ui.py'
       - '.github/scripts/add_anticipos_movimientos_cajas_ui.py'
       - '.github/scripts/remove_obsolete_anticipos_ui.py'
@@ -98,6 +99,9 @@ jobs:
       - name: Agregar notificaciones por usuario
         run: python3 .github/scripts/add_user_notifications_ui.py
 
+      - name: Separar Operadores y Beneficiarios con flujo equivalente
+        run: python3 .github/scripts/add_anticipos_tipo_flujo_ui.py
+
       - name: Eliminar controles obsoletos de Anticipos
         run: python3 .github/scripts/remove_obsolete_anticipos_ui.py
 
@@ -120,6 +124,7 @@ jobs:
           grep -q 'Beneficiarios por concepto v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Restaurar operador por destino v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Movimientos cajas v1' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Filtro Operador/Beneficiario + flujo equivalente v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Anticipos cleanup definitivo v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           ! grep -q 'data-antv="confirmar"' profesional/index.html
           ! grep -q 'data-antv="caja"' profesional/index.html
