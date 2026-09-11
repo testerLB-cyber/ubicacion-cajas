@@ -13,6 +13,7 @@ on:
       - 'ubicacion.html'
       - 'vendor/**'
       - '.github/scripts/build_professional.py'
+      - '.github/scripts/add_professional_runtime.py'
       - '.github/workflows/create-professional-copy.yml'
 
 permissions:
@@ -28,8 +29,18 @@ jobs:
       - name: Construir version paralela
         run: python3 .github/scripts/build_professional.py
 
+      - name: Agregar runtime modular
+        run: python3 .github/scripts/add_professional_runtime.py
+
       - name: Validar respaldo exacto
         run: cmp -s app-correcta.html profesional/source-original.html
+
+      - name: Validar runtime profesional
+        run: |
+          test -f profesional/assets/js/core/module-registry.js
+          test -f profesional/assets/js/core/health-check.js
+          test -f profesional/module-contracts.json
+          grep -q 'profesional-modular-v4' profesional/index.html
 
       - name: Publicar solo carpeta profesional
         run: |
