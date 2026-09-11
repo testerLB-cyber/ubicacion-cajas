@@ -67,6 +67,66 @@ health = r'''/* Tráfico App · Health check no invasivo */
 })();
 '''
 
+anticipos_flow = r'''/* Tráfico App Profesional · Flujo simplificado de cierre de anticipos */
+(function(){
+  function ocultarPendientesConfirmar(){
+    const btn=document.querySelector('.cc-ant-nav [data-antv="confirmar"]');
+    if(btn) btn.style.display='none';
+    const view=document.getElementById('ccAntViewConfirmar');
+    if(view) view.style.display='none';
+  }
+
+  function tieneComprobacion(a){
+    return !!a && (String(a.estatus||'').toUpperCase()==='PENDIENTE_CONFIRMAR' || Number(a.comprobado||0)>0);
+  }
+
+  function mejorarListado(){
+    ocultarPendientesConfirmar();
+    const body=document.getElementById('ccAntBody');
+    const rows=Array.from(body?.querySelectorAll('tr')||[]);
+    const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
+    rows.forEach((tr,i)=>{
+      const a=data[i];
+      if(!a || !tieneComprobacion(a) || ['CERRADO','CANCELADO'].includes(String(a.estatus||'').toUpperCase())) return;
+      tr.style.background='#fef3c7';
+      tr.style.boxShadow='inset 4px 0 0 #f59e0b';
+      tr.dataset.comprobacionLista='1';
+      const actions=tr.lastElementChild?.querySelector('div') || tr.lastElementChild;
+      if(!actions || actions.querySelector('[data-ant-close-main]')) return;
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='cc-btn cc-btn-primary';
+      b.dataset.antCloseMain=a.id;
+      b.innerHTML='<i class="fa-solid fa-circle-check mr-1"></i>Cerrar anticipo';
+      b.title='Finalizar este anticipo usando sus comprobaciones registradas';
+      b.addEventListener('click',function(ev){
+        ev.preventDefault();ev.stopPropagation();
+        if(typeof window.ccAntCerrar==='function') window.ccAntCerrar(a.id);
+      });
+      actions.appendChild(b);
+    });
+  }
+
+  function instalar(){
+    ocultarPendientesConfirmar();
+    if(typeof window.ccAntRender!=='function') return;
+    if(window.ccAntRender.__profCierreEnListado) return;
+    const original=window.ccAntRender;
+    const wrapped=function(){
+      const r=original.apply(this,arguments);
+      mejorarListado();
+      return r;
+    };
+    wrapped.__profCierreEnListado=true;
+    window.ccAntRender=wrapped;
+    mejorarListado();
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(instalar,0));
+  else setTimeout(instalar,0);
+})();
+'''
+
 contracts = {
   'inventario': {'globals':['ccRenderInventario','ccEditarUnidadDirecto'],'owner':'assets/js/modules/inventario.js'},
   'rentas': {'globals':['ccRenderRenta','ccRenderHistorial'],'owner':'assets/js/modules/rentas.js'},
@@ -80,17 +140,24 @@ contracts = {
 (JS/'core').mkdir(parents=True,exist_ok=True)
 (JS/'core'/'module-registry.js').write_text(registry,encoding='utf-8')
 (JS/'core'/'health-check.js').write_text(health,encoding='utf-8')
+(JS/'modules').mkdir(parents=True,exist_ok=True)
+(JS/'modules'/'anticipos-profesional-flow.js').write_text(anticipos_flow,encoding='utf-8')
 (OUT/'module-contracts.json').write_text(json.dumps(contracts,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 html=INDEX.read_text(encoding='utf-8')
 registry_tag='<script src="assets/js/core/module-registry.js"></script>'
 health_tag='<script src="assets/js/core/health-check.js"></script>'
+anticipos_flow_tag='<script src="assets/js/modules/anticipos-profesional-flow.js"></script>'
 
-# Registro antes de las fachadas; health check al final para validar todo ya cargado.
+# Registro antes de las fachadas; override de Anticipos justo después del módulo original.
 needle='<script src="assets/js/modules/inventario.js"></script>'
 if registry_tag not in html:
     if needle not in html: raise SystemExit('No se encontró fachada Inventario para insertar registro modular')
     html=html.replace(needle,registry_tag+'\n'+needle,1)
+anticipos_tag='<script src="assets/js/modules/anticipos.js"></script>'
+if anticipos_flow_tag not in html:
+    if anticipos_tag not in html: raise SystemExit('No se encontró anticipos.js para insertar flujo profesional')
+    html=html.replace(anticipos_tag,anticipos_tag+'\n'+anticipos_flow_tag,1)
 if health_tag not in html:
     pos=html.lower().rfind('</body>')
     if pos<0: raise SystemExit('No se encontró </body>')
@@ -102,8 +169,8 @@ INDEX.write_text(html,encoding='utf-8')
 for name,contract in contracts.items():
     owner=OUT/contract['owner']
     if not owner.exists(): raise SystemExit(f'Owner de módulo faltante: {name} -> {owner}')
-for rel in ['assets/js/core/module-registry.js','assets/js/core/health-check.js','module-contracts.json']:
+for rel in ['assets/js/core/module-registry.js','assets/js/core/health-check.js','assets/js/modules/anticipos-profesional-flow.js','module-contracts.json']:
     if not (OUT/rel).exists(): raise SystemExit('Runtime faltante: '+rel)
-if registry_tag not in html or health_tag not in html:
+if registry_tag not in html or health_tag not in html or anticipos_flow_tag not in html:
     raise SystemExit('Runtime modular no quedó cargado en index.html')
-print('Runtime modular v4 listo: registro, contratos y health check')
+print('Runtime modular v4 listo: registro, contratos, health check y flujo profesional de anticipos')
