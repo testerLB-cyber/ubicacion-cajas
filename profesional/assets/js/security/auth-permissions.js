@@ -22,6 +22,7 @@ const PERM_SCHEMA=[
  ['mantenimiento','Mantenimiento',[['ver','Ver mantenimiento'],['editar_registros','Editar registros'],['ver_dot','Ver Control DOT'],['editar_dot','Editar registros DOT']]],
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
+ ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
 ];
 function getPath(obj,path){return String(path).split('.').reduce((a,k)=>a&&a[k],obj);}
