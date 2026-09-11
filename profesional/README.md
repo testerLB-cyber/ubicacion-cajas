@@ -1,12 +1,10 @@
-# Tráfico App - Versión Profesional Paralela
+# Tráfico App · Versión Profesional Paralela
 
-Base funcional: `app-correcta.html`.
-
+- Base funcional: `app-correcta.html`.
 - Producción no se modifica.
-- `source-original.html` es copia exacta.
-- `index.html` conserva orden de ejecución original.
+- `source-original.html` es copia exacta de la base.
 - CSS extraídos: 28.
-- JS originales organizados: 12.
+- Bloques JS principales: 12.
+- Control de Cajas: 25 fragmentos fuente recompuestos y validados.
 - Fachadas de dominio: 5.
-
-Build actual: `profesional-modular-v3`.
+- Build: `profesional-modular-v4`.

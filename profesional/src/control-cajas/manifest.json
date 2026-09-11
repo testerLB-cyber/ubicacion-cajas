@@ -1,0 +1,266 @@
+{
+  "source": "app-correcta.html / script interno #6",
+  "strategy": "ordered-build-parts",
+  "sha256": "bcaec7564aa2c11009d0c4eaf56f6cc4e2d44c2521b53c6acae2bf21ce179816",
+  "recomposed_sha256": "bcaec7564aa2c11009d0c4eaf56f6cc4e2d44c2521b53c6acae2bf21ce179816",
+  "parts": [
+    {
+      "order": 1,
+      "file": "src/control-cajas/001-supabase-data-01.part.js",
+      "domain": "supabase-data",
+      "source_lines": [
+        1,
+        110
+      ],
+      "bytes": 6592
+    },
+    {
+      "order": 2,
+      "file": "src/control-cajas/002-inventario-01.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        111,
+        217
+      ],
+      "bytes": 10707
+    },
+    {
+      "order": 3,
+      "file": "src/control-cajas/003-inventario-02.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        218,
+        312
+      ],
+      "bytes": 9813
+    },
+    {
+      "order": 4,
+      "file": "src/control-cajas/004-rentas-01.part.js",
+      "domain": "rentas",
+      "source_lines": [
+        313,
+        420
+      ],
+      "bytes": 13857
+    },
+    {
+      "order": 5,
+      "file": "src/control-cajas/005-mantenimiento-dot-01.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        421,
+        525
+      ],
+      "bytes": 6338
+    },
+    {
+      "order": 6,
+      "file": "src/control-cajas/006-mantenimiento-dot-02.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        526,
+        629
+      ],
+      "bytes": 11788
+    },
+    {
+      "order": 7,
+      "file": "src/control-cajas/007-rentas-02.part.js",
+      "domain": "rentas",
+      "source_lines": [
+        630,
+        738
+      ],
+      "bytes": 6436
+    },
+    {
+      "order": 8,
+      "file": "src/control-cajas/008-inventario-03.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        739,
+        841
+      ],
+      "bytes": 18035
+    },
+    {
+      "order": 9,
+      "file": "src/control-cajas/009-mantenimiento-dot-03.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        842,
+        938
+      ],
+      "bytes": 5731
+    },
+    {
+      "order": 10,
+      "file": "src/control-cajas/010-mantenimiento-dot-04.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        939,
+        1047
+      ],
+      "bytes": 7847
+    },
+    {
+      "order": 11,
+      "file": "src/control-cajas/011-mantenimiento-dot-05.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        1048,
+        1157
+      ],
+      "bytes": 4364
+    },
+    {
+      "order": 12,
+      "file": "src/control-cajas/012-mantenimiento-dot-06.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        1158,
+        1269
+      ],
+      "bytes": 3427
+    },
+    {
+      "order": 13,
+      "file": "src/control-cajas/013-mapa-qr-01.part.js",
+      "domain": "mapa-qr",
+      "source_lines": [
+        1270,
+        1377
+      ],
+      "bytes": 4675
+    },
+    {
+      "order": 14,
+      "file": "src/control-cajas/014-mapa-qr-02.part.js",
+      "domain": "mapa-qr",
+      "source_lines": [
+        1378,
+        1482
+      ],
+      "bytes": 4738
+    },
+    {
+      "order": 15,
+      "file": "src/control-cajas/015-mapa-qr-03.part.js",
+      "domain": "mapa-qr",
+      "source_lines": [
+        1483,
+        1590
+      ],
+      "bytes": 8375
+    },
+    {
+      "order": 16,
+      "file": "src/control-cajas/016-mapa-qr-04.part.js",
+      "domain": "mapa-qr",
+      "source_lines": [
+        1591,
+        1697
+      ],
+      "bytes": 12307
+    },
+    {
+      "order": 17,
+      "file": "src/control-cajas/017-mapa-qr-05.part.js",
+      "domain": "mapa-qr",
+      "source_lines": [
+        1698,
+        1806
+      ],
+      "bytes": 5991
+    },
+    {
+      "order": 18,
+      "file": "src/control-cajas/018-inventario-04.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        1807,
+        1921
+      ],
+      "bytes": 14980
+    },
+    {
+      "order": 19,
+      "file": "src/control-cajas/019-rentas-03.part.js",
+      "domain": "rentas",
+      "source_lines": [
+        1922,
+        2046
+      ],
+      "bytes": 10229
+    },
+    {
+      "order": 20,
+      "file": "src/control-cajas/020-inventario-05.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        2047,
+        2155
+      ],
+      "bytes": 17877
+    },
+    {
+      "order": 21,
+      "file": "src/control-cajas/021-inventario-06.part.js",
+      "domain": "inventario",
+      "source_lines": [
+        2156,
+        2258
+      ],
+      "bytes": 6058
+    },
+    {
+      "order": 22,
+      "file": "src/control-cajas/022-configuracion-01.part.js",
+      "domain": "configuracion",
+      "source_lines": [
+        2259,
+        2356
+      ],
+      "bytes": 8716
+    },
+    {
+      "order": 23,
+      "file": "src/control-cajas/023-mantenimiento-dot-07.part.js",
+      "domain": "mantenimiento-dot",
+      "source_lines": [
+        2357,
+        2462
+      ],
+      "bytes": 5149
+    },
+    {
+      "order": 24,
+      "file": "src/control-cajas/024-rentas-04.part.js",
+      "domain": "rentas",
+      "source_lines": [
+        2463,
+        2567
+      ],
+      "bytes": 11786
+    },
+    {
+      "order": 25,
+      "file": "src/control-cajas/025-supabase-data-02.part.js",
+      "domain": "supabase-data",
+      "source_lines": [
+        2568,
+        2615
+      ],
+      "bytes": 2086
+    }
+  ],
+  "domains": {
+    "supabase-data": 2,
+    "inventario": 6,
+    "rentas": 4,
+    "mantenimiento-dot": 7,
+    "mapa-qr": 5,
+    "configuracion": 1
+  }
+}

@@ -34,7 +34,7 @@
     {
       "order": 6,
       "file": "assets/js/modules/control-cajas-core.js",
-      "description": "Núcleo compatible de Control de Cajas; conserva estado compartido y comportamiento original",
+      "description": "Bundle compatible generado desde fuentes modulares de Control de Cajas",
       "bytes": 217902
     },
     {
@@ -77,23 +77,36 @@
   "facades": [
     {
       "file": "assets/js/modules/inventario.js",
-      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+      "role": "API pública de dominio sobre el bundle compatible"
     },
     {
       "file": "assets/js/modules/rentas.js",
-      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+      "role": "API pública de dominio sobre el bundle compatible"
     },
     {
       "file": "assets/js/modules/mantenimiento-dot.js",
-      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+      "role": "API pública de dominio sobre el bundle compatible"
     },
     {
       "file": "assets/js/modules/mapa.js",
-      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+      "role": "API pública de dominio sobre el bundle compatible"
     },
     {
       "file": "assets/js/modules/configuracion.js",
-      "role": "fachada de dominio; no duplica estado ni modifica lógica legado"
+      "role": "API pública de dominio sobre el bundle compatible"
     }
-  ]
+  ],
+  "controlCajasSource": {
+    "manifest": "src/control-cajas/manifest.json",
+    "parts": 25,
+    "domains": {
+      "supabase-data": 2,
+      "inventario": 6,
+      "rentas": 4,
+      "mantenimiento-dot": 7,
+      "mapa-qr": 5,
+      "configuracion": 1
+    },
+    "sha256": "bcaec7564aa2c11009d0c4eaf56f6cc4e2d44c2521b53c6acae2bf21ce179816"
+  }
 }
