@@ -1,0 +1,45 @@
+name: Aplicar mejoras Hojas de Servicio v7
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/add_service_sheets_person_assignment_v7.py'
+      - '.github/workflows/apply-service-sheets-person-v7.yml'
+  workflow_run:
+    workflows: ['Construir version profesional paralela']
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar mejoras Hojas de Servicio
+        run: python3 .github/scripts/add_service_sheets_person_assignment_v7.py
+      - name: Validar mejoras
+        run: |
+          test -f profesional/assets/js/modules/service-sheets-person-v7.js
+          grep -q 'personas + estatus/enlace v7' profesional/assets/js/modules/service-sheets-person-v7.js
+          grep -q 'hs_reissue_assignment_link' profesional/assets/js/modules/service-sheets-person-v7.js
+          grep -q 'BENEFICIARIO' profesional/assets/js/modules/service-sheets-person-v7.js
+          grep -q 'service-sheets-person-v7.js?v=person-v7' profesional/index.html
+      - name: Publicar cambios profesionales
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/assets/js/modules/service-sheets-person-v7.js profesional/index.html
+          if git diff --cached --quiet; then
+            echo "Mejoras Hojas de Servicio v7 ya aplicadas"
+            exit 0
+          fi
+          git commit -m "Mejorar asignaciones de Hojas de Servicio"
+          git push
