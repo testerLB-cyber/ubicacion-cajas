@@ -23,6 +23,7 @@ on:
       - '.github/scripts/add_anticipos_beneficiarios_conceptos_ui.py'
       - '.github/scripts/add_anticipos_tipo_flujo_ui.py'
       - '.github/scripts/fix_anticipos_selector_flujo.py'
+      - '.github/scripts/fix_anticipos_selector_v6.py'
       - '.github/scripts/fix_anticipos_postcreate_ui.py'
       - '.github/scripts/restore_anticipos_operador_destino_ui.py'
       - '.github/scripts/add_anticipos_movimientos_cajas_ui.py'
@@ -84,10 +85,12 @@ jobs:
         run: python3 .github/scripts/add_user_notifications_ui.py
       - name: Separar Operadores y Beneficiarios en listados
         run: python3 .github/scripts/add_anticipos_tipo_flujo_ui.py
-      - name: Fijar selector definitivo Nuevo anticipo
+      - name: Fijar selector base Nuevo anticipo
         run: python3 .github/scripts/fix_anticipos_selector_flujo.py
       - name: Conectar post-create comun Operador Beneficiario
         run: python3 .github/scripts/fix_anticipos_postcreate_ui.py
+      - name: Aplicar selector obligatorio Operador Beneficiario
+        run: python3 .github/scripts/fix_anticipos_selector_v6.py
       - name: Eliminar controles obsoletos de Anticipos
         run: python3 .github/scripts/remove_obsolete_anticipos_ui.py
       - name: Validar respaldo exacto
@@ -110,9 +113,12 @@ jobs:
           grep -q 'Movimientos cajas v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Filtro Operador/Beneficiario + flujo equivalente v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Selector definitivo directo v5' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Selector obligatorio Operador/Beneficiario v6' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'window.ccAntOpenOperatorForm=operatorAdvance' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'window.ccAntOpenBeneficiaryForm=beneficiaryAdvance' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Post-create común Operador/Beneficiario v3' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'ccAntPostCreateComun' profesional/assets/js/modules/anticipos-profesional-flow.js
-          grep -q 'anticipos-profesional-flow.js?v=selector-v5' profesional/index.html
+          grep -q 'anticipos-profesional-flow.js?v=selector-v6' profesional/index.html
           grep -q 'Anticipos cleanup definitivo v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           ! grep -q 'data-antv="confirmar"' profesional/index.html
           ! grep -q 'data-antv="caja"' profesional/index.html
