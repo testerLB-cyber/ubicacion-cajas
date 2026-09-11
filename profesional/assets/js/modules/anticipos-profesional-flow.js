@@ -659,7 +659,7 @@
     const detalles=rows.map(r=>({conceptoId:r.querySelector('[name=concepto]').value,monto:Number(r.querySelector('[name=monto]').value||0)}));
     if(detalles.some(x=>!x.conceptoId||x.monto<=0))throw new Error('Todos los conceptos deben tener concepto y monto mayor a cero.');
     const total=detalles.reduce((a,x)=>a+x.monto,0),ent=Number(fd.get('entregado')||0);if(ent<0||ent>total)throw new Error('El monto entregado no puede exceder el autorizado.');
-    const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:true,responsableId:String(fd.get('beneficiario')||''),cuentaId:String(fd.get('cuenta')||''),fecha:String(fd.get('fecha')||''),metodoDepositoId:String(fd.get('metodo')||''),montoEntregado:ent,referencia:String(fd.get('referencia')||''),observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;alert('Anticipo a beneficiario '+(r.data?.folio||'')+' creado.');
+    const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:true,responsableId:String(fd.get('beneficiario')||''),cuentaId:String(fd.get('cuenta')||''),fecha:String(fd.get('fecha')||''),metodoDepositoId:String(fd.get('metodo')||''),montoEntregado:ent,referencia:String(fd.get('referencia')||''),observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;await ccAntPostCreateComun(r);
   },'Crear anticipo');
   const rows=ov.querySelector('[data-rows]');
   function addRow(){const d=document.createElement('div');d.dataset.conceptRow='1';d.style='display:grid;grid-template-columns:minmax(220px,1fr) 180px auto;gap:8px;align-items:end;margin:8px 0';d.innerHTML='<div class="cc-field"><label>Concepto *</label><select name="concepto" required>'+conceptOpts+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div><button type="button" class="cc-btn cc-btn-light" data-del>Quitar</button>';rows.appendChild(d);const sel=d.querySelector('select'),amt=d.querySelector('[name=monto]');sel.onchange=()=>{const v=sel.selectedOptions[0]?.dataset.default;if(v!==undefined&&v!=='')amt.value=Number(v).toFixed(2);else amt.value='';syncDelivered();};amt.oninput=syncDelivered;d.querySelector('[data-del]').onclick=()=>{d.remove();syncDelivered()};}
@@ -725,7 +725,7 @@
       if(detalles.some(x=>!x.conceptoId||x.monto<0))throw new Error('Revisa los montos de los conceptos.');
       const total=detalles.reduce((a,x)=>a+x.monto,0);if(total<=0)throw new Error('El anticipo debe tener un monto mayor a cero.');
       const ent=Number(fd.get('entregado')||0);if(ent<0||ent>total)throw new Error('El monto entregado no puede exceder el autorizado.');
-      const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:false,operadorId:String(fd.get('operador')||''),unidadId:String(fd.get('unidad')||''),destinoId:String(fd.get('destino')||''),tipoUnidadAnticipoId:String(fd.get('tipoUnidad')||''),cuentaId:String(fd.get('cuenta')||''),metodoDepositoId:String(fd.get('metodo')||''),fecha:String(fd.get('fecha')||''),viaje:String(fd.get('viaje')||''),referencia:String(fd.get('referencia')||''),montoEntregado:ent,observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;alert('Anticipo '+(r.data?.folio||'')+' creado.');
+      const r=await sb().rpc('cc_ant_create',{p_item:{esCajaChica:false,operadorId:String(fd.get('operador')||''),unidadId:String(fd.get('unidad')||''),destinoId:String(fd.get('destino')||''),tipoUnidadAnticipoId:String(fd.get('tipoUnidad')||''),cuentaId:String(fd.get('cuenta')||''),metodoDepositoId:String(fd.get('metodo')||''),fecha:String(fd.get('fecha')||''),viaje:String(fd.get('viaje')||''),referencia:String(fd.get('referencia')||''),montoEntregado:ent,observaciones:String(fd.get('obs')||''),detalles}});if(r.error)throw r.error;await ccAntPostCreateComun(r);
    },'Crear anticipo');
    const box=ov.querySelector('[data-concepts]'),totalEl=ov.querySelector('[data-total]'),ent=ov.querySelector('[name=entregado]');
    function syncTotal(){const total=[...box.querySelectorAll('[name=monto]')].reduce((a,i)=>a+Number(i.value||0),0);totalEl.textContent=money(total);if(!ent.dataset.touched)ent.value=total?total.toFixed(2):'';}
@@ -869,6 +869,25 @@
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,2200));else setTimeout(boot,2200);
 })();
 
+
+
+
+/* Tráfico App Profesional · Post-create común Operador/Beneficiario v3 */
+async function ccAntPostCreateComun(r){
+  if(!r?.data?.ok)return;
+  try{
+    await window.ccAntLoad?.(true);
+    const lr=await window.gmSupabase.rpc('cc_ant_list');
+    if(lr.error)throw lr.error;
+    const a=(lr.data?.anticipos||[]).find(x=>x.id===r.data.id)||{id:r.data.id,folio:r.data.folio,montoAutorizado:r.data.montoAutorizado,montoEntregado:r.data.montoEntregado};
+    const links={
+      firma:typeof window.ccAntPublicUrl==='function'?window.ccAntPublicUrl('anticipo-operador.html',r.data.firmaToken):'',
+      comprobacion:typeof window.ccAntPublicUrl==='function'?window.ccAntPublicUrl('comprobacion-anticipo-completa.html?v=2',r.data.comprobacionToken):''
+    };
+    if(typeof window.ccAntPostCreate==='function')window.ccAntPostCreate(a,links);
+    else if(typeof window.ccAntShowLinks==='function')window.ccAntShowLinks(a,links,false);
+  }catch(e){console.warn('Post-create anticipo',e);}
+}
 
 /* Tráfico App Profesional · Fix selector + flujo común v2 */
 (function(){
