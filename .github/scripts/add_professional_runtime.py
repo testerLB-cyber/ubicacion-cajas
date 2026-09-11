@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import re
 
 ROOT=Path('.')
 OUT=ROOT/'profesional'
@@ -75,11 +76,9 @@ anticipos_flow = r'''/* Tráfico App Profesional · Flujo simplificado de cierre
     const view=document.getElementById('ccAntViewConfirmar');
     if(view) view.style.display='none';
   }
-
   function tieneComprobacion(a){
     return !!a && (String(a.estatus||'').toUpperCase()==='PENDIENTE_CONFIRMAR' || Number(a.comprobado||0)>0);
   }
-
   function mejorarListado(){
     ocultarPendientesConfirmar();
     const body=document.getElementById('ccAntBody');
@@ -106,7 +105,6 @@ anticipos_flow = r'''/* Tráfico App Profesional · Flujo simplificado de cierre
       actions.appendChild(b);
     });
   }
-
   function instalar(){
     ocultarPendientesConfirmar();
     if(typeof window.ccAntRender!=='function') return;
@@ -121,7 +119,6 @@ anticipos_flow = r'''/* Tráfico App Profesional · Flujo simplificado de cierre
     window.ccAntRender=wrapped;
     mejorarListado();
   }
-
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(instalar,0));
   else setTimeout(instalar,0);
 })();
@@ -149,15 +146,16 @@ registry_tag='<script src="assets/js/core/module-registry.js"></script>'
 health_tag='<script src="assets/js/core/health-check.js"></script>'
 anticipos_flow_tag='<script src="assets/js/modules/anticipos-profesional-flow.js"></script>'
 
-# Registro antes de las fachadas; override de Anticipos justo después del módulo original.
 needle='<script src="assets/js/modules/inventario.js"></script>'
 if registry_tag not in html:
     if needle not in html: raise SystemExit('No se encontró fachada Inventario para insertar registro modular')
     html=html.replace(needle,registry_tag+'\n'+needle,1)
-anticipos_tag='<script src="assets/js/modules/anticipos.js"></script>'
+
 if anticipos_flow_tag not in html:
-    if anticipos_tag not in html: raise SystemExit('No se encontró anticipos.js para insertar flujo profesional')
-    html=html.replace(anticipos_tag,anticipos_tag+'\n'+anticipos_flow_tag,1)
+    anticipos_re=re.compile(r'(<script\b[^>]*\bsrc=["\']assets/js/modules/anticipos\.js["\'][^>]*>\s*</script>)',re.I)
+    if not anticipos_re.search(html): raise SystemExit('No se encontró anticipos.js para insertar flujo profesional')
+    html=anticipos_re.sub(lambda m:m.group(1)+'\n'+anticipos_flow_tag,html,count=1)
+
 if health_tag not in html:
     pos=html.lower().rfind('</body>')
     if pos<0: raise SystemExit('No se encontró </body>')
@@ -165,7 +163,6 @@ if health_tag not in html:
 html=html.replace('profesional-modular-v3','profesional-modular-v4')
 INDEX.write_text(html,encoding='utf-8')
 
-# Validaciones estructurales: no se publica si falta un contrato o archivo.
 for name,contract in contracts.items():
     owner=OUT/contract['owner']
     if not owner.exists(): raise SystemExit(f'Owner de módulo faltante: {name} -> {owner}')
