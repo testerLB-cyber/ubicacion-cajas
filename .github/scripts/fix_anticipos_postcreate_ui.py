@@ -7,10 +7,14 @@ marker='/* Tráfico App Profesional · Post-create común Operador/Beneficiario 
 if marker in s:
     print('post-create común v3 ya aplicado'); raise SystemExit(0)
 
-# Inserta helper común antes del fix selector final.
-anchor='/* Tráfico App Profesional · Fix selector + flujo común v2 */'
-if anchor not in s:
-    raise SystemExit('No se encontró ancla Fix selector + flujo común v2')
+# Inserta helper común antes del selector definitivo profesional.
+anchors=[
+    '/* Tráfico App Profesional · Selector definitivo bloqueado v4 */',
+    '/* Tráfico App Profesional · Fix selector + flujo común v2 */'
+]
+anchor=next((a for a in anchors if a in s),None)
+if not anchor:
+    raise SystemExit('No se encontró ancla del selector definitivo de Anticipos')
 helper=r'''
 
 /* Tráfico App Profesional · Post-create común Operador/Beneficiario v3 */
@@ -44,14 +48,12 @@ if old_o not in s:
     raise SystemExit('No se encontró creación de Operador esperada')
 s=s.replace(old_o,new_o,1)
 
-# Refuerzo: los filtros son exclusivamente visuales; no sustituyen acciones ni creación.
-verify="""
 if 'ccAntTipoPersonaSwitch' not in s or 'ccAntPendTipoPersonaSwitch' not in s:
     raise SystemExit('Faltan selectores Operador/Beneficiario')
 if 'window.ccAntChooseTypeFinal=chooseType' not in s:
     raise SystemExit('Falta selector final Nuevo anticipo')
-"""
-exec(verify)
+if 'Selector definitivo bloqueado v4' not in s:
+    raise SystemExit('Falta bloqueo definitivo del selector profesional')
 
 P.write_text(s,encoding='utf-8')
-print('Post-create común conectado para Operador y Beneficiario')
+print('Post-create común conectado para Operador y Beneficiario con selector v4')
