@@ -29,6 +29,7 @@ on:
       - '.github/scripts/add_service_sheets_control_dashboard.py'
       - '.github/scripts/add_service_sheets_comprobacion_v4.py'
       - '.github/scripts/add_service_sheets_comprobacion_v5.py'
+      - '.github/scripts/add_service_sheets_catalogos_v6.py'
       - '.github/scripts/add_user_notifications_ui.py'
       - '.github/workflows/create-professional-copy.yml'
 
@@ -90,6 +91,9 @@ jobs:
       - name: Ajustar comprobación por operador
         run: python3 .github/scripts/add_service_sheets_comprobacion_v5.py
 
+      - name: Agregar catálogos propios de responsables y operadores
+        run: python3 .github/scripts/add_service_sheets_catalogos_v6.py
+
       - name: Agregar notificaciones por usuario
         run: python3 .github/scripts/add_user_notifications_ui.py
 
@@ -117,6 +121,7 @@ jobs:
           grep -q 'Hojas de Servicio v3 · tablero de control' profesional/assets/js/modules/service-sheets.js
           grep -q 'Hojas de Servicio v4 · comprobación final cliente + servicio' profesional/assets/js/modules/service-sheets.js
           grep -q 'Hojas de Servicio v5 · comprobación por operador' profesional/assets/js/modules/service-sheets.js
+          grep -q 'Hojas de Servicio v6 · catálogos propios responsables + operadores' profesional/assets/js/modules/service-sheets.js
           grep -q "\['comprobar','Comprobar uso / devolución'\]" profesional/assets/js/security/auth-permissions.js
           grep -q "hojas_servicio','Control de Hojas de Servicio" profesional/assets/js/security/auth-permissions.js
           grep -q 'Notificaciones por usuario + comprobaciones por enlace' profesional/assets/js/modules/alerts-center.js
