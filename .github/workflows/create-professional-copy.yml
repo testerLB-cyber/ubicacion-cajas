@@ -23,6 +23,7 @@ on:
       - '.github/scripts/add_anticipos_beneficiarios_conceptos_ui.py'
       - '.github/scripts/add_anticipos_tipo_flujo_ui.py'
       - '.github/scripts/fix_anticipos_selector_flujo.py'
+      - '.github/scripts/fix_anticipos_postcreate_ui.py'
       - '.github/scripts/restore_anticipos_operador_destino_ui.py'
       - '.github/scripts/add_anticipos_movimientos_cajas_ui.py'
       - '.github/scripts/remove_obsolete_anticipos_ui.py'
@@ -103,8 +104,11 @@ jobs:
       - name: Separar Operadores y Beneficiarios en listados
         run: python3 .github/scripts/add_anticipos_tipo_flujo_ui.py
 
-      - name: Restaurar selector Nuevo anticipo y flujo común
+      - name: Fijar selector definitivo Nuevo anticipo
         run: python3 .github/scripts/fix_anticipos_selector_flujo.py
+
+      - name: Conectar post-create comun Operador Beneficiario
+        run: python3 .github/scripts/fix_anticipos_postcreate_ui.py
 
       - name: Eliminar controles obsoletos de Anticipos
         run: python3 .github/scripts/remove_obsolete_anticipos_ui.py
@@ -129,7 +133,9 @@ jobs:
           grep -q 'Restaurar operador por destino v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Movimientos cajas v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Filtro Operador/Beneficiario + flujo equivalente v1' profesional/assets/js/modules/anticipos-profesional-flow.js
-          grep -q 'Fix selector + flujo común v2' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Selector definitivo bloqueado v4' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'Post-create común Operador/Beneficiario v3' profesional/assets/js/modules/anticipos-profesional-flow.js
+          grep -q 'ccAntPostCreateComun' profesional/assets/js/modules/anticipos-profesional-flow.js
           grep -q 'Anticipos cleanup definitivo v1' profesional/assets/js/modules/anticipos-profesional-flow.js
           ! grep -q 'data-antv="confirmar"' profesional/index.html
           ! grep -q 'data-antv="caja"' profesional/index.html
