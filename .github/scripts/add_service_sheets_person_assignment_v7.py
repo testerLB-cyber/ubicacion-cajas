@@ -34,4 +34,3 @@ if tag not in h:
     h=h.replace(anchor,anchor+'\n'+tag,1)
 I.write_text(h,encoding='utf-8')
 print('Mejoras Hojas de Servicio v7 aplicadas')
-'''
