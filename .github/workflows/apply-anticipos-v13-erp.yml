@@ -1,4 +1,4 @@
-name: Aplicar Anticipos v13 ERP seguro
+name: Aplicar Anticipos ERP seguro
 
 on:
   workflow_dispatch:
@@ -18,56 +18,57 @@ jobs:
         with:
           ref: main
 
-      - name: Insertar v13 despues de Auth sin duplicados
+      - name: Consolidar una sola carga ERP despues de Auth
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('profesional/index.html')
           t=p.read_text(encoding='utf-8')
-          tag='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v13-safe"></script>'
-          old='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v13"></script>'
           auth='<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>'
-
-          # Eliminar cualquier carga anterior de v13 para impedir que vuelva a quedar antes de Auth.
-          t=t.replace(old+'\n','').replace(old,'')
-          t=t.replace(tag+'\n','').replace(tag,'')
+          tag='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v14-safe"></script>'
 
           if auth not in t:
-              raise SystemExit('No se encontro auth-permissions.js; se cancela para no arriesgar el login')
+              raise SystemExit('No se encontro auth-permissions.js; publicacion cancelada')
 
-          # v13 queda despues de Auth. El modulo no hace RPC hasta que el usuario abre Catalogos/Utilerias.
+          # Quitar cualquier version/duplicado previo del modulo ERP.
+          t=re.sub(r'\s*<script src="assets/js/modules/anticipos-v13-erp-catalogos\.js\?v=[^"]+"></script>\s*', '\n', t)
+
+          # Insertar exactamente una vez despues de Auth.
           t=t.replace(auth, auth+'\n'+tag, 1)
           p.write_text(t,encoding='utf-8')
           PY
 
-      - name: Validar aislamiento de arranque
+      - name: Validar sintaxis orden y unicidad
         run: |
           node --check profesional/assets/js/modules/anticipos-v13-erp-catalogos.js
           python3 - <<'PY'
           from pathlib import Path
-          t=Path('profesional/index.html').read_text(encoding='utf-8')
-          auth='<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>'
-          tag='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v13-safe"></script>'
-          if t.count(tag) != 1:
-              raise SystemExit(f'v13 debe existir una sola vez; encontrado {t.count(tag)}')
-          if t.index(tag) <= t.index(auth):
-              raise SystemExit('v13 quedo antes de Auth: publicacion bloqueada')
+          import re
+          html=Path('profesional/index.html').read_text(encoding='utf-8')
           js=Path('profesional/assets/js/modules/anticipos-v13-erp-catalogos.js').read_text(encoding='utf-8')
-          required=['Catálogos ERP + Utilerías','cc_ant_catalog_action','cc_ant_util_list','const sb=()=>window.gmSupabase']
+          auth='<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>'
+          matches=re.findall(r'<script src="assets/js/modules/anticipos-v13-erp-catalogos\.js\?v=[^"]+"></script>',html)
+          if len(matches)!=1:
+              raise SystemExit(f'Debe existir una sola carga ERP; encontradas {len(matches)}')
+          tag=matches[0]
+          if html.index(tag)<=html.index(auth):
+              raise SystemExit('ERP quedo antes de Auth; publicacion cancelada')
+          required=['Inicialización segura','cc_ant_catalog_action','cc_ant_util_list','function bootSafe()']
           missing=[x for x in required if x not in js]
           if missing:
-              raise SystemExit('Faltan contratos v13: '+', '.join(missing))
-          print('OK: Auth carga antes de v13; una sola instancia; sintaxis y contratos presentes')
+              raise SystemExit('Faltan protecciones/contratos: '+', '.join(missing))
+          print('OK: una sola carga ERP v14, despues de Auth, sintaxis valida e inicializacion segura')
           PY
 
-      - name: Publicar cambio seguro
+      - name: Publicar cambio validado
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add profesional/index.html
           if git diff --cached --quiet; then
-            echo "v13 seguro ya estaba correctamente ubicado"
+            echo "Carga ERP ya estaba consolidada correctamente"
           else
-            git commit -m "Reactivar Anticipos v13 de forma segura despues de Auth"
+            git commit -m "Consolidar Anticipos ERP v14 seguro despues de Auth"
             git push origin main
           fi
