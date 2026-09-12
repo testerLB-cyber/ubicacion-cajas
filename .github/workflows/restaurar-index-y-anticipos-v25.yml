@@ -1,0 +1,49 @@
+name: Restaurar index y Anticipos v25 estable
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/restaurar-index-y-anticipos-v25.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Restaurar index sano y retirar v26/v27 de Anticipos
+        run: |
+          git show 1f39e105aa58baa7dccc2f324990146edc3f077f:profesional/index.html > profesional/index.html
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          for tag in [
+              '<script src="assets/js/modules/anticipos-v26-operador-buscable.js?v=v26"></script>\n',
+              '<script src="assets/js/modules/anticipos-v27-pendientes-separados.js?v=v27"></script>\n'
+          ]:
+              s=s.replace(tag,'')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Verificar Anticipos y Hojas
+        run: |
+          grep -q 'anticipos-v25-movimientos-caja-unico.js?v=v25' profesional/index.html
+          ! grep -q 'anticipos-v26-operador-buscable.js' profesional/index.html
+          ! grep -q 'anticipos-v27-pendientes-separados.js' profesional/index.html
+          grep -q 'service-sheets-v12-unico.js?v=v12-unico' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Restaurar index y Anticipos v25 estable"
+            git push
+          fi
