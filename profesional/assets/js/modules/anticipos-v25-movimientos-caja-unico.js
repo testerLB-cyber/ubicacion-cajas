@@ -41,3 +41,9 @@
   if(window.__ccAntV31Loader)return;window.__ccAntV31Loader=true;
   const s=document.createElement('script');s.src='assets/js/modules/anticipos-v31-saldos-cajas.js?v=31';document.head.appendChild(s);
 })();
+
+/* Loader Anticipos v32 · configuración por destino única */
+(function(){
+  if(window.__ccAntV32Loader)return;window.__ccAntV32Loader=true;
+  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v32-config-destino-unica.js?v=32';document.head.appendChild(s);
+})();
