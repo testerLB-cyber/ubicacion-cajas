@@ -1,3 +1,1253 @@
 <!DOCTYPE html>
+
 <html lang="es">
-<!-- index content intentionally omitted? -->
+<head>
+<meta name="trafico-app-build" content="profesional-modular-v4"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard de Control Logístico Tráfico App</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com">
+async function generarVideoResumen() {
+    alert("Iniciando generación de video resumen... por favor espere.");
+    const canvas = document.createElement("canvas");
+    canvas.width = 1280;
+    canvas.height = 720;
+    const stream = canvas.captureStream(30);
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const chunks = [];
+    
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Resumen_Operacion.webm';
+        a.click();
+    };
+
+    mediaRecorder.start();
+
+    // Narración y presentación visual
+    const synth = window.speechSynthesis;
+    const textoResumen = "Este es el reporte ejecutivo de operaciones de G.M. Transporte. Analizando métricas clave, observamos un desempeño positivo en la eficiencia logística.";
+    
+    // Simulación de grabación visual simple
+    const ctx = canvas.getContext('2d');
+    const draw = () => {
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#333';
+        ctx.font = '40px Arial';
+        ctx.fillText("Reporte de Operación G.M. Transporte", 100, 100);
+        ctx.font = '24px Arial';
+        ctx.fillText(textoResumen, 100, 200);
+        if (mediaRecorder.state !== 'inactive') requestAnimationFrame(draw);
+    };
+    draw();
+
+    // Hablar y esperar
+    const utterance = new SpeechSynthesisUtterance(textoResumen);
+    utterance.lang = 'es-ES';
+    synth.speak(utterance);
+
+    await new Promise(resolve => utterance.onend = resolve);
+    mediaRecorder.stop();
+    alert("Video generado con éxito.");
+}
+
+async function handleReporteGeneracion() {
+    // Llamar al original
+    await exportReporteGerencialPDF();
+    // Llamar al nuevo
+    await generarVideoResumen();
+}
+</script>
+<!-- SheetJS para Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- jsPDF y jspdf-autotable para exportar PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<!-- FontAwesome Font Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="assets/css/style-001.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="assets/css/style-002.css"/>
+<link rel="stylesheet" href="assets/css/style-003.css" id="gm-modern-overhaul"/>
+<link rel="stylesheet" href="assets/css/style-004.css" id="gm-control-cajas-css"/>
+<link rel="stylesheet" href="assets/css/style-005.css" id="cc-medidas-simulacion-css"/>
+</style>
+
+<link rel="stylesheet" href="assets/css/style-006.css" id="gm-kpi-tracto-carro-css"/>
+<link rel="stylesheet" href="assets/css/style-007.css" id="gm-kpi-operators-css"/>
+<link rel="stylesheet" href="assets/css/style-008.css" id="gm-sidebar-cajas-css"/>
+<link rel="stylesheet" href="assets/css/style-009.css" id="cc-fullscreen-responsive"/>
+
+<link rel="stylesheet" href="assets/css/style-010.css" id="cc-dot-css"/>
+
+
+<link rel="stylesheet" href="assets/css/style-011.css" id="cc-inventory-scroll-fix"/>
+
+
+<link rel="stylesheet" href="assets/css/style-012.css" id="cc-storage-inventory-highlight"/>
+
+
+<link rel="stylesheet" href="assets/css/style-013.css" id="cc-renta-compact-list"/>
+
+
+<link rel="stylesheet" href="assets/css/style-014.css" id="cc-refresh-visible-style"/>
+
+
+<link rel="stylesheet" href="assets/css/style-015.css" id="cc-inventory-visual-performance-plus"/>
+
+
+<link rel="stylesheet" href="assets/css/style-016.css" id="cc-renta-edit-button-added"/>
+
+
+<link rel="stylesheet" href="assets/css/style-017.css" id="cc-hist-performance-fix"/>
+
+
+<link rel="stylesheet" href="assets/css/style-018.css" id="cc-location-module-css"/>
+
+
+<link rel="stylesheet" href="assets/css/style-019.css" id="cc-map-units-search-labels"/>
+
+
+<link rel="stylesheet" href="assets/css/style-020.css" id="gm-responsive-scroll-fix"/>
+
+<link rel="stylesheet" href="assets/css/style-021.css" id="cc-auth-security-css"/>
+<link rel="stylesheet" href="assets/css/style-022.css" id="cc-anticipos-css"/>
+<link rel="stylesheet" href="assets/css/style-023.css"/>
+
+<style id="ccAntCompactActionsStyle">
+#ccAntBody td:last-child{min-width:340px;vertical-align:middle}
+#ccAntBody td:last-child>div{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;align-items:center;white-space:nowrap;overflow-x:auto;overflow-y:hidden;padding:2px 0;scrollbar-width:thin}
+#ccAntBody td:last-child .cc-btn{font-size:9px!important;line-height:1.1!important;padding:4px 7px!important;min-height:24px!important;border-radius:6px!important;white-space:nowrap!important;flex:0 0 auto!important}
+#ccAntBody td:last-child .cc-btn i{font-size:9px!important;margin-right:3px!important}
+@media (max-width:900px){#ccAntBody td:last-child{min-width:300px}#ccAntBody td:last-child .cc-btn{font-size:8.5px!important;padding:4px 6px!important}}
+</style>
+</head>
+<body class="text-slate-700 antialiased cc-auth-locked">
+<div id="ccLoginGate">
+  <div class="cc-login-card">
+    <div class="cc-login-brand">
+      <h2><i class="fa-solid fa-truck-fast"></i> Tráfico App</h2>
+      <p>Acceso seguro · Control Logístico</p>
+    </div>
+    <div class="cc-login-body">
+      <form id="ccLoginForm">
+        <div class="cc-login-field"><label>Correo</label><input id="ccLoginEmail" type="email" autocomplete="username" required></div>
+        <div class="cc-login-field"><label>Contraseña</label><input id="ccLoginPassword" type="password" autocomplete="current-password" required></div><label style="display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;color:#475569;margin:-2px 0 12px;cursor:pointer"><input id="ccRememberSession" type="checkbox" checked style="width:auto"> Mantener sesión iniciada en este dispositivo</label>
+        <button id="ccLoginBtn" class="cc-login-btn" type="submit"><i class="fa-solid fa-lock"></i> Iniciar sesión</button>
+      </form>
+      <div id="ccLoginMsg" class="cc-login-msg"></div>
+      <div id="ccBootstrapToggle" class="cc-bootstrap-toggle" style="display:none" onclick="document.getElementById('ccBootstrapBox').classList.toggle('open')">Primera activación del usuario ADMIN</div>
+      <div id="ccBootstrapBox">
+        <div style="font-size:11px;font-weight:900;color:#0f172a;margin-bottom:9px">Activar usuario maestro</div>
+        <form id="ccBootstrapForm">
+          <div class="cc-login-field"><label>Nombre</label><input id="ccBootstrapName" type="text" required></div>
+          <div class="cc-login-field"><label>Correo del administrador</label><input id="ccBootstrapEmail" type="email" required></div>
+          <div class="cc-login-field"><label>Crear contraseña</label><input id="ccBootstrapPassword" type="password" minlength="8" required></div>
+          <button class="cc-login-btn" type="submit">Activar ADMIN</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<aside aria-label="Menú lateral" id="gmSideMenu">
+<div class="gm-side-brand"><i class="fa-solid fa-truck-fast mr-2"></i>Tráfico App<small>Control Logístico</small></div>
+<div class="gm-side-section">Menú principal</div>
+<button class="active" id="gmSideDashboard" onclick="gmMostrarDashboard()"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></button>
+<button id="gmSideCajas" onclick="gmMostrarControlCajas()"><i class="fa-solid fa-trailer"></i><span>Operaciones</span></button>
+<div class="gm-side-section" id="ccAdminSideSection" style="display:none">Administración</div>
+<button id="gmSideUsers" style="display:none" onclick="ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i><span>Usuarios y permisos</span></button>
+<div id="ccSessionBox" style="display:none;margin:12px 8px 0;padding:10px;border-top:1px solid rgba(148,163,184,.18);font-size:10px;color:#cbd5e1">
+  <div id="ccSessionName" style="font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis"></div>
+  <div id="ccSessionRole" style="margin-top:2px;color:#93c5fd"></div>
+  <button type="button" onclick="ccLogout()" style="margin-top:8px;width:100%;padding:7px 8px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.06);color:#fff;font-size:10px;font-weight:800"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+</div>
+</aside>
+<!-- LAYOUT PRINCIPAL CON BARRA SUPERIOR FIJA / HEADER PROFESIONAL -->
+<div class="min-h-screen flex flex-col">
+<!-- Topbar Corporativa -->
+<header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="bg-blue-600 p-2.5 rounded-xl shadow-inner text-white flex items-center justify-center">
+<i class="fa-solid fa-truck-fast text-xl"></i>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-wide text-white flex items-center gap-2">
+            Tráfico App <span class="text-xs bg-blue-500/30 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-normal">Control Logístico</span>
+</h1>
+<p class="text-xs text-slate-400">Sistema inteligente de analítica y operaciones por cliente</p>
+</div>
+</div>
+<!-- Acciones Principales / Botonera Superior -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Botón para alternar a la Radiografía Gerencial -->
+<button class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2 text-xs shadow-sm" id="btnVistaGerencial" onclick="toggleVistaGerencial()">
+<i class="fa-solid fa-chart-pie text-white text-base"></i>
+<span>Vista Gerencial</span>
+</button>
+<button class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2 text-xs border border-slate-700 shadow-sm" onclick="exportReporteGerencialPDF()">
+<i class="fa-solid fa-file-pdf text-rose-400 text-base"></i>
+<span>Reporte PDF</span>
+</button>
+<button class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium px-3.5 py-2 rounded-lg transition flex items-center gap-2 text-xs border border-slate-700 shadow-sm" onclick="exportReporteGerencialSemanalPDF()">
+<i class="fa-solid fa-chart-line text-amber-400 text-base"></i>
+<span>Semanal PDF</span>
+</button>
+<label class="cursor-pointer bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-xs">
+<i class="fa-solid fa-hourglass-half text-sm"></i>
+<span>Vigencia 30D</span>
+<input accept=".xlsx, .xls, .csv" class="hidden" id="vigenciaExcelInput" type="file"/>
+</label>
+<label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-xs">
+<i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+<span>Cargar Excel</span>
+<input accept=".xlsx, .xls, .csv" class="hidden" id="excelInput" type="file"/>
+</label>
+</div>
+</header>
+<!-- Contenedor Principal del Dashboard -->
+<main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+<!-- Status Message -->
+<div class="hidden bg-blue-50 border-l-4 border-blue-500 text-blue-900 px-4 py-3 rounded-r-lg text-sm shadow-sm flex items-center gap-3 avoid-break" id="statusMessage">
+<i class="fa-solid fa-circle-info text-blue-500 text-lg"></i>
+<span id="statusText">Esperando archivo...</span>
+</div>
+<nav aria-label="Navegación rápida" id="gmQuickNav">
+<span class="nav-title"><i class="fa-solid fa-bolt mr-1"></i> Acceso</span>
+<a href="#vistaOperativa"><i class="fa-solid fa-gauge-high mr-1"></i> Resumen</a>
+    <a href="#kpiTractoCarroSection"><i class="fa-solid fa-truck-ramp-box mr-1"></i> Tracto vs Carro</a>
+<a href="#transitoSection"><i class="fa-solid fa-truck-fast mr-1"></i> Tránsito</a>
+<a href="#pendientesSection"><i class="fa-solid fa-clock mr-1"></i> Pendientes</a>
+<a href="#vigencia30Section"><i class="fa-solid fa-hourglass-half mr-1"></i> Vigencia 30</a>
+<a href="#operadorSection"><i class="fa-solid fa-id-card mr-1"></i> Operadores</a>
+<a href="#vistaGerencial"><i class="fa-solid fa-chart-line mr-1"></i> Gerencial</a>
+<a href="#controlCajasSection"><i class="fa-solid fa-trailer mr-1"></i> Control de Cajas</a>
+</nav>
+<!-- ============================================================
+     CONTROL INDEPENDIENTE DE CAJAS / REMOLQUES EN RENTA
+     ============================================================ -->
+<section class="cc-wrap" id="controlCajasSection">
+<button id="ccBackDashboard" onclick="gmMostrarDashboard()" title="Volver al Dashboard" type="button"><i class="fa-solid fa-arrow-left"></i><span>Dashboard</span></button>
+<div class="cc-head"><div><h2><i class="fa-solid fa-trailer mr-2"></i>Control de Cajas</h2><p>Inventario, clientes, responsables y control de cajas en renta.</p></div><span class="cc-badge" style="background:rgba(255,255,255,.12);color:#fff">Módulo independiente</span></div>
+<div style="display:flex;justify-content:flex-end;margin:0 0 10px">
+<button type="button" class="cc-btn cc-btn-light" id="ccRefreshVisibleBtn" onclick="ccRefreshVisible()">
+<i class="fa-solid fa-rotate mr-1"></i>Refresh
+</button>
+</div>
+<div class="cc-tabs">
+
+<button class="cc-tab active" onclick="ccTab('dashboard',this)"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</button>
+<button class="cc-tab" onclick="ccTab('inventario',this)"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventario de Unidades</button>
+<button class="cc-tab" onclick="ccTab('renta',this)"><i class="fa-solid fa-calendar-check mr-1"></i>Control de renta</button><button class="cc-tab" onclick="ccTab('historial',this)"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial / Reporte de renta</button><button class="cc-tab" onclick="ccTab('proforma',this)"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Proforma</button><button class="cc-tab" onclick="ccTab('mantenimiento',this)"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mantenimiento</button><button class="cc-tab" onclick="ccTab('mapa',this)"><i class="fa-solid fa-map-location-dot mr-1"></i>Mapa de cajas</button><button class="cc-tab" onclick="ccTab('anticipos',this)"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Control de Anticipos</button><button class="cc-tab" onclick="ccTab('configuracion',this)"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
+</div>
+<div class="cc-panel" id="ccPanelAnticipos">
+<div class="cc-toolbar"><div><strong>Control de Anticipos</strong><div class="cc-note">Anticipos a operadores, comprobaciones y balance de caja.</div></div><div class="cc-actions"><button id="ccAntNuevoBtn" class="cc-btn cc-btn-primary" onclick="ccAntNuevoAnticipo()" onclick="return ccAntSelectorStandaloneV9(event)">Nuevo anticipo</button></div></div>
+<div id="ccAntKpis" class="cc-ant-kpis"></div>
+<div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
+<div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>TIPO ANTICIPO</th><th>MÉTODO</th><th>VIAJE</th><th>AUTORIZADO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
+
+<div id="ccAntViewSaldos" class="cc-ant-view" style="display:none"><div id="ccAntSaldoKpis" class="cc-ant-kpis"></div><div class="cc-toolbar"><div><strong>Pendiente por comprobar por operador</strong><div class="cc-note">Muestra cuánto dinero tiene pendiente de comprobar cada operador. Presiona un operador para abrir sus anticipos pendientes.</div></div></div><div class="cc-dot-filters" style="grid-template-columns:repeat(2,minmax(180px,1fr))"><div><label>Operador</label><select id="ccAntSaldoOperador" onchange="ccAntRenderSaldos()"><option value="">Todos</option></select></div><div><label>Estado</label><select id="ccAntSaldoTipo" onchange="ccAntRenderSaldos()"><option value="">Todos</option><option value="CON_PENDIENTE">Con pendiente</option><option value="SIN_PENDIENTE">Sin pendiente</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>OPERADOR</th><th>ANTICIPOS ABIERTOS</th><th>ENTREGADO</th><th>COMPROBADO / DEVUELTO</th><th>PENDIENTE</th></tr></thead><tbody id="ccAntSaldoBody"></tbody></table></div><div class="cc-config-card" style="margin-top:12px"><strong>Cómo funciona</strong><div class="cc-note" style="margin-top:8px">El pendiente se calcula por anticipo: <b>Entregado - Comprobado - Devuelto</b>. Al seleccionar un operador se muestran sus anticipos individualmente para continuar la comprobación.</div></div></div>
+<div id="ccAntViewReportes" class="cc-ant-view" style="display:none">
+<div class="cc-toolbar"><div><strong>Reportes de anticipos</strong><div class="cc-note">Filtra por rango y operador para consultar cuánto se entregó, cuánto se comprobó y cuánto quedó pendiente.</div></div></div>
+<div class="cc-dot-filters" style="grid-template-columns:repeat(3,minmax(160px,1fr))">
+<div><label>Desde</label><input id="ccAntRepDesde" type="date" oninput="ccAntRenderReportes()"></div>
+<div><label>Hasta</label><input id="ccAntRepHasta" type="date" oninput="ccAntRenderReportes()"></div>
+<div><label>Operador</label><select id="ccAntRepFiltroOperador" onchange="ccAntRenderReportes()"><option value="">Todos</option></select></div>
+</div>
+<div id="ccAntRepKpis" class="cc-ant-kpis"></div>
+
+<div class="cc-config-card" style="margin-top:12px">
+<div class="cc-toolbar"><div><strong>Histórico por operador</strong><div class="cc-note">Totales de anticipos entregados, comprobados, devueltos y pendientes dentro del rango.</div></div><button class="cc-btn cc-btn-dark" onclick="ccAntExportReporteOperadoresPDF()">Exportar este reporte</button></div>
+<div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>OPERADOR</th><th>ANTICIPOS</th><th>ENTREGADO</th><th>COMPROBADO</th><th>DEVUELTO</th><th>PENDIENTE</th><th>% COMPROBADO</th></tr></thead><tbody id="ccAntRepOperador"></tbody></table></div>
+</div>
+
+<div class="cc-config-card" style="margin-top:12px">
+<div class="cc-toolbar"><div><strong>Detalle de anticipos</strong><div class="cc-note">Detalle individual del rango seleccionado.</div></div><button class="cc-btn cc-btn-dark" onclick="ccAntExportReporteDetallePDF()">Exportar este reporte</button></div>
+<div class="cc-inv-wrap" style="max-height:48vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FECHA</th><th>FOLIO</th><th>OPERADOR</th><th>DESTINO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>DEVUELTO</th><th>PENDIENTE</th><th>ESTATUS</th></tr></thead><tbody id="ccAntRepDetalle"></tbody></table></div>
+</div>
+
+<div class="cc-config-card" style="margin-top:12px">
+<div class="cc-toolbar"><div><strong>Reporte por concepto</strong><div class="cc-note">Importe autorizado por concepto dentro de los anticipos del rango.</div></div><button class="cc-btn cc-btn-dark" onclick="ccAntExportReporteConceptosPDF()">Exportar este reporte</button></div>
+<div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>CONCEPTO</th><th>REGISTROS</th><th>AUTORIZADO</th></tr></thead><tbody id="ccAntRepConcepto"></tbody></table></div>
+</div>
+</div>
+<div id="ccAntViewCatalogos" class="cc-ant-view" style="display:none">
+<div class="cc-ant-report-grid">
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Operadores</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('OPERADOR')">Agregar</button></div><div id="ccAntCatOperadores"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Conceptos</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('CONCEPTO')">Agregar</button></div><div id="ccAntCatConceptos"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Destinos</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('DESTINO')">Agregar</button></div><div id="ccAntCatDestinos"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Métodos de depósito</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('METODO_DEPOSITO')">Agregar</button></div><div id="ccAntCatMetodos"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Cuentas / cajas</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('CUENTA')">Agregar</button></div><div id="ccAntCatCuentas"></div></div><div class="cc-config-card"><div class="cc-toolbar"><div><strong>Tipos de movimiento de caja</strong><div class="cc-note">Define si cada movimiento suma (ENTRADA) o resta (SALIDA) al saldo.</div></div><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('TIPO_MOV_CAJA')">Agregar</button></div><div id="ccAntCatTiposMovCaja"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><strong>Tipos de unidad para Anticipos</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('TIPO_UNIDAD_ANTICIPO')">Agregar</button></div><div id="ccAntCatTiposAnticipo"></div></div>
+  <div class="cc-config-card"><div class="cc-toolbar"><div><strong>Configuración por destino</strong><div class="cc-note">Monto por concepto y tipo de unidad. Marca Default para incluirlo automáticamente.</div></div><button class="cc-btn cc-btn-primary" onclick="ccAntConfigDestino()">Configurar</button></div><div id="ccAntCatDestinoConceptos"></div></div>
+</div></div>
+</div><div class="cc-panel active" id="ccPanelDashboard"><div id="ccDashboardTipoFilter" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;"><span style="font-size:10px;font-weight:900;color:#64748b;">INDICADORES POR TIPO:</span><button type="button" class="cc-btn cc-btn-primary ccDashTipoBtn" data-tipo="TODOS" onclick="ccDashboardTipo('TODOS')">General</button><button type="button" class="cc-btn cc-btn-light ccDashTipoBtn" data-tipo="CAJA" onclick="ccDashboardTipo('CAJA')">Cajas</button><button type="button" class="cc-btn cc-btn-light ccDashTipoBtn" data-tipo="CARRO" onclick="ccDashboardTipo('CARRO')">Carros</button><div id="ccDashTipoExtra" style="display:flex;gap:6px;flex-wrap:wrap"></div></div><div id="ccDashboardContent"></div></div>
+<div class="cc-panel" id="ccPanelInventario"><div class="cc-inv-tipo-filter" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 12px;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+<span style="font-size:10px;font-weight:900;color:#64748b;margin-right:4px;">VER INVENTARIO:</span>
+<button type="button" class="cc-btn cc-btn-primary ccInvTipoBtn" data-tipo="TODOS" onclick="ccFiltrarInventarioTipo('TODOS')">Todas</button>
+<button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CAJA" onclick="ccFiltrarInventarioTipo('CAJA')">Cajas</button>
+<button type="button" class="cc-btn cc-btn-light ccInvTipoBtn" data-tipo="CARRO" onclick="ccFiltrarInventarioTipo('CARRO')">Carros</button>
+<div id="ccInvTipoExtra" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</div><div class="cc-toolbar"><div><strong>Inventario de unidades</strong><div class="cc-note">Catálogo general de unidades: cajas, carros y los demás tipos configurados.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-light" onclick="ccAbrirImportarUnidades()"><i class="fa-solid fa-file-import mr-1"></i>Importar unidades</button><button class="cc-btn cc-btn-light" type="button" onclick="ccDescargarTemplateUnidades()"><i class="fa-solid fa-file-excel mr-1"></i>Descargar template</button><button class="cc-btn cc-btn-primary" onclick="ccNuevaCaja()"><i class="fa-solid fa-plus mr-1"></i>Agregar unidad</button></div></div><div class="cc-inv-kpis" id="ccInventarioKpis"></div><div class="cc-inv-toolbar"><input class="cc-inv-search" id="ccInventarioSearch" oninput="ccInventarioSearchDebounced()" placeholder="Buscar por caja, cliente, tipo, origen..." type="search"/><button class="cc-btn cc-btn-light" onclick="document.getElementById('ccInventarioSearch').value='';ccRenderInventario()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div><div class="cc-inv-wrap"><table class="cc-inv-table"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>UNIDAD / ECONÓMICO</th><th>DESCRIPCIÓN</th><th>TAMAÑO</th><th>TIPO</th><th>ORIGEN</th><th>PLACAS</th><th>CLIENTE</th><th>ESTATUS</th><th>CAPACIDAD</th><th>ÚLTIMA UBICACIÓN</th><th>OBSERVACIONES</th><th>ACCIONES</th></tr></thead><tbody id="ccInventarioBody"></tbody></table></div>
+
+</div>
+<div class="cc-panel" id="ccPanelProforma">
+<div class="cc-pro-hero"><h3><i class="fa-solid fa-file-invoice-dollar mr-2"></i>Proforma de renta</h3><p>Calcula el total a cobrar y el detalle de cada unidad rentada dentro del rango seleccionado, usando la tarifa diaria, semanal o mensual configurada para el cliente.</p><div class="cc-pro-pills"><span class="cc-pro-pill">Rango de fechas</span><span class="cc-pro-pill">Días efectivamente rentados</span><span class="cc-pro-pill">Tarifa por cliente</span><span class="cc-pro-pill">PDF</span></div></div>
+<div class="cc-proforma-card">
+<div class="cc-proforma-filters">
+<div class="cc-field"><label>Desde</label><input id="ccProformaDesde" type="date"></div>
+<div class="cc-field"><label>Hasta</label><input id="ccProformaHasta" type="date"></div>
+<div class="cc-field"><label>Cliente</label><select id="ccProformaCliente"><option value="">Todos los clientes</option></select></div>
+<button class="cc-btn cc-btn-primary" onclick="ccCalcularProforma()"><i class="fa-solid fa-calculator mr-1"></i>Calcular</button>
+</div></div>
+<div class="cc-proforma-kpis" id="ccProformaKpis"></div>
+<div id="ccProformaSummary" class="cc-pro-summary"></div>
+<div class="cc-proforma-card"><div class="cc-toolbar"><div><strong>Detalle financiero de la proforma</strong><div class="cc-note">El importe se calcula con los días efectivamente rentados y la tarifa configurada para cada cliente y unidad.</div></div><button class="cc-btn cc-btn-dark" onclick="ccGenerarPDFProforma()"><i class="fa-solid fa-file-pdf mr-1"></i>Generar PDF</button></div>
+<div class="cc-inv-wrap"><table class="cc-proforma-table"><thead><tr><th>#</th><th>CLIENTE</th><th>UNIDAD</th><th>TIPO</th><th>DÍAS</th><th>COBRO</th><th>TARIFA</th><th>PERIODOS</th><th>IMPORTE</th></tr></thead><tbody id="ccProformaBody"></tbody><tfoot id="ccProformaFoot"></tfoot></table></div></div>
+</div>
+<div class="cc-panel" id="ccPanelHistorial">
+<div class="cc-hist-hero"><h3><i class="fa-solid fa-clock-rotate-left mr-2"></i>Historial / Reporte de renta</h3><p>Consulta todos los movimientos de renta registrados de las cajas. Aquí solo se muestra trazabilidad: cuándo entró a renta, cuándo salió, cliente, responsable, estatus y observaciones.</p></div>
+<div class="cc-hist-filters" style="grid-template-columns:repeat(3,minmax(180px,1fr))">
+<div><label>Caja</label><select id="ccHistCaja" onchange="ccRenderHistorialDebounced()"><option value="">Todas las cajas</option></select></div>
+<div><label>Cliente</label><select id="ccHistCliente" onchange="ccRenderHistorialDebounced()"><option value="">Todos los clientes</option></select></div>
+<div><label>Responsable</label><select id="ccHistResponsable" onchange="ccRenderHistorialDebounced()"><option value="">Todos los responsables</option></select></div>
+<button class="cc-btn cc-btn-light" type="button" onclick="ccLimpiarHistorial()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
+</div>
+<div class="cc-hist-kpis" id="ccHistKpis"></div>
+<div class="cc-hist-card">
+  <div class="cc-toolbar">
+    <div><strong>Movimientos de renta</strong><div class="cc-note">Cada fila corresponde a un periodo de renta registrado. Las rentas finalizadas permanecen en el historial.</div></div>
+    <div class="cc-hist-actions"><button class="cc-btn cc-btn-light" onclick="ccExportarExcelHistorial()"><i class="fa-solid fa-file-excel mr-1"></i>Excel</button><button class="cc-btn cc-btn-dark" onclick="ccGenerarPDFHistorial()"><i class="fa-solid fa-file-pdf mr-1"></i>PDF historial</button></div>
+  </div>
+  <div class="cc-inv-wrap"><table class="cc-hist-table"><thead><tr><th>ENTRADA A RENTA</th><th>SALIDA DE RENTA</th><th>CAJA</th><th>CLIENTE</th><th>RESPONSABLE</th><th>ESTATUS</th><th>OBSERVACIONES</th></tr></thead><tbody id="ccHistBody"></tbody></table></div>
+</div>
+</div>
+<div class="cc-panel" id="ccPanelMantenimiento">
+<div class="cc-toolbar"><div><strong>Mantenimiento</strong><div class="cc-note">Consulta unidades en mantenimiento, historial, evidencias y Control DOT según tus permisos.</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="cc-btn cc-btn-primary" id="ccBtnVistaMant" onclick="ccMostrarMantenimientoHistorial()"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Historial mantenimiento</button><button class="cc-btn cc-btn-dot" id="ccBtnVistaDot" onclick="ccMostrarDotControl()"><i class="fa-solid fa-clipboard-check mr-1"></i>Control DOT</button><span class="cc-badge cc-status-mant" id="ccMaintenanceBadge">0 en mantenimiento</span></div></div>
+<div id="ccMaintenanceView">
+<div class="cc-maint-wrap" style="max-height:42vh;overflow:auto"><table class="cc-maint-table"><thead><tr><th>#</th><th>CAJA</th><th>DESCRIPCIÓN</th><th>ESTATUS</th><th>FECHA SALIDA</th><th>MOTIVO</th><th>LIBERACIÓN</th><th>ACCIÓN</th></tr></thead><tbody id="ccMaintenanceBody"></tbody></table></div>
+<div class="cc-toolbar" style="margin-top:16px"><div><strong>Historial de mantenimiento</strong><div class="cc-note">Filtra por rango de fechas y unidad. El PDF incluye evidencias fotográficas disponibles.</div></div><div class="cc-actions"><button class="cc-btn cc-btn-dark" onclick="ccGenerarPDFHistorialMantenimiento()"><i class="fa-solid fa-file-pdf mr-1"></i>Exportar PDF</button></div></div>
+<div class="cc-dot-filters" style="grid-template-columns:repeat(3,minmax(160px,1fr))"><div><label>Desde</label><input id="ccMantDesde" type="date" oninput="ccRenderMantenimiento()"></div><div><label>Hasta</label><input id="ccMantHasta" type="date" oninput="ccRenderMantenimiento()"></div><div><label>Unidad</label><select id="ccMantUnidad" onchange="ccRenderMantenimiento()"><option value="">Todas las unidades</option></select></div></div>
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="cc-btn cc-btn-light" onclick="ccLimpiarFiltrosMantenimiento()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button></div>
+<div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-table-list" style="min-width:980px"><thead><tr><th>#</th><th>CAJA</th><th>FECHA SALIDA</th><th>MOTIVO / REPARACIÓN</th><th>FECHA LIBERACIÓN</th><th>ESTATUS</th><th>EVIDENCIAS</th><th>ACCIONES</th></tr></thead><tbody id="ccMaintenanceHistoryBody"></tbody></table></div>
+</div>
+<div id="ccDotSection">
+<div class="cc-dot-hero"><div><h3><i class="fa-solid fa-clipboard-check mr-2"></i>Control DOT de unidades</h3><p>Registro histórico de unidades que ingresan a DOT, evidencia y reportes por rango de fechas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cc-btn cc-btn-light" onclick="ccExportarDotExcel()"><i class="fa-solid fa-file-excel mr-1"></i>Excel</button><button class="cc-btn cc-btn-dark" onclick="ccGenerarDotPDF()"><i class="fa-solid fa-file-pdf mr-1"></i>PDF por rango</button><button class="cc-btn cc-btn-light" onclick="ccMostrarMantenimientoHistorial()"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Ver mantenimiento</button></div></div>
+<div class="cc-dot-filters"><div><label>Desde</label><input id="ccDotDesde" type="date"></div><div><label>Hasta</label><input id="ccDotHasta" type="date"></div><div><label>Unidad</label><select id="ccDotUnidad"><option value="">Todas las unidades</option></select></div><div><label>Cliente</label><select id="ccDotCliente"><option value="">Todos los clientes</option></select></div></div>
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="cc-btn cc-btn-primary" onclick="ccCargarDot()"><i class="fa-solid fa-filter mr-1"></i>Aplicar filtros</button><button class="cc-btn cc-btn-light" onclick="ccLimpiarDotFiltros()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button></div>
+<div class="cc-dot-kpis" id="ccDotKpis"></div><div class="cc-inv-wrap" style="max-height:65vh;overflow:auto"><table class="cc-dot-table"><thead><tr><th>#</th><th>FECHA</th><th>UNIDAD</th><th>DESCRIPCIÓN UNIDAD</th><th>CLIENTE</th><th>DESCRIPCIÓN DOT</th><th>EVIDENCIA</th><th>ACCIÓN</th></tr></thead><tbody id="ccDotBody"></tbody></table></div>
+</div></div>
+<div class="cc-panel" id="ccPanelMapa">
+  <div class="cc-hist-hero">
+    <h3><i class="fa-solid fa-map-location-dot mr-2"></i>Mapa de cajas y geocercas</h3>
+    <p>Busca cajas por número, visualiza su última ubicación, muestra u oculta geocercas, dibuja nuevas zonas e importa geocercas existentes.</p>
+  </div>
+  <div class="cc-toolbar cc-geo-toolbar">
+    <div>
+      <strong>Última ubicación de unidades</strong>
+      <div class="cc-note">Las geocercas se guardan en Supabase dentro de la configuración del sistema.</div>
+    </div>
+    <div class="cc-actions">
+      <button id="ccBtnToggleGeocercas" class="cc-btn cc-btn-light" type="button" onclick="ccToggleGeocercas()"><i class="fa-solid fa-layer-group mr-1"></i>Ocultar geocercas</button>
+      <button class="cc-btn cc-btn-primary" type="button" onclick="ccActivarDibujoGeocerca()"><i class="fa-solid fa-draw-polygon mr-1"></i>Crear geocerca</button>
+      <button class="cc-btn cc-btn-light" type="button" onclick="document.getElementById('ccGeocercaFile').click()"><i class="fa-solid fa-file-import mr-1"></i>Importar</button>
+      <input id="ccGeocercaFile" type="file" accept=".geojson,.json,.kml,.kmz" hidden onchange="ccImportarGeocercasArchivo(this.files?.[0]);this.value=''">
+      <button class="cc-btn cc-btn-light" type="button" onclick="ccExportarGeocercas()"><i class="fa-solid fa-file-export mr-1"></i>Exportar</button>
+      <button class="cc-btn cc-btn-light" onclick="ccCargarMapaUnidades(true)"><i class="fa-solid fa-rotate mr-1"></i>Refresh mapa</button>
+    </div>
+  </div>
+  <div class="cc-map-searchbar">
+    <input id="ccMapaUnidadBuscar" type="search" placeholder="Buscar unidad, ej. LB04" oninput="ccBuscarUnidadMapaDebounced()">
+    <button class="cc-btn cc-btn-light" type="button" onclick="ccLimpiarBusquedaMapa()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar</button>
+    <button class="cc-btn cc-btn-light" type="button" onclick="ccAbrirAdministradorGeocercas()"><i class="fa-solid fa-list-check mr-1"></i>Administrar geocercas</button>
+  </div>
+  <div id="ccMapaUnidadesResumen" class="cc-location-summary"></div>
+  <div class="cc-map-layout">
+    <div id="ccMapaUnidadesContainer" class="cc-location-map" style="height:72vh;min-height:540px"></div>
+    <aside id="ccGeoSidePanel" class="cc-geo-sidepanel">
+      <div class="cc-geo-side-title"><span><i class="fa-solid fa-draw-polygon"></i> Geocercas</span><span id="ccGeoCount" class="cc-location-pill">0</span></div>
+      <div id="ccGeocercasLista" class="cc-geo-list"></div>
+    </aside>
+  </div>
+</div>
+<div class="cc-panel" id="ccPanelConfiguracion">
+<div class="cc-toolbar"><div><strong>Configuración</strong><div class="cc-note">Selecciona una opción para mostrar únicamente ese catálogo.</div></div></div><div id="ccCloudStatus" style="margin-bottom:12px;padding:12px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;font-size:11px;font-weight:800">Base de datos: Supabase · PostgreSQL · lectura/escritura directa · sin guardado local.</div>
+<div class="cc-config-nav" role="tablist">
+<button type="button" class="cc-config-nav-btn" data-config="remitente" onclick="ccConfigSection('remitente',this)"><i class="fa-solid fa-paper-plane"></i><span>Correo remitente</span><small>Configuración de envío</small></button>
+<button type="button" class="cc-config-nav-btn" data-config="destinatarios" onclick="ccConfigSection('destinatarios',this)"><i class="fa-solid fa-address-book"></i><span>Destinatarios</span><small>Catálogo de correos</small></button>
+<button type="button" class="cc-config-nav-btn" data-config="clientes" onclick="ccConfigSection('clientes',this)"><i class="fa-solid fa-building"></i><span>Clientes</span><small>Catálogo</small></button>
+<button type="button" class="cc-config-nav-btn" data-config="responsables" onclick="ccConfigSection('responsables',this)"><i class="fa-solid fa-user-tie"></i><span>Responsables</span><small>Catálogo</small></button><button type="button" class="cc-config-nav-btn" data-config="tarifas" onclick="ccConfigSection('tarifas',this)"><i class="fa-solid fa-dollar-sign"></i><span>Tarifas de renta</span><small>Tarifas por cliente · diario / semanal / mensual</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUnidad" onclick="ccConfigSection('tiposUnidad',this)"><i class="fa-solid fa-layer-group"></i><span>Tipos de unidad</span><small>Catálogo de unidades</small></button><button type="button" class="cc-config-nav-btn" data-config="tiposUsoCaja" onclick="ccConfigSection('tiposUsoCaja',this)"><i class="fa-solid fa-route"></i><span>Uso de cajas</span><small>Cruce · Foránea · Storage</small></button>
+</div>
+<div class="cc-config-section" id="ccConfigRemitente">
+<div class="cc-config-card"><div class="cc-config-section-head"><div><h4>📤 Correo remitente</h4><p>Datos del correo desde donde se enviarán automáticamente los avisos de mantenimiento.</p></div><span id="ccMailConfigBadge" class="cc-badge cc-off">Sin configurar</span></div>
+<div class="cc-config-alert"><i class="fa-solid fa-shield-halved mr-1"></i>La contraseña de aplicación de Gmail se guarda cifrada en <b>Supabase Vault</b> y nunca se vuelve a mostrar en el HTML. El envío sale directamente desde tu cuenta Gmail mediante SMTP.</div>
+<div class="cc-grid" style="margin-top:14px">
+<div class="cc-field"><label>Nombre del remitente</label><input id="ccMailSenderName" placeholder="Tráfico App · Control de Cajas"></div>
+<div class="cc-field"><label>Correo Gmail remitente</label><input id="ccMailSenderEmail" type="email" placeholder="tucuenta@gmail.com"></div>
+<div class="cc-field"><label>Responder a (opcional)</label><input id="ccMailReplyTo" type="email" placeholder="taller@tuempresa.com"></div>
+<div class="cc-field"><label>Contraseña de aplicación de Gmail</label><input id="ccMailApiKey" type="password" autocomplete="new-password" placeholder="16 caracteres · deja vacío para conservar la actual"><div class="cc-note" id="ccMailKeyStatus">Contraseña de aplicación no configurada.</div></div>
+</div>
+<div class="cc-note" style="margin-top:10px"><b>Gmail:</b> activa la verificación en 2 pasos en tu cuenta Google y genera una <b>Contraseña de aplicación</b>. No uses tu contraseña normal de Gmail.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="cc-btn cc-btn-primary" onclick="ccGuardarConfiguracionCorreo()"><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar remitente</button><button type="button" class="cc-btn cc-btn-dark" onclick="ccEnviarCorreoPrueba()"><i class="fa-solid fa-paper-plane mr-1"></i>Enviar correo de prueba</button></div>
+</div></div>
+<div class="cc-config-section" id="ccConfigDestinatarios">
+<div class="cc-config-card"><div class="cc-config-section-head"><div><h4>📧 Catálogo de destinatarios</h4><p>Estos correos recibirán automáticamente el aviso cuando una unidad sea puesta fuera de servicio.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoCorreoMantenimiento()"><i class="fa-solid fa-plus mr-1"></i>Agregar destinatario</button></div>
+<div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>Al poner una unidad <b>FUERA DE SERVICIO</b>, se guarda en Supabase, se genera el PDF y el aviso se envía automáticamente a todos los destinatarios de este catálogo.</div>
+<div id="ccCorreosMantenimientoList" style="margin-top:14px"></div></div></div>
+<div class="cc-config-section" id="ccConfigClientes">
+<div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🏢 Catálogo de Clientes</h4><p>Clientes disponibles para asignar cajas de renta.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoCliente()"><i class="fa-solid fa-plus mr-1"></i>Nuevo cliente</button></div>
+<div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>CLIENTE</th><th>CONTACTO</th><th>TELÉFONO</th><th>CORREO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccClientesList"></tbody></table></div></div></div>
+<div class="cc-config-section" id="ccConfigResponsables">
+<div class="cc-config-card"><div class="cc-config-section-head"><div><h4>👤 Catálogo de Responsables</h4><p>Responsables disponibles para las cajas de renta.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoResponsable()"><i class="fa-solid fa-plus mr-1"></i>Nuevo responsable</button></div>
+<div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>NOMBRE</th><th>PUESTO / ÁREA</th><th>TELÉFONO</th><th>CORREO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccResponsablesList"></tbody></table></div></div></div>
+<div class="cc-config-section" id="ccConfigTiposUnidad"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🚛 Catálogo de tipos de unidad</h4><p>Define los tipos que aparecerán al registrar o importar unidades. Los tipos CAJA y CARRO se crean automáticamente si no existen.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUnidad()"><i class="fa-solid fa-plus mr-1"></i>Nuevo tipo</button></div><div class="cc-inv-wrap"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE UNIDAD</th><th>CATEGORÍA</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUnidadList"></tbody></table></div></div></div><div class="cc-config-section" id="ccConfigTiposUsoCaja"><div class="cc-config-card"><div class="cc-config-section-head"><div><h4>🧭 Catálogo de tipo de uso de caja</h4><p>Define los usos disponibles al registrar una unidad categoría CAJA.</p></div><button class="cc-btn cc-btn-primary" onclick="ccNuevoTipoUsoCaja()"><i class="fa-solid fa-plus mr-1"></i>Nuevo uso</button></div><div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>El sistema inicia con <b>Cruce</b>, <b>Foránea</b>, <b>Cruce y Foránea</b> y <b>Storage</b>. Puedes agregar nuevos usos o desactivar los existentes.</div><div class="cc-inv-wrap" style="margin-top:12px"><table class="cc-table-list"><thead><tr><th>#</th><th>TIPO DE USO</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccTiposUsoCajaList"></tbody></table></div></div></div>
+<div class="cc-config-section" id="ccConfigTarifas">
+<div class="cc-config-card">
+<div class="cc-config-section-head"><div><h4>💰 Tarifas de renta por cliente</h4><p>Captura el precio por caja para renta diaria, semanal o mensual. La proforma usa el método elegido en cada renta.</p></div></div>
+<div class="cc-config-alert"><i class="fa-solid fa-circle-info mr-1"></i>La tarifa es <b>por caja por día</b>. Si un cliente tiene 5 cajas rentadas durante 10 días y su tarifa es de $500 diarios, la proforma calculará 5 × 10 × $500.</div>
+<div class="cc-inv-wrap" style="margin-top:14px"><table class="cc-table-list"><thead><tr><th>#</th><th>CLIENTE</th><th>PRECIO POR CAJA</th><th>ESTATUS</th><th>ACCIÓN</th></tr></thead><tbody id="ccTarifasList"></tbody></table></div>
+</div></div>
+</div><div class="cc-panel" id="ccPanelRenta"><div class="cc-renta-tipo-filter" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:10px 0 12px;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
+<label style="font-weight:800;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="ccRentaTipoFiltro" value="TODOS" onchange="ccFiltrarRentaTipo('TODOS')"> Todas</label>
+<label style="font-weight:800;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="ccRentaTipoFiltro" value="CAJA" checked onchange="ccFiltrarRentaTipo('CAJA')"> Cajas</label>
+<label style="font-weight:800;font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="ccRentaTipoFiltro" value="CARRO" onchange="ccFiltrarRentaTipo('CARRO')"> Carros</label>
+</div>
+<div class="cc-toolbar"><div><strong>Control de cajas de renta</strong><div class="cc-note">Operación diaria de rentas. Por defecto se muestran solo activas; activa el check para incluir rentas finalizadas.</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;cursor:pointer"><input id="ccRentaMostrarHistorico" type="checkbox" onchange="ccToggleRentaHistorico()"> Ver histórico</label><button class="cc-btn cc-btn-primary" onclick="ccNuevaRenta()"><i class="fa-solid fa-plus mr-1"></i>Nueva caja de renta</button></div></div>
+<div class="cc-renta-filters cc-renta-filters-compact">
+<div>
+<label for="ccRentaClienteFilter">Cliente</label>
+<select id="ccRentaClienteFilter" onchange="ccRenderRenta()"><option value="">Todos los clientes</option></select>
+</div>
+<div>
+<label for="ccRentaResponsableFilter">Responsable</label>
+<select id="ccRentaResponsableFilter" onchange="ccRenderRenta()"><option value="">Todos los responsables</option></select>
+</div>
+<button class="cc-btn cc-btn-light" onclick="document.getElementById('ccRentaClienteFilter').value='';document.getElementById('ccRentaResponsableFilter').value='';ccRenderRenta()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3" id="ccRentaSummary"></div>
+<div class="cc-renta-list-wrap">
+<table class="cc-renta-list">
+<thead id="ccMatrixHead"></thead>
+<tbody id="ccMatrixBody"></tbody>
+</table>
+</div>
+<div class="cc-note">Esta tabla muestra únicamente rentas activas. Activa <b>Ver histórico</b> para abrir una lista independiente debajo.</div>
+<div id="ccRentaHistoricoPanel" class="cc-config-card" style="display:none;margin-top:16px">
+  <div class="cc-toolbar">
+    <div><strong>Histórico de rentas</strong><div class="cc-note">Consulta rentas finalizadas sin mezclarlas con la operación activa.</div></div>
+    <button class="cc-btn cc-btn-light" type="button" onclick="ccRentaHistoricoLimpiar()"><i class="fa-solid fa-rotate-left mr-1"></i>Limpiar filtros</button>
+  </div>
+  <div class="cc-dot-filters" style="grid-template-columns:repeat(5,minmax(135px,1fr))">
+    <div><label>Caja</label><select id="ccRentaHistCaja" onchange="ccRenderRentaHistorico()"><option value="">Todas</option></select></div>
+    <div><label>Cliente</label><select id="ccRentaHistCliente" onchange="ccRenderRentaHistorico()"><option value="">Todos</option></select></div>
+    <div><label>Responsable</label><select id="ccRentaHistResponsable" onchange="ccRenderRentaHistorico()"><option value="">Todos</option></select></div>
+    <div><label>Desde</label><input id="ccRentaHistDesde" type="date" onchange="ccRenderRentaHistorico()"></div>
+    <div><label>Hasta</label><input id="ccRentaHistHasta" type="date" onchange="ccRenderRentaHistorico()"></div>
+  </div>
+  <div id="ccRentaHistKpis" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+  <div class="cc-inv-wrap" style="max-height:52vh;overflow:auto">
+    <table class="cc-table-list" style="min-width:980px">
+      <thead><tr><th>CAJA</th><th>CLIENTE</th><th>RESPONSABLE</th><th>ENTRADA</th><th>SALIDA</th><th>DÍAS</th><th>MÉTODO</th><th>OBSERVACIONES</th></tr></thead>
+      <tbody id="ccRentaHistBody"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+</section>
+<!-- BARRA DE FILTRO DE FECHAS (Diseño tipo tarjeta moderna) -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row items-center justify-between gap-4 avoid-break" id="gmDateBar">
+<div class="flex items-center gap-3 text-slate-800 font-medium text-xs md:text-sm">
+<div class="bg-blue-50 text-blue-600 p-2 rounded-lg">
+<i class="fa-solid fa-calendar-days text-base"></i>
+</div>
+<div>
+<span class="font-semibold block text-slate-900">Periodo de análisis</span>
+<span class="text-[11px] text-slate-500" id="gmDateFilterMode">Modo activo: salidas dentro del rango Desde–Hasta.</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+<div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+<label class="text-xs font-semibold text-slate-500" for="fechaDesde">Desde:</label>
+<input class="bg-transparent text-xs md:text-sm text-slate-800 focus:outline-none cursor-pointer" id="fechaDesde" onchange="onDateFilterChange()" type="date">
+</input></div>
+<div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+<label class="text-xs font-semibold text-slate-500" for="fechaHasta">Hasta:</label>
+<input class="bg-transparent text-xs md:text-sm text-slate-800 focus:outline-none cursor-pointer" id="fechaHasta" onchange="onDateFilterChange()" type="date"/>
+</div>
+<label class="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg cursor-pointer select-none" title="Si se activa, todos los servicios se analizarán únicamente por su Fecha de Salida igual a la Fecha Hasta.">
+<input class="h-4 w-4 accent-blue-600 cursor-pointer" id="soloSalidasFechaFinal" onchange="onDateFilterChange()" type="checkbox"/>
+<span class="text-xs font-semibold text-blue-800">Solo salidas del día de la fecha final</span>
+</label>
+<button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-lg text-xs transition flex items-center gap-1.5 border border-slate-200" onclick="setTodayDateFilter()">
+<i class="fa-solid fa-rotate-left text-slate-500"></i> Hoy
+          </button>
+</div>
+</div>
+<!-- VISTA 1: DASHBOARD OPERATIVO TRADICIONAL -->
+<div class="space-y-6" id="vistaOperativa">
+<!-- KPI Cards Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 avoid-break">
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider" id="kpiTotalLabel">Salidas Rango</p>
+<p class="text-xl font-black text-slate-900 mt-2" id="kpiTotal">0</p>
+</div>
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Exportación</p>
+<p class="text-xl font-black text-emerald-600 mt-2" id="kpiExpo">0</p>
+</div>
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Importación</p>
+<p class="text-xl font-black text-indigo-600 mt-2" id="kpiImpo">0</p>
+</div>
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Vacío Expo</p>
+<p class="text-xl font-black text-rose-600 mt-2" id="kpiVacioExpo">0</p>
+</div>
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-pink-600 uppercase tracking-wider">Vacío Impo</p>
+<p class="text-xl font-black text-pink-600 mt-2" id="kpiVacioImpo">0</p>
+</div>
+<div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:shadow transition text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Foráneo</p>
+<p class="text-xl font-black text-purple-600 mt-2" id="kpiForaneo">0</p>
+</div>
+<div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 shadow-sm text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Pendientes</p>
+<p class="text-xl font-black text-amber-700 mt-2" id="kpiPendientes">0</p>
+</div>
+<div class="bg-cyan-50/70 p-3.5 rounded-xl border border-cyan-200 shadow-sm text-center flex flex-col justify-between">
+<p class="text-[10px] font-bold text-cyan-800 uppercase tracking-wider">En Tránsito</p>
+<p class="text-xl font-black text-cyan-700 mt-2" id="kpiTransito">0</p>
+</div>
+
+</div>
+
+<!-- KPI: MIX TRACTO VS CARRO -->
+<section class="gm-tracto-carro-panel avoid-break" id="kpiTractoCarroSection">
+  <div class="gm-tracto-carro-head">
+    <div>
+      <h3><i class="fa-solid fa-truck-ramp-box mr-2"></i>Distribución Tracto vs Carro</h3>
+      <p>Exportación, Importación y Foráneo. Un viaje se considera <b>Carro</b> cuando tiene remolque; si no tiene remolque, se considera <b>Tracto</b>.</p>
+    </div>
+    <span class="gm-tracto-carro-badge">Calculado al cargar Excel y al cambiar el periodo</span>
+  </div>
+  <div class="gm-tracto-carro-grid">
+    <div class="gm-tc-card">
+      <div class="gm-tc-title"><i class="fa-solid fa-globe-americas mr-1 text-emerald-600"></i> Exportación</div>
+      <div class="gm-tc-total">Total viajes: <strong id="kpiTCExpoTotal">0</strong></div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-blue-700">Tracto</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-tracto" id="kpiTCExpoTractoBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCExpoTracto">0 · 0%</span>
+      </div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-amber-700">Carro</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-carro" id="kpiTCExpoCarroBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCExpoCarro">0 · 0%</span>
+      </div>
+      <div class="gm-tc-operators"><span class="gm-tc-op">Operadores Tracto: <button id="kpiTCExpoTractoOps" type="button" onclick="abrirListaOperadoresKPI('Expo','Tracto')">0</button></span><span class="gm-tc-op">Operadores Carro: <button id="kpiTCExpoCarroOps" type="button" onclick="abrirListaOperadoresKPI('Expo','Carro')">0</button></span>
+      </div>
+    </div>
+
+    <div class="gm-tc-card">
+      <div class="gm-tc-title"><i class="fa-solid fa-right-left mr-1 text-indigo-600"></i> Importación</div>
+      <div class="gm-tc-total">Total viajes: <strong id="kpiTCImpoTotal">0</strong></div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-blue-700">Tracto</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-tracto" id="kpiTCImpoTractoBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCImpoTracto">0 · 0%</span>
+      </div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-amber-700">Carro</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-carro" id="kpiTCImpoCarroBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCImpoCarro">0 · 0%</span>
+      </div>
+      <div class="gm-tc-operators"><span class="gm-tc-op">Operadores Tracto: <button id="kpiTCImpoTractoOps" type="button" onclick="abrirListaOperadoresKPI('Impo','Tracto')">0</button></span><span class="gm-tc-op">Operadores Carro: <button id="kpiTCImpoCarroOps" type="button" onclick="abrirListaOperadoresKPI('Impo','Carro')">0</button></span>
+      </div>
+    </div>
+
+    <div class="gm-tc-card">
+      <div class="gm-tc-title"><i class="fa-solid fa-route mr-1 text-purple-600"></i> Foráneo</div>
+      <div class="gm-tc-total">Total viajes: <strong id="kpiTCForaneoTotal">0</strong></div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-blue-700">Tracto</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-tracto" id="kpiTCForaneoTractoBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCForaneoTracto">0 · 0%</span>
+      </div>
+      <div class="gm-tc-row">
+        <span class="gm-tc-label text-amber-700">Carro</span>
+        <div class="gm-tc-track"><div class="gm-tc-fill gm-tc-carro" id="kpiTCForaneoCarroBar" style="width:0%"></div></div>
+        <span class="gm-tc-value" id="kpiTCForaneoCarro">0 · 0%</span>
+      </div>
+      <div class="gm-tc-operators"><span class="gm-tc-op">Operadores Tracto: <button id="kpiTCForaneoTractoOps" type="button" onclick="abrirListaOperadoresKPI('Foraneo','Tracto')">0</button></span><span class="gm-tc-op">Operadores Carro: <button id="kpiTCForaneoCarroOps" type="button" onclick="abrirListaOperadoresKPI('Foraneo','Carro')">0</button></span>
+      </div>
+    </div>
+  </div>
+  <div class="gm-tc-note"><i class="fa-solid fa-circle-info mr-1"></i>Regla del KPI: <b>Carro = viaje con remolque/caja registrado</b>. <b>Tracto = viaje sin remolque</b>. Los porcentajes se calculan contra el total de cada tipo de viaje dentro del rango seleccionado. Los operadores son <b>únicos</b> dentro de cada categoría y tipo de unidad.</div>
+</section>
+
+<!-- Table: Resumen Detallado por Cliente -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden avoid-break">
+<div class="p-4 md:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
+<div>
+<h3 class="text-sm md:text-base font-bold text-slate-800 flex items-center gap-2">
+<i class="fa-solid fa-chart-pie text-blue-600"></i> Resumen Detallado por Cliente
+              </h3>
+<p class="text-xs text-slate-500 mt-0.5">Contabiliza servicios de Exportación, Importación y Foráneos dentro del rango seleccionado.</p>
+</div>
+<div class="relative w-full sm:w-72">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+<i class="fa-solid fa-magnifying-glass text-xs"></i>
+</span>
+<input class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="searchInput" placeholder="Filtrar por cliente..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead>
+<tr class="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px]">
+<th class="py-3 px-4">Cliente</th>
+<th class="py-3 px-4 text-center text-blue-700 bg-blue-50/50">Total Servicios (Salidas)</th>
+<th class="py-3 px-4 text-center text-emerald-700">Expo</th>
+<th class="py-3 px-4 text-center text-indigo-700">Impo</th>
+<th class="py-3 px-4 text-center text-rose-700">Vacío Expo</th>
+<th class="py-3 px-4 text-center text-pink-700">Vacío Impo</th>
+<th class="py-3 px-4 text-center text-purple-700">Foráneo</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="tableBody">
+<tr>
+<td class="py-10 text-center text-slate-400" colspan="7">
+<i class="fa-solid fa-file-excel text-3xl mb-2 text-slate-300 block"></i>
+                    Sube tu archivo Excel en la parte superior para comenzar el análisis.
+                  </td>
+</tr>
+</tbody>
+<tfoot class="bg-slate-50 font-bold border-t border-slate-200 hidden" id="tableFoot">
+<!-- Totales calculados dinámicamente -->
+</tfoot>
+</table>
+</div>
+</div>
+<!-- LISTADO COMPLETO DE OPERADORES -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="p-4 md:p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<h3 class="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
+<i class="fa-solid fa-list-ol text-blue-600"></i> Listado Completo de Operadores
+              </h3>
+<p class="text-xs text-slate-500 mt-0.5">Todos los operadores con sus servicios de Exportación, Importación y Foráneos. El total es la suma de esas tres categorías.</p>
+</div>
+<div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+<div class="relative">
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+<input class="w-full sm:w-72 pl-8 pr-3 py-2 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400" id="allDriversSearch" oninput="filtrarListadoOperadores()" placeholder="Buscar operador por nombre..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-2 shadow-sm whitespace-nowrap" onclick="exportListadoOperadoresPDF()">
+<i class="fa-solid fa-file-pdf"></i> Exportar PDF
+                </button>
+<span class="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2.5 py-1 rounded whitespace-nowrap" id="allDriversBadge">0 operadores</span>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto max-h-[520px]">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead class="sticky top-0 bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[10px]">
+<tr>
+<th class="py-2.5 px-3">#</th>
+<th class="py-2.5 px-3">Operador</th>
+<th class="py-2.5 px-3 text-center text-emerald-700">Expo</th>
+<th class="py-2.5 px-3 text-center text-indigo-700">Impo</th>
+<th class="py-2.5 px-3 text-center text-purple-700">Foráneo</th>
+<th class="py-2.5 px-3 text-center text-rose-700">Vacío Expo</th>
+<th class="py-2.5 px-3 text-center text-pink-700">Vacío Impo</th>
+<th class="py-2.5 px-3 text-center text-teal-700">Químico</th>
+<th class="py-2.5 px-3 text-center font-bold">Total Viajes</th>
+<th class="py-2.5 px-3 text-center">Detalle</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="allDriversBody">
+<tr><td class="py-8 text-center text-slate-400" colspan="10">Sube un archivo Excel para generar el listado.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- SECCIÓN 2: APARTADO DE VIAJES EN TRÁNSITO -->
+<div class="bg-white rounded-xl border border-cyan-200 shadow-sm overflow-hidden avoid-break" id="transitoSection">
+<div class="p-4 md:p-5 border-b border-cyan-100 bg-cyan-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-sm md:text-base font-bold text-cyan-950 flex items-center gap-2">
+<i class="fa-solid fa-triangle-exclamation text-cyan-600"></i> Viajes en Tránsito <span class="text-xs font-normal text-cyan-800">(Revisar con Prioridad)</span>
+</h3>
+<p class="text-xs text-cyan-700 mt-0.5">Viajes con registro de Salida pero que todavía NO cuentan con registro de Llegada.</p>
+</div>
+<span class="bg-cyan-200/70 text-cyan-900 text-xs font-bold px-3 py-1 rounded-full w-fit border border-cyan-300" id="transitoBadge">0 Registros</span>
+</div>
+<div class="overflow-x-auto max-h-96">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead class="sticky top-0 bg-cyan-100/90 backdrop-blur-sm border-b border-cyan-200 text-cyan-950 font-semibold uppercase text-[11px]">
+<tr>
+<th class="py-2.5 px-4">Fecha Salida</th>
+<th class="py-2.5 px-4">Viaje / Folio</th>
+<th class="py-2.5 px-4">Cliente</th>
+<th class="py-2.5 px-4">Operador</th>
+<th class="py-2.5 px-4">Unidad / Remolque</th>
+<th class="py-2.5 px-4">Tipo / Clasificación</th>
+<th class="py-2.5 px-4 text-center">Estatus</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-cyan-50" id="transitoTableBody">
+<tr>
+<td class="py-6 text-center text-slate-400" colspan="7">Sin viajes en tránsito registrados.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- SECCIÓN 3: APARTADO DE VIAJES PENDIENTES -->
+<div class="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden avoid-break" id="pendientesSection">
+<div class="p-4 md:p-5 border-b border-amber-100 bg-amber-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-sm md:text-base font-bold text-amber-900 flex items-center gap-2">
+<i class="fa-solid fa-clock-rotate-left text-amber-600"></i> Reporte de Viajes Pendientes / Sin Salida
+              </h3>
+<p class="text-xs text-amber-700 mt-0.5">Registros operativos que no cuentan con fecha u hora de salida especificada.</p>
+</div>
+<span class="bg-amber-200/70 text-amber-900 text-xs font-bold px-3 py-1 rounded-full w-fit border border-amber-300" id="pendingBadge">0 Registros</span>
+</div>
+<div class="overflow-x-auto max-h-96">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead class="sticky top-0 bg-amber-100/90 backdrop-blur-sm border-b border-amber-200 text-amber-900 font-semibold uppercase text-[11px]">
+<tr>
+<th class="py-2.5 px-4">Viaje / Folio</th>
+<th class="py-2.5 px-4">Cliente</th>
+<th class="py-2.5 px-4">Tipo / Clasificación</th>
+<th class="py-2.5 px-4">Operador Asignado</th>
+<th class="py-2.5 px-4">Unidad / Tractor</th>
+<th class="py-2.5 px-4">Estatus / Fecha Salida</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-amber-50" id="pendingTableBody">
+<tr>
+<td class="py-6 text-center text-slate-400" colspan="6">Sin datos pendientes.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- SECCIÓN NUEVA: CONTROL DE VIGENCIA 30 DÍAS / VIAJES SIN SHIPPER Y SIN ARRIBO -->
+<div class="bg-white rounded-xl border border-rose-200 shadow-sm overflow-hidden avoid-break" id="vigencia30Section">
+<div class="p-4 md:p-5 border-b border-rose-100 bg-rose-50/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div>
+<h3 class="text-sm md:text-base font-bold text-rose-950 flex items-center gap-2">
+<i class="fa-solid fa-hourglass-half text-rose-600"></i>
+                Control de Vigencia 30 Días
+                <span class="text-xs font-normal text-rose-800">(Sin Shipper y Sin Fecha de Arribo)</span>
+</h3>
+<p class="text-xs text-rose-700 mt-0.5">
+                Identifica viajes que no tienen Shipper ni Fecha de Arribo y calcula los días transcurridos desde la Fecha de Aceptación hasta hoy.
+              </p>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<span class="bg-white text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-rose-200" id="vigencia30FechaActual">
+                Hoy: --
+              </span>
+<span class="bg-rose-100 text-rose-900 text-xs font-bold px-3 py-2 rounded-lg border border-rose-200" id="vigencia30Badge">
+                0 Registros
+              </span>
+<button class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 shadow" onclick="abrirVigencia30Modal()">
+<i class="fa-solid fa-window-maximize"></i> Ventana
+              </button>
+</div>
+</div>
+<div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 border-b border-slate-100 bg-slate-50/50">
+<div class="bg-white rounded-lg border border-slate-200 p-3 text-center"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sin Shipper + Sin Arribo</p>
+<p class="text-xl font-black text-slate-900 mt-1" id="vigencia30Total">0</p>
+</div>
+<div class="bg-white rounded-lg border border-emerald-200 p-3 text-center">
+<p class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Dentro de 30 Días</p>
+<p class="text-xl font-black text-emerald-600 mt-1" id="vigencia30Vigentes">0</p>
+</div>
+<div class="bg-white rounded-lg border border-amber-200 p-3 text-center">
+<p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Próximos a Vencer</p>
+<p class="text-xl font-black text-amber-600 mt-1" id="vigencia30PorVencer">0</p>
+</div>
+<div class="bg-white rounded-lg border border-red-200 p-3 text-center">
+<p class="text-[10px] font-bold text-red-600 uppercase tracking-wider">Vencidos &gt; 30 Días</p>
+<p class="text-xl font-black text-red-600 mt-1" id="vigencia30Vencidos">0</p>
+</div>
+</div>
+<div class="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+<div class="relative w-full md:w-80">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+<i class="fa-solid fa-magnifying-glass text-xs"></i>
+</span>
+<input class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 shadow-sm" id="vigencia30Search" oninput="filtrarVigencia30()" placeholder="Buscar viaje, operador, caja..." type="text">
+</input></div>
+<select class="w-full md:w-56 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-rose-400" id="vigencia30Filtro" onchange="filtrarVigencia30()">
+<option value="TODOS">Todos los registros</option>
+<option value="VIGENTE">Dentro de 30 días</option>
+<option value="POR_VENCER">Próximos a vencer (25-30)</option>
+<option value="VENCIDO">Vencidos (&gt;30 días)</option>
+</select>
+</div>
+<div class="overflow-x-auto max-h-[32rem]">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead class="sticky top-0 bg-rose-100/95 backdrop-blur-sm border-b border-rose-200 text-rose-950 font-semibold uppercase text-[10px] md:text-[11px]">
+<tr>
+<th class="py-2.5 px-3">Viaje / Folio</th>
+<th class="py-2.5 px-3">Tipo</th>
+<th class="py-2.5 px-3">Estatus</th>
+<th class="py-2.5 px-3">Operador</th>
+<th class="py-2.5 px-3">Conv.</th>
+<th class="py-2.5 px-3">Equip.</th>
+<th class="py-2.5 px-3">Shipper</th>
+<th class="py-2.5 px-3">Fecha Aceptación</th>
+<th class="py-2.5 px-3">Fecha Arribo</th>
+<th class="py-2.5 px-3 text-center">Días</th>
+<th class="py-2.5 px-3 text-center">Vigencia</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="vigencia30TableBody">
+<tr>
+<td class="py-8 text-center text-slate-400" colspan="11">
+<i class="fa-solid fa-file-excel text-3xl mb-2 text-slate-300 block"></i>
+                    Sube el Excel de viajes en el botón <strong>Vigencia 30 Días</strong>.
+                  </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- SECCIÓN 4: VIAJES POR OPERADOR (HISTÓRICO COMPLETO) -->
+<div class="bg-white rounded-xl border border-indigo-200 shadow-sm overflow-hidden avoid-break" id="operadorSection">
+<div class="p-4 md:p-5 border-b border-indigo-100 bg-indigo-50/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h3 class="text-sm md:text-base font-bold text-indigo-950 flex items-center gap-2">
+<i class="fa-solid fa-id-card text-indigo-600"></i> Consulta de Viajes por Operador <span class="text-xs font-normal text-indigo-700">(Histórico Completo)</span>
+</h3>
+<p class="text-xs text-indigo-600 mt-0.5">Muestra todos los movimientos y viajes asociados al operador sin restricción de fechas.</p>
+</div>
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+<!-- Filtro Select de Operadores -->
+<div class="relative min-w-[260px]">
+<select class="w-full pl-3 pr-8 py-2 bg-white border border-indigo-300 rounded-lg text-xs md:text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm appearance-none cursor-pointer" id="driverSelect" onchange="filterDriverTrips()">
+<option value="">-- Selecciona un Operador --</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-indigo-600">
+<i class="fa-solid fa-chevron-down text-xs"></i>
+</div>
+</div>
+<span class="bg-indigo-100 text-indigo-900 text-xs font-bold px-3 py-2 rounded-lg text-center whitespace-nowrap border border-indigo-200" id="driverTripBadge">0 Viajes</span>
+</div>
+</div>
+<div class="overflow-x-auto max-h-96">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead class="sticky top-0 bg-indigo-100/90 backdrop-blur-sm border-b border-indigo-200 text-indigo-950 font-semibold uppercase text-[11px]">
+<tr>
+<th class="py-3 px-4 bg-emerald-100/70 text-emerald-900">Fecha</th>
+<th class="py-3 px-4 bg-blue-100/70 text-blue-900">Viaje</th>
+<th class="py-3 px-4 bg-indigo-100 text-indigo-950">Hoja de Servicio</th>
+<th class="py-3 px-4">Cliente</th>
+<th class="py-3 px-4">Camión</th>
+<th class="py-3 px-4">Remolque</th>
+<th class="py-3 px-4">Tipo</th>
+<th class="py-3 px-4">Clasificación</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="driverTripsTableBody">
+<tr>
+<td class="py-8 text-center text-slate-400" colspan="8">Selecciona un operador en el desplegable superior para ver sus viajes.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Footer de la sección de Operador -->
+<div class="p-4 bg-slate-50 border-t border-indigo-100 flex flex-wrap justify-end gap-3">
+<button class="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-xs md:text-sm" onclick="copiarTextoOperadorWhatsApp()">
+<i class="fa-solid fa-copy text-base"></i>
+<span>Copiar para WhatsApp</span>
+</button>
+<button class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-xs md:text-sm" onclick="shareOperadorWhatsApp()">
+<i class="fa-brands fa-whatsapp text-base"></i>
+<span>Enviar por WhatsApp</span>
+</button>
+<button class="bg-indigo-700 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-xs md:text-sm" onclick="exportOperadorPDF()">
+<i class="fa-solid fa-file-pdf text-indigo-200 text-base"></i>
+<span>Exportar Consulta a PDF</span>
+</button>
+</div>
+</div>
+</div>
+<!-- VISTA 2: NUEVA PÁGINA / RADIOGRAFÍA GERENCIAL AVANZADA (Oculta por defecto) -->
+<div class="hidden space-y-6" id="vistaGerencial">
+<!-- Header de la Radiografía Gerencial -->
+<div class="bg-gradient-to-r from-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<div class="bg-blue-600/50 border border-blue-400/30 p-3 rounded-xl">
+<i class="fa-solid fa-chart-line text-2xl text-blue-300"></i>
+</div>
+<div>
+<h2 class="text-xl font-extrabold tracking-tight">Radiografía Gerencial y Analítica Avanzada</h2>
+<p class="text-xs text-slate-300 mt-1">Diagnóstico integral para toma de decisiones ejecutivas. Métricas de rendimiento, eficiencia de flota y análisis de carga por cliente.</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition border border-white/20 flex items-center gap-2" onclick="toggleVistaGerencial()">
+<i class="fa-solid fa-arrow-left"></i> Volver al Dashboard Operativo
+            </button>
+</div>
+</div>
+<!-- PANEL EJECUTIVO: KPIs DE DECISIÓN -->
+<section class="gerencial-command-grid">
+<div class="exec-kpi kpi-main clickable-kpi" onclick="abrirDetalleKpiGerencial('total')" onkeydown="if(event.key==='Enter'||event.key===' ') abrirDetalleKpiGerencial('total')" role="button" tabindex="0">
+<div class="exec-kpi-head"><span>Operación total</span><i class="fa-solid fa-layer-group"></i></div>
+<div class="exec-kpi-value" id="kpiGerencialTotal">0</div>
+<p>Servicios del periodo <b>· Ver detalle →</b></p>
+</div>
+<div class="exec-kpi risk clickable-kpi" onclick="abrirDetalleKpiGerencial('riesgo')" onkeydown="if(event.key==='Enter'||event.key===' ') abrirDetalleKpiGerencial('riesgo')" role="button" tabindex="0">
+<div class="exec-kpi-head"><span>En riesgo</span><i class="fa-solid fa-triangle-exclamation"></i></div>
+<div class="exec-kpi-value" id="kpiGerencialRiesgoCount">0</div>
+<p><strong id="kpiGerencialRiesgoPct">0%</strong> requiere seguimiento <b>· Ver detalle →</b></p>
+</div>
+<div class="exec-kpi success clickable-kpi" onclick="abrirDetalleKpiGerencial('completados')" onkeydown="if(event.key==='Enter'||event.key===' ') abrirDetalleKpiGerencial('completados')" role="button" tabindex="0">
+<div class="exec-kpi-head"><span>Completados</span><i class="fa-solid fa-circle-check"></i></div>
+<div class="exec-kpi-value" id="kpiGerencialCompletados">0</div>
+<p><strong id="kpiGerencialCompletadosPct">0%</strong> del volumen <b>· Ver detalle →</b></p>
+</div>
+<div class="exec-kpi clickable-kpi" onclick="abrirDetalleKpiGerencial('productividad')" onkeydown="if(event.key==='Enter'||event.key===' ') abrirDetalleKpiGerencial('productividad')" role="button" tabindex="0">
+<div class="exec-kpi-head"><span>Servicios / operador</span><i class="fa-solid fa-user-check"></i></div>
+<div class="exec-kpi-value" id="kpiGerencialServiciosOperador">0.0</div>
+<p>Intensidad media de trabajo <b>· Ver operadores →</b></p>
+</div>
+</section>
+<div class="text-[10px] text-slate-400 text-right -mt-4 mr-1">Los KPIs son interactivos: haz clic para ir directamente al detalle que los explica.</div>
+<!-- TABLERO DE DECISIÓN -->
+<section class="decision-grid">
+<div class="decision-card decision-alerts gm-decision-click" id="gmDecisionAlerts" onclick="abrirPanelGerencialInteractivo('alertas')" role="button" tabindex="0">
+<div class="decision-title"><div><span class="eyebrow">ATENCIÓN</span><h3>Alertas para hoy</h3></div><i class="fa-solid fa-bell"></i></div>
+<div class="alert-list" id="gerencialAlertas"><div class="empty-alert">Carga un Excel para generar alertas.</div></div>
+</div>
+<div class="decision-card gm-decision-click" id="gmDecisionCapacity" onclick="abrirPanelGerencialInteractivo('capacidad')" role="button" tabindex="0">
+<div class="decision-title"><div><span class="eyebrow">CAPACIDAD</span><h3>Uso de recursos</h3></div><i class="fa-solid fa-truck-fast"></i></div>
+<div class="resource-row"><span>Unidades activas</span><strong id="kpiGerencialFlota">0</strong></div>
+<div class="resource-row"><span>Operadores activos</span><strong id="kpiGerencialOperadores">0</strong></div>
+<div class="resource-row"><span>Viajes / unidad</span><strong id="kpiGerencialViajesUnidad">0.0</strong></div>
+<div class="resource-row"><span>Servicios productivos</span><strong id="kpiGerencialProductividad">0%</strong></div>
+</div>
+<div class="decision-card gm-decision-click" id="gmDecisionConcentration" onclick="abrirPanelGerencialInteractivo('concentracion')" role="button" tabindex="0">
+<div class="decision-title"><div><span class="eyebrow">CONCENTRACIÓN</span><h3>Clientes clave</h3></div><i class="fa-solid fa-building"></i></div>
+<div class="big-insight"><span>Mayor cliente</span><strong id="kpiGerencialTopCliente">—</strong><em id="kpiGerencialTopClientePct">0%</em></div>
+<div class="resource-row"><span>Clientes atendidos</span><strong id="kpiGerencialClientes">0</strong></div>
+<div class="resource-row"><span>Participación top 3</span><strong id="kpiGerencialTop3Pct">0%</strong></div>
+<div class="resource-row"><span>Base analizada</span><strong>Expo + Impo + Foráneo</strong></div>
+</div>
+<div class="decision-card gm-decision-click" id="gmDecisionMovements" onclick="abrirPanelGerencialInteractivo('movimientos')" role="button" tabindex="0">
+<div class="decision-title"><div><span class="eyebrow">MOVIMIENTOS</span><h3>Otros movimientos</h3></div><i class="fa-solid fa-arrows-rotate"></i></div>
+<div class="big-insight"><span>Movimientos fuera del core</span><strong id="kpiGerencialMovimientos">0</strong><em id="kpiGerencialMovimientosPct">0%</em></div>
+<div class="resource-row"><span>Clientes con movimientos</span><strong id="kpiGerencialClientesMov">0</strong></div>
+<div class="resource-row"><span>Principal cliente</span><strong id="kpiGerencialTopMovCliente">—</strong></div>
+<div class="resource-row"><span>Tipo principal</span><strong id="kpiGerencialTopMovTipo">—</strong></div>
+</div>
+<div class="decision-card trend-card gm-decision-click" id="gmDecisionPriority" onclick="abrirPanelGerencialInteractivo('prioridad')" role="button" tabindex="0">
+<div class="decision-title"><div><span class="eyebrow">PRIORIDAD</span><h3>Qué hacer primero</h3></div><i class="fa-solid fa-crosshairs"></i></div>
+<div class="priority-list" id="gerencialPrioridades"><div class="empty-alert">Sin prioridades calculadas.</div></div>
+</div>
+</section>
+<!-- RESUMEN DE MIX OPERATIVO -->
+<section class="mix-panel">
+<div class="mix-header"><div><span class="eyebrow">MIX OPERATIVO</span><h3>Composición de la operación</h3><p>Permite identificar rápidamente si el volumen está concentrado en carga, vacíos o servicios foráneos.</p></div></div>
+<div class="mix-grid">
+<div><span>Exportación</span><strong id="mixExpo">0</strong><small id="mixExpoPct">0%</small></div>
+<div><span>Importación</span><strong id="mixImpo">0</strong><small id="mixImpoPct">0%</small></div>
+<div><span>Foráneo</span><strong id="mixForaneo">0</strong><small id="mixForaneoPct">0%</small></div>
+<div><span>Vacíos</span><strong id="mixVacios">0</strong><small id="mixVaciosPct">0%</small></div>
+<div><span>En tránsito</span><strong id="mixTransito">0</strong><small id="mixTransitoPct">0%</small></div>
+<div><span>Pendientes</span><strong id="mixPendientes">0</strong><small id="mixPendientesPct">0%</small></div>
+</div>
+</section>
+<!-- Sección Interactiva: Matriz de Rendimiento Gerencial con Detalle al Clic -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+<i class="fa-solid fa-bullseye text-blue-600"></i> Matriz Estratégica de Clientes y Rentabilidad Operativa
+              </h3>
+<p class="text-xs text-slate-500 mt-0.5">Haz clic en cualquier cliente de la tabla para desplegar su radiografía detallada y desglose de servicios.</p>
+</div>
+<div class="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg font-medium">
+<i class="fa-solid fa-hand-pointer mr-1"></i> Da clic en un renglón para ver detalle
+            </div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead>
+<tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[11px]">
+<th class="py-3 px-4">Cliente Corporativo</th>
+<th class="py-3 px-4 text-center">Total Servicios</th>
+<th class="py-3 px-4 text-center text-emerald-700">Exportación</th>
+<th class="py-3 px-4 text-center text-indigo-700">Importación</th>
+<th class="py-3 px-4 text-center text-purple-700">Foráneo</th>
+<th class="py-3 px-4 text-center text-rose-700">Vacíos</th>
+<th class="py-3 px-4 text-center">Participación %</th>
+<th class="py-3 px-4 text-center">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="gerencialMatrizBody">
+<tr>
+<td class="py-10 text-center text-slate-400" colspan="8">
+                    Sube un archivo Excel para generar la radiografía gerencial.
+                  </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- PANEL DE DETALLE AL DAR CLIC (Se despliega automáticamente al seleccionar un cliente o operador) -->
+<div class="hidden bg-white rounded-xl border-2 border-blue-500 shadow-md p-6 space-y-4" id="panelDetalleGerencial">
+<div class="flex items-center justify-between border-b border-slate-200 pb-3">
+<div class="flex items-center gap-3">
+<div class="bg-blue-600 text-white p-2.5 rounded-lg">
+<i class="fa-solid fa-magnifying-glass-chart text-lg"></i>
+</div>
+<div>
+<h4 class="text-base font-black text-slate-900" id="detalleTituloCliente">Detalle Ejecutivo</h4>
+<p class="text-xs text-slate-500">Radiografía específica de movimientos asociados dentro del rango activo.</p>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 text-sm font-bold bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition" onclick="cerrarPanelDetalle()">
+<i class="fa-solid fa-xmark mr-1"></i> Cerrar Detalle
+            </button>
+</div>
+<!-- Métricas Específicas del Elemento Seleccionado -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+<div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center">
+<p class="text-[10px] font-bold text-slate-500 uppercase">Total Movimientos</p>
+<p class="text-lg font-black text-slate-900 mt-1" id="detValTotal">0</p>
+</div>
+<div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-center">
+<p class="text-[10px] font-bold text-emerald-700 uppercase">Exportaciones</p>
+<p class="text-lg font-black text-emerald-700 mt-1" id="detValExpo">0</p>
+</div>
+<div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200 text-center">
+<p class="text-[10px] font-bold text-indigo-700 uppercase">Importaciones</p>
+<p class="text-lg font-black text-indigo-700 mt-1" id="detValImpo">0</p>
+</div>
+<div class="bg-purple-50 p-3 rounded-lg border border-purple-200 text-center">
+<p class="text-[10px] font-bold text-purple-700 uppercase">Foráneos</p>
+<p class="text-lg font-black text-purple-700 mt-1" id="detValForaneo">0</p>
+</div>
+</div>
+<!-- Tabla de Desglose Individual de Viajes -->
+<div class="overflow-x-auto max-h-80 border border-slate-200 rounded-lg">
+<table class="w-full text-left border-collapse text-xs">
+<thead class="bg-slate-100 text-slate-700 font-semibold uppercase text-[10px] sticky top-0">
+<tr>
+<th class="py-2.5 px-3">Fecha</th>
+<th class="py-2.5 px-3">Folio / Viaje</th>
+<th class="py-2.5 px-3">Cliente</th>
+<th class="py-2.5 px-3">Operador</th>
+<th class="py-2.5 px-3">Unidad</th>
+<th class="py-2.5 px-3">Remolque</th>
+<th class="py-2.5 px-3">Tipo / Clasificación</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="detTableBody">
+<tr>
+<td class="py-6 text-center text-slate-400" colspan="7">Selecciona un elemento para ver el desglose.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Desglose Adicional: Rendimiento Gerencial por Operador -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+<div class="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+<div>
+<h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+<i class="fa-solid fa-id-badge text-indigo-600"></i> Desempeño y Carga de Trabajo por Operador (Auditoría Gerencial)
+              </h3>
+<p class="text-xs text-slate-500 mt-0.5">Haz clic en cualquier operador para auditar su carga de servicios y unidades asignadas.</p>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs md:text-sm">
+<thead>
+<tr class="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[11px]">
+<th class="py-3 px-4">Operador</th>
+<th class="py-3 px-4 text-center">Unidades Asignadas</th>
+<th class="py-3 px-4 text-center text-emerald-700">Expo</th>
+<th class="py-3 px-4 text-center text-indigo-700">Impo</th>
+<th class="py-3 px-4 text-center text-purple-700">Foráneo</th>
+<th class="py-3 px-4 text-center text-rose-700">Vacíos</th>
+<th class="py-3 px-4 text-center font-bold">Total Servicios</th>
+<th class="py-3 px-4 text-center">Acción Detalle</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="gerencialOperadoresBody">
+<tr>
+<td class="py-8 text-center text-slate-400" colspan="8">Sin datos de operadores.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Corporativo Inferior -->
+<footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400 mt-auto">
+      Tráfico App Control Logístico © 2026 — Dashboard Operativo de Rendimiento y Tráfico
+    </footer>
+</div>
+<script src="assets/js/core/dashboard-operaciones.js"></script>
+<!-- POPUP / VENTANA INDEPENDIENTE DEL CONTROL DE VIGENCIA -->
+<div aria-labelledby="vigencia30ModalTitle" aria-modal="true" id="vigencia30Modal" role="dialog">
+<div class="modal-card">
+<div class="modal-head">
+<div>
+<div class="text-[11px] uppercase tracking-wider opacity-80 font-bold">Control de viajes</div>
+<h2 class="text-lg md:text-xl font-black" id="vigencia30ModalTitle">Vigencia 30 Días — Sin Shipper / Sin Arribo</h2>
+<p class="text-xs text-rose-100 mt-1" id="vigencia30ModalSub">Fecha de corte: --</p>
+</div>
+<div class="flex items-center gap-2 modal-actions">
+<button class="bg-white text-rose-700 hover:bg-rose-50 font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-2 shadow" onclick="exportVigencia30PDF()">
+<i class="fa-solid fa-file-pdf"></i> Exportar PDF
+        </button>
+<button class="bg-rose-950/40 hover:bg-rose-950/60 text-white font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-2 border border-white/20" onclick="window.print()">
+<i class="fa-solid fa-print"></i> Imprimir
+        </button>
+<button aria-label="Cerrar" class="bg-white/10 hover:bg-white/20 text-white font-bold w-9 h-9 rounded-lg border border-white/20" onclick="cerrarVigencia30Modal()">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+</div>
+<div class="p-4 bg-white border-b border-slate-200 flex flex-wrap gap-3 items-center justify-between no-print">
+<div class="flex gap-2 flex-wrap">
+<span class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">Total: <b id="modalVigTotal">0</b></span>
+<span class="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold">≤30 días: <b id="modalVigOk">0</b></span>
+<span class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold">25–30: <b id="modalVigWarn">0</b></span>
+<span class="px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-bold">&gt;30: <b id="modalVigBad">0</b></span>
+</div>
+<div class="flex gap-2">
+<input class="px-3 py-2 border border-slate-300 rounded-lg text-xs w-72 focus:outline-none focus:ring-2 focus:ring-rose-400" id="modalVigSearch" oninput="renderVigencia30Modal()" placeholder="Buscar viaje, operador, equipo..."/>
+<select class="px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-rose-400" id="modalVigFilter" onchange="renderVigencia30Modal()">
+<option value="TODOS">Todos</option><option value="VIGENTE">Dentro de 30 días</option><option value="POR_VENCER">25–30 días</option><option value="VENCIDO">Más de 30 días</option>
+</select>
+</div>
+</div>
+<div class="modal-body p-4">
+<div class="bg-white rounded-xl border border-slate-200 overflow-auto shadow-sm">
+<table class="w-full text-xs md:text-sm border-collapse">
+<thead class="sticky top-0 z-10 bg-rose-100 text-rose-950 uppercase text-[10px] font-bold">
+<tr>
+<th class="p-3 text-left">Viaje / Folio</th><th class="p-3 text-left">Tipo</th><th class="p-3 text-left">Estatus</th><th class="p-3 text-left">Operador</th><th class="p-3 text-left">Conv.</th><th class="p-3 text-left">Equip.</th><th class="p-3 text-left">Shipper</th><th class="p-3 text-left">Aceptación</th><th class="p-3 text-left">Arribo</th><th class="p-3 text-center">Días</th><th class="p-3 text-center">Vigencia</th>
+</tr>
+</thead>
+<tbody id="vigencia30ModalBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<!-- MODAL LISTA DE OPERADORES DEL KPI TRACTO VS CARRO -->
+<div class="gm-kpi-op-modal" id="kpiOperadoresModal" onclick="if(event.target===this) cerrarListaOperadoresKPI()">
+  <div class="gm-kpi-op-card">
+    <div class="gm-kpi-op-head">
+      <div><div class="text-base font-black" id="kpiOpModalTitulo">Operadores</div><div class="text-[10px] text-slate-300 mt-1" id="kpiOpModalSubtitulo">—</div></div>
+      <button class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs" onclick="cerrarListaOperadoresKPI()"><i class="fa-solid fa-xmark mr-1"></i>Cerrar</button>
+    </div>
+    <div class="gm-kpi-op-body">
+      <div class="mb-3 text-[10px] text-slate-500">Haz clic en un operador para abrir su información detallada y sus viajes.</div>
+      <table class="gm-kpi-op-table"><thead><tr><th>Operador</th><th>Viajes</th><th>Unidades</th><th>Remolques</th><th>Clientes</th><th>Último viaje</th></tr></thead><tbody id="kpiOperadoresModalBody"></tbody></table>
+    </div>
+  </div>
+</div>
+<!-- MODAL DETALLE DE VIAJES DEL OPERADOR -->
+<div class="hidden fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-sm p-3 md:p-6" id="operadorDetalleModal" onclick="if(event.target===this) cerrarDetalleOperadorTop5()">
+<div class="w-full h-full max-w-7xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+<div class="bg-slate-900 text-white px-5 py-4 flex items-center justify-between gap-4">
+<div>
+<h2 class="text-lg md:text-xl font-black"><i class="fa-solid fa-route mr-2 text-blue-400"></i>Viajes del Operador</h2>
+<p class="text-sm font-bold text-blue-300 mt-0.5" id="opModalNombre">—</p>
+<p class="text-[11px] text-slate-300 mt-1" id="opModalRango">—</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-lg text-xs" onclick="exportarDetalleOperadorPDF()"><i class="fa-solid fa-file-pdf mr-1"></i>Exportar PDF</button>
+<button class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs" onclick="cerrarDetalleOperadorTop5()"><i class="fa-solid fa-xmark mr-1"></i>Cerrar</button>
+</div>
+</div>
+<div class="p-4 border-b border-slate-200 bg-slate-50 grid grid-cols-2 md:grid-cols-4 gap-3">
+<div class="bg-white border rounded-xl p-3 text-center"><div class="text-[10px] uppercase font-bold text-slate-500">Total viajes</div><div class="text-2xl font-black text-slate-900" id="opModalTotal">0</div></div>
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center"><div class="text-[10px] uppercase font-bold text-emerald-700">Exportación</div><div class="text-2xl font-black text-emerald-700" id="opModalExpo">0</div></div>
+<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center"><div class="text-[10px] uppercase font-bold text-indigo-700">Importación</div><div class="text-2xl font-black text-indigo-700" id="opModalImpo">0</div></div>
+<div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center"><div class="text-[10px] uppercase font-bold text-purple-700">Foráneo</div><div class="text-2xl font-black text-purple-700" id="opModalForaneo">0</div></div>
+</div>
+<div class="flex-1 overflow-auto">
+<table class="w-full text-left text-xs border-collapse min-w-[1000px]">
+<thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-200">
+<tr><th class="py-3 px-3">Fecha</th><th class="py-3 px-3">Viaje/Folio</th><th class="py-3 px-3">Cliente</th><th class="py-3 px-3">Camión</th><th class="py-3 px-3">Remolque</th><th class="py-3 px-3">Tipo</th><th class="py-3 px-3">Clasificación</th><th class="py-3 px-3">Estatus</th><th class="py-3 px-3">Hoja Servicio</th></tr>
+</thead>
+<tbody class="divide-y divide-slate-100" id="opModalTableBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+<link rel="stylesheet" href="assets/css/style-024.css" id="gm-command-center-v4"/>
+<link rel="stylesheet" href="assets/css/style-025.css"/>
+<script src="assets/js/ui/dashboard-shell.js"></script>
+<link rel="stylesheet" href="assets/css/style-026.css"/>
+<div aria-hidden="true" class="gm-detail-modal" id="gmInteractiveModal">
+<div aria-modal="true" class="gm-detail-box" role="dialog">
+<div class="gm-detail-head"><div><h2 id="gmModalTitle">Análisis gerencial</h2><p id="gmModalSubtitle">Detalle interactivo del indicador seleccionado.</p></div><button class="gm-close" onclick="cerrarPanelGerencialInteractivo()"><i class="fa-solid fa-xmark"></i></button></div>
+<div class="gm-detail-body" id="gmModalBody"></div>
+</div>
+</div>
+<script src="assets/js/modules/gerencial-analytics.js"></script>
+<link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/>
+<script id="gm-supabase-inline" src="assets/js/vendor/supabase-sdk.js"></script>
+<script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>
+<script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js"></script>
+<script src="assets/js/core/module-registry.js"></script>
+<script src="assets/js/modules/inventario.js"></script>
+<script src="assets/js/modules/rentas.js"></script>
+<script src="assets/js/modules/mantenimiento-dot.js"></script>
+<script src="assets/js/modules/mapa.js"></script>
+<script src="assets/js/modules/configuracion.js"></script>
+<script src="assets/js/modules/clientes-divisiones-v1.js?v=v1"></script>
+<script src="assets/js/modules/clientes-divisiones-v2-unificado.js?v=v2"></script>
+<script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
+
+
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js"></script>
+<script src="assets/js/modules/anticipos-profesional-flow.js?v=accounts-v11"></script>
+<script src="assets/js/modules/anticipos-forms-standalone-v10.js?v=forms-v11-defaults"></script>
+<script src="assets/js/modules/anticipos-selector-standalone.js?v=selector-v9-fast"></script>
+<script src="assets/js/modules/anticipos-v12-catalogos-flujos.js?v=v12"></script>
+<script src="assets/js/modules/anticipos-v12-catalogos-compactos.js?v=compact-v1"></script>
+<script src="assets/js/modules/anticipos-v24-catalogos-listado-beneficiarios.js?v=v24"></script>
+<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>
+<script src="assets/js/modules/anticipos-v16-cajas.js?v=v16"></script>
+<script src="assets/js/modules/anticipos-v19-cajas-historial.js?v=v19"></script>
+<script src="assets/js/modules/anticipos-v25-movimientos-caja-unico.js?v=v25"></script>
+
+<script id="cc-db-location-preservation-note" src="assets/js/core/location-preservation.js"></script>
+<script id="cc-performance-tuning" src="assets/js/core/performance-flags.js"></script>
+
+
+<link rel="stylesheet" href="assets/css/style-028.css" id="cc-global-alerts-css"/>
+<button id="ccGlobalAlertsBtn" type="button" title="Centro de alertas" aria-label="Centro de alertas">
+  <i class="fa-solid fa-bell"></i><span class="cc-alert-label">Alertas</span><span id="ccGlobalAlertsBadge">0</span>
+</button>
+<script id="cc-global-alerts-js" src="assets/js/modules/alerts-center.js"></script>
+
+<script src="assets/js/core/health-check.js"></script>
+<script src="assets/js/modules/service-sheets-v12-unico.js?v=v12-unico"></script>
+</body>
+</html>
