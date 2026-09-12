@@ -1,0 +1,38 @@
+name: Aplicar Anticipos v25 Movimiento Caja Unico
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v25-movimientos-caja-unico.js'
+      - '.github/workflows/apply-anticipos-v25-movimiento-caja-unico.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Activar formulario único
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v25-movimientos-caja-unico.js?v=v25"></script>\n'
+          s=s.replace(tag,'')
+          anchor='<script src="assets/js/modules/anticipos-v19-cajas-historial.js?v=v19"></script>\n'
+          if anchor not in s:
+              raise SystemExit('No se encontró anticipos v19')
+          s=s.replace(anchor,anchor+tag,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check profesional/assets/js/modules/anticipos-v25-movimientos-caja-unico.js
+          grep -q 'anticipos-v25-movimientos-caja-unico.js?v=v25' profesional/index.html
+      - name: Commit
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/index.html
+          git commit -m 'Activar formulario unico de movimientos de cajas v25'
+          git push
