@@ -18,52 +18,43 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Crear versión única restaurada
+      - name: Crear version unica restaurada
         run: |
           cp profesional/assets/js/modules/service-sheets-v12-unico.js profesional/assets/js/modules/service-sheets-v10-3-restaurado-unico.js
           cat >> profesional/assets/js/modules/service-sheets-v10-3-restaurado-unico.js <<'JS'
-
-/* Restauración UX v10.3: Buscar operador en hojas activas */
-(function(){
-  if(window.__hsControlV103SearchRestored)return;window.__hsControlV103SearchRestored=true;
-  const norm=v=>String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
-  let observer=null;
-  function applyFilter(){
-    const input=document.getElementById('hsV103SearchActive');
-    const body=document.getElementById('hsOpBody');
-    if(!input||!body)return;
-    const q=norm(input.value);
-    [...body.querySelectorAll('tr')].forEach(tr=>{
-      if(!tr.querySelector('td'))return;
-      tr.style.display=!q||norm(tr.textContent).includes(q)?'':'none';
-    });
-  }
-  function ensure(){
-    const view=document.getElementById('hsViewOperadores');if(!view)return false;
-    const toolbar=view.querySelector('.cc-toolbar');if(!toolbar)return false;
-    let wrap=document.getElementById('hsV103SearchWrap');
-    if(!wrap){
-      wrap=document.createElement('div');wrap.id='hsV103SearchWrap';
-      wrap.style='display:flex;align-items:center;gap:7px;min-width:min(380px,100%);';
-      wrap.innerHTML='<label for="hsV103SearchActive" style="font-size:10px;font-weight:900;color:#475569;white-space:nowrap">Buscar operador</label><input id="hsV103SearchActive" class="cc-input" type="search" autocomplete="off" placeholder="Escribe nombre del operador..." style="min-width:230px">';
-      const typeBox=document.getElementById('hsV11TipoLista')?.parentElement||document.getElementById('hsV102TipoEntregas')?.parentElement;
-      if(typeBox?.parentElement===toolbar) typeBox.after(wrap); else toolbar.insertBefore(wrap,toolbar.querySelector('[data-op]')||null);
-      wrap.querySelector('input').addEventListener('input',applyFilter);
-      const typeSel=document.getElementById('hsV11TipoLista')||document.getElementById('hsV102TipoEntregas');
-      typeSel?.addEventListener('change',()=>{
-        const t=typeSel.value||'OPERADOR',inp=document.getElementById('hsV103SearchActive');
-        if(inp){inp.value='';inp.placeholder=t==='BENEFICIARIO'?'Escribe nombre del beneficiario...':'Escribe nombre del operador...';}
-        setTimeout(applyFilter,40);
-      });
-    }
-    const body=document.getElementById('hsOpBody');
-    if(body&&!observer){observer=new MutationObserver(applyFilter);observer.observe(body,{childList:true,subtree:true});}
-    applyFilter();return true;
-  }
-  function install(){let n=0;const t=setInterval(()=>{n++;if(ensure()||n>60)clearInterval(t)},250);document.addEventListener('click',e=>{if(e.target.closest?.('#ccTabHojasServicio,#ccPanelHojasServicio [data-hsv="Operadores"]'))setTimeout(ensure,200)},true);}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
-})();
-JS
+          
+          /* Restauracion UX v10.3: Buscar operador en hojas activas */
+          (function(){
+            if(window.__hsControlV103SearchRestored)return;window.__hsControlV103SearchRestored=true;
+            const norm=v=>String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+            let observer=null;
+            function applyFilter(){
+              const input=document.getElementById('hsV103SearchActive');
+              const body=document.getElementById('hsOpBody');
+              if(!input||!body)return;
+              const q=norm(input.value);
+              [...body.querySelectorAll('tr')].forEach(tr=>{if(!tr.querySelector('td'))return;tr.style.display=!q||norm(tr.textContent).includes(q)?'':'none';});
+            }
+            function ensure(){
+              const view=document.getElementById('hsViewOperadores');if(!view)return false;
+              const toolbar=view.querySelector('.cc-toolbar');if(!toolbar)return false;
+              let wrap=document.getElementById('hsV103SearchWrap');
+              if(!wrap){
+                wrap=document.createElement('div');wrap.id='hsV103SearchWrap';wrap.style='display:flex;align-items:center;gap:7px;min-width:min(380px,100%);';
+                wrap.innerHTML='<label for="hsV103SearchActive" style="font-size:10px;font-weight:900;color:#475569;white-space:nowrap">Buscar operador</label><input id="hsV103SearchActive" class="cc-input" type="search" autocomplete="off" placeholder="Escribe nombre del operador..." style="min-width:230px">';
+                const typeBox=document.getElementById('hsV11TipoLista')?.parentElement||document.getElementById('hsV102TipoEntregas')?.parentElement;
+                if(typeBox?.parentElement===toolbar)typeBox.after(wrap);else toolbar.insertBefore(wrap,toolbar.querySelector('[data-op]')||null);
+                wrap.querySelector('input').addEventListener('input',applyFilter);
+                const typeSel=document.getElementById('hsV11TipoLista')||document.getElementById('hsV102TipoEntregas');
+                typeSel?.addEventListener('change',()=>{const t=typeSel.value||'OPERADOR',inp=document.getElementById('hsV103SearchActive');if(inp){inp.value='';inp.placeholder=t==='BENEFICIARIO'?'Escribe nombre del beneficiario...':'Escribe nombre del operador...';}setTimeout(applyFilter,40);});
+              }
+              const body=document.getElementById('hsOpBody');if(body&&!observer){observer=new MutationObserver(applyFilter);observer.observe(body,{childList:true,subtree:true});}
+              applyFilter();return true;
+            }
+            function install(){let n=0;const t=setInterval(()=>{n++;if(ensure()||n>60)clearInterval(t)},250);document.addEventListener('click',e=>{if(e.target.closest?.('#ccTabHojasServicio,#ccPanelHojasServicio [data-hsv="Operadores"]'))setTimeout(ensure,200)},true);}
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
+          })();
+          JS
           python - <<'PY'
           from pathlib import Path
           p=Path('profesional/index.html')
@@ -71,9 +62,8 @@ JS
           old='<script src="assets/js/modules/service-sheets-v12-unico.js?v=v12-unico"></script>'
           new='<script src="assets/js/modules/service-sheets-v10-3-restaurado-unico.js?v=v10-3-restaurado"></script>'
           if old not in s:
-              raise SystemExit('No se encontró referencia v12 única')
-          s=s.replace(old,new,1)
-          p.write_text(s,encoding='utf-8')
+              raise SystemExit('No se encontro referencia v12 unica')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
           node --check profesional/assets/js/modules/service-sheets-v10-3-restaurado-unico.js
       - name: Commit
@@ -81,5 +71,5 @@ JS
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add profesional/index.html profesional/assets/js/modules/service-sheets-v10-3-restaurado-unico.js
-          git commit -m "Restaurar Control de Hojas v10.3 en versión única"
+          git commit -m "Restaurar Control de Hojas v10.3 en version unica"
           git push
