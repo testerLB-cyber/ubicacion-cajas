@@ -1,0 +1,53 @@
+name: Restaurar Anticipos Catalogos Integrados
+on:
+  push:
+    paths:
+      - '.github/workflows/restaurar-anticipos-catalogos-integrados.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restaurar vista integrada original
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          # Quitar implementaciones de emergencia/pantalla completa
+          for tag in [
+            '<script src="assets/js/modules/anticipos-v22-catalogos-emergencia.js?v=v22"></script>\n',
+            '<script src="assets/js/modules/anticipos-v23-catalogos-pantalla-completa.js?v=v23"></script>\n',
+            '<script src="assets/js/modules/anticipos-v21-catalogos-directos.js?v=v21"></script>\n',
+            '<script src="assets/js/modules/anticipos-v20-catalogos-form-hotfix.js?v=v20"></script>\n',
+            '<script src="assets/js/modules/anticipos-v17-catalogos-inline-lock.js?v=v17"></script>\n'
+          ]:
+            s=s.replace(tag,'')
+          # Quitar duplicados previos de v15/v18 para insertar una sola vez
+          s=s.replace('<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-integrado"></script>\n','')
+          s=s.replace('<script src="assets/js/modules/anticipos-v18-formularios-inline.js?v=v18"></script>\n','')
+          anchor='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v14-safe"></script>\n'
+          insert=(anchor+
+                  '<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-integrado-restaurado"></script>\n'+
+                  '<script src="assets/js/modules/anticipos-v18-formularios-inline.js?v=v18-restaurado"></script>\n')
+          if anchor not in s:
+            raise SystemExit('No se encontró ancla v13')
+          s=s.replace(anchor,insert,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js
+          node --check profesional/assets/js/modules/anticipos-v18-formularios-inline.js
+          grep -q 'anticipos-v15-catalogos-integrados.js?v=v15-integrado-restaurado' profesional/index.html
+          grep -q 'anticipos-v18-formularios-inline.js?v=v18-restaurado' profesional/index.html
+          ! grep -q 'anticipos-v23-catalogos-pantalla-completa' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Restaurar Catalogos integrados de Anticipos"
+          git push
