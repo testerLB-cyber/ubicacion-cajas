@@ -1,0 +1,55 @@
+name: Aplicar Anticipos v22 Catalogos Emergencia
+
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v22-catalogos-emergencia.js'
+      - '.github/workflows/apply-anticipos-v22-catalogos-emergencia.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/anticipos-v22-catalogos-emergencia.js
+      - name: Activar v22 y retirar capas de catalogos viejas
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          old=[
+            '<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-integrado"></script>\n',
+            '<script src="assets/js/modules/anticipos-v21-catalogos-directos.js?v=v21"></script>\n',
+            '<script src="assets/js/modules/anticipos-v20-catalogos-form-hotfix.js?v=v20"></script>\n',
+            '<script src="assets/js/modules/anticipos-v18-formularios-inline-visible.js?v=v18"></script>\n',
+            '<script src="assets/js/modules/anticipos-v17-catalogos-inline-lock.js?v=v17"></script>\n'
+          ]
+          for x in old:s=s.replace(x,'')
+          tag='<script src="assets/js/modules/anticipos-v22-catalogos-emergencia.js?v=v22"></script>'
+          if tag not in s:
+            anchor='<script src="assets/js/modules/anticipos-v19-cajas-historial.js?v=v19"></script>'
+            if anchor not in s: raise SystemExit('No se encontro ancla v19')
+            s=s.replace(anchor,anchor+'\n'+tag,1)
+          if s.count('anticipos-v22-catalogos-emergencia.js')!=1: raise SystemExit('v22 duplicado')
+          p.write_text(s,encoding='utf-8')
+      - name: Validar index
+        run: |
+          grep -q 'anticipos-v22-catalogos-emergencia.js?v=v22' profesional/index.html
+          ! grep -q 'anticipos-v15-catalogos-integrados.js' profesional/index.html
+          ! grep -q 'anticipos-v21-catalogos-directos.js' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Activar Catalogos independientes Anticipos v22"
+          git push
