@@ -32,5 +32,6 @@
 /* Loader Anticipos v28 */
 (function(){
   if(window.__ccAntV28Loader)return;window.__ccAntV28Loader=true;
+  const st=document.createElement('style');st.textContent='#ccAntTipoPersonaSwitch{display:none!important}';document.head.appendChild(st);
   const s=document.createElement('script');s.src='assets/js/modules/anticipos-v28-operadores-beneficiarios.js?v=28';document.head.appendChild(s);
 })();
