@@ -1,0 +1,68 @@
+name: Consolidar Control Hojas v12
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/consolidar-control-hojas-v12.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Construir módulo único
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          base=Path('profesional/assets/js/modules/service-sheets.js').read_text(encoding='utf-8')
+          person=Path('profesional/assets/js/modules/service-sheets-person-v7.js').read_text(encoding='utf-8')
+          v11=Path('profesional/assets/js/modules/service-sheets-control-v11.js').read_text(encoding='utf-8')
+          pre='''/* Tráfico App Profesional · Control de Hojas de Servicio · ÚNICA versión v12 */\n(function(){\n  window.__HS_SINGLE_VERSION='v12';\n  var st=document.createElement('style');st.id='hs-v12-boot-style';st.textContent='#ccPanelHojasServicio{visibility:hidden!important}';document.head.appendChild(st);\n})();\n'''
+          post='''\n(function(){\n  function show(){var p=document.getElementById('ccPanelHojasServicio');if(!p)return false;var s=document.getElementById('hs-v12-boot-style');if(s)s.remove();p.style.visibility='visible';return true}\n  var n=0,t=setInterval(function(){n++;if((document.getElementById('hsViewComprobacion')&&show())||n>40){clearInterval(t);show()}},100);\n})();\n'''
+          out=pre+'\n'+base+'\n'+person+'\n'+v11+'\n'+post
+          Path('profesional/assets/js/modules/service-sheets-v12-unico.js').write_text(out,encoding='utf-8')
+
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          lines=[]
+          for line in s.splitlines():
+              if 'assets/js/modules/service-sheets.js' in line: continue
+              if 'assets/js/modules/service-sheets-person-v7.js' in line: continue
+              if 'assets/js/modules/service-sheets-excel-v8.js' in line: continue
+              if 'assets/js/modules/service-sheets-comprobacion-v9.js' in line: continue
+              if 'assets/js/modules/service-sheets-control-v10' in line: continue
+              if 'assets/js/modules/service-sheets-control-v11.js' in line: continue
+              if 'assets/js/modules/service-sheets-v12-unico.js' in line: continue
+              lines.append(line)
+          s='\n'.join(lines)
+          anchor='<script src="assets/js/core/health-check.js"></script>'
+          tag='<script src="assets/js/modules/service-sheets-v12-unico.js?v=v12-unico"></script>'
+          if anchor not in s: raise SystemExit('No se encontró health-check')
+          s=s.replace(anchor,anchor+'\n'+tag,1)
+          p.write_text(s+'\n',encoding='utf-8')
+          PY
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/service-sheets-v12-unico.js
+      - name: Validar única referencia
+        run: |
+          test "$(grep -c 'service-sheets-v12-unico.js' profesional/index.html)" -eq 1
+          ! grep -q 'service-sheets-control-v11.js' profesional/index.html
+          ! grep -q 'service-sheets-person-v7.js' profesional/index.html
+          ! grep -q 'assets/js/modules/service-sheets.js' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html profesional/assets/js/modules/service-sheets-v12-unico.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Consolidar Control de Hojas en una sola versión v12"
+            git push
+          fi
