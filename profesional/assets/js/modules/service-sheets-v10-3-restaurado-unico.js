@@ -1,5 +1,6 @@
-/* Tráfico App Profesional · cargador estable Control de Hojas v10.3 + corrección v10.4 */
+/* Entrada de compatibilidad · Control de Hojas de Servicio v104 ÚNICA */
 (function(){
-  document.write('<script src="assets/js/modules/service-sheets-v10-3-base.js?v=v10-3-base"><\/script>');
-  document.write('<script src="assets/js/modules/service-sheets-v10-4-comprobacion.js?v=v10-4-comprobacion"><\/script>');
+  if(window.__HS_V104_LOADER__) return;
+  window.__HS_V104_LOADER__=true;
+  document.write('<script src="assets/js/modules/service-sheets-v104.js?v=104"><\/script>');
 })();
