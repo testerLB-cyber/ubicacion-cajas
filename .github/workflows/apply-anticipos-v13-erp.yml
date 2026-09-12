@@ -1,0 +1,51 @@
+name: Aplicar Anticipos v13 ERP
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v13-erp-catalogos.js'
+      - '.github/workflows/apply-anticipos-v13-erp.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Insertar modulo ERP v13
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v13"></script>'
+          if tag not in t:
+              anchor='<script src="assets/js/modules/anticipos-v12-catalogos-flujos.js?v=v12"></script>'
+              if anchor not in t:
+                  raise SystemExit('No se encontro modulo v12')
+              t=t.replace(anchor,anchor+'\n'+tag)
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar JavaScript y contenido
+        run: |
+          node --check profesional/assets/js/modules/anticipos-v13-erp-catalogos.js
+          grep -q 'Catálogos ERP + Utilerías' profesional/assets/js/modules/anticipos-v13-erp-catalogos.js
+          grep -q 'cc_ant_catalog_action' profesional/assets/js/modules/anticipos-v13-erp-catalogos.js
+          grep -q 'Utilerías' profesional/assets/js/modules/anticipos-v13-erp-catalogos.js
+          grep -q 'anticipos-v13-erp-catalogos.js?v=v13' profesional/index.html
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then
+            echo "v13 ya insertado"
+          else
+            git commit -m "Activar catalogos ERP y utilerias Anticipos v13"
+            git push origin main
+          fi
