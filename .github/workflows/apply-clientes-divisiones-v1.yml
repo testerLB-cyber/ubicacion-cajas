@@ -1,0 +1,45 @@
+name: Aplicar Clientes Divisiones v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/clientes-divisiones-v1.js'
+      - '.github/workflows/apply-clientes-divisiones-v1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Insertar modulo
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/clientes-divisiones-v1.js?v=v1"></script>'
+          t='\n'.join(x for x in t.splitlines() if 'clientes-divisiones-v1.js' not in x)+'\n'
+          anchor='<script src="assets/js/modules/configuracion.js"></script>'
+          if anchor not in t: raise SystemExit('No se encontro configuracion.js')
+          t=t.replace(anchor,anchor+'\n'+tag)
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar
+        run: |
+          node --check profesional/assets/js/modules/clientes-divisiones-v1.js
+          test "$(grep -c 'clientes-divisiones-v1.js' profesional/index.html)" = "1"
+          grep -q 'cc_client_catalogs' profesional/assets/js/modules/clientes-divisiones-v1.js
+          grep -q 'clienteDivisionId' profesional/assets/js/modules/clientes-divisiones-v1.js
+          grep -q 'Tiene divisiones o sucursales' profesional/assets/js/modules/clientes-divisiones-v1.js
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then echo "ya aplicado"; else git commit -m "Activar catalogo de clientes y divisiones" && git push origin main; fi
