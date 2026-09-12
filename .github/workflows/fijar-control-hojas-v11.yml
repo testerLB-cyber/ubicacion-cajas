@@ -1,0 +1,60 @@
+name: Fijar Control Hojas v11
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'profesional/assets/js/modules/service-sheets-control-v11.js'
+      - '.github/workflows/fijar-control-hojas-v11.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Consolidar scripts de Hojas
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          old=[
+            '<script src="assets/js/modules/service-sheets-excel-v8.js?v=v8"></script>',
+            '<script src="assets/js/modules/service-sheets-comprobacion-v9.js?v=v9"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10.js?v=v10"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10-1.js?v=v10.1"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10-2.js?v=v10-2"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10-3-search.js?v=v10-3"></script>'
+          ]
+          for tag in old:
+              s=s.replace(tag+'\n','').replace(tag,'')
+          tag='<script src="assets/js/modules/service-sheets-control-v11.js?v=v11"></script>'
+          s=s.replace(tag+'\n','').replace(tag,'')
+          anchor='<script src="assets/js/modules/service-sheets-person-v7.js?v=person-v7"></script>'
+          if anchor not in s:
+              raise SystemExit('No se encontró service-sheets-person-v7')
+          s=s.replace(anchor,anchor+'\n'+tag,1)
+          if s.count('service-sheets-control-v11.js')!=1:
+              raise SystemExit('v11 no quedó una sola vez')
+          for bad in ['service-sheets-excel-v8.js','service-sheets-comprobacion-v9.js','service-sheets-control-v10.js','service-sheets-control-v10-1.js','service-sheets-control-v10-2.js','service-sheets-control-v10-3-search.js']:
+              if bad in s: raise SystemExit('Sigue activo '+bad)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validar JS
+        run: node --check profesional/assets/js/modules/service-sheets-control-v11.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Dejar Control de Hojas v11 como única versión activa"
+            git push
+          fi
