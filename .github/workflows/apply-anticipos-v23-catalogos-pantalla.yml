@@ -1,0 +1,44 @@
+name: Aplicar Anticipos v23 Catalogos Pantalla
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v23-catalogos-pantalla-completa.js'
+      - '.github/workflows/apply-anticipos-v23-catalogos-pantalla.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Actualizar index profesional
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          for old in [
+            '<script src="assets/js/modules/anticipos-v22-catalogos-emergencia.js?v=v22"></script>\n',
+            '<script src="assets/js/modules/anticipos-v21-catalogos-directos.js?v=v21"></script>\n'
+          ]:
+            s=s.replace(old,'')
+          tag='<script src="assets/js/modules/anticipos-v23-catalogos-pantalla-completa.js?v=v23"></script>'
+          anchor='<script src="assets/js/modules/anticipos-v19-cajas-historial.js?v=v19"></script>'
+          if tag not in s:
+            s=s.replace(anchor,anchor+'\n'+tag)
+          p.write_text(s,encoding='utf-8')
+      - name: Validar JS e index
+        run: |
+          node --check profesional/assets/js/modules/anticipos-v23-catalogos-pantalla-completa.js
+          test "$(grep -c 'anticipos-v23-catalogos-pantalla-completa.js' profesional/index.html)" -eq 1
+          test "$(grep -c 'anticipos-v22-catalogos-emergencia.js' profesional/index.html)" -eq 0
+      - name: Commit cambios
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Activar Catalogos Anticipos pantalla completa v23'
+            git push
+          fi
