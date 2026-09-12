@@ -1,0 +1,44 @@
+name: Aplicar Anticipos v19 Cajas Historial
+
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v19-cajas-historial.js'
+      - '.github/workflows/apply-anticipos-v19-cajas-historial.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/anticipos-v19-cajas-historial.js
+      - name: Insertar modulo v19
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v19-cajas-historial.js?v=v19"></script>'
+          if tag not in s:
+              anchor='<script src="assets/js/modules/anticipos-v16-cajas.js?v=v16"></script>'
+              if anchor not in s:
+                  raise SystemExit('No se encontro ancla v16')
+              s=s.replace(anchor,anchor+'\n'+tag,1)
+              p.write_text(s,encoding='utf-8')
+          if s.count('anticipos-v19-cajas-historial.js')!=1:
+              raise SystemExit('Carga v19 duplicada')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Activar Cajas historial primero en Anticipos v19"
+          git push
