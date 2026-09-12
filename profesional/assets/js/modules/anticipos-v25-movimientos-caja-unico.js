@@ -47,3 +47,9 @@
   if(window.__ccAntV32Loader)return;window.__ccAntV32Loader=true;
   const s=document.createElement('script');s.src='assets/js/modules/anticipos-v32-config-destino-unica.js?v=32';document.head.appendChild(s);
 })();
+
+/* Loader Anticipos v33 · ocultar Tipos de movimiento de caja */
+(function(){
+  if(window.__ccAntV33Loader)return;window.__ccAntV33Loader=true;
+  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v33-ocultar-tipos-mov-caja.js?v=33';document.head.appendChild(s);
+})();
