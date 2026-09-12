@@ -1,0 +1,43 @@
+name: Hotfix desactivar Anticipos v13
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/hotfix-disable-anticipos-v13.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Desactivar modulo v13 temporalmente
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace('<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v13"></script>\n','')
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar arranque sin v13
+        run: |
+          ! grep -q 'anticipos-v13-erp-catalogos.js' profesional/index.html
+          grep -q 'assets/js/security/auth-permissions.js' profesional/index.html
+          grep -q 'assets/js/config/supabase-config.js' profesional/index.html
+      - name: Publicar hotfix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then
+            echo "Hotfix ya aplicado"
+          else
+            git commit -m "Hotfix restaurar acceso Supabase desactivando Anticipos v13"
+            git push origin main
+          fi
