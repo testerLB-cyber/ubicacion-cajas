@@ -29,9 +29,15 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,1300));else setTimeout(boot,1300);
 })();
 
-/* Loader Anticipos v28 */
+/* Loader Anticipos v29 */
 (function(){
-  if(window.__ccAntV28Loader)return;window.__ccAntV28Loader=true;
+  if(window.__ccAntV29Loader)return;window.__ccAntV29Loader=true;
   const st=document.createElement('style');st.textContent='#ccAntTipoPersonaSwitch{display:none!important}';document.head.appendChild(st);
-  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v28-operadores-beneficiarios.js?v=28';document.head.appendChild(s);
+  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v28-operadores-beneficiarios.js?v=30';document.head.appendChild(s);
+})();
+
+/* Loader Anticipos v31 · saldos de cajas */
+(function(){
+  if(window.__ccAntV31Loader)return;window.__ccAntV31Loader=true;
+  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v31-saldos-cajas.js?v=31';document.head.appendChild(s);
 })();
