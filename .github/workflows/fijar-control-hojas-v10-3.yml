@@ -1,0 +1,58 @@
+name: Fijar Control Hojas v10.3
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'profesional/assets/js/modules/service-sheets-control-v10-3-search.js'
+      - '.github/workflows/fijar-control-hojas-v10-3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Fijar orden y activar v10.3
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tags=[
+            '<script src="assets/js/modules/service-sheets-control-v10-1.js?v=v10.1"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10-2.js?v=v10-2"></script>',
+            '<script src="assets/js/modules/service-sheets-control-v10-3-search.js?v=v10-3"></script>'
+          ]
+          for tag in tags:
+            s=s.replace(tag+'\n','').replace(tag,'')
+          anchor='<script src="assets/js/modules/service-sheets-comprobacion-v9.js?v=v9"></script>'
+          if anchor not in s:
+            raise SystemExit('No se encontró ancla de comprobación v9')
+          block=anchor+'\n'+'\n'.join(tags)
+          s=s.replace(anchor,block,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/service-sheets-control-v10-3-search.js
+      - name: Validar index
+        run: |
+          grep -q 'service-sheets-control-v10-1.js?v=v10.1' profesional/index.html
+          grep -q 'service-sheets-control-v10-2.js?v=v10-2' profesional/index.html
+          grep -q 'service-sheets-control-v10-3-search.js?v=v10-3' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Fijar Control de Hojas v10.3 como versión publicada"
+            git push
+          fi
