@@ -28,3 +28,9 @@
   function boot(){const root=document.getElementById('ccPanelAnticipos')||document.body;let q=false;const run=()=>{if(q)return;q=true;requestAnimationFrame(()=>{q=false;render()})};new MutationObserver(run).observe(root,{childList:true,subtree:true});document.addEventListener('click',e=>{if(e.target.closest?.('.cc-ant-nav [data-antv="cajas"]'))setTimeout(run,80)},true);setTimeout(run,500)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,1300));else setTimeout(boot,1300);
 })();
+
+/* Loader Anticipos v28 */
+(function(){
+  if(window.__ccAntV28Loader)return;window.__ccAntV28Loader=true;
+  const s=document.createElement('script');s.src='assets/js/modules/anticipos-v28-operadores-beneficiarios.js?v=28';document.head.appendChild(s);
+})();
