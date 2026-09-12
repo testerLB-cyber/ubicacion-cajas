@@ -1,0 +1,58 @@
+name: Aplicar Anticipos v15 Catalogos Integrados
+
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js'
+      - '.github/workflows/apply-anticipos-v15-integrado.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Validar JavaScript
+        run: |
+          node --check profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js
+          grep -q 'Catálogos ERP integrados' profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js
+          grep -q 'ccAntViewCatalogos' profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js
+      - name: Insertar modulo integrado
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          import re
+          t=re.sub(r'\n?<script src="assets/js/modules/anticipos-v15-catalogos-integrados\.js\?v=[^"]+"></script>','',t)
+          anchor='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v14-safe"></script>'
+          tag='<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-integrado"></script>'
+          if anchor not in t:
+              raise SystemExit('No se encontro v14-safe')
+          t=t.replace(anchor,anchor+'\n'+tag)
+          if t.count('anticipos-v15-catalogos-integrados.js')!=1:
+              raise SystemExit('Carga v15 duplicada')
+          if t.index(tag)<t.index(anchor):
+              raise SystemExit('v15 quedo antes de v14')
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar integracion
+        run: |
+          grep -q 'anticipos-v15-catalogos-integrados.js?v=v15-integrado' profesional/index.html
+          test "$(grep -o 'anticipos-v15-catalogos-integrados.js' profesional/index.html | wc -l)" -eq 1
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then
+            echo "v15 ya integrado"
+          else
+            git commit -m "Integrar catalogos ERP de Anticipos en su vista original"
+            git push origin main
+          fi
