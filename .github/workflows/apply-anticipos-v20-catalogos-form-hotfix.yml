@@ -1,0 +1,37 @@
+name: Aplicar Anticipos v20 Catalogos Forms
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v20-catalogos-form-hotfix.js'
+      - '.github/workflows/apply-anticipos-v20-catalogos-form-hotfix.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Insertar hotfix v20
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v20-catalogos-form-hotfix.js?v=v20"></script>'
+          if tag not in s:
+              anchor='<script src="assets/js/modules/anticipos-v18-formularios-inline-visible.js?v=v18"></script>'
+              if anchor not in s:
+                  raise SystemExit('No se encontro anchor v18')
+              s=s.replace(anchor,anchor+'\n'+tag)
+              p.write_text(s,encoding='utf-8')
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/anticipos-v20-catalogos-form-hotfix.js
+      - name: Commit
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add profesional/index.html
+          git commit -m "Activar hotfix formularios Catalogos Anticipos v20"
+          git push
