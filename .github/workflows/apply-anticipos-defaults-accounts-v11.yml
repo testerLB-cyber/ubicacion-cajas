@@ -1,0 +1,47 @@
+name: Aplicar Anticipos v11 Defaults y Cuentas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/scripts/fix_anticipos_defaults_accounts_v11.py'
+      - '.github/workflows/apply-anticipos-defaults-accounts-v11.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar cambios v11
+        run: python3 .github/scripts/fix_anticipos_defaults_accounts_v11.py
+      - name: Validar conceptos default
+        run: |
+          grep -q "x.esDefault??x.es_default" profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q "uso_operadores===true" profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q "Anticipos a Beneficiarios" profesional/assets/js/modules/anticipos-profesional-flow.js
+      - name: Actualizar cache bust
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace('anticipos-forms-standalone-v10.js?v=forms-v10','anticipos-forms-standalone-v10.js?v=forms-v11-defaults')
+          t=t.replace('anticipos-profesional-flow.js?v=fast-open-v7','anticipos-profesional-flow.js?v=accounts-v11')
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html profesional/assets/js/modules/anticipos-forms-standalone-v10.js profesional/assets/js/modules/anticipos-profesional-flow.js .github/scripts/add_anticipos_standalone_forms_v10.py .github/scripts/add_anticipos_cuentas_corrected_ui.py
+          if git diff --cached --quiet; then
+            echo "Cambios ya aplicados"
+          else
+            git commit -m "Anticipos v11 conceptos default y cuentas separadas"
+            git push origin main
+          fi
