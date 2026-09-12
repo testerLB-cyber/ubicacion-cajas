@@ -1,0 +1,50 @@
+name: Aplicar Anticipos v18 Formularios Inline
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v18-formularios-inline-visible.js'
+      - '.github/workflows/apply-anticipos-v18-formularios-inline.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Insertar v18
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v18-formularios-inline-visible.js?v=v18"></script>'
+          t='\n'.join(x for x in t.splitlines() if 'anticipos-v18-formularios-inline-visible.js' not in x)+'\n'
+          anchor='<script src="assets/js/modules/anticipos-v17-catalogos-inline-lock.js?v=v17"></script>'
+          if anchor not in t:
+              raise SystemExit('No se encontro v17')
+          t=t.replace(anchor,anchor+'\n'+tag)
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar
+        run: |
+          node --check profesional/assets/js/modules/anticipos-v18-formularios-inline-visible.js
+          test "$(grep -c 'anticipos-v18-formularios-inline-visible.js' profesional/index.html)" = "1"
+          grep -q 'ccV15FormHost' profesional/assets/js/modules/anticipos-v18-formularios-inline-visible.js
+          grep -q 'ccV16ConceptForm' profesional/assets/js/modules/anticipos-v18-formularios-inline-visible.js
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then
+            echo "v18 ya insertado"
+          else
+            git commit -m "Mostrar formularios de catalogos Anticipos dentro de la vista"
+            git push origin main
+          fi
