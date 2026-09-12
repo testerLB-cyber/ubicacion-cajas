@@ -1,0 +1,53 @@
+name: Aplicar Anticipos v16 Cajas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v16-cajas.js'
+      - '.github/workflows/apply-anticipos-v16-cajas.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Insertar modulo v16
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          t=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v16-cajas.js?v=v16"></script>'
+          # evitar duplicados
+          lines=[x for x in t.splitlines() if 'anticipos-v16-cajas.js' not in x]
+          t='\n'.join(lines)+'\n'
+          anchor='<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15"></script>'
+          if anchor not in t:
+              raise SystemExit('No se encontro Anticipos v15 integrado')
+          t=t.replace(anchor,anchor+'\n'+tag)
+          p.write_text(t,encoding='utf-8')
+          PY
+      - name: Validar
+        run: |
+          node --check profesional/assets/js/modules/anticipos-v16-cajas.js
+          test "$(grep -c 'anticipos-v16-cajas.js' profesional/index.html)" = "1"
+          grep -q 'data-antv="cajas"' profesional/assets/js/modules/anticipos-v16-cajas.js
+          grep -q 'cc_ant_transfer_funds' profesional/assets/js/modules/anticipos-v16-cajas.js
+          grep -q 'cc_ant_add_cash_movement' profesional/assets/js/modules/anticipos-v16-cajas.js
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then
+            echo "v16 ya insertado"
+          else
+            git commit -m "Activar Cajas y conceptos simples en Anticipos v16"
+            git push origin main
+          fi
