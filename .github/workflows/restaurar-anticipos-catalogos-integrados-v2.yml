@@ -1,0 +1,56 @@
+name: Restaurar Anticipos Catalogos Integrados v2
+on:
+  push:
+    paths:
+      - '.github/workflows/restaurar-anticipos-catalogos-integrados-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restaurar vista integrada original
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          remove_tokens=[
+            'anticipos-v22-catalogos-emergencia.js',
+            'anticipos-v23-catalogos-pantalla-completa.js',
+            'anticipos-v21-catalogos-directos.js',
+            'anticipos-v20-catalogos-form-hotfix.js',
+            'anticipos-v17-catalogos-inline-lock.js',
+            'anticipos-v15-catalogos-integrados.js',
+            'anticipos-v15-form-visible-restaurado.js'
+          ]
+          lines=[]
+          for line in s.splitlines(True):
+            if any(tok in line for tok in remove_tokens):
+              continue
+            lines.append(line)
+          s=''.join(lines)
+          anchor='<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v14-safe"></script>\n'
+          if anchor not in s:
+            raise SystemExit('No se encontró ancla v13')
+          insert=(anchor+
+                  '<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-restaurado"></script>\n'+
+                  '<script src="assets/js/modules/anticipos-v15-form-visible-restaurado.js?v=restaurado"></script>\n')
+          s=s.replace(anchor,insert,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check profesional/assets/js/modules/anticipos-v15-catalogos-integrados.js
+          node --check profesional/assets/js/modules/anticipos-v15-form-visible-restaurado.js
+          grep -q 'anticipos-v15-catalogos-integrados.js?v=v15-restaurado' profesional/index.html
+          grep -q 'anticipos-v15-form-visible-restaurado.js?v=restaurado' profesional/index.html
+          ! grep -q 'anticipos-v23-catalogos-pantalla-completa' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Restaurar Catalogos integrados de Anticipos v15"
+          git push
