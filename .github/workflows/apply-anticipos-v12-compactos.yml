@@ -1,0 +1,43 @@
+name: Aplicar Catalogos Anticipos v12 compactos
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v12-catalogos-compactos.js'
+      - '.github/workflows/apply-anticipos-v12-compactos.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Insertar capa visual compacta
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v12-catalogos-compactos.js?v=compact-v1"></script>'
+          if tag not in s:
+              anchor='<script src="assets/js/modules/anticipos-v12-catalogos-flujos.js?v=v12"></script>'
+              assert anchor in s, 'No se encontró Anticipos v12'
+              s=s.replace(anchor,anchor+'\n'+tag,1)
+              p.write_text(s,encoding='utf-8')
+          assert s.count('anticipos-v12-catalogos-flujos.js?v=v12')==1
+          assert s.count('anticipos-v12-catalogos-compactos.js?v=compact-v1')==1
+          assert 'anticipos-v13-erp-catalogos.js' not in s
+          assert 'anticipos-v15-catalogos-integrados.js' not in s
+          PY
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/anticipos-v12-catalogos-compactos.js
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Compactar Catalogos Anticipos v12 sin cambiar funcionalidad'
+            git push
+          fi
