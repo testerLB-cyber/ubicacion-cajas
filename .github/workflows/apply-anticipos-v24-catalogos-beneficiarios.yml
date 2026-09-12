@@ -1,0 +1,39 @@
+name: Aplicar Anticipos v24 Catalogos Beneficiarios
+on:
+  push:
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v24-catalogos-listado-beneficiarios.js'
+      - '.github/workflows/apply-anticipos-v24-catalogos-beneficiarios.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Insertar v24
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v24-catalogos-listado-beneficiarios.js?v=v24"></script>\n'
+          # evitar duplicados
+          s=s.replace(tag,'')
+          anchor='<script src="assets/js/modules/anticipos-v12-catalogos-compactos.js?v=compact-v1"></script>\n'
+          if anchor not in s:
+              raise SystemExit('No se encontró ancla compact-v1')
+          s=s.replace(anchor,anchor+tag,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check profesional/assets/js/modules/anticipos-v24-catalogos-listado-beneficiarios.js
+          grep -q 'anticipos-v24-catalogos-listado-beneficiarios.js?v=v24' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Activar Anticipos v24 catalogos y conceptos beneficiario'
+          git push
