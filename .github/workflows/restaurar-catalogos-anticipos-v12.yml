@@ -1,0 +1,58 @@
+name: Restaurar Catalogos Anticipos v12
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restaurar-catalogos-anticipos-v12.yml'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restaurar Catálogos previos a ERP/modal
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          # Retirar capas que reorganizaron/interceptaron Catálogos después de v12.
+          remove=[
+            '<script src="assets/js/modules/anticipos-v13-erp-catalogos.js?v=v14-safe"></script>\n',
+            '<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-restaurado"></script>\n',
+            '<script src="assets/js/modules/anticipos-v15-catalogos-integrados.js?v=v15-integrado"></script>\n',
+            '<script src="assets/js/modules/anticipos-v15-form-visible-restaurado.js?v=restaurado"></script>\n',
+            '<script src="assets/js/modules/anticipos-v17-catalogos-inline-lock.js?v=v17"></script>\n',
+            '<script src="assets/js/modules/anticipos-v18-formularios-inline.js?v=v18"></script>\n',
+            '<script src="assets/js/modules/anticipos-v20-catalogos-form-hotfix.js?v=v20"></script>\n',
+            '<script src="assets/js/modules/anticipos-v21-catalogos-directos.js?v=v21"></script>\n',
+            '<script src="assets/js/modules/anticipos-v22-catalogos-emergencia.js?v=v22"></script>\n',
+            '<script src="assets/js/modules/anticipos-v23-catalogos-pantalla-completa.js?v=v23"></script>\n'
+          ]
+          for tag in remove:
+            s=s.replace(tag,'')
+          # Asegurar v12 una sola vez en su posición histórica, antes de auth.
+          v12='<script src="assets/js/modules/anticipos-v12-catalogos-flujos.js?v=v12"></script>\n'
+          s=s.replace(v12,'')
+          anchor='<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js"></script>\n'
+          if anchor not in s:
+            raise SystemExit('No se encontró auth anchor')
+          s=s.replace(anchor,v12+anchor,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check profesional/assets/js/modules/anticipos-v12-catalogos-flujos.js
+          grep -q 'anticipos-v12-catalogos-flujos.js?v=v12' profesional/index.html
+          ! grep -q 'anticipos-v13-erp-catalogos' profesional/index.html
+          ! grep -q 'anticipos-v15-catalogos-integrados' profesional/index.html
+          ! grep -q 'anticipos-v23-catalogos-pantalla-completa' profesional/index.html
+          grep -q 'anticipos-v16-cajas.js?v=v16' profesional/index.html
+          grep -q 'anticipos-v19-cajas-historial.js?v=v19' profesional/index.html
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Restaurar Catalogos Anticipos al estado v12 previo a ERP'
+          git push
