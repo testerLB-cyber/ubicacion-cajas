@@ -1,0 +1,45 @@
+name: Aplicar formularios independientes Anticipos v10
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/add_anticipos_standalone_forms_v10.py'
+      - '.github/workflows/apply-anticipos-forms-v10.yml'
+  workflow_run:
+    workflows: ['Construir version profesional paralela']
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Aplicar formularios independientes
+        run: python3 .github/scripts/add_anticipos_standalone_forms_v10.py
+      - name: Validar formularios v10
+        run: |
+          test -f profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q 'Formularios independientes Anticipos v10' profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q 'window.ccAntOpenOperatorForm=openOperator' profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q 'window.ccAntOpenBeneficiaryForm=openBeneficiary' profesional/assets/js/modules/anticipos-forms-standalone-v10.js
+          grep -q 'anticipos-forms-standalone-v10.js?v=forms-v10' profesional/index.html
+      - name: Publicar cambio profesional
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional
+          if git diff --cached --quiet; then
+            echo "Formularios v10 ya aplicados"
+            exit 0
+          fi
+          git commit -m "Corregir formularios independientes de Anticipos v10"
+          git push
