@@ -31,8 +31,9 @@ jobs:
               t=t.replace(anchor,anchor+'\n'+tag)
           p.write_text(t,encoding='utf-8')
           PY
-      - name: Validar
+      - name: Validar sintaxis y contenido
         run: |
+          node --check profesional/assets/js/modules/anticipos-v12-catalogos-flujos.js
           grep -q 'Anticipos v12' profesional/assets/js/modules/anticipos-v12-catalogos-flujos.js
           grep -q 'anticipos-v12-catalogos-flujos.js?v=v12' profesional/index.html
           grep -q 'Configuración por destino' profesional/assets/js/modules/anticipos-v12-catalogos-flujos.js
