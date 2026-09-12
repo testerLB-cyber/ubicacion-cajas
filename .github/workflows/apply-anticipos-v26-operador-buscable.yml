@@ -1,0 +1,47 @@
+name: Aplicar Anticipos v26 Operador Buscable
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'profesional/assets/js/modules/anticipos-v26-operador-buscable.js'
+      - '.github/workflows/apply-anticipos-v26-operador-buscable.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Insertar módulo v26
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="assets/js/modules/anticipos-v26-operador-buscable.js?v=v26"></script>'
+          if tag not in s:
+              anchor='<script src="assets/js/modules/anticipos-v25-movimientos-caja-unico.js?v=v25"></script>'
+              if anchor not in s:
+                  anchor='<script src="assets/js/modules/anticipos-forms-standalone-v10.js?v=forms-v11-defaults"></script>'
+              if anchor not in s: raise SystemExit('No se encontró ancla de Anticipos')
+              s=s.replace(anchor,anchor+'\n'+tag,1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validar JavaScript
+        run: node --check profesional/assets/js/modules/anticipos-v26-operador-buscable.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profesional/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Activar Anticipos v26 operador buscable"
+            git push
+          fi
