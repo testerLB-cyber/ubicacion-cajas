@@ -1,15 +1,15 @@
-/* Tráfico App · Inventario · módulo estable */
+/* Tráfico App · Inventario · módulo estable limpio */
 (function(){
   const root=window.TraficApp=window.TraficApp||{};
   root.modules=root.modules||{};
 
-  function cargarQrToolbar(){
-    if(window.__INVENTARIO_QR_TOOLBAR_V2__) return;
-    if(document.querySelector('script[data-inventario-qr-toolbar-v2]')) return;
+  function loadQrSystem(){
+    if(window.__CC_UNIT_QR_SYSTEM_V1__) return;
+    if(document.querySelector('script[data-unit-qr-system-v1]')) return;
     const s=document.createElement('script');
-    s.src='assets/js/modules/inventario-qr-toolbar-v2.js?v=toolbar-v2-20260912-2330';
-    s.dataset.inventarioQrToolbarV2='1';
-    s.onerror=e=>console.warn('No se pudo cargar Generar QR de Inventario',e);
+    s.src='assets/js/modules/inventario-qr-system-v1.js?v=unit-qr-rebuild-v1-20260912-2338';
+    s.dataset.unitQrSystemV1='1';
+    s.onerror=e=>console.warn('No se pudo cargar el sistema QR de unidades',e);
     document.body.appendChild(s);
   }
 
@@ -33,14 +33,14 @@
   }
 
   const original=window.ccRenderInventario;
-  if(typeof original==='function'&&!original.__inventarioModuloEstable){
+  if(typeof original==='function'&&!original.__inventarioModuloEstableV2){
     const wrapped=function(){
       const r=original.apply(this,arguments);
       compactarAcciones();
-      cargarQrToolbar();
+      loadQrSystem();
       return r;
     };
-    wrapped.__inventarioModuloEstable=true;
+    wrapped.__inventarioModuloEstableV2=true;
     window.ccRenderInventario=wrapped;
   }
 
@@ -55,5 +55,5 @@
   };
 
   compactarAcciones();
-  cargarQrToolbar();
+  loadQrSystem();
 })();
