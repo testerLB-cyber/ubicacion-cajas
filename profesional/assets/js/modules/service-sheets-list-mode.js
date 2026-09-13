@@ -55,8 +55,32 @@
       '<div class="hs-list-cell"><small>Fecha uso</small><strong>'+fecha+'</strong></div>';
   }
 
+  function syncPhotoAction(row){
+    if(!row) return;
+    const actions=row.querySelector(':scope > .hs104-actions');
+    if(!actions) return;
+    const source=row.querySelector('[data-mobile-photo]');
+    let listBtn=actions.querySelector('[data-hs-list-photo]');
+    if(!source){
+      if(listBtn) listBtn.remove();
+      return;
+    }
+    if(!listBtn){
+      listBtn=document.createElement('button');
+      listBtn.type='button';
+      listBtn.className='cc-btn cc-btn-light';
+      listBtn.dataset.hsListPhoto='1';
+      listBtn.innerHTML='<i class="fa-solid fa-camera"></i> Ver foto';
+      const edit=actions.querySelector('[data-hs-edit]');
+      if(edit) edit.after(listBtn); else actions.insertBefore(listBtn,actions.firstChild);
+      listBtn.addEventListener('click',()=>source.click());
+    }
+    source.style.display='none';
+  }
+
   function patchRow(row){
-    if(!row||row.dataset.hsListMode==='1') { updateSummary(row); return; }
+    if(!row) return;
+    if(row.dataset.hsListMode==='1') { updateSummary(row); syncPhotoAction(row); return; }
     const toolbar=row.querySelector(':scope > .cc-toolbar');
     const grid=row.querySelector(':scope > .hs104-grid');
     const obsField=row.querySelector(':scope > .cc-field');
@@ -103,6 +127,7 @@
     };
     row.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('change',()=>updateSummary(row)));
     updateSummary(row);
+    syncPhotoAction(row);
   }
 
   function markGroups(){
