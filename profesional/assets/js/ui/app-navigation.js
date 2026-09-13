@@ -16,7 +16,7 @@ function ccLoadUnitQrSystem(){
   if(window.__CC_UNIT_QR_SYSTEM_V2__)return;
   if(document.querySelector('script[data-unit-qr-system-v2]'))return;
   const s=document.createElement('script');
-  s.src='assets/js/modules/inventario-qr-system-v1.js?v=unit-qr-preview-v2-20260912-2359';
+  s.src='assets/js/modules/inventario-qr-system-v1.js?v=unit-qr-preview-print-v3-20260913-0003';
   s.dataset.unitQrSystemV2='1';
   s.onerror=e=>console.warn('No se pudo cargar sistema QR de unidades',e);
   document.body.appendChild(s);
