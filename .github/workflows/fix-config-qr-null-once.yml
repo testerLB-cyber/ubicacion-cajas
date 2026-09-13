@@ -1,0 +1,47 @@
+name: Fix config QR null once
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-config-qr-null-once.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Patch QR button and cache version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('profesional/assets/js/modules/configuracion.js')
+          s=p.read_text()
+          old="const typeSel=ov.querySelector('#ccPrintType'),search=ov.querySelector('#ccPrintSearch'),list=ov.querySelector('#ccPrintList'),count=ov.querySelector('#ccPrintCount'),visibleCount=ov.querySelector('#ccPrintVisibleCount'),qrBtn=ov.querySelector('#ccPrintQrBtn');const selected=new Set();"
+          new="const typeSel=ov.querySelector('#ccPrintType'),search=ov.querySelector('#ccPrintSearch'),list=ov.querySelector('#ccPrintList'),count=ov.querySelector('#ccPrintCount'),visibleCount=ov.querySelector('#ccPrintVisibleCount');let qrBtn=ov.querySelector('#ccPrintQrBtn');if(!qrBtn){const footer=ov.querySelector('#ccPrintBody > div:last-child')||ov.querySelector('#ccPrintBody');qrBtn=document.createElement('button');qrBtn.type='button';qrBtn.id='ccPrintQrBtn';qrBtn.className='cc-btn cc-btn-primary';qrBtn.innerHTML='<i class=\"fa-solid fa-qrcode\"></i> QR';footer?.appendChild(qrBtn);}const selected=new Set();"
+          if old not in s:
+              raise SystemExit('No se encontró bloque qrBtn esperado')
+          s=s.replace(old,new,1)
+          old2="qrBtn.onclick=async()=>{"
+          new2="if(!qrBtn)throw new Error('No se pudo crear el botón QR del modal.');qrBtn.onclick=async()=>{"
+          if old2 not in s:
+              raise SystemExit('No se encontró asignación onclick esperada')
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+
+          idx=Path('profesional/index.html')
+          h=idx.read_text()
+          import re
+          h=re.sub(r'assets/js/modules/configuracion\.js\?v=[^\"\']+', 'assets/js/modules/configuracion.js?v=config-qr-nullfix-20260913-0110', h, count=1)
+          if 'assets/js/modules/configuracion.js?v=' not in h:
+              h=h.replace('assets/js/modules/configuracion.js','assets/js/modules/configuracion.js?v=config-qr-nullfix-20260913-0110',1)
+          idx.write_text(h)
+          PY
+      - name: Commit change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add profesional/assets/js/modules/configuracion.js profesional/index.html
+          git commit -m 'Configuración: corregir botón QR nulo y forzar carga fresca'
+          git push origin HEAD:main
