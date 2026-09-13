@@ -45,3 +45,11 @@
   const retry=setInterval(ensureMovedPrintButton,300);
   setTimeout(()=>clearInterval(retry),60000);
 })();
+
+(function(){
+  if(document.querySelector('script[data-cc-tipo-unidad-general]'))return;
+  const s=document.createElement('script');
+  s.src='assets/js/modules/inventario-tipo-unidad-general.js?v=20260913-1';
+  s.dataset.ccTipoUnidadGeneral='1';
+  document.head.appendChild(s);
+})();
