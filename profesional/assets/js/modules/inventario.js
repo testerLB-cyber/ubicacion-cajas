@@ -1,55 +1,8 @@
 /* Tráfico App · API pública · Inventario */
 (function(){
   const root=window.TraficApp=window.TraficApp||{};root.modules=root.modules||{};
-
-  function ensureMovedPrintButton(){
-    const panel=document.getElementById('ccPanelInventario');
-    if(!panel)return false;
-    const toolbar=[...panel.querySelectorAll('.cc-toolbar')].find(t=>(t.textContent||'').includes('Inventario de unidades'));
-    if(!toolbar)return false;
-    const actions=toolbar.querySelector('.cc-actions')||toolbar;
-    const addBtn=actions.querySelector('button[onclick*="ccNuevaCaja"]');
-
-    const oldFake=document.getElementById('ccInvPrintQr_20260913');
-    if(oldFake)oldFake.remove();
-
-    let btn=document.querySelector('[data-config-placeholder="impresion"]');
-    if(!btn)return false;
-
-    btn.id='ccInvPrintQrMoved';
-    btn.type='button';
-    btn.className='cc-btn cc-btn-primary';
-    btn.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';
-    btn.style.cssText='display:inline-flex!important;visibility:visible!important;opacity:1!important;';
-
-    if(addBtn){
-      if(btn.parentElement!==actions||btn.nextElementSibling!==addBtn)actions.insertBefore(btn,addBtn);
-    }else if(btn.parentElement!==actions){
-      actions.appendChild(btn);
-    }
-    return true;
-  }
-
-  root.modules.inventario={name:'inventario',open(){const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('inventario'"));if(b&&typeof window.ccTab==='function')return window.ccTab('inventario',b);},render(){if(typeof window.ccRenderInventario==='function')return window.ccRenderInventario();},edit(id){if(typeof window.ccEditarUnidadDirecto==='function')return window.ccEditarUnidadDirecto(id);}};
-
-  const kick=()=>{ensureMovedPrintButton();setTimeout(ensureMovedPrintButton,50);setTimeout(ensureMovedPrintButton,250);setTimeout(ensureMovedPrintButton,800);};
-  kick();
-  document.addEventListener('DOMContentLoaded',kick);
-  document.addEventListener('click',e=>{
-    const tab=e.target.closest?.('#controlCajasSection .cc-tab');
-    if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){kick();}
-  },true);
-
-  const obs=new MutationObserver(()=>ensureMovedPrintButton());
-  obs.observe(document.documentElement,{childList:true,subtree:true});
-  const retry=setInterval(ensureMovedPrintButton,300);
-  setTimeout(()=>clearInterval(retry),60000);
+  function ensureMovedPrintButton(){const panel=document.getElementById('ccPanelInventario');if(!panel)return false;const toolbar=[...panel.querySelectorAll('.cc-toolbar')].find(t=>(t.textContent||'').includes('Inventario de unidades'));if(!toolbar)return false;const actions=toolbar.querySelector('.cc-actions')||toolbar;const addBtn=actions.querySelector('button[onclick*="ccNuevaCaja"]');document.getElementById('ccInvPrintQr_20260913')?.remove();let btn=document.querySelector('[data-config-placeholder="impresion"]');if(!btn)return false;btn.id='ccInvPrintQrMoved';btn.type='button';btn.className='cc-btn cc-btn-primary';btn.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';btn.style.cssText='display:inline-flex!important;visibility:visible!important;opacity:1!important;';if(addBtn){if(btn.parentElement!==actions||btn.nextElementSibling!==addBtn)actions.insertBefore(btn,addBtn)}else if(btn.parentElement!==actions)actions.appendChild(btn);return true}
+  root.modules.inventario={name:'inventario',open(){const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('inventario'"));if(b&&typeof window.ccTab==='function')return window.ccTab('inventario',b)},render(){if(typeof window.ccRenderInventario==='function')return window.ccRenderInventario()},edit(id){if(typeof window.ccEditarUnidadDirecto==='function')return window.ccEditarUnidadDirecto(id)}};
+  const kick=()=>{ensureMovedPrintButton();setTimeout(ensureMovedPrintButton,50);setTimeout(ensureMovedPrintButton,250);setTimeout(ensureMovedPrintButton,800)};kick();document.addEventListener('DOMContentLoaded',kick);document.addEventListener('click',e=>{const tab=e.target.closest?.('#controlCajasSection .cc-tab');if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){kick()}},true);const obs=new MutationObserver(()=>ensureMovedPrintButton());obs.observe(document.documentElement,{childList:true,subtree:true});const retry=setInterval(ensureMovedPrintButton,300);setTimeout(()=>clearInterval(retry),60000);
 })();
-
-(function(){
-  if(document.querySelector('script[data-cc-tipo-unidad-general]'))return;
-  const s=document.createElement('script');
-  s.src='assets/js/modules/inventario-tipo-unidad-general.js?v=20260913-1';
-  s.dataset.ccTipoUnidadGeneral='1';
-  document.head.appendChild(s);
-})();
+(function(){const old=document.querySelector('script[data-cc-tipo-unidad-general]');if(old)old.remove();const s=document.createElement('script');s.src='assets/js/modules/inventario-tipo-unidad-general.js?v=20260913-2';s.dataset.ccTipoUnidadGeneral='2';document.head.appendChild(s)})();
