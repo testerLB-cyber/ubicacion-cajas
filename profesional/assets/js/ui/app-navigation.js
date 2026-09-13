@@ -35,12 +35,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   ccLoadScriptOnce('assets/js/security/mobile-app-users.js?v=mobile-users-v2','data-mobile-users','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v2','data-hs-catalogs','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-precapture.js?v=ant-mobile-pre-v2','data-ant-mobile-pre','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-catalog-fix.js?v=ant-mobile-cat-v1','data-ant-mobile-cat','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-mobile-pending-badge.js?v=ant-mobile-pending-v1','data-ant-mobile-pending','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-drafts-v3.js?v=ant-mobile-drafts-v3-2','data-ant-mobile-drafts-v3','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-comprobar-unificado-v4.js?v=ant-comp-unificado-v4','data-ant-comp-unificado-v4','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=ant-comp-cierre-v5','data-ant-comp-cierre-v5','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=ant-comp-cierre-v5-final','data-ant-comp-cierre-v5','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/anticipos-final-cleanup-v6.js?v=ant-final-v6','data-ant-final-v6','1').catch(console.warn);
 
   window.__HS_V104_AUTOCOMPLETE__=true;
 
