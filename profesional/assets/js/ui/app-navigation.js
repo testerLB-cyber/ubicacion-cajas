@@ -21,4 +21,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     s.dataset.mobileUsers='1';
     document.body.appendChild(s);
   }
+  if(!document.querySelector('script[data-hs-catalogs]')){
+    const c=document.createElement('script');
+    c.src='assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v1';
+    c.dataset.hsCatalogs='1';
+    document.body.appendChild(c);
+  }
 });
