@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   ccLoadScriptOnce('assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v2','data-hs-catalogs','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-mobile-precapture.js?v=ant-mobile-pre-v2','data-ant-mobile-pre','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-mobile-catalog-fix.js?v=ant-mobile-cat-v1','data-ant-mobile-cat','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-pending-badge.js?v=ant-mobile-pending-v1','data-ant-mobile-pending','1').catch(console.warn);
 
   window.__HS_V104_AUTOCOMPLETE__=true;
 
