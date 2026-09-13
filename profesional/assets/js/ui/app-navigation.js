@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   ccLoadScriptOnce('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=ant-comp-cierre-v5-final','data-ant-comp-cierre-v5','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-final-cleanup-v6.js?v=ant-final-v6','data-ant-final-v6','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-comprobado-v7.js?v=ant-comprobado-v7','data-ant-comprobado-v7','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/inventario-qr-visible-v3.js?v=qr-visible-v3-20260912','data-inventario-qr-v3','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/inventario-qr-visible-v3.js?v=qr-visible-v4-20260912-2318','data-inventario-qr-v4','1').catch(console.warn);
 
   window.__HS_V104_AUTOCOMPLETE__=true;
 
