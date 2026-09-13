@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   if(!document.querySelector('script[data-hs-precapture]')){
     const p=document.createElement('script');
-    p.src='assets/js/modules/service-sheets-precapture.js?v=hs-precapture-v1';
+    p.src='assets/js/modules/service-sheets-precapture.js?v=hs-precapture-v2';
     p.dataset.hsPrecapture='1';
     document.body.appendChild(p);
   }
