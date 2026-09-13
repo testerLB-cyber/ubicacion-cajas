@@ -23,8 +23,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   if(!document.querySelector('script[data-hs-catalogs]')){
     const c=document.createElement('script');
-    c.src='assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v1';
+    c.src='assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v2';
     c.dataset.hsCatalogs='1';
     document.body.appendChild(c);
+  }
+  if(!document.querySelector('script[data-hs-precapture]')){
+    const p=document.createElement('script');
+    p.src='assets/js/modules/service-sheets-precapture.js?v=hs-precapture-v1';
+    p.dataset.hsPrecapture='1';
+    document.body.appendChild(p);
   }
 });
