@@ -1,7 +1,2 @@
-/* Entrada de compatibilidad · Control de Hojas de Servicio v104 ÚNICA */
-(function(){
-  if(window.__HS_V104_LOADER__) return;
-  window.__HS_V104_LOADER__=true;
-  document.write('<script src="assets/js/modules/service-sheets-v104.js?v=104"><\/script>');
-  document.write('<script src="assets/js/modules/service-sheets-v104-autocomplete.js?v=104"><\/script>');
-})();
+/* Desactivado: versionescorrectas1 usa service-sheets-v104 + precaptura móvil. */
+(function(){ window.__HS_PERSON_V7_DISABLED_FOR_CORRECT_VERSION__=true; })();

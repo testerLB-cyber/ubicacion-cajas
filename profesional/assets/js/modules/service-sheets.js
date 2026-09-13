@@ -2,6 +2,5 @@
 (function(){
   if(window.__HS_V104_LOADER__) return;
   window.__HS_V104_LOADER__=true;
-  document.write('<script src="assets/js/modules/service-sheets-v104.js?v=104"><\/script>');
-  document.write('<script src="assets/js/modules/service-sheets-v104-autocomplete.js?v=104"><\/script>');
+  // La carga completa se realiza desde app-navigation.js para conservar precaptura móvil y complementos.
 })();
