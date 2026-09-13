@@ -1,30 +1,40 @@
-/* Tráfico App · Etiquetas semánticas para variante de CARRO */
+/* Tráfico App · Etiquetas CARRO · hotfix estable · 2026-09-13 */
 (function(){
-  if(window.__CC_TIPO_CARRO_LABELS_V1__)return;
-  window.__CC_TIPO_CARRO_LABELS_V1__=true;
+  if(window.__CC_TIPO_CARRO_LABELS_V2__) return;
+  window.__CC_TIPO_CARRO_LABELS_V2__ = true;
+
+  function setText(el,text){
+    if(el && el.textContent !== text) el.textContent = text;
+  }
+
   function apply(){
     const nav=document.querySelector('[data-config-tipos-unidad-general]');
     if(nav){
-      const span=nav.querySelector('span'); if(span)span.textContent='Tipos de unidad de carro';
-      const small=nav.querySelector('small'); if(small)small.textContent='Variante para unidades CARRO';
+      setText(nav.querySelector('span'),'Tipos de unidad de carro');
+      setText(nav.querySelector('small'),'Variante para unidades CARRO');
     }
     const sec=document.getElementById('ccConfigTiposUnidadGeneral');
     if(sec){
-      const strong=sec.querySelector('.cc-toolbar strong'); if(strong)strong.textContent='Tipos de unidad de carro';
-      const note=sec.querySelector('.cc-toolbar .cc-note'); if(note)note.textContent='Catálogo de variantes para unidades cuyo Tipo de unidad principal es CARRO. Lo usan Inventario, Anticipos y Hojas de Servicio.';
-      const name=sec.querySelector('input[name="nombre"]'); if(name)name.placeholder='Ej. ESTAQUITA / VAN, RABON, TONELADA, TRACTO-CAMION...';
+      setText(sec.querySelector('.cc-toolbar strong'),'Tipos de unidad de carro');
+      setText(sec.querySelector('.cc-toolbar .cc-note'),'Catálogo de variantes para unidades cuyo Tipo de unidad principal es CARRO. Lo usan Inventario, Anticipos y Hojas de Servicio.');
+      const name=sec.querySelector('input[name="nombre"]');
+      if(name && name.placeholder!=='Ej. ESTAQUITA / VAN, RABON, TONELADA, TRACTO-CAMION...') name.placeholder='Ej. ESTAQUITA / VAN, RABON, TONELADA, TRACTO-CAMION...';
     }
     document.querySelectorAll('#ccFormModal [data-cc-tipo-unidad-general],#ccEditUnitModal [data-cc-tipo-unidad-general]').forEach(field=>{
-      const label=field.querySelector('label'); if(label)label.textContent='Tipo de unidad de carro';
-      const note=field.querySelector('div'); if(note)note.textContent='Se muestra únicamente cuando el Tipo de unidad principal es CARRO.';
-      const sel=field.querySelector('select'); if(sel&&sel.options?.[0])sel.options[0].textContent='Selecciona tipo de unidad de carro';
+      setText(field.querySelector('label'),'Tipo de unidad de carro');
+      const note=field.querySelector('div');
+      setText(note,'Se muestra únicamente cuando el Tipo de unidad principal es CARRO.');
+      const sel=field.querySelector('select');
+      if(sel&&sel.options?.[0]&&sel.options[0].textContent!=='Selecciona tipo de unidad de carro') sel.options[0].textContent='Selecciona tipo de unidad de carro';
     });
     document.querySelectorAll('.cc-car-type-detail').forEach(x=>{
-      x.textContent=x.textContent.replace(/^Tipo unidad:/i,'Tipo de unidad de carro:');
+      const next=x.textContent.replace(/^Tipo unidad:/i,'Tipo de unidad de carro:');
+      if(x.textContent!==next) x.textContent=next;
     });
   }
+
   document.addEventListener('DOMContentLoaded',apply);
-  document.addEventListener('click',()=>setTimeout(apply,30),true);
-  new MutationObserver(apply).observe(document.documentElement,{childList:true,subtree:true});
-  setTimeout(apply,200);setTimeout(apply,900);
+  document.addEventListener('click',()=>setTimeout(apply,40),true);
+  setTimeout(apply,200);
+  setTimeout(apply,900);
 })();
