@@ -21,12 +21,13 @@
       const actions=cells[cells.length-1];
       if(!actions) return;
 
-      // Limpia cualquier intento QR anterior en esta fila.
+      const edit=actions.querySelector('button[onclick*="ccEditarUnidadDirecto"]');
+      if(!edit) return;
+
       actions.querySelectorAll('[data-qr-catalogo="1"]').forEach(x=>x.remove());
       const oldQr=actions.querySelector('button[onclick*="ccMostrarQrUnidad"]');
       if(oldQr) oldQr.style.display='none';
 
-      // Compacta mantenimiento sin alterar su función.
       const mant=actions.querySelector('.cc-btn-maintenance');
       if(mant){
         mant.innerHTML='<i class="fa-solid fa-triangle-exclamation mr-1"></i>Mantenimiento';
@@ -41,14 +42,16 @@
       qr.className='cc-btn cc-btn-primary';
       qr.title='Generar QR de ubicación de esta unidad';
       qr.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>QR';
-      qr.style.cssText='display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;padding:5px 9px!important;font-size:9px!important;margin:2px 0 2px 3px!important;position:static!important;pointer-events:auto!important;z-index:2!important;';
+      qr.style.cssText='display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;justify-content:center!important;padding:5px 9px!important;font-size:9px!important;margin:2px 3px!important;position:static!important;pointer-events:auto!important;z-index:2!important;';
       qr.addEventListener('click',function(ev){
         ev.preventDefault();
         ev.stopPropagation();
         if(typeof window.ccMostrarQrUnidad==='function') window.ccMostrarQrUnidad(id);
         else alert('El generador QR no está disponible en este momento.');
       });
-      actions.appendChild(qr);
+
+      // QR queda como segundo botón visible, inmediatamente después de Editar.
+      edit.insertAdjacentElement('afterend',qr);
     });
   }
 
