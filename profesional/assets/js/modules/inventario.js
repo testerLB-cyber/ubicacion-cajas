@@ -11,8 +11,9 @@
   function ensurePrintQrButton(){
     const panel=document.getElementById('ccPanelInventario');
     if(!panel)return false;
-    const importBtn=panel.querySelector('button[onclick*="ccAbrirImportarUnidades"]');
-    if(!importBtn)return false;
+    const toolbar=[...panel.querySelectorAll('.cc-toolbar')].find(t=>(t.textContent||'').includes('Inventario de unidades'));
+    if(!toolbar)return false;
+    const actions=toolbar.querySelector('.cc-actions')||toolbar;
     let btn=document.getElementById('ccUnitQrMainBtn');
     if(!btn){
       btn=document.createElement('button');
@@ -22,7 +23,12 @@
       btn.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';
     }
     btn.onclick=function(e){e.preventDefault();e.stopPropagation();openPrintQr();};
-    if(importBtn.nextElementSibling!==btn)importBtn.insertAdjacentElement('afterend',btn);
+    const addBtn=actions.querySelector('button[onclick*="ccNuevaCaja"]');
+    if(addBtn){
+      if(btn.parentElement!==actions||btn.nextElementSibling!==addBtn)actions.insertBefore(btn,addBtn);
+    }else if(btn.parentElement!==actions){
+      actions.appendChild(btn);
+    }
     return true;
   }
 
@@ -32,8 +38,14 @@
   document.addEventListener('DOMContentLoaded',ensurePrintQrButton);
   document.addEventListener('click',e=>{
     const tab=e.target.closest?.('#controlCajasSection .cc-tab');
-    if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){setTimeout(ensurePrintQrButton,30);}
+    if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){
+      setTimeout(ensurePrintQrButton,0);
+      setTimeout(ensurePrintQrButton,80);
+      setTimeout(ensurePrintQrButton,300);
+    }
   },true);
+  const obs=new MutationObserver(()=>ensurePrintQrButton());
+  obs.observe(document.documentElement,{childList:true,subtree:true});
   const retry=setInterval(ensurePrintQrButton,500);
-  setTimeout(()=>clearInterval(retry),20000);
+  setTimeout(()=>clearInterval(retry),30000);
 })();
