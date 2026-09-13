@@ -1,0 +1,43 @@
+name: Mobile back arrow v4
+on:
+  push:
+    paths:
+      - '.github/workflows/mobile-back-arrow-v4.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add top back arrow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('nueva-app/app-v2.html')
+          s=p.read_text()
+          marker='mobile-back-arrow-v4'
+          if marker not in s:
+              addon=r'''<!-- mobile-back-arrow-v4 -->
+<style>
+#mobileTopBack{position:fixed;z-index:9999;top:calc(10px + env(safe-area-inset-top));left:max(12px,calc((100vw - 560px)/2 + 12px));width:42px;height:42px;border:1px solid rgba(255,255,255,.28);border-radius:14px;background:rgba(15,23,42,.82);color:#fff;font-size:25px;line-height:38px;text-align:center;box-shadow:0 8px 22px rgba(15,23,42,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:0;cursor:pointer}#mobileTopBack.hidden{display:none!important}
+</style>
+<button id="mobileTopBack" class="hidden" type="button" aria-label="Regresar">‹</button>
+<script>
+(()=>{const b=document.getElementById('mobileTopBack');if(!b)return;function visible(id){const e=document.getElementById(id);return e&&!e.classList.contains('hidden')}function sync(){b.classList.toggle('hidden',visible('login')||visible('menu'))}b.onclick=()=>{if(visible('hsCapture')&&typeof renderHs==='function')return renderHs();if(visible('antCapture')&&typeof renderAnt==='function')return renderAnt();if(typeof renderMenu==='function')return renderMenu()};new MutationObserver(sync).observe(document.querySelector('.shell')||document.body,{subtree:true,attributes:true,attributeFilter:['class']});sync()})();
+</script>
+'''
+              s=s.replace('</body>',addon+'</body>')
+              p.write_text(s)
+          idx=Path('nueva-app/index.html')
+          t=idx.read_text().replace('historial-operador-v3','mobile-back-v4').replace('historial-operador-v2','mobile-back-v4')
+          idx.write_text(t)
+          PY
+      - name: Commit deployment
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add nueva-app/app-v2.html nueva-app/index.html
+          git diff --cached --quiet || git commit -m 'Add top back arrow to mobile app'
+          git push
