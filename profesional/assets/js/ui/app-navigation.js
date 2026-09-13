@@ -21,4 +21,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     s.dataset.mobileUsers='1';
     document.body.appendChild(s);
   }
+  if(!document.querySelector('script[data-hs-mobile-evidence]')){
+    const e=document.createElement('script');
+    e.src='assets/js/modules/service-sheets-mobile-evidence.js?v=mobile-evidence-v1';
+    e.dataset.hsMobileEvidence='1';
+    document.body.appendChild(e);
+  }
 });
