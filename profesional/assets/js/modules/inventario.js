@@ -2,6 +2,12 @@
 (function(){
   const root=window.TraficApp=window.TraficApp||{};root.modules=root.modules||{};
 
+  function openPrintQr(){
+    if(typeof window.ccOpenPrintQrV5==='function') return window.ccOpenPrintQrV5();
+    if(typeof window.ccOpenPrintV3==='function') return window.ccOpenPrintV3();
+    alert('El módulo Imprimir QR todavía está cargando. Intenta nuevamente.');
+  }
+
   function ensurePrintQrButton(){
     const panel=document.getElementById('ccPanelInventario');
     if(!panel)return false;
@@ -14,8 +20,8 @@
       btn.type='button';
       btn.className='cc-btn cc-btn-primary';
       btn.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';
-      btn.onclick=()=>{};
     }
+    btn.onclick=function(e){e.preventDefault();e.stopPropagation();openPrintQr();};
     if(importBtn.nextElementSibling!==btn)importBtn.insertAdjacentElement('afterend',btn);
     return true;
   }
@@ -26,9 +32,7 @@
   document.addEventListener('DOMContentLoaded',ensurePrintQrButton);
   document.addEventListener('click',e=>{
     const tab=e.target.closest?.('#controlCajasSection .cc-tab');
-    if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){
-      setTimeout(ensurePrintQrButton,30);
-    }
+    if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))){setTimeout(ensurePrintQrButton,30);}
   },true);
   const retry=setInterval(ensurePrintQrButton,500);
   setTimeout(()=>clearInterval(retry),20000);
