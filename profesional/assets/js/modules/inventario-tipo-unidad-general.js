@@ -86,17 +86,17 @@
   async function guardarCatalogo(e){
     e.preventDefault();const f=e.currentTarget;const b=f.querySelector('button[type=submit]');b.disabled=true;
     try{
-      const item={id:String(f.id.value||''),nombre:String(f.nombre.value||'').trim(),estatus:String(f.estatus.value||'ACTIVO')};
+      const item={id:String(f.elements.id.value||''),nombre:String(f.elements.nombre.value||'').trim(),estatus:String(f.elements.estatus.value||'ACTIVO')};
       const {data,error}=await sb().rpc('cc_unit_type_catalog_save',{p_item:item});
       if(error||data?.ok===false)throw new Error(error?.message||data?.error||'No se pudo guardar');
-      f.reset();f.id.value='';f.estatus.value='ACTIVO';await cargarDatos();
+      f.reset();f.elements.id.value='';f.elements.estatus.value='ACTIVO';await cargarDatos();
     }catch(err){alert(err.message||err)}finally{b.disabled=false;}
   }
 
   function renderCatalogo(){
     const root=document.getElementById('ccTiposUnidadGeneralList');if(!root)return;
     root.innerHTML=catalogo.length?catalogo.map(x=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid #e2e8f0"><div><b>'+esc(x.nombre)+'</b><div style="font-size:9px;color:'+(x.estatus==='ACTIVO'?'#15803d':'#94a3b8')+'">'+esc(x.estatus)+'</div></div><button type="button" class="cc-btn cc-btn-light" data-edit-tug="'+esc(x.id)+'">Editar</button></div>').join(''):'<div class="cc-note" style="padding:10px 0">Aún no hay tipos configurados.</div>';
-    root.querySelectorAll('[data-edit-tug]').forEach(b=>b.onclick=()=>{const x=catalogo.find(r=>String(r.id)===String(b.dataset.editTug));const f=document.getElementById('ccTipoUnidadGeneralForm');if(!x||!f)return;f.id.value=x.id;f.nombre.value=x.nombre;f.estatus.value=x.estatus;f.nombre.focus();});
+    root.querySelectorAll('[data-edit-tug]').forEach(b=>b.onclick=()=>{const x=catalogo.find(r=>String(r.id)===String(b.dataset.editTug));const f=document.getElementById('ccTipoUnidadGeneralForm');if(!x||!f)return;f.elements.id.value=x.id;f.elements.nombre.value=x.nombre;f.elements.estatus.value=x.estatus;f.elements.nombre.focus();});
   }
 
   function decorarInventario(){
