@@ -1,66 +1,43 @@
 (function(){
   'use strict';
+  if(window.__HS_PRECAPTURE_V2__) return;
+  window.__HS_PRECAPTURE_V2__=true;
   const sb=()=>window.gmSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let DATA=null,busy=false,lastLoad=0;
-  async function loadData(force=false){
-    if(!sb()) return null;
-    const now=Date.now();
-    if(DATA&&!force&&now-lastLoad<4000) return DATA;
-    if(busy) return DATA;
-    busy=true;
-    try{
-      const {data,error}=await sb().rpc('hs_list');
-      if(error||!data?.ok) throw new Error(error?.message||data?.error||'No se pudo cargar precaptura');
-      DATA=data;lastLoad=Date.now();return DATA;
-    }catch(e){console.warn('HS PRECAPTURA',e);return DATA}
-    finally{busy=false}
+  let DATA=null,loading=null;
+  async function data(force=false){
+    if(DATA&&!force)return DATA;
+    if(loading)return loading;
+    loading=(async()=>{try{const {data,error}=await sb().rpc('hs_list');if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudo cargar la precaptura');DATA=data;return DATA;}finally{loading=null;}})();
+    return loading;
   }
-  function makeOptions(xs,selected,label='Seleccionar…'){
-    return '<option value="">'+label+'</option>'+(xs||[]).map(x=>'<option value="'+esc(x.nombre)+'" data-id="'+esc(x.id)+'" '+(String(x.nombre)===String(selected)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('');
-  }
-  async function openPhoto(path){
-    try{
-      const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);
-      if(error) throw error;
-      window.open(data.signedUrl,'_blank','noopener');
-    }catch(e){alert(e.message||String(e));}
-  }
+  function options(xs,selected,label){return '<option value="">'+label+'</option>'+(xs||[]).map(x=>'<option value="'+esc(x.nombre)+'" data-id="'+esc(x.id)+'" '+(String(x.nombre)===String(selected)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('');}
+  async function photo(path){try{const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error)throw error;window.open(data.signedUrl,'_blank','noopener');}catch(e){alert(e.message||String(e));}}
   function patchRow(row,d){
-    if(row.dataset.precapturePatched==='1') return;
-    const folioId=row.dataset.row,folio=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(folioId));
-    if(!folio) return;
-    const pre=folio.precaptura||null;
-    const tipoInput=row.querySelector('[data-tipo]'),clasInput=row.querySelector('[data-clas]'),cliente=row.querySelector('[data-cliente]'),obs=row.querySelector('[data-obs]');
-    if(!tipoInput||!clasInput||!cliente) return;
-    const tipoSel=document.createElement('select');tipoSel.dataset.tipo='';tipoSel.innerHTML=makeOptions(d.tiposViaje||[],pre?.tipoViaje||'','Seleccionar tipo de viaje…');tipoInput.replaceWith(tipoSel);
-    const clasSel=document.createElement('select');clasSel.dataset.clas='';clasInput.replaceWith(clasSel);
-    const fillClas=()=>{
-      const op=tipoSel.selectedOptions[0],tipoId=op?.dataset.id||'';
-      const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId||'')===String(tipoId));
-      const keep=(pre&&String(pre.tipoViaje||'')===String(tipoSel.value))?pre.clasificacion:'';
-      clasSel.innerHTML=makeOptions(xs,keep,'Seleccionar clasificación…');
-    };
-    tipoSel.onchange=()=>{fillClas();};fillClas();
+    if(!row||row.dataset.precaptureV2==='1')return;
+    const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(!f)return;
+    const pre=f.precaptura||null,tipo=row.querySelector('[data-tipo]'),clas=row.querySelector('[data-clas]'),cliente=row.querySelector('[data-cliente]'),obs=row.querySelector('[data-obs]');
+    if(!tipo||!clas||!cliente)return;
+    const tipoSel=document.createElement('select');tipoSel.dataset.tipo='';tipoSel.className=tipo.className||'';tipoSel.innerHTML=options(d.tiposViaje||[],pre?.tipoViaje||'','Seleccionar tipo de viaje…');tipo.replaceWith(tipoSel);
+    const clasSel=document.createElement('select');clasSel.dataset.clas='';clasSel.className=clas.className||'';clas.replaceWith(clasSel);
+    const fill=(selected='')=>{const tid=tipoSel.selectedOptions[0]?.dataset.id||'';const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId||'')===String(tid));clasSel.innerHTML=options(xs,selected,'Seleccionar clasificación…');};
+    tipoSel.onchange=()=>fill('');fill(pre?.clasificacion||'');
     if(pre){
       cliente.value=pre.clienteId||'';
-      if(obs&&!String(obs.value||'').trim()&&pre.dondeUtilizado) obs.value='Dónde se utilizó: '+pre.dondeUtilizado;
-      const toolbar=row.querySelector('.cc-toolbar');
-      const pill=toolbar?.querySelector('.hs104-pill');
-      if(pill){pill.textContent='PRECARGADA APP';pill.classList.remove('hs104-danger');pill.classList.add('hs104-ok');}
-      const note=document.createElement('div');note.className='hs104-note';note.style.marginTop='10px';
-      note.innerHTML='<strong>Precarga móvil:</strong> '+esc(pre.cliente||'—')+' · '+esc(pre.tipoViaje||'—')+' · '+esc(pre.clasificacion||'—')+(pre.dondeUtilizado?' · '+esc(pre.dondeUtilizado):'')+(pre.fotoPath?' <button type="button" class="cc-btn cc-btn-light" data-mobile-photo style="margin-left:6px"><i class="fa-solid fa-camera"></i> Ver foto</button>':'');
-      row.querySelector('.hs104-actions')?.insertAdjacentElement('beforebegin',note);
-      note.querySelector('[data-mobile-photo]')?.addEventListener('click',()=>openPhoto(pre.fotoPath));
+      if(obs&&!String(obs.value||'').trim()&&pre.dondeUtilizado)obs.value='Dónde se utilizó: '+pre.dondeUtilizado;
+      const pill=row.querySelector('.hs104-pill');if(pill){pill.textContent='PRECARGADA APP';pill.classList.remove('hs104-danger');pill.classList.add('hs104-ok');}
+      const note=document.createElement('div');note.className='hs104-note';note.style.cssText='margin:10px 0;padding:9px 10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:9px;color:#166534';
+      note.innerHTML='<strong>Precarga móvil lista para revisar:</strong> '+esc(pre.cliente||'—')+' · '+esc(pre.tipoViaje||'—')+' · '+esc(pre.clasificacion||'—')+(pre.dondeUtilizado?' · '+esc(pre.dondeUtilizado):'')+(pre.fotoPath?' <button type="button" class="cc-btn cc-btn-light" data-mobile-photo style="margin-left:6px"><i class="fa-solid fa-camera"></i> Ver foto</button>':'');
+      row.querySelector('.hs104-actions')?.insertAdjacentElement('beforebegin',note);note.querySelector('[data-mobile-photo]')?.addEventListener('click',()=>photo(pre.fotoPath));
     }
-    row.dataset.precapturePatched='1';
+    row.dataset.precaptureV2='1';
   }
-  async function patch(){
-    const root=document.getElementById('hs104CompList');if(!root)return;
-    const rows=[...root.querySelectorAll('[data-row]')];if(!rows.length)return;
-    const d=await loadData();if(!d)return;
-    rows.forEach(r=>patchRow(r,d));
+  async function patch(force=false){
+    const list=document.getElementById('hs104CompList');if(!list||!sb())return;
+    const rows=[...list.querySelectorAll('[data-row]')];if(!rows.length)return;
+    try{const d=await data(force);rows.forEach(r=>patchRow(r,d));}catch(e){console.warn('HS PRECAPTURA V2',e);}
   }
-  const obs=new MutationObserver(()=>setTimeout(patch,60));
-  document.addEventListener('DOMContentLoaded',()=>{obs.observe(document.body,{childList:true,subtree:true});setInterval(()=>{DATA=null;patch();},5000);setTimeout(patch,1200);});
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]'))setTimeout(()=>patch(true),180);},true);
+  document.addEventListener('change',e=>{if(e.target?.id==='hs104CompPerson'||e.target?.id==='hs104CompType')setTimeout(()=>patch(true),80);},true);
+  window.hsPatchPrecapture=()=>patch(true);
 })();
