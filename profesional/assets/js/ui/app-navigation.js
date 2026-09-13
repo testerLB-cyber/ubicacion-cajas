@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   ccLoadScriptOnce('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=ant-comp-cierre-v5-final','data-ant-comp-cierre-v5','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-final-cleanup-v6.js?v=ant-final-v6','data-ant-final-v6','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/anticipos-comprobado-v7.js?v=ant-comprobado-v7','data-ant-comprobado-v7','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/ui/qr-inventory-safe-v1.js?v=qr-safe-v1','data-qr-safe','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/control-sellos-safe-v1.js?v=sellos-safe-v1','data-sellos-safe','1').catch(console.warn);
 
   window.__HS_V104_AUTOCOMPLETE__=true;
 
