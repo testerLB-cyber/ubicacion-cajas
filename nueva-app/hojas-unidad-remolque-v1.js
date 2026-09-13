@@ -17,7 +17,7 @@
     const form=document.getElementById('hsForm');if(!form||document.getElementById('hsUnit'))return;
     const used=document.getElementById('hsUsedAt')?.closest('.field');if(!used)return;
     const wrap=document.createElement('div');wrap.innerHTML='<div class="field"><label>Unidad *</label><input id="hsUnit" list="mobileHsUnitList" autocomplete="off" placeholder="Escribe número de unidad"><datalist id="mobileHsUnitList"></datalist><div id="hsUnitStatus" class="unit-status muted">Escribe y selecciona una unidad del catálogo.</div></div><div class="field hidden" id="hsTrailerField"><label>Número de remolque *</label><input id="hsTrailer" list="mobileHsTrailerList" autocomplete="off" placeholder="Ej. LB245 o cualquier remolque"><datalist id="mobileHsTrailerList"></datalist><div class="muted" style="font-size:11px;margin-top:5px">Campo libre. Si escribes LB se sugieren cajas; no se valida que exista.</div></div>';
-    const nodes=[...wrap.children];nodes.reverse().forEach(n=>used.parentNode.insertBefore(n,used));
+    const nodes=[...wrap.children];nodes.forEach(n=>used.parentNode.insertBefore(n,used));
     ['input','change','blur'].forEach(ev=>document.getElementById('hsUnit').addEventListener(ev,syncOperatorUnit));
     fillLists();
   }
