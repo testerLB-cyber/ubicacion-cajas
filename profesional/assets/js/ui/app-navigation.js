@@ -43,6 +43,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-v104-autocomplete.js?v=hs-autocomplete-v2','data-hs-autocomplete','1'))
     .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-precapture.js?v=hs-precapture-v2','data-hs-precapture','1'))
     .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-show-all.js?v=hs-show-all-v1','data-hs-show-all','1'))
-    .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-list-mode.js?v=hs-list-mode-v1','data-hs-list-mode','1'))
+    .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-list-mode.js?v=hs-list-mode-v2','data-hs-list-mode','1'))
     .catch(err=>console.warn('Control de Hojas de Servicio no pudo cargar',err));
 });
