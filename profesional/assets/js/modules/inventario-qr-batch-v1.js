@@ -84,9 +84,10 @@
   async function tokenFor(id){
     const sb=window.gmSupabase;
     if(!sb) throw new Error('Supabase no está disponible.');
-    const {data,error}=await sb.rpc('cc_ensure_unit_qr_token',{p_unit_id:id});
+    const {data,error}=await sb.rpc('cc_ensure_unit_qr_token',{p_unidad_id:id});
     if(error) throw error;
     const d=Array.isArray(data)?data[0]:data;
+    if(d?.ok===false) throw new Error(d.error||'No se pudo obtener el QR de la unidad.');
     const token=d?.qr_token||d?.token||d?.qrToken||d?.value||d;
     if(!token||typeof token==='object') throw new Error('No se pudo obtener el token QR de la unidad.');
     return String(token);
@@ -126,7 +127,7 @@
         items.push({...u,url,qr});
       }
       const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
-      const pageW=215.9,pageH=279.4,margin=10,gap=5,cols=2,rows=3;
+      const pageW=215.9,pageH=279.4,margin=10,gap=5;
       const cellW=(pageW-margin*2-gap)/2,cellH=(pageH-margin*2-gap*2)/3;
       items.forEach((u,i)=>{
         if(i>0&&i%6===0) pdf.addPage();
