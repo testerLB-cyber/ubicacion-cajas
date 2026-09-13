@@ -10,4 +10,12 @@
     s.onerror=e=>console.warn('No se pudo cargar Unidad/Remolque de Hojas',e);
     document.body.appendChild(s);
   }
+  // Fix visible de catálogo Tipos de unidad + selector destacado en alta/edición de unidades.
+  if(!document.querySelector('script[data-unit-types-fix-v1]')){
+    const s2=document.createElement('script');
+    s2.src='assets/js/modules/unit-types-catalog-fix-v1.js?v=20260913-1340';
+    s2.dataset.unitTypesFixV1='1';
+    s2.onerror=e=>console.warn('No se pudo cargar el catálogo de Tipos de unidad',e);
+    document.body.appendChild(s2);
+  }
 })();
