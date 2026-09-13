@@ -35,11 +35,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   ccLoadScriptOnce('assets/js/security/mobile-app-users.js?v=mobile-users-v2','data-mobile-users','1').catch(console.warn);
   ccLoadScriptOnce('assets/js/modules/service-sheets-catalogs.js?v=hs-catalogs-v2','data-hs-catalogs','1').catch(console.warn);
-  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-precapture.js?v=ant-mobile-pre-v1','data-ant-mobile-pre','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-precapture.js?v=ant-mobile-pre-v2','data-ant-mobile-pre','1').catch(console.warn);
+  ccLoadScriptOnce('assets/js/modules/anticipos-mobile-catalog-fix.js?v=ant-mobile-cat-v1','data-ant-mobile-cat','1').catch(console.warn);
 
   window.__HS_V104_AUTOCOMPLETE__=true;
 
-  // Carga secuencial: módulo principal -> buscador -> precaptura -> ver todos -> modo lista -> evidencia/PDF/QR -> reapertura.
   ccLoadScriptOnce('assets/js/modules/service-sheets-v104.js?v=hs-v104-fix1','data-hs-main','1')
     .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-v104-autocomplete.js?v=hs-autocomplete-v2','data-hs-autocomplete','1'))
     .then(()=>ccLoadScriptOnce('assets/js/modules/service-sheets-precapture.js?v=hs-precapture-v2','data-hs-precapture','1'))
