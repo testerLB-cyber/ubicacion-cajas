@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v31-clientes-config-correctos';
+  app.version='profesional-modular-v32-anticipos-utileria-historicos';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -31,6 +31,7 @@
     addScript('assets/js/modules/config-tipos-viaje-clasificaciones.js?v=20260914-trip-class-1','data-cc-trip-class-config');
     addScript('assets/js/modules/renta-tarifas-tipo-v1.js?v=20260914-rent-commercial-proforma-4','data-cc-rent-type-rates');
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
+    addScript('assets/js/modules/anticipos-utileria-historicos-v1.js?v=20260914-ant-util-hist-1','data-cc-ant-util-hist');
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
     addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-compact');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
