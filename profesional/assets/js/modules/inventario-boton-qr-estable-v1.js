@@ -1,46 +1,67 @@
-/* Tráfico App · Inventario · botón QR persistente v1 */
+/* Tráfico App · Inventario · botonera canónica estable v2 */
 (function(){
 'use strict';
-if(window.__CC_INVENTARIO_QR_BUTTON_STABLE_V1__)return;
+if(window.__CC_INVENTARIO_TOOLBAR_STABLE_V2__)return;
+window.__CC_INVENTARIO_TOOLBAR_STABLE_V2__=true;
 window.__CC_INVENTARIO_QR_BUTTON_STABLE_V1__=true;
 
-function ensureButton(){
+function actionsBox(){
   const panel=document.getElementById('ccPanelInventario');
-  if(!panel)return false;
+  if(!panel)return null;
   const toolbar=[...panel.querySelectorAll('.cc-toolbar')].find(x=>(x.textContent||'').includes('Inventario de unidades'));
-  if(!toolbar)return false;
-  const actions=toolbar.querySelector('.cc-actions')||toolbar;
-  ['ccInvPrintQr_20260913','ccInvPrintQrMoved','ccInventoryPrintQrDirectV61'].forEach(id=>document.getElementById(id)?.remove());
-  let btn=document.getElementById('ccInventoryPrintQrStableV7');
-  if(!btn){
-    btn=document.createElement('button');
-    btn.type='button';
-    btn.id='ccInventoryPrintQrStableV7';
-    btn.className='cc-btn cc-btn-primary';
-    btn.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';
-    btn.onclick=e=>{e.preventDefault();if(typeof window.ccOpenPrintQrV7==='function')window.ccOpenPrintQrV7();};
+  return toolbar?.querySelector('.cc-actions')||null;
+}
+function findButton(actions,needle){return [...actions.querySelectorAll('button')].find(b=>(b.getAttribute('onclick')||'').includes(needle));}
+function ensureToolbar(){
+  const actions=actionsBox();if(!actions)return false;
+
+  const importar=findButton(actions,'ccAbrirImportarUnidades');
+  const template=findButton(actions,'ccDescargarTemplateUnidades');
+  const agregar=findButton(actions,'ccNuevaCaja');
+
+  const legacyIds=['ccInvPrintQr_20260913','ccInvPrintQrMoved','ccInventoryPrintQrDirectV61','ccUnitQrMainBtn'];
+  legacyIds.forEach(id=>document.getElementById(id)?.remove());
+  [...actions.querySelectorAll('button')].forEach(b=>{
+    const t=String(b.textContent||'').trim().toUpperCase();
+    if(t.includes('IMPRIMIR QR')&&b.id!=='ccInventoryPrintQrStableV7')b.remove();
+  });
+
+  let qr=document.getElementById('ccInventoryPrintQrStableV7');
+  if(!qr){
+    qr=document.createElement('button');
+    qr.type='button';
+    qr.id='ccInventoryPrintQrStableV7';
+    qr.className='cc-btn cc-btn-primary';
+    qr.innerHTML='<i class="fa-solid fa-qrcode mr-1"></i>Imprimir QR';
   }
-  const add=actions.querySelector('button[onclick*="ccNuevaCaja"]');
-  if(!btn.isConnected){if(add)actions.insertBefore(btn,add);else actions.appendChild(btn);}
+  qr.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.ccOpenPrintQrV7==='function')window.ccOpenPrintQrV7();else if(typeof window.ccOpenPrintV3==='function')window.ccOpenPrintV3();};
+
+  // Orden único y permanente: Importar · Descargar template · Imprimir QR · Agregar unidad.
+  [importar,template,qr,agregar].filter(Boolean).forEach(b=>actions.appendChild(b));
+  actions.dataset.ccInventoryToolbarStable='1';
   return true;
 }
 
 function install(){
-  if(window.__CC_INVENTARIO_QR_RENDER_WRAPPED__)return true;
-  if(!window.__CC_INVENTARIO_TABLE_STABLE_V1__||typeof window.ccRenderInventario!=='function')return false;
-  window.__CC_INVENTARIO_QR_RENDER_WRAPPED__=true;
+  if(window.__CC_INVENTARIO_TOOLBAR_RENDER_WRAPPED__)return true;
+  if(!window.__CC_INVENTARIO_TABLE_STABLE_V2__||typeof window.ccRenderInventario!=='function')return false;
+  window.__CC_INVENTARIO_TOOLBAR_RENDER_WRAPPED__=true;
   const render=window.ccRenderInventario;
-  window.ccRenderInventario=function(){
+  const wrapped=function(){
     const out=render.apply(this,arguments);
-    ensureButton();
+    ensureToolbar();
     return out;
   };
-  ensureButton();
+  wrapped.__ccInventoryToolbarStableV2=true;
+  wrapped.__ccWrapped=render;
+  window.ccRenderInventario=wrapped;
+  ensureToolbar();
   return true;
 }
 
+window.ccEnsureInventoryToolbar=ensureToolbar;
 if(!install()){
-  const wait=setInterval(()=>{if(install())clearInterval(wait);},120);
-  setTimeout(()=>clearInterval(wait),15000);
+  let n=0;
+  const wait=setInterval(()=>{n++;if(install()||n>120)clearInterval(wait);},100);
 }
 })();
