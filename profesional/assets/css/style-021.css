@@ -19,4 +19,39 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 .cc-user-body{padding:16px}.cc-user-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cc-user-item{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px}
 .cc-user-email{font-weight:900;color:#0f172a;font-size:12px}.cc-user-meta{font-size:10px;color:#64748b;margin-top:3px}.cc-user-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .cc-perm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cc-perm-group{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff}.cc-perm-group strong{display:block;font-size:11px;margin-bottom:6px}.cc-perm-check{display:flex;gap:7px;align-items:center;font-size:10px;padding:3px 0}.cc-perm-check input{width:auto}
-@media(max-width:700px){.cc-user-grid,.cc-perm-grid{grid-template-columns:1fr}.cc-user-card{max-height:96vh}}
+
+/* Usuarios y permisos · vista organizada en tarjetas sin alterar acciones */
+#ccUserAdminModal .cc-user-card{width:min(1080px,96vw);background:#f1f5f9}
+#ccUserAdminModal .cc-user-head{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+#ccUserAdminModal .cc-user-body>div{overflow:visible!important}
+#ccUserAdminModal table{display:block!important;width:100%!important;min-width:0!important;background:transparent!important;border-radius:0!important;overflow:visible!important}
+#ccUserAdminModal thead{display:none!important}
+#ccUserAdminModal tbody{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+#ccUserAdminModal tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name status" "email role" "actions actions";gap:3px 12px;align-items:center;background:#fff;border:1px solid #dbe4ee!important;border-radius:15px;padding:14px 15px;box-shadow:0 5px 16px rgba(15,23,42,.04);min-width:0;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+#ccUserAdminModal tbody tr:hover{border-color:#bfdbfe!important;box-shadow:0 9px 24px rgba(37,99,235,.08);transform:translateY(-1px)}
+#ccUserAdminModal tbody td{padding:0!important;border:0!important;min-width:0}
+#ccUserAdminModal tbody td:nth-child(1){grid-area:name;font-size:13px!important;font-weight:950!important;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ccUserAdminModal tbody td:nth-child(2){grid-area:email;font-size:10.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-top:2px!important}
+#ccUserAdminModal tbody td:nth-child(3){grid-area:role;justify-self:end;font-size:10px;font-weight:900;color:#475569}
+#ccUserAdminModal tbody td:nth-child(4){grid-area:status;justify-self:end}
+#ccUserAdminModal tbody td:nth-child(5){grid-area:actions;border-top:1px solid #eef2f7!important;margin-top:9px;padding-top:10px!important}
+#ccUserAdminModal .cc-user-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:0}
+#ccUserAdminModal .cc-user-actions .cc-btn{min-height:30px;padding:6px 9px;font-size:9.5px;border-radius:8px;white-space:nowrap}
+#ccUserAdminModal .cc-badge{white-space:nowrap}
+
+@media(max-width:760px){
+ .cc-user-grid,.cc-perm-grid{grid-template-columns:1fr}.cc-user-card{max-height:96vh}
+ #ccUserAdminModal .cc-user-modal{padding:8px}
+ #ccUserAdminModal .cc-user-head{align-items:flex-start;flex-direction:column;padding:14px}
+ #ccUserAdminModal .cc-user-head>div:last-child{width:100%;display:grid!important;grid-template-columns:1fr 1fr;gap:7px!important}
+ #ccUserAdminModal .cc-user-head .cc-btn{justify-content:center}
+ #ccUserAdminModal .cc-user-body{padding:10px}
+ #ccUserAdminModal tbody{grid-template-columns:1fr!important;gap:9px}
+ #ccUserAdminModal tbody tr{padding:13px;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name status" "email role" "actions actions"}
+ #ccUserAdminModal .cc-user-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ #ccUserAdminModal .cc-user-actions .cc-btn{width:100%;justify-content:center;text-align:center}
+}
+@media(max-width:420px){
+ #ccUserAdminModal .cc-user-actions{grid-template-columns:1fr}
+ #ccUserAdminModal tbody td:nth-child(2){font-size:10px}
+}
