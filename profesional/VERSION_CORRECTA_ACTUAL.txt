@@ -1,7 +1,7 @@
 TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
 Fecha: 2026-09-14
-Versión profesional: profesional-modular-v41-correo-diagnostico
-Commit funcional de referencia: bdd787c3fcc3189374399e6b65e2f6b97fc6169f
+Versión profesional: profesional-modular-v45-qr-pdf-9-por-pagina
+Commit funcional de referencia: 8359e8c9f70fdb8bfd2ee5bc60aa1b20025d62fd
 Ruta web: /ubicacion-cajas/profesional/
 
-Esta versión queda marcada como la base correcta para pruebas. Incluye diagnóstico visible y persistencia de errores de correo DOT / Fuera de Servicio / Liberación. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
+Esta versión queda marcada como la base correcta para pruebas. Incluye Configuración → Impresión → QR con selección de unidades, vista previa y exportación a PDF con 9 códigos QR por página. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
