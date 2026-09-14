@@ -18,4 +18,14 @@
     const missing=required.filter(key=>typeof window[key]==='undefined');
     return {ok:missing.length===0,missing};
   };
+
+  /* Log de actividad: se carga como módulo independiente para no alterar
+     la lógica existente de Configuración ni de los módulos operativos. */
+  if(!document.querySelector('script[data-cc-activity-log]')){
+    const s=document.createElement('script');
+    s.src='assets/js/modules/activity-log.js?v=20260913-1';
+    s.defer=true;
+    s.setAttribute('data-cc-activity-log','1');
+    document.head.appendChild(s);
+  }
 })();
