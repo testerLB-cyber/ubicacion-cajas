@@ -13,7 +13,7 @@
   const q=(p.get('q')||p.get('token')||p.get('t')||'').trim();
   const target=q
     ? 'ubicacion.html?q='+encodeURIComponent(q)
-    : 'app-correcta.html'+location.search+location.hash;
+    : 'profesional/'+location.search+location.hash;
   location.replace(target);
 })();
 </script>
