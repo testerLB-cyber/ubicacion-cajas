@@ -1,21 +1,24 @@
-/* Tráfico App · Inventario · estabilidad estructural + tipo canónico v3 */
+/* Tráfico App · Inventario · estabilidad estructural + tipo canónico v4 */
 (function(){
 'use strict';
-if(window.__CC_INVENTARIO_TABLE_STABLE_V3__)return;
+if(window.__CC_INVENTARIO_TABLE_STABLE_V4__)return;
+window.__CC_INVENTARIO_TABLE_STABLE_V4__=true;
 window.__CC_INVENTARIO_TABLE_STABLE_V3__=true;
 window.__CC_INVENTARIO_TABLE_STABLE_V2__=true;
 window.__CC_INVENTARIO_TABLE_STABLE_V1__=true;
-let typeMap=new Map(),typeMapReady=false,typeMapLoading=false;
+let typeMap=new Map(),typeMapReady=false,typeMapLoading=false,lastTypeLoad=0;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-async function loadTypeMap(){
+async function loadTypeMap(force=false){
+  const now=Date.now();
   if(typeMapLoading||!window.gmSupabase)return false;
+  if(!force&&typeMapReady&&(now-lastTypeLoad)<1500)return true;
   typeMapLoading=true;
   try{
     const r=await window.gmSupabase.rpc('cc_unit_type_map');
     if(r.error)throw r.error;
     typeMap=new Map((r.data?.rows||[]).map(x=>[String(x.numero||'').trim().toUpperCase(),String(x.tipoUnidadGeneralNombre||'').trim()]));
-    typeMapReady=true;
+    typeMapReady=true;lastTypeLoad=Date.now();
     return true;
   }catch(e){console.warn('Mapa de tipos de Inventario:',e);return false;}
   finally{typeMapLoading=false;}
@@ -83,11 +86,14 @@ function stabilizeCells(body){
     }
   });
 }
-function finish(body){decorateTypes(body);ensureHeader();stabilizeCells(body);window.ccEnsureInventoryToolbar?.();}
+function finish(body){decorateTypes(body);ensureHeader();stabilizeCells(body);}
+function refreshCanonicalTypes(body){
+  loadTypeMap(true).then(ok=>{if(ok)decorateTypes(body||document.getElementById('ccInventarioBody'));});
+}
 function install(){
   if(!window.CC_AUTH_READY||typeof window.ccRenderInventario!=='function'||!window.__CC_TIPO_UNIDAD_ESTABLE_V11__)return false;
   const current=window.ccRenderInventario;
-  if(current.__ccStableTableV3)return true;
+  if(current.__ccStableTableV4)return true;
   let rendering=false;
   const stable=function(){
     if(rendering)return;
@@ -98,7 +104,8 @@ function install(){
 
     if(!realBody||!realBody.children.length){
       const out=current.apply(this,arguments);
-      finish(document.getElementById('ccInventarioBody'));
+      const body=document.getElementById('ccInventarioBody');
+      finish(body);refreshCanonicalTypes(body);
       return out;
     }
 
@@ -113,7 +120,6 @@ function install(){
         return nativeGet.call(document,id);
       };
       current.apply(this,arguments);
-      decorateTypes(ghostBody);
     }finally{
       document.getElementById=nativeGet;
       rendering=false;
@@ -121,9 +127,10 @@ function install(){
 
     reconcileRows(realBody,ghostBody);
     if(realKpis&&ghostKpis.innerHTML&&realKpis.innerHTML!==ghostKpis.innerHTML)realKpis.innerHTML=ghostKpis.innerHTML;
-    finish(realBody);
+    finish(realBody);refreshCanonicalTypes(realBody);
     if(wrap){wrap.scrollLeft=scrollLeft;wrap.scrollTop=scrollTop;}
   };
+  stable.__ccStableTableV4=true;
   stable.__ccStableTableV3=true;
   stable.__ccStableTableV2=true;
   stable.__ccStableTableV1=true;
@@ -134,7 +141,7 @@ function install(){
 }
 
 async function boot(){
-  await loadTypeMap();
+  await loadTypeMap(true);
   let n=0;
   const timer=setInterval(()=>{n++;if(install()||n>100)clearInterval(timer);},100);
   setTimeout(()=>{if(typeMapReady){decorateTypes(document.getElementById('ccInventarioBody'));window.ccRenderInventario?.();}},0);
