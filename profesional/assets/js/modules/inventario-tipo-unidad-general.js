@@ -1,8 +1,8 @@
-/* Tráfico App · Inventario · tipos de unidad canónicos v5 */
+/* Tráfico App · Inventario · tipos de unidad canónicos v6 */
 (function(){
  'use strict';
- if(window.__CC_TIPO_UNIDAD_CANONICAL_V5__)return;
- window.__CC_TIPO_UNIDAD_CANONICAL_V5__=true;
+ if(window.__CC_TIPO_UNIDAD_CANONICAL_V6__)return;
+ window.__CC_TIPO_UNIDAD_CANONICAL_V6__=true;
  const sb=()=>window.gmSupabase;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let tipos=[],mapa=new Map(),loading=false;
@@ -33,8 +33,24 @@
    let field=f.querySelector('[data-cc-tipo-unidad-canonico]');
    if(!field){field=document.createElement('div');field.className='cc-field';field.dataset.ccTipoUnidadCanonico='1';field.innerHTML='<label>Tipo específico de unidad</label><select name="tipoUnidadGeneralId"></select><div style="font-size:9px;color:#64748b;margin-top:4px">Catálogo único usado por Inventario, Anticipos y Hojas.</div>';base.closest('.cc-field')?.insertAdjacentElement('afterend',field);}
    const det=field.querySelector('select');
-   const sync=()=>{const k=String(num.value||'').trim().toUpperCase();ensureBaseCar(base,k);const cur=mapa.get(k)?.tipoUnidadGeneralId||det.value||'';const html=options(cur);if(det.innerHTML!==html)det.innerHTML=html;const car=isCar(base)||!!mapa.get(k);field.style.display=car?'block':'none';det.required=car;};
-   if(!base.dataset.canonicalBound){base.dataset.canonicalBound='1';base.addEventListener('change',sync);num.addEventListener('change',sync);num.addEventListener('input',sync);}sync();
+   const sync=(forceFromDb=false)=>{
+     const k=String(num.value||'').trim().toUpperCase();ensureBaseCar(base,k);
+     const mappedId=String(mapa.get(k)?.tipoUnidadGeneralId||'');
+     const current=String(det.value||'');
+     const cur=forceFromDb||!det.dataset.ccInitialized ? mappedId : current;
+     const html=options(cur);
+     if(det.innerHTML!==html)det.innerHTML=html;
+     if(cur)det.value=cur;
+     det.dataset.ccInitialized='1';
+     const car=isCar(base)||!!mapa.get(k);field.style.display=car?'block':'none';det.required=car;
+   };
+   if(!base.dataset.canonicalBound){
+     base.dataset.canonicalBound='1';
+     base.addEventListener('change',()=>sync(false));
+     num.addEventListener('change',()=>{det.dataset.ccInitialized='';sync(true);});
+     num.addEventListener('input',()=>{det.dataset.ccInitialized='';sync(true);});
+   }
+   if(!det.dataset.ccInitialized)sync(true);else sync(false);
  }
  function decorateModals(){decorateModal(document.getElementById('ccFormModal'));decorateModal(document.getElementById('ccEditUnitModal'));}
  async function persist(number,typeId){await rpc('cc_set_car_unit_type',{p_numero:number,p_tipo_id:typeId});await load();window.ccAntLoad?.(true);}
