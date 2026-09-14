@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v9-single-unit-type';
+  app.version='profesional-modular-v10-system-class-catalog';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){
@@ -19,14 +19,11 @@
     const missing=required.filter(key=>typeof window[key]==='undefined');
     return {ok:missing.length===0,missing};
   };
-
   let loaded=false;
   function addScript(src,attr){
     if(document.querySelector('script['+attr+']')) return;
     const s=document.createElement('script');
-    s.src=src;
-    s.async=true;
-    s.setAttribute(attr,'1');
+    s.src=src;s.async=true;s.setAttribute(attr,'1');
     s.onerror=()=>console.error('No se pudo cargar módulo opcional:',src);
     document.head.appendChild(s);
   }
@@ -34,10 +31,8 @@
     if(loaded || !window.CC_AUTH_READY || !window.gmSupabase) return false;
     loaded=true;
     addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
-    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-single-unit-type-1','data-cc-unit-type-canonical');
-    if(!document.querySelector('script[data-cc-commissions-direct]')){
-      addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
-    }
+    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-system-class-catalog-1','data-cc-unit-type-canonical');
+    if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
     return true;
   }
   app.loadOptionalModules=loadOptionalModules;
