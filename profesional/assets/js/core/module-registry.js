@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v45-qr-pdf-9-por-pagina';
+  app.version='profesional-modular-v46-dot-operador-borrado';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -34,6 +34,7 @@
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
     addScript('assets/js/modules/correo-envio-diagnostico-v1.js?v=20260914-mail-diag-1','data-cc-mail-diag');
     addScript('assets/js/modules/correo-validacion-v1.js?v=20260914-mail-validate-1','data-cc-mail-validate');
+    addScript('assets/js/modules/dot-operador-borrado-v1.js?v=20260914-dot-op-delete-1','data-cc-dot-op-delete');
     addScript('assets/js/modules/anticipos-utileria-historicos-v1.js?v=20260914-ant-util-hist-1','data-cc-ant-util-hist');
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
     addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-selector-2','data-cc-ant-catalog-compact');
