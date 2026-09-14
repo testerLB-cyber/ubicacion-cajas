@@ -1,26 +1,61 @@
-/* Tráfico App · DOT operador + borrado autorizado */
+/* Tráfico App · DOT operador + borrado autorizado + autocompletado de catálogos */
 (function(){
  'use strict';
  if(window.__CC_DOT_OPERADOR_BORRADO_V1__)return;window.__CC_DOT_OPERADOR_BORRADO_V1__=true;
  const sb=()=>window.gmSupabase;
- const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+ const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
  let operadoresCache=null;
  async function operadores(){
   if(operadoresCache)return operadoresCache;
   const {data,error}=await sb().rpc('cc_dot_operator_catalog');if(error)throw error;
-  operadoresCache=Array.isArray(data?.operadores)?data.operadores:[];return operadoresCache;
+  operadoresCache=(Array.isArray(data?.operadores)?data.operadores:[]).map(o=>({id:String(o.id||''),nombre:String(o.nombre||''),extra:String(o.numeroEmpleado||'')})).filter(o=>o.id&&o.nombre);
+  return operadoresCache;
  }
- async function injectOperator(modalId,selected=''){
-  const modal=document.getElementById(modalId),form=modal?.querySelector('form');if(!form||form.querySelector('[name="operadorId"]'))return;
-  const rows=form.querySelector('.cc-grid');if(!rows)return;
-  const wrap=document.createElement('div');wrap.className='cc-field';wrap.innerHTML='<label>Operador</label><select name="operadorId"><option value="">Sin operador</option></select>';
-  rows.appendChild(wrap);
-  try{const xs=await operadores();const sel=wrap.querySelector('select');xs.forEach(o=>{const op=document.createElement('option');op.value=o.id;op.textContent=o.nombre+(o.numeroEmpleado?' · '+o.numeroEmpleado:'');if(String(o.id)===String(selected||''))op.selected=true;sel.appendChild(op);});}
-  catch(e){wrap.querySelector('select').innerHTML='<option value="">No se pudieron cargar operadores</option>';console.warn('DOT operadores',e);}
+ function catalogFromSelect(sel){
+  return [...(sel?.options||[])].filter(o=>o.value).map(o=>({id:String(o.value),nombre:String(o.textContent||'').trim(),extra:''}));
+ }
+ function makeAutocomplete(field,{name,label,catalog,selectedId='',selectedLabel='',placeholder=''}){
+  if(!field||field.dataset.dotAutocomplete==='1')return;
+  field.dataset.dotAutocomplete='1';field.style.position='relative';
+  const hidden=document.createElement('input');hidden.type='hidden';hidden.name=name;hidden.value=selectedId||'';
+  const input=document.createElement('input');input.type='text';input.autocomplete='off';input.spellcheck=false;input.placeholder=placeholder||'Escribe al menos 3 letras';input.value=selectedLabel||'';input.dataset.dotLookup=name;
+  const menu=document.createElement('div');menu.dataset.dotSuggest=name;menu.style='display:none;position:absolute;left:0;right:0;top:calc(100% + 3px);z-index:10020;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 12px 28px rgba(15,23,42,.18);max-height:230px;overflow:auto';
+  field.innerHTML='';const lab=document.createElement('label');lab.textContent=label;field.append(lab,input,hidden,menu);
+  field.dataset.selectedLabel=selectedLabel||'';
+  const close=()=>{menu.style.display='none';menu.innerHTML='';};
+  const choose=item=>{hidden.value=item.id;input.value=item.nombre;field.dataset.selectedLabel=item.nombre;close();};
+  const exact=()=>{const q=norm(input.value);if(!q){hidden.value='';field.dataset.selectedLabel='';return true;}const hit=catalog.find(x=>norm(x.nombre)===q || norm((x.nombre+(x.extra?' · '+x.extra:'')))===q);if(hit){choose(hit);return true;}return !!hidden.value&&norm(field.dataset.selectedLabel)===q;};
+  field.__dotExact=exact;
+  input.addEventListener('input',()=>{
+    hidden.value='';field.dataset.selectedLabel='';const q=norm(input.value);if(q.length<3){close();return;}
+    const matches=catalog.filter(x=>norm(x.nombre+' '+x.extra).includes(q)).sort((a,b)=>{const as=norm(a.nombre).startsWith(q)?0:1,bs=norm(b.nombre).startsWith(q)?0:1;return as-bs||a.nombre.localeCompare(b.nombre,'es');}).slice(0,10);
+    menu.innerHTML='';
+    if(!matches.length){const d=document.createElement('div');d.style='padding:10px 12px;color:#b91c1c;font-size:12px;font-weight:700';d.textContent='No existe en el catálogo';menu.appendChild(d);menu.style.display='block';return;}
+    matches.forEach(item=>{const b=document.createElement('button');b.type='button';b.style='display:block;width:100%;text-align:left;border:0;background:#fff;padding:10px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9';b.innerHTML='<strong>'+esc(item.nombre)+'</strong>'+(item.extra?'<div style="font-size:11px;color:#64748b">'+esc(item.extra)+'</div>':'');b.onmousedown=e=>{e.preventDefault();choose(item);};menu.appendChild(b);});menu.style.display='block';
+  });
+  input.addEventListener('focus',()=>{if(norm(input.value).length>=3)input.dispatchEvent(new Event('input'));});
+  input.addEventListener('blur',()=>setTimeout(()=>{exact();close();},150));
+ }
+ function installValidation(form){
+  if(!form||form.dataset.dotCatalogValidation==='1')return;form.dataset.dotCatalogValidation='1';
+  form.addEventListener('submit',e=>{
+    const checks=[['clienteId','Cliente'],['operadorId','Operador']];
+    for(const [name,label] of checks){const field=form.querySelector('[data-dot-autocomplete="1"]:has([name="'+name+'"])');if(!field)continue;field.__dotExact?.();const input=field.querySelector('[data-dot-lookup="'+name+'"]'),hidden=field.querySelector('[name="'+name+'"]');if(String(input?.value||'').trim()&&!hidden?.value){e.preventDefault();e.stopImmediatePropagation();input.focus();alert(label+' no válido. Debes seleccionar una opción existente del catálogo.');return;}}
+  },true);
+ }
+ async function enhanceDotForm(modalId,selectedOperatorId='',selectedOperatorLabel=''){
+  const modal=document.getElementById(modalId),form=modal?.querySelector('form');if(!form)return;
+  const clientSel=form.querySelector('select[name="clienteId"]');
+  if(clientSel&&!form.querySelector('[data-dot-lookup="clienteId"]')){const cat=catalogFromSelect(clientSel);const wrap=clientSel.closest('.cc-field');const sid=clientSel.value||'';const slabel=sid?(clientSel.selectedOptions?.[0]?.textContent||'').trim():'';makeAutocomplete(wrap,{name:'clienteId',label:'Cliente (opcional)',catalog:cat,selectedId:sid,selectedLabel:slabel,placeholder:'Escribe 3 letras del cliente'});}
+  if(!form.querySelector('[data-dot-lookup="operadorId"]')){
+   const rows=form.querySelector('.cc-grid');if(rows){const wrap=document.createElement('div');wrap.className='cc-field';rows.appendChild(wrap);try{const cat=await operadores();let label=selectedOperatorLabel||'';if(selectedOperatorId&&!label)label=cat.find(x=>x.id===String(selectedOperatorId))?.nombre||'';makeAutocomplete(wrap,{name:'operadorId',label:'Operador (opcional)',catalog:cat,selectedId:selectedOperatorId||'',selectedLabel:label,placeholder:'Escribe 3 letras del operador'});}catch(err){wrap.innerHTML='<label>Operador (opcional)</label><input disabled value="No se pudieron cargar operadores">';console.warn('DOT operadores',err);}}
+  }
+  installValidation(form);
  }
  function wrapDotForms(){
-  if(typeof window.ccAbrirDotRegistro==='function'&&!window.ccAbrirDotRegistro.__opWrap){const old=window.ccAbrirDotRegistro;const w=function(){const r=old.apply(this,arguments);setTimeout(()=>injectOperator('ccDotModal'),0);return r};w.__opWrap=true;window.ccAbrirDotRegistro=w;}
-  if(typeof window.ccEditarDot==='function'&&!window.ccEditarDot.__opWrap){const old=window.ccEditarDot;const w=function(id){const r=old.apply(this,arguments);const row=(window.ccDotData||[]).find(x=>x.id===id);setTimeout(()=>injectOperator('ccDotEditModal',row?.operadorId||''),0);return r};w.__opWrap=true;window.ccEditarDot=w;}
+  if(typeof window.ccAbrirDotRegistro==='function'&&!window.ccAbrirDotRegistro.__opWrap){const old=window.ccAbrirDotRegistro;const w=function(){const r=old.apply(this,arguments);setTimeout(()=>enhanceDotForm('ccDotModal'),0);return r};w.__opWrap=true;window.ccAbrirDotRegistro=w;}
+  if(typeof window.ccEditarDot==='function'&&!window.ccEditarDot.__opWrap){const old=window.ccEditarDot;const w=function(id){const r=old.apply(this,arguments);const row=(window.ccDotData||[]).find(x=>x.id===id);setTimeout(()=>enhanceDotForm('ccDotEditModal',row?.operadorId||'',row?.operador||''),0);return r};w.__opWrap=true;window.ccEditarDot=w;}
  }
  function patchRpc(){
   const client=sb();if(!client?.rpc||client.rpc.__dotOpWrap)return;
