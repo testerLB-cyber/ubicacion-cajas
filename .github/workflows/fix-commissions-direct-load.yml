@@ -1,4 +1,4 @@
-name: Fix commissions direct load
+name: Safe professional startup
 on:
   push:
     paths:
@@ -10,25 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch professional index
+      - name: Patch professional index for safe startup
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('profesional/index.html')
           s=p.read_text(encoding='utf-8')
-          marker='</body>'
-          script='<script src="assets/js/modules/commissions-liquidations.js?v=20260914-direct-1" data-cc-commissions-direct="1"></script>\n'
-          if 'data-cc-commissions-direct' not in s:
-              s=s.replace(marker, script+marker)
-          s=s.replace('assets/js/core/module-registry.js"','assets/js/core/module-registry.js?v=20260914-direct-1"')
+          # Los módulos opcionales ya los carga module-registry únicamente después del login.
+          lines=[]
+          for line in s.splitlines():
+              if 'data-cc-commissions-direct' in line:
+                  continue
+              lines.append(line)
+          s='\n'.join(lines)+'\n'
+          import re
+          s=re.sub(r'assets/js/core/module-registry\.js(?:\?v=[^"\']*)?',
+                   'assets/js/core/module-registry.js?v=20260914-safe-2',s)
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit patch
+      - name: Commit safe startup patch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add profesional/index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Carga directa de tarifas comisiones y liquidaciones'
+            git commit -m 'Aísla módulos opcionales hasta después del login'
             git push
           fi
