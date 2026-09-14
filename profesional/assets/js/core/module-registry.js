@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v32-anticipos-utileria-historicos';
+  app.version='profesional-modular-v33-anticipos-catalogos-listado';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -33,7 +33,7 @@
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
     addScript('assets/js/modules/anticipos-utileria-historicos-v1.js?v=20260914-ant-util-hist-1','data-cc-ant-util-hist');
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
-    addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-compact');
+    addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-listado-2','data-cc-ant-catalog-compact');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
     return true;
   }
