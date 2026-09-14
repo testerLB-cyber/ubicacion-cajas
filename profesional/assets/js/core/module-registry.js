@@ -28,4 +28,13 @@
     s.setAttribute('data-cc-activity-log','1');
     document.head.appendChild(s);
   }
+
+  /* Tarifas de comisiones + liquidaciones de Hojas de Servicio. */
+  if(!document.querySelector('script[data-cc-commissions]')){
+    const s=document.createElement('script');
+    s.src='assets/js/modules/commissions-liquidations.js?v=20260913-1';
+    s.defer=true;
+    s.setAttribute('data-cc-commissions','1');
+    document.head.appendChild(s);
+  }
 })();
