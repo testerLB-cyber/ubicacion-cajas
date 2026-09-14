@@ -44,38 +44,38 @@
     try{
       const jsPDF=await loadJsPdf();
       const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-      const pageW=210,pageH=297,marginX=10,marginY=10,gapX=4,gapY=4;
+      const pageW=210,pageH=297,marginX=4,marginY=5,gapX=2,gapY=3;
       const cellW=(pageW-(marginX*2)-(gapX*2))/3;
       const cellH=(pageH-(marginY*2)-(gapY*2))/3;
-      const qrSize=Math.min(50,cellW-8,cellH-28);
+      const qrSize=Math.min(63,cellW-3,cellH-23);
 
       items.forEach((it,i)=>{
         if(i>0 && i%9===0) doc.addPage();
         const p=i%9,row=Math.floor(p/3),col=p%3;
         const x=marginX+col*(cellW+gapX),y=marginY+row*(cellH+gapY);
 
-        doc.setDrawColor(210,218,228);
-        doc.roundedRect(x,y,cellW,cellH,2,2,'S');
+        doc.setDrawColor(218,224,232);
+        doc.roundedRect(x,y,cellW,cellH,1.5,1.5,'S');
         doc.setFont('helvetica','bold');
-        doc.setFontSize(11);
-        doc.text(String(it.numero||'UNIDAD'),x+cellW/2,y+7,{align:'center',maxWidth:cellW-6});
+        doc.setFontSize(10.5);
+        doc.text(String(it.numero||'UNIDAD'),x+cellW/2,y+5.2,{align:'center',maxWidth:cellW-4});
 
         if(it.detalle){
           doc.setFont('helvetica','normal');
           doc.setTextColor(90,100,115);
-          doc.setFontSize(7);
-          const lines=doc.splitTextToSize(String(it.detalle),cellW-8).slice(0,2);
-          doc.text(lines,x+cellW/2,y+11,{align:'center'});
+          doc.setFontSize(6.5);
+          const lines=doc.splitTextToSize(String(it.detalle),cellW-5).slice(0,1);
+          doc.text(lines,x+cellW/2,y+9,{align:'center'});
           doc.setTextColor(0,0,0);
         }
 
         const qx=x+(cellW-qrSize)/2;
-        const qy=y+17;
+        const qy=y+11;
         doc.addImage(it.qr,'PNG',qx,qy,qrSize,qrSize,undefined,'FAST');
         doc.setFont('helvetica','normal');
-        doc.setFontSize(7);
+        doc.setFontSize(6.5);
         doc.setTextColor(95,105,120);
-        doc.text('Escanear para actualizar ubicación',x+cellW/2,qy+qrSize+6,{align:'center',maxWidth:cellW-6});
+        doc.text('Escanear para actualizar ubicación',x+cellW/2,qy+qrSize+4.5,{align:'center',maxWidth:cellW-4});
         doc.setTextColor(0,0,0);
       });
 
