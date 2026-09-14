@@ -30,15 +30,14 @@
       if(el.children.length)return;
       const t=norm(el.textContent);
       if(t.includes('selecciona destino')&&t.includes('tipo de unidad')&&t.includes('anticipo')){
-        el.textContent='Selecciona destino y unidad. El tipo de unidad se obtiene automáticamente del catálogo principal.';
+        el.textContent='Selecciona destino y unidad.';
       }
     });
   }
 
-  async function syncUnitType(form,unitSelect,typeSelect,note){
+  async function syncUnitType(form,unitSelect,typeSelect){
     typeSelect.value='';
     if(!unitSelect.value){
-      note.textContent='Tipo de unidad: se tomará automáticamente de la unidad seleccionada.';
       typeSelect.dispatchEvent(new Event('change',{bubbles:true}));
       return false;
     }
@@ -46,8 +45,6 @@
     const row=(D.unidadesTipoGeneral||[]).find(x=>String(x.id)===String(unitSelect.value));
     const tid=String(row?.tipoUnidadGeneralId||'');
     if(!tid){
-      note.textContent='La unidad seleccionada no tiene Tipo de unidad configurado en el catálogo principal.';
-      note.style.color='#b91c1c';
       typeSelect.dispatchEvent(new Event('change',{bubbles:true}));
       return false;
     }
@@ -58,8 +55,6 @@
       typeSelect.appendChild(op);
     }
     typeSelect.value=tid;
-    note.style.color='';
-    note.textContent='Tipo de unidad: '+(row?.tipoUnidadGeneralNombre||'configurado')+' · automático';
     typeSelect.dispatchEvent(new Event('change',{bubbles:true}));
     return true;
   }
@@ -78,24 +73,12 @@
     typeSelect.required=false;
     typeSelect.setAttribute('aria-hidden','true');
 
+    form.querySelector('[data-ant-main-unit-type-note]')?.remove();
+
     if(form.dataset.ccAutoMainUnitType==='1')return true;
     form.dataset.ccAutoMainUnitType='1';
 
-    let note=form.querySelector('[data-ant-main-unit-type-note]');
-    if(!note){
-      note=document.createElement('div');
-      note.dataset.antMainUnitTypeNote='1';
-      note.className='cc-note';
-      note.style.marginTop='5px';
-      note.textContent='Tipo de unidad: se tomará automáticamente de la unidad seleccionada.';
-      unitSelect.closest('.cc-field')?.appendChild(note);
-    }
-
-    const sync=()=>syncUnitType(form,unitSelect,typeSelect,note).catch(err=>{
-      note.style.color='#b91c1c';
-      note.textContent='No se pudo obtener el tipo de la unidad: '+(err?.message||err);
-      return false;
-    });
+    const sync=()=>syncUnitType(form,unitSelect,typeSelect).catch(()=>false);
 
     unitSelect.addEventListener('change',sync);
     form.addEventListener('submit',async e=>{
