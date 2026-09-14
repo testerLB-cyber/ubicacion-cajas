@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v6-safe';
+  app.version='profesional-modular-v7-catalog-fix';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){
@@ -33,19 +33,14 @@
   function loadOptionalModules(){
     if(loaded || !window.CC_AUTH_READY || !window.gmSupabase) return false;
     loaded=true;
-    /* Se cargan DESPUÉS de autenticar para que ningún módulo opcional bloquee el login. */
     addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
-    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-safe-2','data-cc-unit-type-canonical');
+    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-catalog-fix-1','data-cc-unit-type-canonical');
     if(!document.querySelector('script[data-cc-commissions-direct]')){
       addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
     }
     return true;
   }
   app.loadOptionalModules=loadOptionalModules;
-
-  /* auth-permissions.js se carga más adelante en index.html. Esperamos a que marque CC_AUTH_READY. */
-  const timer=setInterval(()=>{
-    if(loadOptionalModules()) clearInterval(timer);
-  },350);
-  setTimeout(()=>{ if(!loaded && !window.CC_AUTH_READY) console.info('Módulos opcionales esperando autenticación.'); },2500);
+  const timer=setInterval(()=>{if(loadOptionalModules())clearInterval(timer);},350);
+  setTimeout(()=>{if(!loaded&&!window.CC_AUTH_READY)console.info('Módulos opcionales esperando autenticación.');},2500);
 })();
