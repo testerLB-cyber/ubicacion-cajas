@@ -1,7 +1,7 @@
 TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
 Fecha: 2026-09-14
-Versión profesional: profesional-modular-v40-anticipos-menu-unico
-Commit funcional de referencia: acd1e8e5d9a86582c939fcd73a620542414a89cc
+Versión profesional: profesional-modular-v41-correo-diagnostico
+Commit funcional de referencia: bdd787c3fcc3189374399e6b65e2f6b97fc6169f
 Ruta web: /ubicacion-cajas/profesional/
 
-Esta versión queda marcada como la base correcta para pruebas. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
+Esta versión queda marcada como la base correcta para pruebas. Incluye diagnóstico visible y persistencia de errores de correo DOT / Fuera de Servicio / Liberación. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
