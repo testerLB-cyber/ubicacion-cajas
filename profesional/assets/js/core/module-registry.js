@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v51-nuevo-anticipo-tipo-unidad-automatico';
+  app.version='profesional-modular-v52-tarifas-comision-inhabilitables';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -46,6 +46,7 @@
     addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v2.js?v=20260914-ant-clean-dup-menu-2','data-cc-ant-clean-dup-menu-v2');
     addScript('assets/js/modules/anticipos-sin-tipo-unidad-propio-v1.js?v=20260914-ant-no-own-unit-type-2','data-cc-ant-no-own-unit-type');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
+    addScript('assets/js/modules/commission-tariff-status-v1.js?v=20260914-commission-status-1','data-cc-commission-tariff-status');
     return true;
   }
   app.loadOptionalModules=loadOptionalModules;
