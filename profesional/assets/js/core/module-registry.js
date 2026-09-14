@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v8-unit-edit-fix';
+  app.version='profesional-modular-v9-single-unit-type';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){
@@ -34,7 +34,7 @@
     if(loaded || !window.CC_AUTH_READY || !window.gmSupabase) return false;
     loaded=true;
     addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
-    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-unit-edit-fix-1','data-cc-unit-type-canonical');
+    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-single-unit-type-1','data-cc-unit-type-canonical');
     if(!document.querySelector('script[data-cc-commissions-direct]')){
       addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
     }
