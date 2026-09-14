@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v38-anticipos-nueva-config-destino';
+  app.version='profesional-modular-v39-anticipos-sin-menu-duplicado';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -37,6 +37,7 @@
     addScript('assets/js/modules/anticipos-destino-conceptos-compactos-v1.js?v=20260914-ant-dest-compact-1','data-cc-ant-dest-compact');
     addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-ant-dest-unit-general-1','data-cc-ant-dest-unit-general');
     addScript('assets/js/modules/anticipos-destino-nueva-config-v1.js?v=20260914-ant-new-dest-config-1','data-cc-ant-new-dest-config');
+    addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v1.js?v=20260914-ant-clean-dup-menu-1','data-cc-ant-clean-dup-menu');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
     return true;
   }
