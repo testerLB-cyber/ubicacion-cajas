@@ -1,7 +1,8 @@
-/* Tráfico App · Registro modular profesional */
+/* Tráfico App · Registro modular profesional · arranque seguro */
 (function(){
+  'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v5';
+  app.version='profesional-modular-v6-safe';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){
@@ -19,30 +20,32 @@
     return {ok:missing.length===0,missing};
   };
 
-  /* Log de actividad */
-  if(!document.querySelector('script[data-cc-activity-log]')){
+  let loaded=false;
+  function addScript(src,attr){
+    if(document.querySelector('script['+attr+']')) return;
     const s=document.createElement('script');
-    s.src='assets/js/modules/activity-log.js?v=20260913-1';
-    s.defer=true;
-    s.setAttribute('data-cc-activity-log','1');
+    s.src=src;
+    s.async=true;
+    s.setAttribute(attr,'1');
+    s.onerror=()=>console.error('No se pudo cargar módulo opcional:',src);
     document.head.appendChild(s);
   }
+  function loadOptionalModules(){
+    if(loaded || !window.CC_AUTH_READY || !window.gmSupabase) return false;
+    loaded=true;
+    /* Se cargan DESPUÉS de autenticar para que ningún módulo opcional bloquee el login. */
+    addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
+    addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-safe-2','data-cc-unit-type-canonical');
+    if(!document.querySelector('script[data-cc-commissions-direct]')){
+      addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
+    }
+    return true;
+  }
+  app.loadOptionalModules=loadOptionalModules;
 
-  /* Tipo base CAJA/CARRO separado del tipo específico (TRACTO, RABON, etc.). */
-  if(!document.querySelector('script[data-cc-unit-type-canonical]')){
-    const s=document.createElement('script');
-    s.src='assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-safe-1';
-    s.defer=true;
-    s.setAttribute('data-cc-unit-type-canonical','1');
-    document.head.appendChild(s);
-  }
-
-  /* Tarifas de comisiones + liquidaciones de Hojas de Servicio. */
-  if(!document.querySelector('script[data-cc-commissions]') && !document.querySelector('script[data-cc-commissions-direct]')){
-    const s=document.createElement('script');
-    s.src='assets/js/modules/commissions-liquidations.js?v=20260914-safe-1';
-    s.defer=true;
-    s.setAttribute('data-cc-commissions','1');
-    document.head.appendChild(s);
-  }
+  /* auth-permissions.js se carga más adelante en index.html. Esperamos a que marque CC_AUTH_READY. */
+  const timer=setInterval(()=>{
+    if(loadOptionalModules()) clearInterval(timer);
+  },350);
+  setTimeout(()=>{ if(!loaded && !window.CC_AUTH_READY) console.info('Módulos opcionales esperando autenticación.'); },2500);
 })();
