@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v42-correo-validado';
+  app.version='profesional-modular-v45-qr-pdf-9-por-pagina';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -27,6 +27,7 @@
     addScript('assets/js/modules/inventario-tipo-refresh-v1.js?v=20260914-type-refresh-1','data-cc-inventory-type-refresh');
     addScript('assets/js/modules/inventario-sin-qr.js?v=20260914-no-qr-final-1','data-cc-inventory-no-qr');
     addScript('assets/js/modules/configuracion-impresion-qr-restore.js?v=20260914-config-qr-style-3','data-cc-config-print-qr-restore');
+    addScript('assets/js/modules/configuracion-qr-pdf-v1.js?v=20260914-qr-pdf-1','data-cc-config-qr-pdf');
     addScript('assets/js/modules/config-clientes-catalogo-v1.js?v=20260914-clientes-config-1','data-cc-config-clientes');
     addScript('assets/js/modules/config-tipos-viaje-clasificaciones.js?v=20260914-trip-class-1','data-cc-trip-class-config');
     addScript('assets/js/modules/renta-tarifas-tipo-v1.js?v=20260914-rent-commercial-proforma-4','data-cc-rent-type-rates');
