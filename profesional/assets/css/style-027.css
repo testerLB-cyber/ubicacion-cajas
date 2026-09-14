@@ -1,11 +1,35 @@
 .cc-config-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:4px 0 16px;padding:6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:14px}
-.cc-config-nav-btn{border:0;background:transparent;border-radius:10px;padding:12px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;color:#64748b;font-weight:800;transition:.18s}
+.cc-config-nav-btn{border:0;background:transparent;border-radius:10px;padding:12px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;color:#64748b;font-weight:800;transition:.18s;font-family:inherit;font-size:12px;line-height:1.2}
 .cc-config-nav-btn i{font-size:16px}.cc-config-nav-btn span{font-size:12px}.cc-config-nav-btn small{font-size:9px;font-weight:600;color:#94a3b8}
 .cc-config-nav-btn.active{background:#fff;color:#0f172a;box-shadow:0 3px 12px rgba(15,23,42,.10)}
 .cc-config-nav-btn.active i{color:#2563eb}.cc-config-nav-btn.active small{color:#64748b}
-.cc-config-section{display:none}.cc-config-section.active{display:block}
-.cc-config-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
-.cc-config-section-head h4{margin:0 0 4px;font-size:15px;color:#0f172a}.cc-config-section-head p{margin:0;color:#64748b;font-size:11px}
+.cc-config-section{display:none;font-family:inherit;color:#334155}.cc-config-section.active{display:block}
+.cc-config-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
+.cc-config-section-head h4{margin:0 0 4px;font-size:15px;line-height:1.2;font-weight:900;color:#0f172a;font-family:inherit}.cc-config-section-head p{margin:0;color:#64748b;font-size:11px;line-height:1.4;font-family:inherit}
+
+/* Configuración · catálogos uniformes */
+#ccPanelConfiguracion{font-family:inherit}
+#ccPanelConfiguracion .cc-config-section .cc-toolbar,
+#ccPanelConfiguracion .cc-config-section .cc-card,
+#ccPanelConfiguracion .cc-config-section .cc-table-wrap,
+#ccPanelConfiguracion .cc-config-section>div[style*="border"]{font-family:inherit}
+#ccPanelConfiguracion .cc-config-section table{width:100%;border-collapse:collapse;font-family:inherit;font-size:11px;color:#334155;background:#fff}
+#ccPanelConfiguracion .cc-config-section thead th{background:#f8fafc;color:#475569;font-size:10px;line-height:1.2;font-weight:900;text-transform:uppercase;letter-spacing:.035em;padding:10px 12px;border-bottom:1px solid #e2e8f0;white-space:nowrap;text-align:left}
+#ccPanelConfiguracion .cc-config-section tbody td{padding:10px 12px;border-bottom:1px solid #eef2f7;vertical-align:middle;font-size:11px;line-height:1.35;font-family:inherit}
+#ccPanelConfiguracion .cc-config-section tbody tr:last-child td{border-bottom:0}
+#ccPanelConfiguracion .cc-config-section tbody tr:hover{background:#f8fafc}
+#ccPanelConfiguracion .cc-config-section .cc-btn{font-family:inherit;font-size:10px;line-height:1.15;font-weight:800;min-height:30px;border-radius:8px}
+#ccPanelConfiguracion .cc-config-section input,
+#ccPanelConfiguracion .cc-config-section select,
+#ccPanelConfiguracion .cc-config-section textarea{font-family:inherit;font-size:11px;color:#334155}
+#ccPanelConfiguracion .cc-config-section label{font-family:inherit;font-size:10px;font-weight:800;color:#475569}
+#ccPanelConfiguracion .cc-config-section .cc-note,
+#ccPanelConfiguracion .cc-config-section small{font-family:inherit}
+#ccPanelConfiguracion .cc-config-section .cc-badge{font-family:inherit;font-size:9px;font-weight:800}
+#ccPanelConfiguracion .cc-config-section [data-gpc-table],
+#ccPanelConfiguracion #ccGeneralPeopleCatalogs table,
+#ccPanelConfiguracion #ccGeneralPeopleCatalogsV2 table{font-family:inherit}
+
 @media(max-width:700px){.cc-config-nav{grid-template-columns:1fr}.cc-config-nav-btn{justify-content:flex-start}.cc-config-section-head{flex-direction:column;align-items:stretch}}
 
 /* ===== GEOCERCAS / MAPA DE CAJAS ===== */
