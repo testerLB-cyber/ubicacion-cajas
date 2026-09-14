@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v20-inventory-canonical-stable';
+  app.version='profesional-modular-v21-inventory-canonical-final';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -13,8 +13,6 @@
     if(document.querySelector('script['+attr+']'))return;
     const s=document.createElement('script');
     s.src=src;
-    // Los módulos dinámicos se ejecutan en el orden en que se insertan.
-    // Esto evita carreras entre tipo de unidad -> estabilidad de tabla -> botonera.
     s.async=false;
     s.setAttribute(attr,'1');
     s.onerror=()=>console.error('No se pudo cargar módulo opcional:',src);
@@ -25,7 +23,7 @@
     loaded=true;
     addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
     addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-inventory-final-3','data-cc-unit-type-canonical');
-    addScript('assets/js/modules/inventario-estabilidad-tabla.js?v=20260914-table-stable-2','data-cc-inventory-table-stability');
+    addScript('assets/js/modules/inventario-estabilidad-tabla.js?v=20260914-table-stable-3','data-cc-inventory-table-stability');
     addScript('assets/js/modules/inventario-boton-qr-estable-v1.js?v=20260914-inventory-toolbar-stable-2','data-cc-inventory-qr-stability');
     addScript('assets/js/modules/renta-tarifas-tipo-v1.js?v=20260914-rent-commercial-proforma-4','data-cc-rent-type-rates');
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
