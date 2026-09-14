@@ -1,79 +1,31 @@
-/* Tráfico App · Configuración · QR grande y persistente en Impresión v2 */
+/* Tráfico App · Configuración · estilo estable del QR en Impresión v3
+   No crea, mueve ni reinyecta botones. El flujo original de configuracion.js
+   es el único responsable de crear y ejecutar el botón QR. */
 (function(){
   'use strict';
-  if(window.__CC_CONFIG_PRINT_QR_RESTORE_V2__)return;
-  window.__CC_CONFIG_PRINT_QR_RESTORE_V2__=true;
+  if(window.__CC_CONFIG_PRINT_QR_STYLE_V3__)return;
+  window.__CC_CONFIG_PRINT_QR_STYLE_V3__=true;
 
-  let savedQrBtn=null;
-  let observerBusy=false;
-
-  function configPanel(){return document.getElementById('ccPanelConfiguracion');}
-  function printNav(){
-    const panel=configPanel();
-    if(!panel)return null;
-    const nav=panel.querySelector('.cc-config-nav,.cc-config-sidebar,.cc-config-menu')||panel.querySelector('.cc-config-nav-btn')?.parentElement;
-    if(!nav)return null;
-    return nav.querySelector('[data-config-placeholder="impresion"]');
-  }
-  function ensureConfigPrintNav(){
-    const btn=printNav();
-    if(!btn)return;
-    btn.style.display='';
-    btn.hidden=false;
-    btn.innerHTML='<i class="fa-solid fa-print"></i><span>Impresión</span><small>Unidades y QR</small>';
-  }
-  function qrFooter(modal){
-    const body=modal?.querySelector('#ccPrintBody');
-    if(!body)return null;
-    const direct=body.querySelector('#ccPrintList')?.nextElementSibling;
-    if(direct)return direct;
-    return [...body.querySelectorAll('div')].find(x=>String(x.style?.justifyContent||'').includes('flex-end'))||body;
-  }
-  function makeLarge(btn){
-    if(!btn)return;
-    btn.style.display='inline-flex';
-    btn.hidden=false;
-    btn.removeAttribute('aria-hidden');
-    btn.classList.add('cc-btn','cc-btn-primary');
-    btn.style.minWidth='220px';
-    btn.style.minHeight='54px';
-    btn.style.padding='13px 24px';
-    btn.style.fontSize='16px';
-    btn.style.fontWeight='900';
-    btn.style.justifyContent='center';
-    btn.style.alignItems='center';
-    btn.style.gap='9px';
-    btn.style.borderRadius='12px';
-    btn.innerHTML='<i class="fa-solid fa-qrcode" style="font-size:20px"></i> GENERAR QR';
-  }
-  function ensureQrButton(){
-    const modal=document.getElementById('ccPrintUnitsModal');
-    if(!modal)return;
-    let btn=modal.querySelector('#ccPrintQrBtn');
-    if(btn){
-      savedQrBtn=btn;
-      makeLarge(btn);
-      return;
+  const style=document.createElement('style');
+  style.id='ccConfigPrintQrStyleV3';
+  style.textContent=`
+    #ccPrintUnitsModal #ccPrintQrBtn{
+      display:inline-flex !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      min-width:220px !important;
+      min-height:54px !important;
+      padding:13px 24px !important;
+      font-size:16px !important;
+      font-weight:900 !important;
+      align-items:center !important;
+      justify-content:center !important;
+      gap:9px !important;
+      border-radius:12px !important;
     }
-    if(savedQrBtn){
-      const footer=qrFooter(modal);
-      if(footer){
-        footer.appendChild(savedQrBtn);
-        makeLarge(savedQrBtn);
-      }
+    #ccPrintUnitsModal #ccPrintQrBtn .fa-qrcode{
+      font-size:20px !important;
     }
-  }
-  function run(){
-    if(observerBusy)return;
-    observerBusy=true;
-    try{ensureConfigPrintNav();ensureQrButton();}
-    finally{observerBusy=false;}
-  }
-  const mo=new MutationObserver(()=>requestAnimationFrame(run));
-  function boot(){
-    run();
-    mo.observe(document.getElementById('controlCajasSection')||document.body,{childList:true,subtree:true});
-    setInterval(run,500);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  `;
+  document.head.appendChild(style);
 })();
