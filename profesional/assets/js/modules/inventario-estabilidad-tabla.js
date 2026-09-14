@@ -1,11 +1,37 @@
-/* Tráfico App · Inventario · estabilidad estructural v2 */
+/* Tráfico App · Inventario · estabilidad estructural + tipo canónico v3 */
 (function(){
 'use strict';
-if(window.__CC_INVENTARIO_TABLE_STABLE_V2__)return;
+if(window.__CC_INVENTARIO_TABLE_STABLE_V3__)return;
+window.__CC_INVENTARIO_TABLE_STABLE_V3__=true;
 window.__CC_INVENTARIO_TABLE_STABLE_V2__=true;
 window.__CC_INVENTARIO_TABLE_STABLE_V1__=true;
+let typeMap=new Map(),typeMapReady=false,typeMapLoading=false;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+async function loadTypeMap(){
+  if(typeMapLoading||!window.gmSupabase)return false;
+  typeMapLoading=true;
+  try{
+    const r=await window.gmSupabase.rpc('cc_unit_type_map');
+    if(r.error)throw r.error;
+    typeMap=new Map((r.data?.rows||[]).map(x=>[String(x.numero||'').trim().toUpperCase(),String(x.tipoUnidadGeneralNombre||'').trim()]));
+    typeMapReady=true;
+    return true;
+  }catch(e){console.warn('Mapa de tipos de Inventario:',e);return false;}
+  finally{typeMapLoading=false;}
+}
 function rowKey(tr){return String(tr?.children?.[2]?.textContent||'').trim().toUpperCase();}
+function decorateTypes(body){
+  if(!body||!typeMapReady)return;
+  [...body.querySelectorAll('tr')].forEach(tr=>{
+    const cells=[...tr.children];if(cells.length<3)return;
+    const name=typeMap.get(rowKey(tr));if(!name)return;
+    if(cells[1].dataset.ccCanonicalType!==name){
+      cells[1].innerHTML='<span class="cc-unit-type-badge">'+esc(name)+'</span>';
+      cells[1].dataset.ccCanonicalType=name;
+    }
+  });
+}
 function sameKeys(a,b){
   const ar=[...a.querySelectorAll('tr')],br=[...b.querySelectorAll('tr')];
   if(!ar.length||ar.length!==br.length)return false;
@@ -57,10 +83,11 @@ function stabilizeCells(body){
     }
   });
 }
+function finish(body){decorateTypes(body);ensureHeader();stabilizeCells(body);window.ccEnsureInventoryToolbar?.();}
 function install(){
   if(!window.CC_AUTH_READY||typeof window.ccRenderInventario!=='function'||!window.__CC_TIPO_UNIDAD_ESTABLE_V11__)return false;
   const current=window.ccRenderInventario;
-  if(current.__ccStableTableV2)return true;
+  if(current.__ccStableTableV3)return true;
   let rendering=false;
   const stable=function(){
     if(rendering)return;
@@ -71,7 +98,7 @@ function install(){
 
     if(!realBody||!realBody.children.length){
       const out=current.apply(this,arguments);
-      ensureHeader();stabilizeCells(document.getElementById('ccInventarioBody'));
+      finish(document.getElementById('ccInventarioBody'));
       return out;
     }
 
@@ -86,6 +113,7 @@ function install(){
         return nativeGet.call(document,id);
       };
       current.apply(this,arguments);
+      decorateTypes(ghostBody);
     }finally{
       document.getElementById=nativeGet;
       rendering=false;
@@ -93,20 +121,23 @@ function install(){
 
     reconcileRows(realBody,ghostBody);
     if(realKpis&&ghostKpis.innerHTML&&realKpis.innerHTML!==ghostKpis.innerHTML)realKpis.innerHTML=ghostKpis.innerHTML;
-    ensureHeader();stabilizeCells(realBody);
+    finish(realBody);
     if(wrap){wrap.scrollLeft=scrollLeft;wrap.scrollTop=scrollTop;}
   };
+  stable.__ccStableTableV3=true;
   stable.__ccStableTableV2=true;
   stable.__ccStableTableV1=true;
   stable.__ccWrapped=current;
   window.ccRenderInventario=stable;
-  ensureHeader();stabilizeCells(document.getElementById('ccInventarioBody'));
+  finish(document.getElementById('ccInventarioBody'));
   return true;
 }
 
-function boot(){
+async function boot(){
+  await loadTypeMap();
   let n=0;
   const timer=setInterval(()=>{n++;if(install()||n>100)clearInterval(timer);},100);
+  setTimeout(()=>{if(typeMapReady){decorateTypes(document.getElementById('ccInventarioBody'));window.ccRenderInventario?.();}},0);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
