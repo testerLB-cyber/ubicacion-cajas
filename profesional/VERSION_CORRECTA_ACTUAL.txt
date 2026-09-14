@@ -1,0 +1,7 @@
+TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
+Fecha: 2026-09-14
+Versión profesional: profesional-modular-v26-inventario-tipo-refresco
+Commit funcional de referencia: 10593a6bd7f678128aee98c8a69d42eed3c7d058
+Ruta web: /ubicacion-cajas/profesional/
+
+Esta versión queda marcada como la base correcta hasta este punto. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
