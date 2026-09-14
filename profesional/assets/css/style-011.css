@@ -17,3 +17,17 @@
 #ccPanelInventario .cc-inv-table th:last-child{
   min-width:260px;
 }
+
+/* QR se administra exclusivamente desde Configuración.
+   Oculta cualquier variante heredada del botón sólo dentro de Inventario. */
+#ccPanelInventario #ccInventoryPrintQrStableV7,
+#ccPanelInventario #ccInvPrintQr_20260913,
+#ccPanelInventario #ccInvPrintQrMoved,
+#ccPanelInventario #ccInventoryPrintQrDirectV61,
+#ccPanelInventario button[id*="PrintQr"],
+#ccPanelInventario button[id*="PrintQR"],
+#ccPanelInventario button[onclick*="ccOpenPrintQr"],
+#ccPanelInventario button[onclick*="ccImprimirQR"],
+#ccPanelInventario button[onclick*="ccGenerarQR"]{
+  display:none !important;
+}
