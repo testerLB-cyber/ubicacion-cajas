@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v27-config-impresion-qr';
+  app.version='profesional-modular-v28-config-impresion-qr-fijo';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -26,7 +26,7 @@
     addScript('assets/js/modules/inventario-estabilidad-tabla.js?v=20260914-table-stable-4','data-cc-inventory-table-stability');
     addScript('assets/js/modules/inventario-tipo-refresh-v1.js?v=20260914-type-refresh-1','data-cc-inventory-type-refresh');
     addScript('assets/js/modules/inventario-sin-qr.js?v=20260914-no-qr-final-1','data-cc-inventory-no-qr');
-    addScript('assets/js/modules/configuracion-impresion-qr-restore.js?v=20260914-config-qr-restore-1','data-cc-config-print-qr-restore');
+    addScript('assets/js/modules/configuracion-impresion-qr-restore.js?v=20260914-config-qr-restore-2','data-cc-config-print-qr-restore');
     addScript('assets/js/modules/renta-tarifas-tipo-v1.js?v=20260914-rent-commercial-proforma-4','data-cc-rent-type-rates');
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
