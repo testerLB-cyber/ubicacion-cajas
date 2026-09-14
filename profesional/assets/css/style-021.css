@@ -39,6 +39,24 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
 #ccUserAdminModal .cc-user-actions .cc-btn{min-height:30px;padding:6px 9px;font-size:9.5px;border-radius:8px;white-space:nowrap}
 #ccUserAdminModal .cc-badge{white-space:nowrap}
 
+/* Catálogo Usuarios App · mismo lenguaje visual */
+#ccMobileUsersModal .cc-user-card{width:min(980px,96vw)!important;background:#f1f5f9!important}
+#ccMobileUsersModal .cc-user-head{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+#ccMobileUsersModal .cc-user-body>div{overflow:visible!important}
+#ccMobileUsersModal table{display:block!important;width:100%!important;min-width:0!important;border-collapse:separate!important;background:transparent!important}
+#ccMobileUsersModal thead{display:none!important}
+#ccMobileUsersModal tbody{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+#ccMobileUsersModal tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"user status" "name status" "operator operator";gap:4px 12px;align-items:center;background:#fff;border:1px solid #dbe4ee!important;border-radius:15px;padding:15px;box-shadow:0 5px 16px rgba(15,23,42,.04);min-width:0;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+#ccMobileUsersModal tbody tr:hover{border-color:#bfdbfe!important;box-shadow:0 9px 24px rgba(37,99,235,.08);transform:translateY(-1px)}
+#ccMobileUsersModal tbody td{padding:0!important;border:0!important;min-width:0}
+#ccMobileUsersModal tbody td:nth-child(1){grid-area:user;font-size:13px;font-weight:950;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ccMobileUsersModal tbody td:nth-child(1)::before{content:'USUARIO';display:block;font-size:8px;line-height:1.1;letter-spacing:.06em;color:#94a3b8;font-weight:900;margin-bottom:3px}
+#ccMobileUsersModal tbody td:nth-child(2){grid-area:name;font-size:10.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ccMobileUsersModal tbody td:nth-child(2)::before{content:'NOMBRE';display:inline-block;font-size:8px;letter-spacing:.05em;color:#94a3b8;font-weight:900;margin-right:6px}
+#ccMobileUsersModal tbody td:nth-child(3){grid-area:operator;margin-top:8px;padding-top:9px!important;border-top:1px solid #eef2f7!important;font-size:10.5px;color:#334155;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ccMobileUsersModal tbody td:nth-child(3)::before{content:'OPERADOR LIGADO';display:block;font-size:8px;line-height:1.1;letter-spacing:.05em;color:#94a3b8;font-weight:900;margin-bottom:3px}
+#ccMobileUsersModal tbody td:nth-child(4){grid-area:status;justify-self:end;align-self:start;background:#dcfce7;color:#166534;border-radius:999px;padding:5px 8px!important;font-size:8.5px;font-weight:950;white-space:nowrap}
+
 @media(max-width:760px){
  .cc-user-grid,.cc-perm-grid{grid-template-columns:1fr}.cc-user-card{max-height:96vh}
  #ccUserAdminModal .cc-user-modal{padding:8px}
@@ -50,8 +68,16 @@ body.cc-auth-locked>aside,body.cc-auth-locked>div.min-h-screen{visibility:hidden
  #ccUserAdminModal tbody tr{padding:13px;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name status" "email role" "actions actions"}
  #ccUserAdminModal .cc-user-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
  #ccUserAdminModal .cc-user-actions .cc-btn{width:100%;justify-content:center;text-align:center}
+ #ccMobileUsersModal .cc-user-head{align-items:flex-start;flex-direction:column;padding:14px}
+ #ccMobileUsersModal .cc-user-head>div:last-child{width:100%;display:grid!important;grid-template-columns:1fr 1fr;gap:7px!important}
+ #ccMobileUsersModal .cc-user-head .cc-btn{justify-content:center}
+ #ccMobileUsersModal .cc-user-body{padding:10px}
+ #ccMobileUsersModal tbody{grid-template-columns:1fr!important;gap:9px}
+ #ccMobileUsersModal tbody tr{padding:13px}
 }
 @media(max-width:420px){
  #ccUserAdminModal .cc-user-actions{grid-template-columns:1fr}
  #ccUserAdminModal tbody td:nth-child(2){font-size:10px}
+ #ccMobileUsersModal tbody td:nth-child(1){font-size:12.5px}
+ #ccMobileUsersModal tbody td:nth-child(2),#ccMobileUsersModal tbody td:nth-child(3){font-size:10px}
 }
