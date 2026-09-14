@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v22-inventory-no-qr-interference';
+  app.version='profesional-modular-v23-inventory-clean-no-qr';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -24,6 +24,7 @@
     addScript('assets/js/modules/activity-log.js?v=20260914-safe-2','data-cc-activity-log');
     addScript('assets/js/modules/inventario-tipo-unidad-general.js?v=20260914-inventory-final-3','data-cc-unit-type-canonical');
     addScript('assets/js/modules/inventario-estabilidad-tabla.js?v=20260914-table-stable-3','data-cc-inventory-table-stability');
+    addScript('assets/js/modules/inventario-sin-qr.js?v=20260914-no-qr-final-1','data-cc-inventory-no-qr');
     addScript('assets/js/modules/renta-tarifas-tipo-v1.js?v=20260914-rent-commercial-proforma-4','data-cc-rent-type-rates');
     addScript('assets/js/modules/renta-cobro-estabilidad-v1.js?v=20260914-rent-commercial-stable-1','data-cc-rent-commercial-stability');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-safe-2','data-cc-commissions');
