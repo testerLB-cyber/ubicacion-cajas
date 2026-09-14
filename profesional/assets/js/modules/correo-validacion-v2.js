@@ -12,8 +12,10 @@
     if(!document.getElementById('ccMailProvider')){
       const field=document.createElement('div');field.className='cc-field';field.id='ccMailProviderField';
       field.innerHTML='<label>Proveedor de correo</label><select id="ccMailProvider"><option value="GMAIL">Gmail</option><option value="OUTLOOK">Outlook / Microsoft 365</option></select><div class="cc-note" id="ccMailProviderNote">Usa una contraseña de aplicación de Gmail.</div>';
-      (email.closest('.cc-field')||email.parentElement)?.parentElement?.insertBefore(field,email.closest('.cc-field')||email.parentElement);
-      document.getElementById('ccMailProvider').onchange=syncLabels;
+      const anchor=email.closest('.cc-field')||email.parentElement;
+      if(anchor?.parentElement)anchor.parentElement.insertBefore(field,anchor);
+      const sel=document.getElementById('ccMailProvider');
+      if(sel)sel.onchange=syncLabels;
     }
     syncLabels();
     return true;
@@ -21,14 +23,18 @@
   function syncLabels(){
     const p=provider(),key=document.getElementById('ccMailApiKey'),note=document.getElementById('ccMailProviderNote');
     const label=key?.closest('.cc-field')?.querySelector('label');
-    if(label)label.textContent=p==='OUTLOOK'?'Contraseña / contraseña de aplicación de Outlook':'Contraseña de aplicación de Gmail';
-    if(note)note.textContent=p==='OUTLOOK'?'Microsoft 365 / Outlook usa SMTP seguro por puerto 587.':'Gmail requiere una contraseña de aplicación válida; no uses la contraseña normal.';
-    if(key)key.placeholder=p==='OUTLOOK'?'Contraseña SMTP / aplicación':'Contraseña de aplicación de 16 caracteres';
+    const labelText=p==='OUTLOOK'?'Contraseña / contraseña de aplicación de Outlook':'Contraseña de aplicación de Gmail';
+    const noteText=p==='OUTLOOK'?'Microsoft 365 / Outlook usa SMTP seguro por puerto 587.':'Gmail requiere una contraseña de aplicación válida; no uses la contraseña normal.';
+    const placeholder=p==='OUTLOOK'?'Contraseña SMTP / aplicación':'Contraseña de aplicación de 16 caracteres';
+    if(label&&label.textContent!==labelText)label.textContent=labelText;
+    if(note&&note.textContent!==noteText)note.textContent=noteText;
+    if(key&&key.placeholder!==placeholder)key.placeholder=placeholder;
   }
   async function loadSettings(){
-    ensureUi();
+    if(!ensureUi())return null;
     try{
-      const {data,error}=await sb().rpc('cc_get_mail_settings'); if(error)throw error;
+      const client=sb(); if(!client)return null;
+      const {data,error}=await client.rpc('cc_get_mail_settings'); if(error)throw error;
       const d=data||{};
       const p=document.getElementById('ccMailProvider'); if(p)p.value=String(d.proveedor||'GMAIL').toUpperCase();
       const n=document.getElementById('ccMailSenderName'); if(n&&!n.value)n.value=d.nombreRemitente||'';
@@ -39,7 +45,8 @@
     }catch(err){console.warn('Correo settings:',err);return null;}
   }
   async function testMail(){
-    const {data,error}=await sb().functions.invoke('cc-send-maintenance-email',{body:{test:true}});
+    const client=sb(); if(!client)throw new Error('Supabase no está disponible.');
+    const {data,error}=await client.functions.invoke('cc-send-maintenance-email',{body:{test:true}});
     if(error)throw error;
     if(!data?.ok)throw new Error(data?.message||data?.error||'El servidor de correo rechazó el envío.');
     return data;
@@ -66,10 +73,11 @@
     if(!password)return alert('La configuración fue limpiada. Captura una contraseña nueva para el proveedor seleccionado.');
     if(p==='GMAIL'&&password.length!==16)return alert('Para Gmail captura una contraseña de aplicación nueva de 16 caracteres.');
     try{
+      const client=sb(); if(!client)throw new Error('Supabase no está disponible.');
       window.showStatus?.('Guardando configuración nueva de correo...','info');
-      const {data,error}=await sb().rpc('cc_save_mail_settings',{p_nombre_remitente:nombre,p_correo_remitente:correo,p_reply_to:reply||null,p_resend_api_key:password,p_proveedor:p});
+      const {data,error}=await client.rpc('cc_save_mail_settings',{p_nombre_remitente:nombre,p_correo_remitente:correo,p_reply_to:reply||null,p_resend_api_key:password,p_proveedor:p});
       if(error)throw error;if(data?.ok===false)throw new Error(data?.error||'No se pudo guardar');
-      document.getElementById('ccMailApiKey').value='';
+      const key=document.getElementById('ccMailApiKey');if(key)key.value='';
       await loadSettings();
       window.showStatus?.('Configuración guardada · realizando prueba real...','info');
       const t=await testMail();
@@ -83,7 +91,12 @@
 
   const oldRefresh=window.ccRefreshMailSettings;
   if(typeof oldRefresh==='function')window.ccRefreshMailSettings=async function(){const r=await oldRefresh.apply(this,arguments);await loadSettings();return r;};
-  const timer=setInterval(()=>{if(ensureUi()){loadSettings();clearInterval(timer);}},300);
-  setTimeout(()=>clearInterval(timer),20000);
-  new MutationObserver(()=>ensureUi()).observe(document.documentElement,{childList:true,subtree:true});
+
+  // Inicialización acotada. No usar MutationObserver global: puede generar ciclos y congelar la app.
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(ensureUi()){loadSettings();clearInterval(timer);}
+    else if(tries>=40)clearInterval(timer);
+  },300);
 })();
