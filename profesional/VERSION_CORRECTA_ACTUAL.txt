@@ -1,7 +1,7 @@
 TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
 Fecha: 2026-09-14
-Versión profesional: profesional-modular-v34-anticipos-catalogos-selector
-Commit funcional de referencia: f7af745a68f0c62f67de70c76d25ef97f720cd4d
+Versión profesional: profesional-modular-v40-anticipos-menu-unico
+Commit funcional de referencia: acd1e8e5d9a86582c939fcd73a620542414a89cc
 Ruta web: /ubicacion-cajas/profesional/
 
-Esta versión queda marcada como la base correcta hasta este punto. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
+Esta versión queda marcada como la base correcta para pruebas. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
