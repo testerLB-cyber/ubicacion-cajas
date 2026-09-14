@@ -1,21 +1,26 @@
-/* Entrada de compatibilidad · Control de Hojas de Servicio v104 ÚNICA */
+/* Entrada de compatibilidad · Hojas + Tipos + Anticipos · certificación 2026-09-13 */
 (function(){
-  if(window.__HS_V104_LOADER__) return;
-  window.__HS_V104_LOADER__=true;
-  // La carga completa de v104 se conserva sin cambios.
-  if(!document.querySelector('script[data-hs-unit-trailer-v1]')){
+  if(window.__HS_CERTIFIED_LOADER_20260913__) return;
+  window.__HS_CERTIFIED_LOADER_20260913__=true;
+
+  function load(src,key){
+    if(document.querySelector('script[data-certified="'+key+'"]'))return;
     const s=document.createElement('script');
-    s.src='assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260913-1';
-    s.dataset.hsUnitTrailerV1='1';
-    s.onerror=e=>console.warn('No se pudo cargar Unidad/Remolque de Hojas',e);
+    s.src=src;
+    s.dataset.certified=key;
+    s.onerror=e=>console.warn('No se pudo cargar '+key,e);
     document.body.appendChild(s);
   }
-  // Catálogo maestro definitivo de Tipos de unidad + clasificación Caja/Carro para inventario.
-  if(!document.querySelector('script[data-unit-types-fix-v1]')){
-    const s2=document.createElement('script');
-    s2.src='assets/js/modules/unit-types-catalog-fix-v1.js?v=20260913-1435';
-    s2.dataset.unitTypesFixV1='1';
-    s2.onerror=e=>console.warn('No se pudo cargar el catálogo de Tipos de unidad',e);
-    document.body.appendChild(s2);
-  }
+
+  /* Hojas web: selección de unidad, detección de Tracto-Camión y remolque obligatorio. */
+  load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260913-integral2','hojas-unidad-remolque');
+
+  /* Catálogo maestro con edición protegida y revisión de impacto. */
+  load('assets/js/modules/unit-types-catalog-fix-v1.js?v=20260913-integral2','tipos-unidad-seguros');
+
+  /* Inventario usa el mismo tipo canónico que Anticipos y Hojas. */
+  load('assets/js/modules/inventario-tipo-unidad-general.js?v=20260913-integral2','inventario-tipo-canonico');
+
+  /* Anticipos: catálogos administrables, multi-concepto y tipo automático desde unidad. */
+  load('assets/js/modules/anticipos-final-cleanup-v6.js?v=20260913-integral2','anticipos-integral');
 })();
