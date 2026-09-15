@@ -2,8 +2,8 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v62-anticipos-destino-canonical';
-  app.cacheVersion='20260914-v62-ant-dest-canonical-1';
+  app.version='profesional-modular-v63-anticipos-clean';
+  app.cacheVersion='20260914-v63-ant-clean-1';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -29,11 +29,9 @@
     addScript('assets/js/modules/dot-operador-borrado-v1.js?v=20260914-v53-dot','data-cc-dot-op-delete');
     addScript('assets/js/modules/catalog-autocomplete-global-v1.js?v=20260914-v53-autocomplete-tab-unidad','data-cc-global-catalog-autocomplete');
     addScript('assets/js/modules/anticipos-utileria-historicos-v1.js?v=20260914-ant-util-hist-1','data-cc-ant-util-hist');
-    addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
-    addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-selector-2','data-cc-ant-catalog-compact');
-    /* Anticipos: un solo flujo Destino + Tipo de unidad general. */
-    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v62-ant-dest-canonical-1','data-cc-ant-dest-unit-general');
-    addScript('assets/js/modules/anticipos-sin-tipo-unidad-propio-v1.js?v=20260914-v62-ant-general-flow-1','data-cc-ant-no-own-unit-type');
+    addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-v63-ant-base-1','data-cc-ant-catalog-flow');
+    /* Único flujo activo para tarifas: Destino + Tipo de unidad del catálogo general. */
+    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v63-ant-dest-1','data-cc-ant-dest-unit-general');
     addScript('assets/js/modules/anticipos-reportes-selector-caja-t-v1.js?v=20260914-v54-reportes-caja-t-1','data-cc-ant-report-selector-t');
     if(!document.querySelector('script[data-cc-commissions-direct]'))addScript('assets/js/modules/commissions-liquidations.js?v=20260914-v53-commissions','data-cc-commissions');
     addScript('assets/js/modules/commission-tariff-status-v1.js?v=20260914-v53-status','data-cc-commission-tariff-status');
