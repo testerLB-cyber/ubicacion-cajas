@@ -2,8 +2,8 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v55-anticipos-flujo-tipo-unidad-general';
-  app.cacheVersion='20260914-v55-ant-general-flow-1';
+  app.version='profesional-modular-v56-anticipos-config-destino-guardado';
+  app.cacheVersion='20260914-v56-ant-dest-save-1';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -41,8 +41,9 @@
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
     addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-selector-2','data-cc-ant-catalog-compact');
     addScript('assets/js/modules/anticipos-destino-conceptos-compactos-v1.js?v=20260914-ant-dest-compact-1','data-cc-ant-dest-compact');
-    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v55-ant-general-flow-1','data-cc-ant-dest-unit-general');
-    addScript('assets/js/modules/anticipos-destino-nueva-config-v1.js?v=20260914-ant-new-dest-config-1','data-cc-ant-new-dest-config');
+    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v56-ant-dest-save-1','data-cc-ant-dest-unit-general');
+    addScript('assets/js/modules/anticipos-destino-nueva-config-v1.js?v=20260914-v56-ant-dest-save-1','data-cc-ant-new-dest-config');
+    addScript('assets/js/modules/anticipos-config-destino-guardado-atomico-v1.js?v=20260914-v56-ant-dest-save-1','data-cc-ant-dest-save-atomic');
     addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v1.js?v=20260914-ant-clean-dup-menu-1','data-cc-ant-clean-dup-menu');
     addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v2.js?v=20260914-ant-clean-dup-menu-2','data-cc-ant-clean-dup-menu-v2');
     addScript('assets/js/modules/anticipos-sin-tipo-unidad-propio-v1.js?v=20260914-v55-ant-general-flow-1','data-cc-ant-no-own-unit-type');
