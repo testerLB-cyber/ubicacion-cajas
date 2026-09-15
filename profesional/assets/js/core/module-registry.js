@@ -2,8 +2,8 @@
 (function(){
   'use strict';
   const app=window.TraficApp=window.TraficApp||{};
-  app.version='profesional-modular-v58-anticipos-config-destino-flujo-real';
-  app.cacheVersion='20260914-v58-ant-dest-real-1';
+  app.version='profesional-modular-v59-anticipos-config-destino-canonico';
+  app.cacheVersion='20260914-v59-ant-dest-canonical-1';
   app.modules=app.modules||{};
   app.contracts=app.contracts||{};
   app.register=function(name,descriptor){if(!name)throw new Error('Módulo sin nombre');app.modules[name]=Object.assign({name,status:'registered'},descriptor||{});return app.modules[name];};
@@ -40,10 +40,9 @@
     addScript('assets/js/modules/anticipos-utileria-historicos-v1.js?v=20260914-ant-util-hist-1','data-cc-ant-util-hist');
     addScript('assets/js/modules/anticipos-v12-catalogos-flujos.js?v=20260914-ant-catalogos-1','data-cc-ant-catalog-flow');
     addScript('assets/js/modules/anticipos-v12-catalogos-compactos.js?v=20260914-ant-catalogos-selector-2','data-cc-ant-catalog-compact');
-    addScript('assets/js/modules/anticipos-destino-conceptos-compactos-v1.js?v=20260914-v58-ant-dest-real-1','data-cc-ant-dest-compact');
-    addScript('assets/js/modules/anticipos-config-destino-guardado-real-v2.js?v=20260914-v58-ant-dest-real-1','data-cc-ant-dest-save-real');
-    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v58-ant-dest-real-1','data-cc-ant-dest-unit-general');
-    addScript('assets/js/modules/anticipos-destino-nueva-config-v1.js?v=20260914-v58-ant-dest-real-1','data-cc-ant-new-dest-config');
+    addScript('assets/js/modules/anticipos-destino-conceptos-compactos-v1.js?v=20260914-v59-ant-dest-canonical-1','data-cc-ant-dest-compact');
+    addScript('assets/js/modules/anticipos-destino-tipo-unidad-general-v1.js?v=20260914-v59-ant-dest-canonical-1','data-cc-ant-dest-unit-general');
+    addScript('assets/js/modules/anticipos-destino-nueva-config-v1.js?v=20260914-v59-ant-dest-canonical-1','data-cc-ant-new-dest-config');
     addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v1.js?v=20260914-ant-clean-dup-menu-1','data-cc-ant-clean-dup-menu');
     addScript('assets/js/modules/anticipos-limpiar-menu-duplicado-v2.js?v=20260914-ant-clean-dup-menu-2','data-cc-ant-clean-dup-menu-v2');
     addScript('assets/js/modules/anticipos-sin-tipo-unidad-propio-v1.js?v=20260914-v55-ant-general-flow-1','data-cc-ant-no-own-unit-type');
