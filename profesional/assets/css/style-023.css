@@ -10,6 +10,8 @@
 #ccAntCompModal .cc-comp-docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #ccAntCompModal .cc-comp-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
 #ccAntCompModal .cc-comp-list{margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px}
+/* Anticipos: Pendiente operadores queda retirado de la interfaz. Se conserva la estructura interna para no afectar cálculos ni Balance por operador. */
+#ccPanelAnticipos .cc-ant-nav [data-antv="saldos"],#ccAntViewSaldos{display:none!important}
 @media(max-width:760px){
  #ccAntCompModal{padding:8px!important;align-items:flex-start!important}
  #ccAntCompModal .cc-comp-shell{width:100%;max-height:98vh;border-radius:14px}
