@@ -67,7 +67,8 @@
 
   function currentPhoto(folio){return text(folio.fotoManualPath)||text(folio.precaptura?.fotoPath)||'';}
   function renderPhotoBox(row,folio){
-    const editArea=row.querySelector('.hs-list-edit-area')||row;
+    const editArea=row.querySelector('.hs-list-edit-area');
+    if(!editArea)return;
     let box=row.querySelector('[data-hs-manual-photo-box]');
     if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';}
     if(box.parentElement!==editArea)editArea.appendChild(box);
@@ -78,36 +79,11 @@
     box.dataset.photoPath=path;
     box.innerHTML='<label>Evidencia fotográfica</label><div class="hs-manual-photo-actions">'+(exists?'<button type="button" class="cc-btn cc-btn-light" data-view-current><i class="fa-solid fa-camera"></i> Ver foto</button>':'')+'<div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div></div><div class="hs-manual-photo-status">'+(exists?'Foto cargada. Puedes subir o tomar otra para reemplazarla.':'Sin foto. Puedes subirla desde este equipo o tomarla con QR desde un teléfono.')+'</div>';
     box.querySelector('[data-view-current]')?.addEventListener('click',async()=>{try{await showStoredPhoto(row.dataset.hsCurrentPhotoPath,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}});
-    wireMethods(box,row,folio,exists);
     syncListPhoto(row,folio,path);
-  }
-
-  function wireMethods(box,row,folio,replacing){
-    const input=box.querySelector('[data-file]'),status=box.querySelector('.hs-manual-photo-status');box.querySelector('[data-upload]')?.addEventListener('click',()=>input?.click());input?.addEventListener('change',async()=>{const file=input.files?.[0];if(!file)return;try{status.textContent='Procesando…';await uploadManualPhoto(row,file,status,replacing);}catch(e){status.textContent='Error: '+(e?.message||e);alert(e?.message||e);}});box.querySelector('[data-qr]')?.addEventListener('click',async()=>{try{await openQr(row,folio,replacing);}catch(e){status.textContent='Error: '+(e?.message||e);}});
   }
 
   function syncListPhoto(row,folio,path){
     const actions=row.querySelector(':scope > .hs104-actions');if(!actions)return;let btn=actions.querySelector('[data-hs-current-photo]');const old=actions.querySelector('[data-hs-list-photo]');if(old)old.style.display='none';if(!path){btn?.remove();return;}if(!btn){btn=document.createElement('button');btn.type='button';btn.className='cc-btn cc-btn-light';btn.dataset.hsCurrentPhoto='1';btn.innerHTML='<i class="fa-solid fa-camera"></i> Ver foto';const edit=actions.querySelector('[data-hs-edit]');edit?edit.after(btn):actions.insertBefore(btn,actions.firstChild);}btn.onclick=async()=>{try{await showStoredPhoto(path,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}};
-  }
-
-  function ensureDirectQr(row){
-    const actions=row.querySelector(':scope > .hs104-actions');
-    if(!actions||actions.querySelector('[data-hs-direct-qr]'))return;
-    const button=document.createElement('button');
-    button.type='button';
-    button.className='cc-btn cc-btn-light';
-    button.dataset.hsDirectQr='1';
-    button.innerHTML='<i class="fa-solid fa-qrcode"></i> Tomar foto con QR';
-    const edit=actions.querySelector('[data-hs-edit]');
-    if(edit)edit.after(button);else actions.insertBefore(button,actions.firstChild);
-    button.addEventListener('click',async()=>{
-      if(button.disabled)return;
-      button.disabled=true;
-      try{
-        await openQr(row,{id:row.dataset.row,folio:row.dataset.hsFolio||row.querySelector(':scope > .cc-toolbar strong')?.textContent||''},!!row.dataset.hsCurrentPhotoPath);
-      }catch(e){alert(e?.message||String(e));}
-      finally{button.disabled=false;}
-    });
   }
 
   async function ensureJsPdf(){if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;let s=document.querySelector('script[data-hs-jspdf]');if(!s){s=document.createElement('script');s.dataset.hsJspdf='1';s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';document.head.appendChild(s);}await new Promise((res,rej)=>{if(window.jspdf?.jsPDF)return res();s.addEventListener('load',res,{once:true});s.addEventListener('error',()=>rej(new Error('No se pudo cargar el generador PDF.')),{once:true});});if(!window.jspdf?.jsPDF)throw new Error('Generador PDF no disponible.');return window.jspdf.jsPDF;}
@@ -117,6 +93,26 @@
 
   function patchHistory(d){const body=document.getElementById('hs104Hist');if(!body)return;const table=body.closest('table');if(!table)return;const head=table.querySelector('thead tr');if(head&&!head.querySelector('[data-hs-pdf-head]')){const th=document.createElement('th');th.dataset.hsPdfHead='1';th.textContent='ACCIONES';head.appendChild(th);}[...body.querySelectorAll('tr')].forEach(tr=>{if(tr.querySelector('[data-hs-pdf-cell]'))return;const cells=tr.querySelectorAll('td');if(!cells.length||cells.length<6)return;const folio=text(cells[0].textContent),c=(d.comprobaciones||[]).find(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA'&&text(x.folio)===folio);if(!c)return;const td=document.createElement('td');td.dataset.hsPdfCell='1';td.innerHTML='<button type="button" class="cc-btn cc-btn-light" data-hs-pdf><i class="fa-solid fa-file-pdf"></i> PDF</button>'+(c.fotoPath?' <button type="button" class="cc-btn cc-btn-light" data-hs-hist-photo><i class="fa-solid fa-camera"></i> Foto</button>':'');tr.appendChild(td);td.querySelector('[data-hs-pdf]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{await exportPdf(c);}catch(err){alert(err?.message||err);}finally{b.disabled=false;}};td.querySelector('[data-hs-hist-photo]')?.addEventListener('click',async()=>{try{await showStoredPhoto(c.fotoPath,'Evidencia · '+c.folio);}catch(e){alert(e?.message||e);}});});}
 
-  async function patch(force=false){ensureStyles();const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;const rows=list?[...list.querySelectorAll('[data-row]')]:[];rows.forEach(ensureDirectQr);if(!sb())return;try{const d=await getData(force);rows.forEach(row=>{if(!row.isConnected)return;const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});if(hist)patchHistory(d);}catch(e){console.warn('HS FOTO/PDF V2',e);}}
+  async function patch(force=false){ensureStyles();const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;if(list&&typeof window.hsApplyListMode==='function')window.hsApplyListMode();const rows=list?[...list.querySelectorAll('[data-row]')]:[];if(!sb())return;try{const d=await getData(force);rows.forEach(row=>{if(!row.isConnected)return;const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});if(hist)patchHistory(d);}catch(e){console.warn('HS FOTO/PDF V2',e);}}
+  document.addEventListener('click',async e=>{
+    const button=e.target.closest?.('#hs104CompList [data-hs-manual-photo-box] [data-upload], #hs104CompList [data-hs-manual-photo-box] [data-qr]');
+    if(!button)return;
+    const box=button.closest('[data-hs-manual-photo-box]'),row=button.closest('[data-row]');
+    if(!row)return;
+    if(button.matches('[data-upload]')){box.querySelector('[data-file]')?.click();return;}
+    if(button.disabled)return;
+    button.disabled=true;
+    try{await openQr(row,{id:row.dataset.row,folio:row.dataset.hsFolio||''},!!row.dataset.hsCurrentPhotoPath);}
+    catch(err){const status=box.querySelector('.hs-manual-photo-status');if(status)status.textContent='Error: '+(err?.message||err);alert(err?.message||err);}
+    finally{button.disabled=false;}
+  },true);
+  document.addEventListener('change',async e=>{
+    const input=e.target.closest?.('#hs104CompList [data-hs-manual-photo-box] [data-file]');
+    if(!input?.files?.[0])return;
+    const row=input.closest('[data-row]'),status=input.closest('[data-hs-manual-photo-box]')?.querySelector('.hs-manual-photo-status');
+    if(!row||!status)return;
+    try{await uploadManualPhoto(row,input.files[0],status,!!row.dataset.hsCurrentPhotoPath);}
+    catch(err){status.textContent='Error: '+(err?.message||err);alert(err?.message||err);}
+  },true);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')||e.target.closest?.('#hs104CompShowAll'))setTimeout(()=>patch(true),280);},true);document.addEventListener('change',e=>{if(['hs104CompPerson','hs104CompType','hs104CompShowAll'].includes(e.target?.id))setTimeout(()=>patch(true),240);},true);window.hsPatchManualPhotoPdf=()=>patch(true);setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch(false);},1600);
 })();
