@@ -67,16 +67,18 @@
 
   function currentPhoto(folio){return text(folio.fotoManualPath)||text(folio.precaptura?.fotoPath)||'';}
   function renderPhotoBox(row,folio){
-    const previous=row.querySelector('[data-hs-manual-photo-box]');
-    // Polling refreshes the list every few seconds. Keep the current controls,
-    // selected file and replacement state until the stored photo actually changes.
-    if(previous&&previous.dataset.photoPath===currentPhoto(folio))return;
-    const editArea=row.querySelector('.hs-list-edit-area')||row;let box=row.querySelector('[data-hs-manual-photo-box]');if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';editArea.appendChild(box);}const path=currentPhoto(folio);if(path)row.dataset.hsCurrentPhotoPath=path;else delete row.dataset.hsCurrentPhotoPath;const exists=!!path;box.innerHTML='<label>Evidencia fotográfica</label><div class="hs-manual-photo-actions">'+(exists?'<button type="button" class="cc-btn cc-btn-light" data-view-current><i class="fa-solid fa-camera"></i> Ver foto</button><button type="button" class="cc-btn cc-btn-light" data-replace><i class="fa-solid fa-pen"></i> Reemplazar foto</button>':'<div class="hs-photo-methods" data-methods><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div>')+'</div><div class="hs-manual-photo-status">'+(exists?(folio.fotoManualPath?'Evidencia manual/QR cargada.':'Foto precargada desde la app móvil.'):'Sin foto. Puedes cargarla desde este equipo o tomarla desde otro teléfono mediante QR.')+'</div>';
+    const editArea=row.querySelector('.hs-list-edit-area')||row;
+    let box=row.querySelector('[data-hs-manual-photo-box]');
+    if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';}
+    if(box.parentElement!==editArea)editArea.appendChild(box);
+    const path=currentPhoto(folio),exists=!!path;
+    // Keep the controls and chosen file during polling; a new saved path triggers a refresh.
+    if(box.dataset.photoPath===path&&box.querySelector('[data-qr]'))return;
+    if(path)row.dataset.hsCurrentPhotoPath=path;else delete row.dataset.hsCurrentPhotoPath;
     box.dataset.photoPath=path;
-    const status=box.querySelector('.hs-manual-photo-status');
+    box.innerHTML='<label>Evidencia fotográfica</label><div class="hs-manual-photo-actions">'+(exists?'<button type="button" class="cc-btn cc-btn-light" data-view-current><i class="fa-solid fa-camera"></i> Ver foto</button>':'')+'<div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div></div><div class="hs-manual-photo-status">'+(exists?'Foto cargada. Puedes subir o tomar otra para reemplazarla.':'Sin foto. Puedes subirla desde este equipo o tomarla con QR desde un teléfono.')+'</div>';
     box.querySelector('[data-view-current]')?.addEventListener('click',async()=>{try{await showStoredPhoto(row.dataset.hsCurrentPhotoPath,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}});
-    box.querySelector('[data-replace]')?.addEventListener('click',()=>{box.innerHTML='<label>Reemplazar evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><button type="button" class="cc-btn cc-btn-light" data-cancel-replace>Cancelar</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Selecciona cómo reemplazar la evidencia actual.</div>';wireMethods(box,row,folio,true);box.querySelector('[data-cancel-replace]')?.addEventListener('click',()=>{delete box.dataset.photoPath;renderPhotoBox(row,folio);});});
-    if(!exists)wireMethods(box,row,folio,false);
+    wireMethods(box,row,folio,exists);
     syncListPhoto(row,folio,path);
   }
 
