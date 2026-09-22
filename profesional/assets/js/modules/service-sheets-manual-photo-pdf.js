@@ -52,7 +52,7 @@
   }
 
   async function ensureQrLib(){
-    if(window.QRCode)return;let s=document.querySelector('script[data-hs-qrcode]');if(!s){s=document.createElement('script');s.dataset.hsQrcode='1';s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';document.head.appendChild(s);}await new Promise((res,rej)=>{if(window.QRCode)return res();s.addEventListener('load',res,{once:true});s.addEventListener('error',()=>rej(new Error('No se pudo cargar el generador QR.')),{once:true});});if(!window.QRCode)throw new Error('Generador QR no disponible.');
+    if(window.QRCode)return;let s=document.querySelector('script[data-hs-qrcode]');if(!s){s=document.createElement('script');s.dataset.hsQrcode='1';s.src='assets/js/vendor/qrcode.min.js?v=1.0.0';document.head.appendChild(s);}await new Promise((res,rej)=>{if(window.QRCode)return res();s.addEventListener('load',res,{once:true});s.addEventListener('error',()=>rej(new Error('No se pudo cargar el generador QR.')),{once:true});});if(!window.QRCode)throw new Error('Generador QR no disponible.');
   }
 
   function closeQr(){if(qrPoll){clearInterval(qrPoll);qrPoll=null;}document.getElementById('hs-photo-qr-modal')?.remove();}
@@ -90,6 +90,26 @@
     const actions=row.querySelector(':scope > .hs104-actions');if(!actions)return;let btn=actions.querySelector('[data-hs-current-photo]');const old=actions.querySelector('[data-hs-list-photo]');if(old)old.style.display='none';if(!path){btn?.remove();return;}if(!btn){btn=document.createElement('button');btn.type='button';btn.className='cc-btn cc-btn-light';btn.dataset.hsCurrentPhoto='1';btn.innerHTML='<i class="fa-solid fa-camera"></i> Ver foto';const edit=actions.querySelector('[data-hs-edit]');edit?edit.after(btn):actions.insertBefore(btn,actions.firstChild);}btn.onclick=async()=>{try{await showStoredPhoto(path,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}};
   }
 
+  function ensureDirectQr(row){
+    const actions=row.querySelector(':scope > .hs104-actions');
+    if(!actions||actions.querySelector('[data-hs-direct-qr]'))return;
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='cc-btn cc-btn-light';
+    button.dataset.hsDirectQr='1';
+    button.innerHTML='<i class="fa-solid fa-qrcode"></i> Tomar foto con QR';
+    const edit=actions.querySelector('[data-hs-edit]');
+    if(edit)edit.after(button);else actions.insertBefore(button,actions.firstChild);
+    button.addEventListener('click',async()=>{
+      if(button.disabled)return;
+      button.disabled=true;
+      try{
+        await openQr(row,{id:row.dataset.row,folio:row.dataset.hsFolio||row.querySelector(':scope > .cc-toolbar strong')?.textContent||''},!!row.dataset.hsCurrentPhotoPath);
+      }catch(e){alert(e?.message||String(e));}
+      finally{button.disabled=false;}
+    });
+  }
+
   async function ensureJsPdf(){if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;let s=document.querySelector('script[data-hs-jspdf]');if(!s){s=document.createElement('script');s.dataset.hsJspdf='1';s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';document.head.appendChild(s);}await new Promise((res,rej)=>{if(window.jspdf?.jsPDF)return res();s.addEventListener('load',res,{once:true});s.addEventListener('error',()=>rej(new Error('No se pudo cargar el generador PDF.')),{once:true});});if(!window.jspdf?.jsPDF)throw new Error('Generador PDF no disponible.');return window.jspdf.jsPDF;}
   async function photoDataUrl(path){if(!path)return null;const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,300);if(error||!data?.signedUrl)return null;const r=await fetch(data.signedUrl);if(!r.ok)return null;const b=await r.blob();return await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res(null);fr.readAsDataURL(b);});}
   function pdfLine(doc,label,value,y){doc.setFont('helvetica','bold');doc.text(label+':',16,y);doc.setFont('helvetica','normal');const parts=doc.splitTextToSize(text(value)||'—',145);doc.text(parts,52,y);return y+Math.max(7,parts.length*5.2);}
@@ -97,6 +117,6 @@
 
   function patchHistory(d){const body=document.getElementById('hs104Hist');if(!body)return;const table=body.closest('table');if(!table)return;const head=table.querySelector('thead tr');if(head&&!head.querySelector('[data-hs-pdf-head]')){const th=document.createElement('th');th.dataset.hsPdfHead='1';th.textContent='ACCIONES';head.appendChild(th);}[...body.querySelectorAll('tr')].forEach(tr=>{if(tr.querySelector('[data-hs-pdf-cell]'))return;const cells=tr.querySelectorAll('td');if(!cells.length||cells.length<6)return;const folio=text(cells[0].textContent),c=(d.comprobaciones||[]).find(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA'&&text(x.folio)===folio);if(!c)return;const td=document.createElement('td');td.dataset.hsPdfCell='1';td.innerHTML='<button type="button" class="cc-btn cc-btn-light" data-hs-pdf><i class="fa-solid fa-file-pdf"></i> PDF</button>'+(c.fotoPath?' <button type="button" class="cc-btn cc-btn-light" data-hs-hist-photo><i class="fa-solid fa-camera"></i> Foto</button>':'');tr.appendChild(td);td.querySelector('[data-hs-pdf]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{await exportPdf(c);}catch(err){alert(err?.message||err);}finally{b.disabled=false;}};td.querySelector('[data-hs-hist-photo]')?.addEventListener('click',async()=>{try{await showStoredPhoto(c.fotoPath,'Evidencia · '+c.folio);}catch(e){alert(e?.message||e);}});});}
 
-  async function patch(force=false){ensureStyles();if(!sb())return;const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;try{const d=await getData(force);if(list)[...list.querySelectorAll('[data-row]')].forEach(row=>{const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});if(hist)patchHistory(d);}catch(e){console.warn('HS FOTO/PDF V2',e);}}
+  async function patch(force=false){ensureStyles();const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;const rows=list?[...list.querySelectorAll('[data-row]')]:[];rows.forEach(ensureDirectQr);if(!sb())return;try{const d=await getData(force);rows.forEach(row=>{if(!row.isConnected)return;const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});if(hist)patchHistory(d);}catch(e){console.warn('HS FOTO/PDF V2',e);}}
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')||e.target.closest?.('#hs104CompShowAll'))setTimeout(()=>patch(true),280);},true);document.addEventListener('change',e=>{if(['hs104CompPerson','hs104CompType','hs104CompShowAll'].includes(e.target?.id))setTimeout(()=>patch(true),240);},true);window.hsPatchManualPhotoPdf=()=>patch(true);setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch(false);},1600);
 })();
