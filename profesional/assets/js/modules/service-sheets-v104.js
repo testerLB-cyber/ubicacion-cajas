@@ -189,7 +189,7 @@
       list.querySelectorAll('[data-row]').forEach(row=>{
         const area=row.querySelector('.hs-list-edit-area');
         const close=()=>{row.classList.remove('hs-list-modal-open');if(!list.querySelector('.hs-list-modal-open'))document.body.style.overflow='';};
-        row.querySelector('[data-hs-edit]').onclick=()=>{list.querySelectorAll('.hs-list-modal-open').forEach(other=>other.classList.remove('hs-list-modal-open'));row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();window.hsPatchManualPhotoPdf?.();};
+        row.querySelector('[data-hs-edit]').onclick=()=>{list.querySelectorAll('.hs-list-modal-open').forEach(other=>other.classList.remove('hs-list-modal-open'));row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();};
         row.querySelector('[data-hs-close]').onclick=close;
         area.onclick=e=>{if(e.target===area)close();};
         row.querySelector('[data-save]').onclick=()=>saveUsed(row);
