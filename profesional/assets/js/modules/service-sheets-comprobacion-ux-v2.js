@@ -257,6 +257,17 @@
         const folio=String(tr.dataset.hsHistFolio||'').trim();
         const c=hist.find(x=>String(x.folio||'').trim()===folio);
         if(!c)return;
+
+        // QR foto debe existir siempre en Historial.
+        const actions=tr.querySelector('.hs-hist-actions');
+        if(actions&&!actions.querySelector('[data-qr-h]')){
+          const qr=document.createElement('button');
+          qr.type='button';qr.className='cc-btn cc-btn-light';qr.dataset.qrH='1';
+          qr.innerHTML='<i class="fa-solid fa-qrcode"></i> QR foto';
+          const edit=actions.querySelector('[data-edit-h]');
+          edit?edit.after(qr):actions.insertBefore(qr,actions.firstChild);
+        }
+
         const photo=tr.querySelector('[data-photo-h]');
         if(photo){
           photo.disabled=!c.fotoPath;
