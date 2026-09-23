@@ -1,8 +1,8 @@
 TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
-Fecha: 2026-09-14
-Versión profesional: profesional-modular-v53-correcta-unidad-tab-auto
-Commit funcional de referencia: 81aa70eb23796bf502cfaa1c4b5114fb4f9ff2d6
-Commit cache/base estable: 5ffeab984e104b2ee31010da264ca70f35c8506f
-Ruta web: /ubicacion-cajas/profesional/
+Fecha: 2026-09-22
+Versión profesional: 20260923-class-by-trip
+Commit funcional de referencia: 11a47f7e1ba0507a8066d9c16bce261da691b094
+Ruta principal web: /ubicacion-cajas/profesional/
+Ruta de referencia validada: /ubicacion-cajas/profesional/?v=20260923-class-by-trip
 
-Esta versión queda marcada como la base correcta de Profesional. Incluye todos los cambios acumulados validados hasta esta versión: QR en PDF 9 por página con mayor tamaño, DOT con operador obligatorio/autocompletable y borrado autorizado, autocompletado global para Cliente/Operador/Responsable/Unidad, selección automática de Unidad al escribir su código exacto y presionar Tab, Anticipos tomando el tipo de unidad desde el catálogo principal sin mostrar el tipo manual, y Tarifas Comisiones con opción de inhabilitar/reactivar sin contemplar tarifas inactivas en liquidaciones. Los cambios posteriores deben partir de esta versión y no deben eliminar funcionalidades existentes.
+Esta versión queda marcada como la versión principal actual de Profesional. Corresponde al estado publicado con el cambio de clasificaciones repetibles entre tipos de movimiento y debe ser la base para los cambios posteriores, sin depender del parámetro ?v= para abrir la aplicación.
