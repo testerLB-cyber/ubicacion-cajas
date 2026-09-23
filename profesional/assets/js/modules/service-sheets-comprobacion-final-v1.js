@@ -85,14 +85,7 @@
     const edit=e.target.closest?.('#hs104CompList [data-hs-edit]');
     if(edit){
       const row=edit.closest('[data-row]');
-      setTimeout(()=>{
-        ensureRow(row);
-        try{window.hsPatchManualPhotoPdf?.();}catch(_){}
-      },0);
-      setTimeout(()=>{
-        ensureRow(row);
-        try{window.hsPatchManualPhotoPdf?.();}catch(_){}
-      },180);
+      setTimeout(()=>{ensureRow(row);},0);
     }
     if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio')){
       setTimeout(patch,120);
