@@ -23,9 +23,10 @@
       #hs104CompList .hs-list-head-actions{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;overflow-x:auto}
       #hs104CompList .hs-list-head-actions .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important}
       #hs104CompList .hs-list-head-actions .hs104-pill{white-space:nowrap}
-      #hs104Hist th[data-hs-ux-head],#hs104Hist td[data-hs-ux-actions]{min-width:310px;width:310px;white-space:nowrap}
-      #hs104Hist td[data-hs-ux-actions] .cc-btn{font-size:10px!important;padding:5px 7px!important;white-space:nowrap!important;min-height:28px!important}
-      .hs-hist-actions{display:flex!important;gap:5px!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important}
+      #hs104Hist .hs-hist-actions-cell{min-width:330px;width:330px;white-space:nowrap}
+      #hs104Hist .hs-hist-actions-cell .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important;border-radius:7px!important}
+      .hs-hist-actions{display:flex!important;gap:6px!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important}
+      #hs104Hist [data-photo-h][disabled]{opacity:.45;cursor:not-allowed}
       .hs-edit-comp-modal{position:fixed;inset:0;z-index:101050;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:14px}
       .hs-edit-comp-card{width:min(760px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px #0007}
       .hs-edit-comp-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -246,70 +247,22 @@
     let busy=false;qrPoll=setInterval(async()=>{if(busy||!document.body.contains(ov))return;busy=true;try{const {data:s,error:e}=await sb().rpc('hs_qr_photo_status',{p_token:r.token});if(e)throw e;if(s?.status==='CAPTURADA'){ov.querySelector('[data-status]').innerHTML='<strong style="color:#166534">Foto recibida correctamente.</strong>';clearInterval(qrPoll);qrPoll=null;cache=null;setTimeout(()=>{closeQr();document.getElementById('hs104Refresh')?.click();setTimeout(()=>{showHistory=true;ensureSwitch();patchHistory(true);},350);},650);}else if(s?.status!=='PENDIENTE'){ov.querySelector('[data-status]').textContent='El QR ya no está disponible.';clearInterval(qrPoll);qrPoll=null;}}catch(err){ov.querySelector('[data-status]').textContent='Error: '+(err?.message||err);}finally{busy=false;}},1800);
   }
 
-  function cleanLegacyHistoryActions(){
-    document.querySelectorAll('[data-hs-open-head],[data-hs-open-cell],[data-hs-pdf-head],[data-hs-pdf-cell]').forEach(x=>x.remove());
-
-    const table=document.getElementById('hs104Hist')?.closest('table');
-    const head=table?.querySelector('thead tr');
-    if(head){
-      const uxHeads=[...head.querySelectorAll('[data-hs-ux-head]')];
-      uxHeads.slice(1).forEach(x=>x.remove());
-    }
-
-    document.querySelectorAll('#hs104Hist tr').forEach(tr=>{
-      const actionCells=[...tr.querySelectorAll('[data-hs-ux-actions]')];
-      actionCells.slice(1).forEach(x=>x.remove());
-    });
-  }
-
   async function patchHistory(force=false){
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
-    cleanLegacyHistoryActions();
     try{
       const d=await data(force);
       const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
 
-      const table=body.closest('table'),head=table?.querySelector('thead tr');
-      if(head){
-        let th=head.querySelector('[data-hs-ux-head]');
-        if(!th){th=document.createElement('th');th.dataset.hsUxHead='1';head.appendChild(th);}
-        th.textContent='ACCIONES';
-      }
-
-      [...body.querySelectorAll('tr')].forEach(tr=>{
-        const cells=tr.querySelectorAll('td');if(cells.length<6)return;
-        const folio=String(cells[0].textContent||'').trim();
-        const c=hist.find(x=>String(x.folio||'').trim()===folio);if(!c)return;
-
-        let td=tr.querySelector('[data-hs-ux-actions]');
-        if(!td){td=document.createElement('td');td.dataset.hsUxActions='1';tr.appendChild(td);}
-
-        const editable=canEdit();
-        const sig=[String(c.id||''),String(c.fotoPath||''),editable?'1':'0'].join('|');
-        if(td.dataset.hsUxSig!==sig){
-          td.dataset.hsUxSig=sig;
-          const editBtn=editable?'<button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button>':'';
-          const qrBtn=editable?'<button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button>':'';
-          const pdfBtn='<button type="button" class="cc-btn cc-btn-light" data-pdf-h><i class="fa-solid fa-file-pdf"></i> PDF</button>';
-          const photoBtn=c.fotoPath?'<button type="button" class="cc-btn cc-btn-light" data-photo-h><i class="fa-solid fa-camera"></i> Foto</button>':'';
-          td.innerHTML='<div class="hs-hist-actions">'+editBtn+qrBtn+pdfBtn+photoBtn+'</div>';
-
-          td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
-          td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
-          td.querySelector('[data-pdf-h]')?.addEventListener('click',async e=>{
-            const b=e.currentTarget;b.disabled=true;
-            try{
-              if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
-              await window.hsHistoryExportPdf(c);
-            }catch(err){alert(err?.message||err);}finally{b.disabled=false;}
-          });
-          td.querySelector('[data-photo-h]')?.addEventListener('click',async()=>{
-            try{
-              if(typeof window.hsHistoryShowPhoto!=='function')throw new Error('El visor de foto todavía no está disponible.');
-              await window.hsHistoryShowPhoto(c.fotoPath,'Evidencia · '+c.folio);
-            }catch(err){alert(err?.message||err);}
-          });
+      body.querySelectorAll('tr[data-hs-hist-row]').forEach(tr=>{
+        const folio=String(tr.dataset.hsHistFolio||'').trim();
+        const c=hist.find(x=>String(x.folio||'').trim()===folio);
+        if(!c)return;
+        const photo=tr.querySelector('[data-photo-h]');
+        if(photo){
+          photo.disabled=!c.fotoPath;
+          photo.title=c.fotoPath?'Ver evidencia fotográfica':'Esta comprobación todavía no tiene fotografía';
         }
+        tr.dataset.hsHistPhoto=c.fotoPath||'';
       });
       filterHistory();
     }catch(e){console.warn('HS COMPROBACION UX V2',e);}
@@ -317,11 +270,16 @@
 
   function patch(){
     style();
-    cleanLegacyHistoryActions();
     ensureSwitch();patchPending();if(showHistory)patchHistory(false);
   }
 
-  const obs=new MutationObserver(()=>setTimeout(patch,30));
+  let patchTimer=null;
+  const obs=new MutationObserver(mutations=>{
+    const relevant=mutations.some(m=>!m.target.closest?.('#hs104Hist'));
+    if(!relevant)return;
+    clearTimeout(patchTimer);
+    patchTimer=setTimeout(patch,80);
+  });
   function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   document.addEventListener('click',e=>{
@@ -336,9 +294,38 @@
         setTimeout(()=>{try{window.hsPatchPrecapture?.();window.hsPatchManualPhotoPdf?.();}catch(_){}},0);
       }
     }
+    const histBtn=e.target.closest?.('#hs104Hist [data-edit-h],#hs104Hist [data-qr-h],#hs104Hist [data-pdf-h],#hs104Hist [data-photo-h]');
+    if(histBtn){
+      const tr=histBtn.closest('tr[data-hs-hist-row]');
+      const folio=String(tr?.dataset.hsHistFolio||'').trim();
+      if(folio){
+        (async()=>{
+          try{
+            const d=await data(false);
+            const c=(d.comprobaciones||[]).find(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA'&&String(x.folio||'').trim()===folio);
+            if(!c)throw new Error('No se encontró la comprobación.');
+            if(histBtn.matches('[data-edit-h]')) return openEdit(c,d);
+            if(histBtn.matches('[data-qr-h]')) return openHistoryQr(c);
+            if(histBtn.matches('[data-pdf-h]')){
+              histBtn.disabled=true;
+              try{
+                if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
+                await window.hsHistoryExportPdf(c);
+              } finally {histBtn.disabled=false;}
+              return;
+            }
+            if(histBtn.matches('[data-photo-h]')){
+              if(!c.fotoPath)return;
+              if(typeof window.hsHistoryShowPhoto!=='function')throw new Error('El visor de foto todavía no está disponible.');
+              return window.hsHistoryShowPhoto(c.fotoPath,'Evidencia · '+c.folio);
+            }
+          }catch(err){alert(err?.message||err);}
+        })();
+      }
+    }
     if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio,#hs104Refresh')){
       cache=null;setTimeout(patch,250);
     }
   },true);
-  setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch();},1200);
+  /* Historial: sin intervalos que reconstruyan o alteren la botonera. */
 })();
