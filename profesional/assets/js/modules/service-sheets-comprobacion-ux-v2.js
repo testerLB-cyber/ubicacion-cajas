@@ -23,10 +23,10 @@
       #hs104CompList .hs-list-head-actions{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;overflow-x:auto}
       #hs104CompList .hs-list-head-actions .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important}
       #hs104CompList .hs-list-head-actions .hs104-pill{white-space:nowrap}
-      #hs104Hist .hs-hist-actions-cell{min-width:360px;width:360px;white-space:nowrap!important}
-      #hs104Hist .hs-hist-actions-cell .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important;border-radius:7px!important;flex:0 0 auto!important}
-      .hs-hist-actions{display:flex!important;flex-direction:row!important;gap:6px!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;white-space:nowrap!important}
-      .hs-hist-evidence-actions{display:inline-flex!important;flex-direction:row!important;gap:6px!important;align-items:center!important;white-space:nowrap!important;flex:0 0 auto!important}
+      #hs104Hist .hs-hist-actions-cell{min-width:390px!important;width:390px!important;white-space:nowrap!important;overflow:visible!important}
+      #hs104Hist .hs-hist-actions-cell .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important;border-radius:7px!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important}
+      #hs104Hist .hs-hist-actions{display:inline-flex!important;flex-direction:row!important;gap:6px!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;white-space:nowrap!important;width:max-content!important;max-width:none!important}
+      #hs104Hist .hs-hist-evidence-actions{display:contents!important}
       #hs104Hist [data-qr-h]{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;gap:5px!important;position:static!important}
       #hs104Hist [data-photo-h][disabled]{opacity:.45;cursor:not-allowed}
       .hs-edit-comp-modal{position:fixed;inset:0;z-index:101050;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:14px}
