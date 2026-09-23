@@ -133,6 +133,42 @@
     });
   }
 
+  async function compressHistoryPhoto(file){
+    if(!file?.type?.startsWith('image/'))throw new Error('Selecciona una imagen válida.');
+    const url=URL.createObjectURL(file);
+    try{
+      const img=new Image();
+      await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error('No se pudo leer la foto.'));img.src=url;});
+      let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      const max=1800;
+      if(Math.max(w,h)>max){const r=max/Math.max(w,h);w=Math.round(w*r);h=Math.round(h*r);}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d',{alpha:false}).drawImage(img,0,0,w,h);
+      const blob=await new Promise(res=>cv.toBlob(res,'image/jpeg',.78));
+      if(!blob)throw new Error('No se pudo preparar la foto.');
+      return blob;
+    } finally {URL.revokeObjectURL(url);}
+  }
+
+  async function uploadHistoryPhoto(c,file,status){
+    if(!c?.folioId)throw new Error('No se identificó el folio de la comprobación.');
+    if(c.fotoPath&&!confirm('Esta comprobación ya tiene una foto. ¿Deseas reemplazarla?'))return false;
+    status.textContent='Preparando foto…';
+    const blob=await compressHistoryPhoto(file);
+    const {data:userData,error:userError}=await sb().auth.getUser();
+    if(userError||!userData?.user?.id)throw new Error('Sesión no disponible.');
+    const path=userData.user.id+'/web-manual/'+c.folioId+'/'+Date.now()+'.jpg';
+    status.textContent='Subiendo foto…';
+    const {error:upErr}=await sb().storage.from('app-hojas-servicio').upload(path,blob,{contentType:'image/jpeg',upsert:false});
+    if(upErr)throw upErr;
+    const {data:r,error}=await sb().rpc('hs_set_manual_photo',{p_folio_id:c.folioId,p_foto_path:path});
+    if(error||!r?.ok)throw new Error(error?.message||r?.error||'No se pudo ligar la foto a la comprobación.');
+    c.fotoPath=path;
+    cache=null;
+    status.innerHTML='<strong style="color:#166534">Foto cargada correctamente.</strong>';
+    return true;
+  }
+
   function closeEdit(){document.querySelector('.hs-edit-comp-modal')?.remove()}
   async function openEdit(c,d){
     if(!canEdit())return alert('Tu usuario no tiene permiso para editar comprobaciones.');
@@ -151,6 +187,15 @@
             <div class="cc-field"><label>Clasificación *</label><select data-clas></select></div>
           </div>
           <div class="cc-field"><label>Observaciones</label><textarea data-obs>${esc(c.observaciones||'')}</textarea></div>
+          <div style="margin-top:12px;padding:11px;border:1px dashed #cbd5e1;border-radius:10px;background:#f8fafc">
+            <label style="display:block;font-weight:900;color:#334155;margin-bottom:7px">Evidencia fotográfica</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="cc-btn cc-btn-light" data-photo-pick><i class="fa-solid fa-upload"></i> ${c.fotoPath?'Reemplazar foto':'Subir foto'}</button>
+              <button type="button" class="cc-btn cc-btn-light" data-photo-qr><i class="fa-solid fa-qrcode"></i> QR foto</button>
+              <input type="file" accept="image/*" data-photo-file style="display:none">
+            </div>
+            <div data-photo-status style="margin-top:7px;font-size:10px;color:#64748b">${c.fotoPath?'Esta comprobación ya tiene evidencia. Puedes reemplazarla o cargar otra mediante QR.':'Sin foto cargada. Puedes subirla aquí o mediante QR.'}</div>
+          </div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cerrar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Guardar cambios</button></div>
         </div>
       </div>`;
@@ -159,6 +204,17 @@
     const fillClas=()=>{const tid=tipo.value;const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId)===String(tid)&&String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');clas.innerHTML=xs.map(x=>'<option value="'+esc(x.id)+'" data-name="'+esc(x.nombre)+'" '+(norm(x.nombre)===norm(c.clasificacion)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('');};
     tipo.onchange=()=>{c.clasificacion='';fillClas()};fillClas();
     ov.querySelector('[data-x]').onclick=closeEdit;ov.querySelector('[data-cancel]').onclick=closeEdit;ov.onclick=e=>{if(e.target===ov)closeEdit();};
+    const photoFile=ov.querySelector('[data-photo-file]'),photoStatus=ov.querySelector('[data-photo-status]');
+    ov.querySelector('[data-photo-pick]').onclick=()=>photoFile.click();
+    photoFile.onchange=async()=>{
+      const file=photoFile.files?.[0];if(!file)return;
+      try{
+        const ok=await uploadHistoryPhoto(c,file,photoStatus);
+        if(ok){ov.querySelector('[data-photo-pick]').innerHTML='<i class="fa-solid fa-upload"></i> Reemplazar foto';}
+      }catch(err){photoStatus.textContent='Error: '+(err?.message||err);alert(err?.message||err);}
+      finally{photoFile.value='';}
+    };
+    ov.querySelector('[data-photo-qr]').onclick=async()=>{try{await openHistoryQr(c);}catch(err){alert(err?.message||err);}};
     ov.querySelector('[data-save]').onclick=async e=>{
       const btn=e.currentTarget,fecha=ov.querySelector('[data-fecha]').value,clienteId=ov.querySelector('[data-cliente]').value,tipoId=tipo.value,clasId=clas.value;
       if(!fecha||!clienteId||!tipoId||!clasId)return alert('Completa fecha, cliente, tipo de servicio y clasificación.');
@@ -208,9 +264,9 @@
         // Evitar destruir/recrear los botones continuamente; conserva sus eventos y clics.
         if(td.dataset.hsUxSig!==sig){
           td.dataset.hsUxSig=sig;
-          td.innerHTML=editable?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> '+(c.fotoPath?'Reemplazar foto QR':'QR foto')+'</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
+          td.innerHTML=editable?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
           td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
-          td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{if(c.fotoPath&&!confirm('Esta comprobación ya tiene foto. ¿Deseas reemplazarla mediante QR?'))return;await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+          td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
         }
       });
       const table=body.closest('table'),head=table?.querySelector('thead tr');
