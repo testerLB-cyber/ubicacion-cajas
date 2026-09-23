@@ -264,8 +264,10 @@
           const qr=document.createElement('button');
           qr.type='button';qr.className='cc-btn cc-btn-light';qr.dataset.qrH='1';
           qr.innerHTML='<i class="fa-solid fa-qrcode"></i> QR foto';
-          const edit=actions.querySelector('[data-edit-h]');
-          edit?edit.after(qr):actions.insertBefore(qr,actions.firstChild);
+          const photoBtn=actions.querySelector('[data-photo-h]'),pdfBtn=actions.querySelector('[data-pdf-h]');
+          if(photoBtn)photoBtn.after(qr);
+          else if(pdfBtn)pdfBtn.after(qr);
+          else actions.appendChild(qr);
         }
 
         const photo=tr.querySelector('[data-photo-h]');
