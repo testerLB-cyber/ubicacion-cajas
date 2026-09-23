@@ -23,9 +23,9 @@
       #hs104CompList .hs-list-head-actions{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;overflow-x:auto}
       #hs104CompList .hs-list-head-actions .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important}
       #hs104CompList .hs-list-head-actions .hs104-pill{white-space:nowrap}
-      #hs104Hist td:last-child{min-width:270px}
-      #hs104Hist td:last-child .cc-btn{font-size:10px;padding:5px 7px;white-space:nowrap}
-      .hs-hist-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+      #hs104Hist th[data-hs-ux-head],#hs104Hist td[data-hs-ux-actions]{min-width:310px;width:310px;white-space:nowrap}
+      #hs104Hist td[data-hs-ux-actions] .cc-btn{font-size:10px!important;padding:5px 7px!important;white-space:nowrap!important;min-height:28px!important}
+      .hs-hist-actions{display:flex!important;gap:5px!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important}
       .hs-edit-comp-modal{position:fixed;inset:0;z-index:101050;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:14px}
       .hs-edit-comp-card{width:min(760px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px #0007}
       .hs-edit-comp-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -248,36 +248,60 @@
 
   async function patchHistory(force=false){
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
-    body.closest('table')?.querySelectorAll('[data-hs-open-head]').forEach(x=>x.remove());
-    body.querySelectorAll('[data-hs-open-cell]').forEach(x=>x.remove());
+    cleanLegacyHistoryActions();
     try{
       const d=await data(force);
       const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
+
+      const table=body.closest('table'),head=table?.querySelector('thead tr');
+      if(head){
+        let th=head.querySelector('[data-hs-ux-head]');
+        if(!th){th=document.createElement('th');th.dataset.hsUxHead='1';head.appendChild(th);}
+        th.textContent='ACCIONES';
+      }
+
       [...body.querySelectorAll('tr')].forEach(tr=>{
         const cells=tr.querySelectorAll('td');if(cells.length<6)return;
         const folio=String(cells[0].textContent||'').trim();
         const c=hist.find(x=>String(x.folio||'').trim()===folio);if(!c)return;
+
         let td=tr.querySelector('[data-hs-ux-actions]');
         if(!td){td=document.createElement('td');td.dataset.hsUxActions='1';tr.appendChild(td);}
+
         const editable=canEdit();
         const sig=[String(c.id||''),String(c.fotoPath||''),editable?'1':'0'].join('|');
-        // Evitar destruir/recrear los botones continuamente; conserva sus eventos y clics.
         if(td.dataset.hsUxSig!==sig){
           td.dataset.hsUxSig=sig;
-          td.innerHTML=editable?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
+          const editBtn=editable?'<button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button>':'';
+          const qrBtn=editable?'<button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button>':'';
+          const pdfBtn='<button type="button" class="cc-btn cc-btn-light" data-pdf-h><i class="fa-solid fa-file-pdf"></i> PDF</button>';
+          const photoBtn=c.fotoPath?'<button type="button" class="cc-btn cc-btn-light" data-photo-h><i class="fa-solid fa-camera"></i> Foto</button>':'';
+          td.innerHTML='<div class="hs-hist-actions">'+editBtn+qrBtn+pdfBtn+photoBtn+'</div>';
+
           td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
           td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+          td.querySelector('[data-pdf-h]')?.addEventListener('click',async e=>{
+            const b=e.currentTarget;b.disabled=true;
+            try{
+              if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
+              await window.hsHistoryExportPdf(c);
+            }catch(err){alert(err?.message||err);}finally{b.disabled=false;}
+          });
+          td.querySelector('[data-photo-h]')?.addEventListener('click',async()=>{
+            try{
+              if(typeof window.hsHistoryShowPhoto!=='function')throw new Error('El visor de foto todavía no está disponible.');
+              await window.hsHistoryShowPhoto(c.fotoPath,'Evidencia · '+c.folio);
+            }catch(err){alert(err?.message||err);}
+          });
         }
       });
-      const table=body.closest('table'),head=table?.querySelector('thead tr');
-      if(head&&!head.querySelector('[data-hs-ux-head]')){const th=document.createElement('th');th.dataset.hsUxHead='1';th.textContent='EDITAR / FOTO';head.appendChild(th);}
       filterHistory();
     }catch(e){console.warn('HS COMPROBACION UX V2',e);}
   }
 
   function patch(){
     style();
-    document.querySelectorAll('[data-hs-open-head],[data-hs-open-cell]').forEach(x=>x.remove());
+    cleanLegacyHistoryActions();
     ensureSwitch();patchPending();if(showHistory)patchHistory(false);
   }
 
