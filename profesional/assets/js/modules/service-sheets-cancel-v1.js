@@ -119,12 +119,12 @@
 
   function patchRow(row){
     const actions=row.querySelector('.hs-list-head-actions');
-    const edit=row.querySelector('[data-hs-edit]');
+    const edit=row.querySelector('[data-hs-edit]'),ret=row.querySelector('[data-return]');
     if(!actions||!edit||actions.querySelector('[data-hs-cancel]')) return;
     const b=document.createElement('button');
     b.type='button';b.className='cc-btn cc-btn-light';b.dataset.hsCancel='1';
-    b.innerHTML='<i class="fa-solid fa-ban"></i> Cancelar hoja';
-    edit.after(b);
+    b.innerHTML='<i class="fa-solid fa-ban"></i> Cancelar';
+    (ret||edit).after(b);
     b.onclick=()=>openCancel(row);
   }
 
