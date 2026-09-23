@@ -246,6 +246,22 @@
     let busy=false;qrPoll=setInterval(async()=>{if(busy||!document.body.contains(ov))return;busy=true;try{const {data:s,error:e}=await sb().rpc('hs_qr_photo_status',{p_token:r.token});if(e)throw e;if(s?.status==='CAPTURADA'){ov.querySelector('[data-status]').innerHTML='<strong style="color:#166534">Foto recibida correctamente.</strong>';clearInterval(qrPoll);qrPoll=null;cache=null;setTimeout(()=>{closeQr();document.getElementById('hs104Refresh')?.click();setTimeout(()=>{showHistory=true;ensureSwitch();patchHistory(true);},350);},650);}else if(s?.status!=='PENDIENTE'){ov.querySelector('[data-status]').textContent='El QR ya no está disponible.';clearInterval(qrPoll);qrPoll=null;}}catch(err){ov.querySelector('[data-status]').textContent='Error: '+(err?.message||err);}finally{busy=false;}},1800);
   }
 
+  function cleanLegacyHistoryActions(){
+    document.querySelectorAll('[data-hs-open-head],[data-hs-open-cell],[data-hs-pdf-head],[data-hs-pdf-cell]').forEach(x=>x.remove());
+
+    const table=document.getElementById('hs104Hist')?.closest('table');
+    const head=table?.querySelector('thead tr');
+    if(head){
+      const uxHeads=[...head.querySelectorAll('[data-hs-ux-head]')];
+      uxHeads.slice(1).forEach(x=>x.remove());
+    }
+
+    document.querySelectorAll('#hs104Hist tr').forEach(tr=>{
+      const actionCells=[...tr.querySelectorAll('[data-hs-ux-actions]')];
+      actionCells.slice(1).forEach(x=>x.remove());
+    });
+  }
+
   async function patchHistory(force=false){
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
     cleanLegacyHistoryActions();
