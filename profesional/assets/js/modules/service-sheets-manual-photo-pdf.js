@@ -72,7 +72,7 @@
     if(!editArea)return;
     let box=row.querySelector('[data-hs-manual-photo-box]');
     if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';}
-    if(!editArea.contains(box))editArea.insertBefore(box,editArea.firstChild);
+    if(!editArea.contains(box)){const body=editArea.querySelector('.hs-list-dialog-body')||editArea;body.insertBefore(box,body.firstChild);}
     const path=currentPhoto(folio),exists=!!path;
     // Keep the controls and chosen file during polling; a new saved path triggers a refresh.
     if(box.dataset.photoPath===path&&box.querySelector('[data-qr]'))return;
