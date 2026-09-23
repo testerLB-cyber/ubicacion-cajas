@@ -96,12 +96,33 @@
     document.querySelectorAll('#hs104CompList [data-row]').forEach(row=>{
       const actions=row.querySelector('.hs-list-head-actions'),edit=row.querySelector('[data-hs-edit]'),ret=row.querySelector('[data-return]'),cancel=row.querySelector('[data-hs-cancel]');
       if(!actions||!edit||!ret)return;
-      edit.className='cc-btn cc-btn-light';edit.innerHTML='<i class="fa-solid fa-pen"></i> Editar';
-      ret.innerHTML='<i class="fa-solid fa-rotate-left"></i> Registrar sin usar';
-      if(cancel)cancel.innerHTML='<i class="fa-solid fa-ban"></i> Cancelar';
-      actions.appendChild(edit);
-      actions.appendChild(ret);
-      if(cancel)actions.appendChild(cancel);
+
+      // No reconstruir ni mover botones en cada MutationObserver:
+      // un botón que cambia de nodo entre pointerdown/click puede perder el click.
+      if(edit.dataset.hsUxPatched!=='1'){
+        edit.className='cc-btn cc-btn-light';
+        edit.innerHTML='<i class="fa-solid fa-pen"></i> Editar';
+        edit.dataset.hsUxPatched='1';
+      }
+      if(ret.dataset.hsUxPatched!=='1'){
+        ret.innerHTML='<i class="fa-solid fa-rotate-left"></i> Registrar sin usar';
+        ret.dataset.hsUxPatched='1';
+      }
+      if(cancel&&cancel.dataset.hsUxPatched!=='1'){
+        cancel.innerHTML='<i class="fa-solid fa-ban"></i> Cancelar';
+        cancel.dataset.hsUxPatched='1';
+      }
+
+      // Orden requerido: Editar, Registrar sin usar, Cancelar.
+      // Solo tocar el DOM si el orden actual realmente es distinto.
+      const wanted=[edit,ret].concat(cancel?[cancel]:[]);
+      const current=[...actions.children].filter(el=>wanted.includes(el));
+      const ordered=current.length===wanted.length&&wanted.every((el,i)=>current[i]===el);
+      if(!ordered){
+        const frag=document.createDocumentFragment();
+        wanted.forEach(el=>frag.appendChild(el));
+        actions.appendChild(frag);
+      }
     });
     filterPending();
   }
@@ -190,9 +211,15 @@
         const c=hist.find(x=>String(x.folio||'').trim()===folio);if(!c)return;
         let td=tr.querySelector('[data-hs-ux-actions]');
         if(!td){td=document.createElement('td');td.dataset.hsUxActions='1';tr.appendChild(td);}
-        td.innerHTML=canEdit()?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> '+(c.fotoPath?'Reemplazar foto QR':'QR foto')+'</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
-        td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
-        td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{if(c.fotoPath&&!confirm('Esta comprobación ya tiene foto. ¿Deseas reemplazarla mediante QR?'))return;await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+        const editable=canEdit();
+        const sig=[String(c.id||''),String(c.fotoPath||''),editable?'1':'0'].join('|');
+        // Evitar destruir/recrear los botones continuamente; conserva sus eventos y clics.
+        if(td.dataset.hsUxSig!==sig){
+          td.dataset.hsUxSig=sig;
+          td.innerHTML=editable?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> '+(c.fotoPath?'Reemplazar foto QR':'QR foto')+'</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
+          td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
+          td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{if(c.fotoPath&&!confirm('Esta comprobación ya tiene foto. ¿Deseas reemplazarla mediante QR?'))return;await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+        }
       });
       const table=body.closest('table'),head=table?.querySelector('thead tr');
       if(head&&!head.querySelector('[data-hs-ux-head]')){const th=document.createElement('th');th.dataset.hsUxHead='1';th.textContent='EDITAR / FOTO';head.appendChild(th);}
