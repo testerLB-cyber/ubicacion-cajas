@@ -113,16 +113,8 @@
         cancel.dataset.hsUxPatched='1';
       }
 
-      // Orden requerido: Editar, Registrar sin usar, Cancelar.
-      // Solo tocar el DOM si el orden actual realmente es distinto.
-      const wanted=[edit,ret].concat(cancel?[cancel]:[]);
-      const current=[...actions.children].filter(el=>wanted.includes(el));
-      const ordered=current.length===wanted.length&&wanted.every((el,i)=>current[i]===el);
-      if(!ordered){
-        const frag=document.createDocumentFragment();
-        wanted.forEach(el=>frag.appendChild(el));
-        actions.appendChild(frag);
-      }
+      // El orden ya lo genera el módulo base. No mover nodos aquí:
+      // así los manejadores onclick originales permanecen intactos.
     });
     filterPending();
   }
@@ -236,6 +228,21 @@
   const obs=new MutationObserver(()=>setTimeout(patch,30));
   function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio,#hs104Refresh')){cache=null;setTimeout(patch,250);}},true);
+  document.addEventListener('click',e=>{
+    const edit=e.target.closest?.('#hs104CompList [data-hs-edit]');
+    if(edit){
+      const row=edit.closest('[data-row]');
+      const list=document.getElementById('hs104CompList');
+      if(row&&list){
+        list.querySelectorAll('.hs-list-modal-open').forEach(other=>{if(other!==row)other.classList.remove('hs-list-modal-open');});
+        row.classList.add('hs-list-modal-open');
+        document.body.style.overflow='hidden';
+        setTimeout(()=>{try{window.hsPatchPrecapture?.();window.hsPatchManualPhotoPdf?.();}catch(_){}},0);
+      }
+    }
+    if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio,#hs104Refresh')){
+      cache=null;setTimeout(patch,250);
+    }
+  },true);
   setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch();},1200);
 })();
