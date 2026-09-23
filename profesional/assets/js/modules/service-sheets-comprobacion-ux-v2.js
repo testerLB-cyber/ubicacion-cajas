@@ -268,12 +268,40 @@
           photo.disabled=!c.fotoPath;
           photo.title=c.fotoPath?'Ver evidencia fotográfica':'Esta comprobación todavía no tiene fotografía';
         }
-        const qr=tr.querySelector('[data-qr-h]');
-        if(qr){
-          qr.disabled=false;
-          qr.style.setProperty('display','inline-flex','important');
-          qr.style.setProperty('visibility','visible','important');
-          qr.style.setProperty('opacity','1','important');
+        // Dejar exactamente UN botón QR en el listado.
+        // Limpia botones QR heredados de versiones anteriores ("QR foto")
+        // sin tocar el QR del modal de edición.
+        const actions=tr.querySelector('.hs-hist-actions');
+        if(actions){
+          const qrCandidates=[...actions.querySelectorAll('button')].filter(b=>{
+            const txt=String(b.textContent||'').trim().toUpperCase();
+            return b.hasAttribute('data-qr-h')||txt==='QR FOTO'||txt==='QR';
+          });
+
+          let qr=actions.querySelector('.hs-hist-evidence-actions [data-qr-h]')||qrCandidates[0]||null;
+          qrCandidates.forEach(b=>{if(b!==qr)b.remove();});
+
+          const evidence=actions.querySelector('.hs-hist-evidence-actions');
+          if(!qr&&evidence){
+            qr=document.createElement('button');
+            qr.type='button';
+            qr.className='cc-btn cc-btn-primary';
+            qr.dataset.qrH='1';
+            qr.innerHTML='<i class="fa-solid fa-qrcode"></i> QR';
+            evidence.appendChild(qr);
+          }else if(qr){
+            qr.dataset.qrH='1';
+            qr.className='cc-btn cc-btn-primary';
+            qr.innerHTML='<i class="fa-solid fa-qrcode"></i> QR';
+            if(evidence&&!evidence.contains(qr))evidence.appendChild(qr);
+          }
+
+          if(qr){
+            qr.disabled=false;
+            qr.style.setProperty('display','inline-flex','important');
+            qr.style.setProperty('visibility','visible','important');
+            qr.style.setProperty('opacity','1','important');
+          }
         }
         tr.dataset.hsHistPhoto=c.fotoPath||'';
       });
