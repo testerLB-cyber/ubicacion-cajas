@@ -70,16 +70,43 @@
   function renderPhotoBox(row,folio){
     const editArea=row.querySelector('.hs-list-edit-area');
     if(!editArea)return;
+
     let box=row.querySelector('[data-hs-manual-photo-box]');
-    if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';}
-    if(!editArea.contains(box)){const body=editArea.querySelector('.hs-list-dialog-body')||editArea;body.insertBefore(box,body.firstChild);}
+    if(!box){
+      const body=editArea.querySelector('.hs-list-dialog-body')||editArea;
+      box=document.createElement('div');
+      box.className='hs-manual-photo-box';
+      box.dataset.hsManualPhotoBox='1';
+      box.dataset.photoPath='';
+      box.innerHTML='<label>Evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Sube una foto o muestra el QR para tomarla desde tu teléfono.</div>';
+      body.insertBefore(box,body.firstChild);
+    }
+
     const path=currentPhoto(folio),exists=!!path;
-    // Keep the controls and chosen file during polling; a new saved path triggers a refresh.
-    if(box.dataset.photoPath===path&&box.querySelector('[data-qr]'))return;
     if(path)row.dataset.hsCurrentPhotoPath=path;else delete row.dataset.hsCurrentPhotoPath;
+    row.dataset.hsPhotoSource=exists?'MANUAL':'';
     box.dataset.photoPath=path;
-    box.innerHTML='<label>Evidencia fotográfica</label>'+(exists?'<div style="margin-bottom:7px"><button type="button" class="cc-btn cc-btn-light" data-view-current><i class="fa-solid fa-camera"></i> Ver foto</button></div>':'')+'<div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">'+(exists?'Foto cargada. Puedes subir o tomar otra para reemplazarla.':'Sin foto. Puedes subirla desde este equipo o tomarla con QR desde un teléfono.')+'</div>';
-    box.querySelector('[data-view-current]')?.addEventListener('click',async()=>{try{await showStoredPhoto(row.dataset.hsCurrentPhotoPath,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}});
+
+    // IMPORTANTE: no reconstruir box.innerHTML. Los botones Upload/QR son nodos estables.
+    // Solo actualizar estado y el botón opcional "Ver foto".
+    let viewBtn=box.querySelector('[data-view-current]');
+    if(exists&&!viewBtn){
+      viewBtn=document.createElement('button');
+      viewBtn.type='button';
+      viewBtn.className='cc-btn cc-btn-light';
+      viewBtn.dataset.viewCurrent='1';
+      viewBtn.innerHTML='<i class="fa-solid fa-camera"></i> Ver foto';
+      viewBtn.style.marginBottom='7px';
+      const methods=box.querySelector('.hs-photo-methods');
+      methods?.insertAdjacentElement('beforebegin',viewBtn);
+      viewBtn.addEventListener('click',async()=>{try{await showStoredPhoto(row.dataset.hsCurrentPhotoPath,'Evidencia · '+(folio.folio||''));}catch(e){alert(e?.message||e);}});
+    }else if(!exists&&viewBtn){
+      viewBtn.remove();
+    }
+
+    const status=box.querySelector('.hs-manual-photo-status');
+    if(status)status.textContent=exists?'Foto cargada. Puedes subir o tomar otra para reemplazarla.':'Sin foto. Puedes subirla desde este equipo o tomarla con QR desde un teléfono.';
+
     syncListPhoto(row,folio,path);
   }
 
