@@ -332,7 +332,7 @@
         list.querySelectorAll('.hs-list-modal-open').forEach(other=>{if(other!==row)other.classList.remove('hs-list-modal-open');});
         row.classList.add('hs-list-modal-open');
         document.body.style.overflow='hidden';
-        setTimeout(()=>{try{window.hsPatchPrecapture?.();window.hsPatchManualPhotoPdf?.();}catch(_){}},0);
+        setTimeout(()=>{try{window.hsPatchPrecapture?.();}catch(_){}},0);
       }
     }
     const histBtn=e.target.closest?.('#hs104Hist [data-edit-h],#hs104Hist [data-qr-h],#hs104Hist [data-pdf-h],#hs104Hist [data-photo-h]');
