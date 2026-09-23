@@ -23,11 +23,11 @@
       #hs104CompList .hs-list-head-actions{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;overflow-x:auto}
       #hs104CompList .hs-list-head-actions .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important}
       #hs104CompList .hs-list-head-actions .hs104-pill{white-space:nowrap}
-      #hs104Hist .hs-hist-actions-cell{min-width:330px;width:330px;white-space:nowrap}
+      #hs104Hist .hs-hist-actions-cell{min-width:300px;width:300px;white-space:normal!important}
       #hs104Hist .hs-hist-actions-cell .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important;border-radius:7px!important}
-      .hs-hist-actions{display:flex!important;gap:6px!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important}
-      .hs-hist-evidence-actions{display:inline-flex!important;gap:5px!important;align-items:center!important;white-space:nowrap!important}
-      #hs104Hist [data-qr-h]{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;gap:5px!important}
+      .hs-hist-actions{display:grid!important;grid-template-columns:max-content max-content!important;gap:6px!important;align-items:center!important;justify-content:start!important}
+      .hs-hist-evidence-actions{grid-column:1 / -1!important;display:inline-flex!important;gap:6px!important;align-items:center!important;white-space:nowrap!important}
+      #hs104Hist [data-qr-h]{display:inline-flex!important;visibility:visible!important;opacity:1!important;align-items:center!important;gap:5px!important;position:static!important}
       #hs104Hist [data-photo-h][disabled]{opacity:.45;cursor:not-allowed}
       .hs-edit-comp-modal{position:fixed;inset:0;z-index:101050;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:14px}
       .hs-edit-comp-card{width:min(760px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px #0007}
@@ -255,80 +255,27 @@
       const d=await data(force);
       const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
 
-      const table=body.closest('table');
-      const head=table?.querySelector('thead tr');
-      if(head&&!head.querySelector('[data-hs-history-actions-head]')){
-        const th=document.createElement('th');
-        th.dataset.hsHistoryActionsHead='1';
-        th.textContent='ACCIONES';
-        head.appendChild(th);
-      }
-
-      body.querySelectorAll('tr').forEach(tr=>{
-        const cells=tr.querySelectorAll('td');
-        if(cells.length<6)return;
-
-        const folio=String(tr.dataset.hsHistFolio||cells[0]?.textContent||'').trim();
+      body.querySelectorAll('tr[data-hs-hist-row]').forEach(tr=>{
+        const folio=String(tr.dataset.hsHistFolio||'').trim();
         const c=hist.find(x=>String(x.folio||'').trim()===folio);
         if(!c)return;
 
-        tr.dataset.hsHistRow='1';
-        tr.dataset.hsHistFolio=folio;
+        // Los botones del historial son estáticos desde service-sheets-v104.
+        // Aquí únicamente se actualiza el estado de Foto. No se agregan,
+        // eliminan, mueven ni reconstruyen botones.
+        const photo=tr.querySelector('[data-photo-h]');
+        if(photo){
+          photo.disabled=!c.fotoPath;
+          photo.title=c.fotoPath?'Ver evidencia fotográfica':'Esta comprobación todavía no tiene fotografía';
+        }
+        const qr=tr.querySelector('[data-qr-h]');
+        if(qr){
+          qr.disabled=false;
+          qr.style.setProperty('display','inline-flex','important');
+          qr.style.setProperty('visibility','visible','important');
+          qr.style.setProperty('opacity','1','important');
+        }
         tr.dataset.hsHistPhoto=c.fotoPath||'';
-
-        let td=tr.querySelector('.hs-hist-actions-cell');
-        if(!td){
-          td=document.createElement('td');
-          td.className='hs-hist-actions-cell';
-          tr.appendChild(td);
-        }
-
-        let actions=td.querySelector('.hs-hist-actions');
-        if(!actions){
-          actions=document.createElement('div');
-          actions.className='hs-hist-actions';
-          td.appendChild(actions);
-        }
-
-        // Botones fijos del historial. No se eliminan ni se reconstruyen.
-        if(!actions.querySelector('[data-edit-h]')){
-          const b=document.createElement('button');
-          b.type='button';b.className='cc-btn cc-btn-light';b.dataset.editH='1';
-          b.innerHTML='<i class="fa-solid fa-pen"></i> Editar';
-          actions.appendChild(b);
-        }
-
-        let evidence=actions.querySelector('.hs-hist-evidence-actions');
-        if(!evidence){
-          evidence=document.createElement('span');
-          evidence.className='hs-hist-evidence-actions';
-          const edit=actions.querySelector('[data-edit-h]');
-          edit?edit.after(evidence):actions.appendChild(evidence);
-        }
-
-        let photo=evidence.querySelector('[data-photo-h]');
-        if(!photo){
-          photo=document.createElement('button');
-          photo.type='button';photo.className='cc-btn cc-btn-light';photo.dataset.photoH='1';
-          photo.innerHTML='<i class="fa-solid fa-camera"></i> Foto';
-          evidence.appendChild(photo);
-        }
-        photo.disabled=!c.fotoPath;
-        photo.title=c.fotoPath?'Ver evidencia fotográfica':'Esta comprobación todavía no tiene fotografía';
-
-        if(!evidence.querySelector('[data-qr-h]')){
-          const qr=document.createElement('button');
-          qr.type='button';qr.className='cc-btn cc-btn-primary';qr.dataset.qrH='1';
-          qr.innerHTML='<i class="fa-solid fa-qrcode"></i> QR';
-          evidence.appendChild(qr);
-        }
-
-        if(!actions.querySelector('[data-pdf-h]')){
-          const pdf=document.createElement('button');
-          pdf.type='button';pdf.className='cc-btn cc-btn-light';pdf.dataset.pdfH='1';
-          pdf.innerHTML='<i class="fa-solid fa-file-pdf"></i> PDF';
-          actions.appendChild(pdf);
-        }
       });
       filterHistory();
     }catch(e){console.warn('HS COMPROBACION UX V2',e);}
