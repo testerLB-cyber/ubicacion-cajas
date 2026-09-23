@@ -7,6 +7,7 @@
   const sb=()=>window.gmSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  const canEdit=()=>window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('hojas_servicio.comprobar'));
   let showHistory=false, cache=null, qrPoll=null;
 
   function style(){
@@ -121,6 +122,7 @@
 
   function closeEdit(){document.querySelector('.hs-edit-comp-modal')?.remove()}
   async function openEdit(c,d){
+    if(!canEdit())return alert('Tu usuario no tiene permiso para editar comprobaciones.');
     closeEdit();
     const clients=(d.clientes||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
     const tipos=(d.tiposViaje||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
@@ -164,6 +166,7 @@
   }
   function closeQr(){if(qrPoll){clearInterval(qrPoll);qrPoll=null;}document.querySelector('.hs-qr-hist-modal')?.remove();}
   async function openHistoryQr(c){
+    if(!canEdit())return alert('Tu usuario no tiene permiso para agregar evidencia.');
     const {data:r,error}=await sb().rpc('hs_qr_photo_create',{p_folio_id:c.folioId});
     if(error||!r?.ok)throw new Error(error?.message||r?.error||'No se pudo generar QR.');
     const url=new URL('hojas-servicio-foto-qr.html',location.href);url.search='?t='+encodeURIComponent(r.token);
@@ -176,6 +179,8 @@
 
   async function patchHistory(force=false){
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
+    body.closest('table')?.querySelectorAll('[data-hs-open-head]').forEach(x=>x.remove());
+    body.querySelectorAll('[data-hs-open-cell]').forEach(x=>x.remove());
     try{
       const d=await data(force);
       const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
@@ -185,9 +190,9 @@
         const c=hist.find(x=>String(x.folio||'').trim()===folio);if(!c)return;
         let td=tr.querySelector('[data-hs-ux-actions]');
         if(!td){td=document.createElement('td');td.dataset.hsUxActions='1';tr.appendChild(td);}
-        td.innerHTML='<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button>'+(c.fotoPath?'':'<button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button>')+'</div>';
-        td.querySelector('[data-edit-h]').onclick=()=>openEdit(c,d);
-        td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+        td.innerHTML=canEdit()?'<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> '+(c.fotoPath?'Reemplazar foto QR':'QR foto')+'</button></div>':'<span style="font-size:10px;color:#94a3b8">Sin permiso para editar</span>';
+        td.querySelector('[data-edit-h]')?.addEventListener('click',()=>openEdit(c,d));
+        td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{if(c.fotoPath&&!confirm('Esta comprobación ya tiene foto. ¿Deseas reemplazarla mediante QR?'))return;await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
       });
       const table=body.closest('table'),head=table?.querySelector('thead tr');
       if(head&&!head.querySelector('[data-hs-ux-head]')){const th=document.createElement('th');th.dataset.hsUxHead='1';th.textContent='EDITAR / FOTO';head.appendChild(th);}
@@ -196,7 +201,9 @@
   }
 
   function patch(){
-    style();ensureSwitch();patchPending();if(showHistory)patchHistory(false);
+    style();
+    document.querySelectorAll('[data-hs-open-head],[data-hs-open-cell]').forEach(x=>x.remove());
+    ensureSwitch();patchPending();if(showHistory)patchHistory(false);
   }
 
   const obs=new MutationObserver(()=>setTimeout(patch,30));
