@@ -86,12 +86,17 @@
       #hs104CompList .hs-list-info strong{font-size:13px;color:#0f172a}
       #hs104CompList .hs-list-info .hs104-note{font-size:11px;line-height:1.5}
       #hs104CompList .hs-list-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-      #hs104CompList .hs-list-edit-area{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0}
-      #hs104CompList .hs-list-editing .hs-list-edit-area{display:block}
-      #hs104CompList .hs-list-edit-area>.cc-field{margin:10px 0}
-      #hs104CompList .hs-list-edit-area>.hs104-actions{margin-top:12px}
+      #hs104CompList .hs-list-edit-area{display:none;position:fixed;inset:0;z-index:100700;padding:14px;background:rgba(15,23,42,.78);align-items:center;justify-content:center}
+      #hs104CompList .hs-list-modal-open .hs-list-edit-area{display:flex}
+      #hs104CompList .hs-list-dialog{width:min(780px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005}
+      #hs104CompList .hs-list-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:#0f172a;color:#fff}
+      #hs104CompList .hs-list-dialog-body{padding:16px}
+      #hs104CompList .hs-list-dialog-close{border:0;background:transparent;color:#fff;font-size:25px;cursor:pointer}
+      #hs104CompList .hs-list-modal-open{position:static}
+      #hs104CompList .hs-list-dialog-body>.cc-field{margin:10px 0}
+      #hs104CompList .hs-list-dialog-body>.hs104-actions{margin-top:12px}
       @media(max-width:700px){#ccPanelHojasServicio .cc-toolbar{align-items:flex-start;gap:8px}#ccPanelHojasServicio .hs104-actions{justify-content:flex-start}}
-      @media(max-width:460px){#hs104CompList .hs-list-head{align-items:flex-start}#hs104CompList .hs-list-head-actions{flex-direction:column;align-items:flex-end}#ccPanelHojasServicio .hs-photo-methods .cc-btn{font-size:11px;padding:7px 8px}}
+      @media(max-width:460px){#hs104CompList .hs-list-head{align-items:flex-start}#hs104CompList .hs-list-head-actions{flex-direction:column;align-items:flex-end}#hs104CompList .hs-list-edit-area{padding:6px}#hs104CompList .hs-list-dialog{max-height:98vh}#ccPanelHojasServicio .hs-photo-methods .cc-btn{font-size:11px;padding:7px 8px}}
     `;document.head.appendChild(st);
   }
 
@@ -116,7 +121,7 @@
   function renderNav(){const n=document.getElementById('hs104Nav');if(!n)return;n.innerHTML=navItems.map(([v,i])=>'<button class="cc-btn '+(currentView===v?'cc-btn-primary':'cc-btn-light')+'" data-v="'+v+'"><i class="fa-solid '+i+' mr-1"></i>'+({Comprobacion:'Comprobación'}[v]||v)+'</button>').join('');n.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{currentView=b.dataset.v;renderNav();renderView()})}
   function renderKpis(){const r=D.resumen||{},k=document.getElementById('hs104Kpis');if(!k)return;k.innerHTML=[['Total',r.total],['Nuevas',r.nuevos],['Pend. aceptación',r.pendienteAceptacion],['Con responsable',r.enCustodia],['Pend. comprobar',r.asignadosOperador],['Comprobadas',r.utilizados]].map(x=>'<div class="cc-ant-kpi"><small>'+x[0]+'</small><strong>'+Number(x[1]||0).toLocaleString('es-MX')+'</strong></div>').join('')}
   function renderAll(){renderKpis();renderNav();renderView()}
-  function renderView(){({Control:renderControl,Folios:renderFolios,Responsables:renderResponsables,Operadores:renderOperadores,Comprobacion:renderComprobacion,Catalogos:renderCatalogos}[currentView]||renderControl)()}
+  function renderView(){if(document.querySelector('#hs104CompList .hs-list-modal-open'))document.body.style.overflow='';({Control:renderControl,Folios:renderFolios,Responsables:renderResponsables,Operadores:renderOperadores,Comprobacion:renderComprobacion,Catalogos:renderCatalogos}[currentView]||renderControl)()}
   const view=()=>document.getElementById('hs104View');
 
   function renderControl(){
@@ -158,23 +163,34 @@
     const fillPeople=()=>{const t=type.value, rows=(D.foliosAsignadosOperador||[]).filter(x=>personType(x)===t),map=new Map();rows.forEach(x=>{const id=t==='BENEFICIARIO'?x.beneficiarioId:x.operadorId;if(id&&!map.has(String(id)))map.set(String(id),{id,name:personName(x),count:0});if(id)map.get(String(id)).count++});person.innerHTML='<option value="">Seleccionar '+(t==='BENEFICIARIO'?'beneficiario':'operador')+'…</option>'+[...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'es')).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+' · '+p.count+' pendiente(s)</option>').join('');drawCards();drawHist()};
     const drawCards=()=>{
       const id=person.value,t=type.value,list=v.querySelector('#hs104CompList');
+      if(list.querySelector('.hs-list-modal-open'))document.body.style.overflow='';
       if(!id){list.innerHTML='<div style="padding:26px;text-align:center;color:#64748b">Selecciona una persona para ver sus hojas pendientes.</div>';return;}
       const rows=(D.foliosAsignadosOperador||[]).filter(x=>personType(x)===t&&String(t==='BENEFICIARIO'?x.beneficiarioId:x.operadorId)===String(id));
-      list.innerHTML='<div class="hs104-row">'+rows.map(x=>`
+      list.innerHTML='<div class="hs104-row">'+rows.map(x=>{
+        const pre=x.precaptura;
+        return `
         <div class="hs104-card hs-list-row" data-row="${esc(x.id)}" data-hs-folio="${esc(x.folio)}" data-hs-person="${esc(personName(x))}">
           <div class="hs-list-head">
-            <div class="hs-list-info"><strong>${esc(x.folio)}</strong><div class="hs104-note">${esc(personName(x))} · Responsable: ${esc(x.responsable||'—')} · Entregada: ${fmt(x.asignadoAt)}</div></div>
-            <div class="hs-list-head-actions"><span class="hs104-pill hs104-danger">PENDIENTE</span><button type="button" class="cc-btn cc-btn-light" data-hs-edit aria-expanded="false"><i class="fa-solid fa-pen"></i> Editar</button></div>
+            <div class="hs-list-info"><strong>${esc(x.folio)}</strong><div class="hs104-note">${esc(personName(x))} · ${pre?esc([pre.cliente,pre.tipoViaje,pre.clasificacion].filter(Boolean).join(' · ')||'Datos precargados'):esc(x.responsable||'—')}</div></div>
+            <div class="hs-list-head-actions"><span class="hs104-pill ${pre?'hs104-ok':'hs104-danger'}">${pre?'PRECARGADA APP':'PENDIENTE'}</span><button type="button" class="cc-btn ${pre?'cc-btn-primary':'cc-btn-light'}" data-hs-edit aria-haspopup="dialog"><i class="fa-solid ${pre?'fa-circle-check':'fa-pen'}"></i> ${pre?'Comprobar':'Editar'}</button></div>
           </div>
-          <div class="hs-list-edit-area">
-            <div class="hs-manual-photo-box" data-hs-manual-photo-box="1" data-photo-path=""><label>Evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Sube una foto o escanea el QR desde tu teléfono.</div></div>
-            <div class="hs104-grid"><div class="cc-field"><label>Fecha de uso *</label><input data-fecha type="date" value="${today()}"></div><div class="cc-field"><label>Cliente *</label><select data-cliente>${options(D.clientes||[],c=>c.nombre+(c.razonSocial&&c.razonSocial!==c.nombre?' · '+c.razonSocial:''))}</select></div><div class="cc-field"><label>Tipo de servicio *</label><input data-tipo placeholder="Ej. Exportación, Importación, Cruce..."></div><div class="cc-field"><label>Clasificación *</label><input data-clas placeholder="Ej. Cargado, Vacío, Foráneo..."></div></div>
-            <div class="cc-field"><label>Observaciones</label><textarea data-obs placeholder="Opcional"></textarea></div>
-            <div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-return>Regresar sin usar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Comprobar hoja</button></div>
+          <div class="hs-list-edit-area" role="dialog" aria-modal="true" aria-label="${pre?'Revisar y comprobar':'Editar'} hoja ${esc(x.folio)}">
+            <div class="hs-list-dialog"><div class="hs-list-dialog-head"><strong>${pre?'Revisar y comprobar':'Llenar hoja'} · ${esc(x.folio)}</strong><button type="button" class="hs-list-dialog-close" data-hs-close aria-label="Cerrar">×</button></div>
+              <div class="hs-list-dialog-body">
+                <div class="hs-manual-photo-box" data-hs-manual-photo-box="1" data-photo-path=""><label>Evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Sube una foto o muestra el QR para tomarla desde tu teléfono.</div></div>
+                <div class="hs104-grid"><div class="cc-field"><label>Fecha de uso *</label><input data-fecha type="date" value="${today()}"></div><div class="cc-field"><label>Cliente *</label><select data-cliente>${options(D.clientes||[],c=>c.nombre+(c.razonSocial&&c.razonSocial!==c.nombre?' · '+c.razonSocial:''))}</select></div><div class="cc-field"><label>Tipo de servicio *</label><input data-tipo placeholder="Ej. Exportación, Importación, Cruce..."></div><div class="cc-field"><label>Clasificación *</label><input data-clas placeholder="Ej. Cargado, Vacío, Foráneo..."></div></div>
+                <div class="cc-field"><label>Observaciones</label><textarea data-obs placeholder="Opcional"></textarea></div>
+                <div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-return>Regresar sin usar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Comprobar hoja</button></div>
+              </div>
+            </div>
           </div>
-        </div>`).join('')+'</div>';
+        </div>`;}).join('')+'</div>';
       list.querySelectorAll('[data-row]').forEach(row=>{
-        row.querySelector('[data-hs-edit]').onclick=e=>{const open=row.classList.toggle('hs-list-editing');e.currentTarget.setAttribute('aria-expanded',String(open));e.currentTarget.innerHTML=open?'<i class="fa-solid fa-xmark"></i> Cerrar':'<i class="fa-solid fa-pen"></i> Editar';};
+        const area=row.querySelector('.hs-list-edit-area');
+        const close=()=>{row.classList.remove('hs-list-modal-open');if(!list.querySelector('.hs-list-modal-open'))document.body.style.overflow='';};
+        row.querySelector('[data-hs-edit]').onclick=()=>{list.querySelectorAll('.hs-list-modal-open').forEach(other=>other.classList.remove('hs-list-modal-open'));row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();window.hsPatchManualPhotoPdf?.();};
+        row.querySelector('[data-hs-close]').onclick=close;
+        area.onclick=e=>{if(e.target===area)close();};
         row.querySelector('[data-save]').onclick=()=>saveUsed(row);
         row.querySelector('[data-return]').onclick=()=>returnBlank(row);
       });
