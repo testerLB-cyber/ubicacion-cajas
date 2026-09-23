@@ -1,0 +1,207 @@
+/* Tráfico App · UX Comprobación Hojas v2 · 2026-09-23 */
+(function(){
+  'use strict';
+  if(window.__HS_COMPROBACION_UX_V2__) return;
+  window.__HS_COMPROBACION_UX_V2__=true;
+
+  const sb=()=>window.gmSupabase;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+  let showHistory=false, cache=null, qrPoll=null;
+
+  function style(){
+    if(document.getElementById('hs-comp-ux-v2-style'))return;
+    const s=document.createElement('style');s.id='hs-comp-ux-v2-style';s.textContent=`
+      .hs-comp-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:11px 13px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px}
+      .hs-comp-switch label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:900;color:#1e3a8a;cursor:pointer}
+      .hs-comp-switch input[type=checkbox]{width:17px;height:17px}
+      .hs-comp-search{min-width:230px;max-width:360px;width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;font-size:12px}
+      #hs104CompList .hs104-row{gap:6px!important}
+      #hs104CompList .hs-list-row{padding:9px 11px!important;margin-bottom:5px!important}
+      #hs104CompList .hs-list-head{gap:10px!important}
+      #hs104CompList .hs-list-head-actions{display:flex!important;flex-direction:row!important;align-items:center!important;gap:5px!important;flex-wrap:nowrap!important;overflow-x:auto}
+      #hs104CompList .hs-list-head-actions .cc-btn{font-size:10px!important;padding:6px 8px!important;white-space:nowrap!important;min-height:30px!important}
+      #hs104CompList .hs-list-head-actions .hs104-pill{white-space:nowrap}
+      #hs104Hist td:last-child{min-width:270px}
+      #hs104Hist td:last-child .cc-btn{font-size:10px;padding:5px 7px;white-space:nowrap}
+      .hs-hist-actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+      .hs-edit-comp-modal{position:fixed;inset:0;z-index:101050;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:14px}
+      .hs-edit-comp-card{width:min(760px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 80px #0007}
+      .hs-edit-comp-head{background:#0f172a;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .hs-edit-comp-body{padding:16px}
+      .hs-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .hs-qr-hist-modal{position:fixed;inset:0;z-index:101100;background:rgba(15,23,42,.82);display:flex;align-items:center;justify-content:center;padding:14px}
+      .hs-qr-hist-card{width:min(500px,96vw);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 80px #0008}
+      .hs-qr-hist-head{background:#0f172a;color:#fff;padding:13px 16px;display:flex;justify-content:space-between;align-items:center}
+      .hs-qr-hist-body{padding:18px;text-align:center}
+      @media(max-width:700px){.hs-edit-grid{grid-template-columns:1fr}.hs-comp-search{max-width:none}.hs-comp-switch{align-items:stretch}}
+    `;document.head.appendChild(s);
+  }
+
+  async function data(force=false){
+    if(cache&&!force)return cache;
+    const {data,error}=await sb().rpc('hs_list');
+    if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudo cargar Hojas de Servicio.');
+    cache=data;return data;
+  }
+
+  function cardOf(el){return el?.closest('.hs104-card')||null}
+
+  function ensureSwitch(){
+    const view=document.getElementById('hs104View'),list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');
+    if(!view||!list||!hist)return;
+    const pendingCard=cardOf(list),histCard=cardOf(hist);
+    if(!pendingCard||!histCard)return;
+
+    let box=document.getElementById('hsCompUxSwitch');
+    if(!box){
+      box=document.createElement('div');box.id='hsCompUxSwitch';box.className='hs-comp-switch';
+      box.innerHTML='<label><input id="hsCompUxHistory" type="checkbox"> Mostrar historial de comprobaciones</label><div style="font-size:11px;color:#475569">Solo se muestra una vista a la vez: pendientes o historial.</div>';
+      pendingCard.parentNode.insertBefore(box,pendingCard);
+      box.querySelector('#hsCompUxHistory').checked=showHistory;
+      box.querySelector('#hsCompUxHistory').onchange=e=>{showHistory=!!e.target.checked;applyMode();};
+    }
+    applyMode();
+    ensurePendingSearch(pendingCard);
+    ensureHistorySearch(histCard);
+  }
+
+  function applyMode(){
+    const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');
+    const pendingCard=cardOf(list),histCard=cardOf(hist);
+    if(pendingCard)pendingCard.style.display=showHistory?'none':'';
+    if(histCard)histCard.style.display=showHistory?'':'none';
+    const ch=document.getElementById('hsCompUxHistory');if(ch)ch.checked=showHistory;
+    if(showHistory)setTimeout(()=>patchHistory(true),40);else setTimeout(()=>patchPending(),40);
+  }
+
+  function ensurePendingSearch(card){
+    if(card.querySelector('#hsCompUxFolioSearch'))return;
+    const toolbar=card.querySelector('.cc-toolbar');if(!toolbar)return;
+    const wrap=document.createElement('div');wrap.style='margin:8px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+    wrap.innerHTML='<input id="hsCompUxFolioSearch" class="hs-comp-search" type="search" placeholder="Buscar por hoja / folio..."><span style="font-size:10px;color:#64748b">Escribe el número completo o una parte del folio.</span>';
+    toolbar.insertAdjacentElement('afterend',wrap);
+    wrap.querySelector('input').oninput=filterPending;
+  }
+  function filterPending(){
+    const q=norm(document.getElementById('hsCompUxFolioSearch')?.value||'');
+    document.querySelectorAll('#hs104CompList [data-row]').forEach(r=>{
+      const text=norm((r.dataset.hsFolio||'')+' '+(r.dataset.hsPerson||'')+' '+r.textContent);
+      r.style.display=!q||text.includes(q)?'':'none';
+    });
+  }
+
+  function patchPending(){
+    document.querySelectorAll('#hs104CompList [data-row]').forEach(row=>{
+      const actions=row.querySelector('.hs-list-head-actions'),edit=row.querySelector('[data-hs-edit]'),ret=row.querySelector('[data-return]'),cancel=row.querySelector('[data-hs-cancel]');
+      if(!actions||!edit||!ret)return;
+      edit.className='cc-btn cc-btn-light';edit.innerHTML='<i class="fa-solid fa-pen"></i> Editar';
+      ret.innerHTML='<i class="fa-solid fa-rotate-left"></i> Registrar sin usar';
+      if(cancel)cancel.innerHTML='<i class="fa-solid fa-ban"></i> Cancelar';
+      actions.appendChild(edit);
+      actions.appendChild(ret);
+      if(cancel)actions.appendChild(cancel);
+    });
+    filterPending();
+  }
+
+  function ensureHistorySearch(card){
+    if(card.querySelector('#hsCompUxHistSearch'))return;
+    const toolbar=card.querySelector('.cc-toolbar');if(!toolbar)return;
+    const inp=document.createElement('input');inp.id='hsCompUxHistSearch';inp.className='hs-comp-search';inp.type='search';inp.placeholder='Buscar historial por hoja, persona o cliente...';
+    toolbar.appendChild(inp);inp.oninput=filterHistory;
+  }
+  function filterHistory(){
+    const q=norm(document.getElementById('hsCompUxHistSearch')?.value||'');
+    document.querySelectorAll('#hs104Hist tr').forEach(tr=>{
+      if(!tr.querySelector('td'))return;
+      tr.style.display=!q||norm(tr.textContent).includes(q)?'':'none';
+    });
+  }
+
+  function closeEdit(){document.querySelector('.hs-edit-comp-modal')?.remove()}
+  async function openEdit(c,d){
+    closeEdit();
+    const clients=(d.clientes||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
+    const tipos=(d.tiposViaje||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
+    const ov=document.createElement('div');ov.className='hs-edit-comp-modal';
+    ov.innerHTML=`
+      <div class="hs-edit-comp-card">
+        <div class="hs-edit-comp-head"><div><strong>Editar comprobación · ${esc(c.folio)}</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">La hoja seguirá como COMPROBADA; solo se corrigen sus datos.</div></div><button type="button" data-x style="border:0;background:none;color:#fff;font-size:25px">×</button></div>
+        <div class="hs-edit-comp-body">
+          <div class="hs-edit-grid">
+            <div class="cc-field"><label>Fecha de uso *</label><input data-fecha type="date" value="${esc(String(c.fechaUso||c.fecha||'').slice(0,10))}"></div>
+            <div class="cc-field"><label>Cliente *</label><select data-cliente>${clients.map(x=>'<option value="'+esc(x.id)+'" '+(String(x.id)===String(c.clienteId)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('')}</select></div>
+            <div class="cc-field"><label>Tipo de servicio *</label><select data-tipo>${tipos.map(x=>'<option value="'+esc(x.id)+'" data-name="'+esc(x.nombre)+'" '+(norm(x.nombre)===norm(c.tipoViaje||c.servicio)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('')}</select></div>
+            <div class="cc-field"><label>Clasificación *</label><select data-clas></select></div>
+          </div>
+          <div class="cc-field"><label>Observaciones</label><textarea data-obs>${esc(c.observaciones||'')}</textarea></div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cerrar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Guardar cambios</button></div>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    const tipo=ov.querySelector('[data-tipo]'),clas=ov.querySelector('[data-clas]');
+    const fillClas=()=>{const tid=tipo.value;const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId)===String(tid)&&String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');clas.innerHTML=xs.map(x=>'<option value="'+esc(x.id)+'" data-name="'+esc(x.nombre)+'" '+(norm(x.nombre)===norm(c.clasificacion)?'selected':'')+'>'+esc(x.nombre)+'</option>').join('');};
+    tipo.onchange=()=>{c.clasificacion='';fillClas()};fillClas();
+    ov.querySelector('[data-x]').onclick=closeEdit;ov.querySelector('[data-cancel]').onclick=closeEdit;ov.onclick=e=>{if(e.target===ov)closeEdit();};
+    ov.querySelector('[data-save]').onclick=async e=>{
+      const btn=e.currentTarget,fecha=ov.querySelector('[data-fecha]').value,clienteId=ov.querySelector('[data-cliente]').value,tipoId=tipo.value,clasId=clas.value;
+      if(!fecha||!clienteId||!tipoId||!clasId)return alert('Completa fecha, cliente, tipo de servicio y clasificación.');
+      btn.disabled=true;
+      try{
+        const {data:r,error}=await sb().rpc('hs_update_comprobacion',{p_item:{comprobacionId:c.id,fechaUso:fecha,clienteId,tipoViajeId:tipoId,clasificacionId:clasId,observaciones:ov.querySelector('[data-obs]').value||''}});
+        if(error||!r?.ok)throw new Error(error?.message||r?.error||'No se pudo actualizar la comprobación.');
+        closeEdit();cache=null;document.getElementById('hs104Refresh')?.click();setTimeout(()=>{showHistory=true;ensureSwitch();patchHistory(true);},350);
+      }catch(err){alert(err?.message||err);btn.disabled=false;}
+    };
+  }
+
+  async function ensureQrLib(){
+    if(window.QRCode)return;
+    let s=document.querySelector('script[data-hs-ux-qrcode]');
+    if(!s){s=document.createElement('script');s.dataset.hsUxQrcode='1';s.src='assets/js/vendor/qrcode.min.js?v=1.0.0';document.head.appendChild(s);}
+    await new Promise((res,rej)=>{if(window.QRCode)return res();s.addEventListener('load',res,{once:true});s.addEventListener('error',()=>rej(new Error('No se pudo cargar QR.')),{once:true});});
+  }
+  function closeQr(){if(qrPoll){clearInterval(qrPoll);qrPoll=null;}document.querySelector('.hs-qr-hist-modal')?.remove();}
+  async function openHistoryQr(c){
+    const {data:r,error}=await sb().rpc('hs_qr_photo_create',{p_folio_id:c.folioId});
+    if(error||!r?.ok)throw new Error(error?.message||r?.error||'No se pudo generar QR.');
+    const url=new URL('hojas-servicio-foto-qr.html',location.href);url.search='?t='+encodeURIComponent(r.token);
+    closeQr();const ov=document.createElement('div');ov.className='hs-qr-hist-modal';
+    ov.innerHTML='<div class="hs-qr-hist-card"><div class="hs-qr-hist-head"><strong>Subir foto por QR · '+esc(c.folio)+'</strong><button data-x style="border:0;background:none;color:#fff;font-size:25px">×</button></div><div class="hs-qr-hist-body"><div data-code style="display:flex;justify-content:center;min-height:230px;align-items:center">Generando QR…</div><div style="font-size:11px;color:#64748b;margin-top:10px">Escanea con el celular y toma/sube la foto de esta comprobación.</div><div data-status style="margin-top:10px;padding:9px;border-radius:9px;background:#f8fafc;font-size:11px">Esperando fotografía…</div></div></div>';
+    document.body.appendChild(ov);ov.querySelector('[data-x]').onclick=closeQr;ov.onclick=e=>{if(e.target===ov)closeQr();};
+    try{await ensureQrLib();const el=ov.querySelector('[data-code]');el.innerHTML='';new QRCode(el,{text:url.toString(),width:230,height:230,correctLevel:QRCode.CorrectLevel.M});}catch(_){ov.querySelector('[data-code]').textContent=url.toString();}
+    let busy=false;qrPoll=setInterval(async()=>{if(busy||!document.body.contains(ov))return;busy=true;try{const {data:s,error:e}=await sb().rpc('hs_qr_photo_status',{p_token:r.token});if(e)throw e;if(s?.status==='CAPTURADA'){ov.querySelector('[data-status]').innerHTML='<strong style="color:#166534">Foto recibida correctamente.</strong>';clearInterval(qrPoll);qrPoll=null;cache=null;setTimeout(()=>{closeQr();document.getElementById('hs104Refresh')?.click();setTimeout(()=>{showHistory=true;ensureSwitch();patchHistory(true);},350);},650);}else if(s?.status!=='PENDIENTE'){ov.querySelector('[data-status]').textContent='El QR ya no está disponible.';clearInterval(qrPoll);qrPoll=null;}}catch(err){ov.querySelector('[data-status]').textContent='Error: '+(err?.message||err);}finally{busy=false;}},1800);
+  }
+
+  async function patchHistory(force=false){
+    const body=document.getElementById('hs104Hist');if(!body||!sb())return;
+    try{
+      const d=await data(force);
+      const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
+      [...body.querySelectorAll('tr')].forEach(tr=>{
+        const cells=tr.querySelectorAll('td');if(cells.length<6)return;
+        const folio=String(cells[0].textContent||'').trim();
+        const c=hist.find(x=>String(x.folio||'').trim()===folio);if(!c)return;
+        let td=tr.querySelector('[data-hs-ux-actions]');
+        if(!td){td=document.createElement('td');td.dataset.hsUxActions='1';tr.appendChild(td);}
+        td.innerHTML='<div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button>'+(c.fotoPath?'':'<button type="button" class="cc-btn cc-btn-light" data-qr-h><i class="fa-solid fa-qrcode"></i> QR foto</button>')+'</div>';
+        td.querySelector('[data-edit-h]').onclick=()=>openEdit(c,d);
+        td.querySelector('[data-qr-h]')?.addEventListener('click',async()=>{try{await openHistoryQr(c);}catch(e){alert(e?.message||e);}});
+      });
+      const table=body.closest('table'),head=table?.querySelector('thead tr');
+      if(head&&!head.querySelector('[data-hs-ux-head]')){const th=document.createElement('th');th.dataset.hsUxHead='1';th.textContent='EDITAR / FOTO';head.appendChild(th);}
+      filterHistory();
+    }catch(e){console.warn('HS COMPROBACION UX V2',e);}
+  }
+
+  function patch(){
+    style();ensureSwitch();patchPending();if(showHistory)patchHistory(false);
+  }
+
+  const obs=new MutationObserver(()=>setTimeout(patch,30));
+  function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio,#hs104Refresh')){cache=null;setTimeout(patch,250);}},true);
+  setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch();},1200);
+})();
