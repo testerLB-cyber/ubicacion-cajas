@@ -23,7 +23,8 @@
       .hs-manual-photo-box label{display:block;font-size:10px;font-weight:900;color:#334155;margin-bottom:7px}
       .hs-manual-photo-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
       .hs-manual-photo-status{display:block;margin-top:7px;font-size:10px;color:#64748b}
-      .hs-photo-methods{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+      .hs-photo-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%;align-items:stretch}
+      .hs-photo-methods .cc-btn{width:100%;min-width:0;white-space:normal;min-height:42px}
       .hs-photo-methods input[type=file]{display:none}
       #hs104Hist th[data-hs-pdf-head],#hs104Hist td[data-hs-pdf-cell]{text-align:right;white-space:nowrap}
       .hs-qr-modal{position:fixed;inset:0;z-index:100900;background:rgba(15,23,42,.82);display:flex;align-items:center;justify-content:center;padding:16px}
@@ -31,7 +32,7 @@
       .hs-qr-head{background:#0f172a;color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
       .hs-qr-body{padding:18px;text-align:center}.hs-qr-code{display:flex;justify-content:center;min-height:230px;align-items:center}.hs-qr-code img,.hs-qr-code canvas{max-width:230px!important;height:auto!important}
       .hs-qr-note{font-size:11px;color:#64748b;margin-top:10px}.hs-qr-status{margin-top:11px;padding:10px;border-radius:10px;background:#f8fafc;font-size:12px;color:#475569}
-      @media(max-width:640px){.hs-manual-photo-actions,.hs-photo-methods{align-items:stretch}.hs-manual-photo-box .cc-btn{width:100%}}
+      @media(max-width:640px){.hs-manual-photo-actions{align-items:stretch}.hs-photo-methods .cc-btn{font-size:13px!important;line-height:1.2}}
     `;document.head.appendChild(st);
   }
 
@@ -71,7 +72,7 @@
     if(!editArea)return;
     let box=row.querySelector('[data-hs-manual-photo-box]');
     if(!box){box=document.createElement('div');box.className='hs-manual-photo-box';box.dataset.hsManualPhotoBox='1';}
-    if(box.parentElement!==editArea)editArea.appendChild(box);
+    if(!editArea.contains(box))editArea.appendChild(box);
     const path=currentPhoto(folio),exists=!!path;
     // Keep the controls and chosen file during polling; a new saved path triggers a refresh.
     if(box.dataset.photoPath===path&&box.querySelector('[data-qr]'))return;

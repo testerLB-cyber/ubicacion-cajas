@@ -107,12 +107,6 @@
     grid.parentNode.insertBefore(editArea,grid);
     editArea.appendChild(grid);
     if(obsField&&obsField!==actions) editArea.appendChild(obsField);
-    const photo=document.createElement('div');
-    photo.className='hs-manual-photo-box';
-    photo.dataset.hsManualPhotoBox='1';
-    photo.dataset.photoPath='';
-    photo.innerHTML='<label>Evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Elige una foto o escanea el QR desde otro teléfono.</div>';
-    editArea.appendChild(photo);
 
     const edit=document.createElement('button');
     edit.type='button';
