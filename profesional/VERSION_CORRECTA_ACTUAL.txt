@@ -1,8 +1,14 @@
 TRÁFICO APP · VERSIÓN CORRECTA / BASE ACTUAL
 Fecha: 2026-09-22
-Versión profesional: 20260923-class-by-trip
-Commit funcional de referencia: 11a47f7e1ba0507a8066d9c16bce261da691b094
+Versión profesional: 20260923-comp-v2
+Commit funcional principal: 9eee8a8abe4c5c8a7bee0363d2f442fb9497e8ca
 Ruta principal web: /ubicacion-cajas/profesional/
-Ruta de referencia validada: /ubicacion-cajas/profesional/?v=20260923-class-by-trip
 
-Esta versión queda marcada como la versión principal actual de Profesional. Corresponde al estado publicado con el cambio de clasificaciones repetibles entre tipos de movimiento y debe ser la base para los cambios posteriores, sin depender del parámetro ?v= para abrir la aplicación.
+Cambios incluidos en esta publicación:
+- Comprobación de Hojas: Operador/Beneficiario con búsqueda autocompletable nativa.
+- Botón “Regresar sin usar” movido al listado principal, junto a Editar/Comprobar.
+- Modal Editar/Revisar conserva de forma visible las opciones “Subir imagen” y “Tomar foto con QR”.
+- Renovación de versiones de scripts para evitar caché de la versión anterior.
+- Se conservan precaptura móvil, cliente, tipo de servicio, clasificación, observaciones, comprobación e historial.
+
+Esta versión queda marcada como base principal actual de Profesional. Los cambios posteriores deben partir de esta versión sin eliminar funcionalidades existentes.
