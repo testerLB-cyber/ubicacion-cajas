@@ -173,7 +173,7 @@
         <div class="hs104-card hs-list-row" data-row="${esc(x.id)}" data-hs-folio="${esc(x.folio)}" data-hs-person="${esc(personName(x))}">
           <div class="hs-list-head">
             <div class="hs-list-info"><strong>${esc(x.folio)}</strong><div class="hs104-note">${esc(personName(x))} · ${pre?esc([pre.cliente,pre.tipoViaje,pre.clasificacion].filter(Boolean).join(' · ')||'Datos precargados'):esc(x.responsable||'—')}</div></div>
-            <div class="hs-list-head-actions"><span class="hs104-pill ${pre?'hs104-ok':'hs104-danger'}">${pre?'PRECARGADA APP':'PENDIENTE'}</span><button type="button" class="cc-btn cc-btn-light" data-return><i class="fa-solid fa-rotate-left"></i> Regresar sin usar</button><button type="button" class="cc-btn ${pre?'cc-btn-primary':'cc-btn-light'}" data-hs-edit aria-haspopup="dialog"><i class="fa-solid ${pre?'fa-circle-check':'fa-pen'}"></i> ${pre?'Comprobar':'Editar'}</button></div>
+            <div class="hs-list-head-actions"><span class="hs104-pill ${pre?'hs104-ok':'hs104-danger'}">${pre?'PRECARGADA APP':'PENDIENTE'}</span><button type="button" class="cc-btn cc-btn-light" data-hs-edit aria-haspopup="dialog"><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-return><i class="fa-solid fa-rotate-left"></i> Registrar sin usar</button></div>
           </div>
           <div class="hs-list-edit-area" role="dialog" aria-modal="true" aria-label="${pre?'Revisar y comprobar':'Editar'} hoja ${esc(x.folio)}">
             <div class="hs-list-dialog"><div class="hs-list-dialog-head"><strong>${pre?'Revisar y comprobar':'Llenar hoja'} · ${esc(x.folio)}</strong><button type="button" class="hs-list-dialog-close" data-hs-close aria-label="Cerrar">×</button></div>
