@@ -38,7 +38,20 @@
       .hs-qr-hist-card{width:min(500px,96vw);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 80px #0008}
       .hs-qr-hist-head{background:#0f172a;color:#fff;padding:13px 16px;display:flex;justify-content:space-between;align-items:center}
       .hs-qr-hist-body{padding:18px;text-align:center}
-      @media(max-width:700px){.hs-edit-grid{grid-template-columns:1fr}.hs-comp-search{max-width:none}.hs-comp-switch{align-items:stretch}}
+      @media(max-width:700px){
+        .hs-edit-grid{grid-template-columns:1fr}.hs-comp-search{max-width:none}.hs-comp-switch{align-items:stretch}
+        #hs104CompList .hs-list-row{padding:10px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+        #hs104CompList .hs-list-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;align-items:stretch!important}
+        #hs104CompList .hs-list-info{width:100%!important;min-width:0!important;overflow-wrap:anywhere!important}
+        #hs104CompList .hs-list-info strong{display:block!important;font-size:12px!important;line-height:1.35!important}
+        #hs104CompList .hs-list-info .hs104-note{font-size:10px!important;line-height:1.35!important;white-space:normal!important}
+        #hs104CompList .hs-list-head-actions{width:100%!important;max-width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;overflow:visible!important}
+        #hs104CompList .hs-list-head-actions .cc-btn{width:100%!important;min-width:0!important;justify-content:center!important;padding:7px 4px!important;font-size:9px!important;overflow:hidden!important;text-overflow:ellipsis!important}
+        #hs104CompList .hs-list-head-actions .hs104-pill{grid-column:1/-1;width:max-content;max-width:100%;font-size:9px!important}
+      }
+      @media(max-width:380px){
+        #hs104CompList .hs-list-head-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      }
     `;document.head.appendChild(s);
   }
 
