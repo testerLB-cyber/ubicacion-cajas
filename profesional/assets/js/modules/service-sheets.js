@@ -13,7 +13,7 @@
   }
 
   /* Hojas web: selección de unidad, detección de Tracto-Camión y remolque obligatorio. */
-  load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260924-listunit1','hojas-unidad-remolque');
+  load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260924-directcheck1','hojas-unidad-remolque');
 
   /* Catálogo maestro con edición protegida y revisión de impacto. */
   load('assets/js/modules/unit-types-catalog-fix-v1.js?v=20260913-integral2','tipos-unidad-seguros');
