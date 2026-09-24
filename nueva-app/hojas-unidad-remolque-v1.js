@@ -16,7 +16,8 @@
   function ensureOperatorFields(){
     const form=document.getElementById('hsForm');if(!form||document.getElementById('hsUnit'))return;
     const used=document.getElementById('hsUsedAt')?.closest('.field');if(!used)return;
-    const wrap=document.createElement('div');wrap.innerHTML='<div class="field"><label>Unidad *</label><input id="hsUnit" list="mobileHsUnitList" autocomplete="off" placeholder="Escribe número de unidad"><datalist id="mobileHsUnitList"></datalist><div id="hsUnitStatus" class="unit-status muted">Escribe y selecciona una unidad del catálogo.</div></div><div class="field hidden" id="hsTrailerField"><label>Número de remolque *</label><input id="hsTrailer" list="mobileHsTrailerList" autocomplete="off" placeholder="Ej. LB245 o cualquier remolque"><datalist id="mobileHsTrailerList"></datalist><div class="muted" style="font-size:11px;margin-top:5px">Campo libre. Si escribes LB se sugieren cajas; no se valida que exista.</div></div>';
+    const client=document.getElementById('hsClient');if(client&&client.tagName==='SELECT'){const input=document.createElement('input');input.id='hsClientAuto';input.setAttribute('list','mobileHsClientList');input.autocomplete='off';input.placeholder='Escribe o selecciona cliente';const dl=document.createElement('datalist');dl.id='mobileHsClientList';dl.innerHTML=[...client.options].filter(o=>o.value).map(o=>'<option value="'+esc(o.textContent)+'"></option>').join('');client.style.display='none';client.insertAdjacentElement('afterend',input);input.addEventListener('input',()=>{const o=[...client.options].find(x=>norm(x.textContent)===norm(input.value));client.value=o?.value||'';});}
+    const wrap=document.createElement('div');wrap.innerHTML='<div class="field"><label>Unidad *</label><input id="hsUnit" list="mobileHsUnitList" autocomplete="off" placeholder="Escribe o selecciona unidad"><datalist id="mobileHsUnitList"></datalist><div id="hsUnitStatus" class="unit-status muted">Escribe y selecciona una unidad del catálogo.</div></div><div class="field hidden" id="hsTrailerField"><label>Caja *</label><input id="hsTrailer" list="mobileHsTrailerList" autocomplete="off" placeholder="Escribe o selecciona caja"><datalist id="mobileHsTrailerList"></datalist><div class="muted" style="font-size:11px;margin-top:5px">Selecciona una caja del catálogo.</div></div>';
     const nodes=[...wrap.children];nodes.forEach(n=>used.parentNode.insertBefore(n,used));
     ['input','change','blur'].forEach(ev=>document.getElementById('hsUnit').addEventListener(ev,syncOperatorUnit));
     fillLists();
@@ -40,7 +41,7 @@
     let path='';
     try{
       const u=syncOperatorUnit();if(!u)throw new Error('Selecciona una unidad válida del catálogo.');
-      const rem=String(document.getElementById('hsTrailer')?.value||'').trim();if(u.esTracto&&!rem)throw new Error('Captura el número de remolque para el Tracto-camión.');
+      const rem=String(document.getElementById('hsTrailer')?.value||'').trim();if(u.esTracto&&!rem)throw new Error('Selecciona la caja para el Tracto-camión.');if(u.esTracto&&!boxes().some(x=>norm(x.numero)===norm(rem)))throw new Error('Selecciona una caja válida del catálogo.');
       if(!HS_FILE)throw new Error('La foto es obligatoria.');
       const au=await sb.auth.getUser(),uid=au.data?.user?.id;path=uid+'/'+HS_CURRENT.id+'/'+Date.now()+'.jpg';
       let r=await sb.storage.from('app-hojas-servicio').upload(path,HS_FILE,{contentType:'image/jpeg'});if(r.error)throw r.error;
