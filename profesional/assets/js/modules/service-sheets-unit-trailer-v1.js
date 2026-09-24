@@ -52,6 +52,26 @@
     return null;
   }
 
+  function confirmPreloaded(row,ev){
+    const pre=ev?.precaptura||null;
+    const val=s=>String(row.querySelector(s)?.value||'').trim();
+    const unit=ev?.unidadNumero||val('[data-hs-unidad]')||'—';
+    const trailer=ev?.remolqueNumero||val('[data-hs-remolque]')||'';
+    const cliente=pre?.cliente||row.querySelector('[data-cliente]')?.selectedOptions?.[0]?.textContent?.trim()||'—';
+    const tipo=pre?.tipoViaje||val('[data-tipo]')||'—';
+    const clas=pre?.clasificacion||val('[data-clas]')||'—';
+    const usado=pre?.dondeUtilizado||val('[data-obs]')||'—';
+    return confirm('¿Seguro que deseas COMPROBAR esta hoja con la información precargada?\n\n'+
+      'Folio: '+(row.dataset.hsFolio||'—')+'\n'+
+      'Cliente: '+cliente+'\n'+
+      'Tipo de servicio: '+tipo+'\n'+
+      'Clasificación: '+clas+'\n'+
+      'Unidad: '+unit+'\n'+
+      (trailer?'Remolque: '+trailer+'\n':'')+
+      'Dónde se utilizó / comentarios: '+usado+'\n\n'+
+      'Al confirmar, esta información será aceptada y la hoja quedará comprobada.');
+  }
+
   function decorateRow(row){
     if(!row||row.dataset.hsUnitTrailer==='1'||!UNITS.length)return;
     const grid=row.querySelector('.hs104-grid');if(!grid)return;
@@ -79,6 +99,17 @@
     }
     ['input','change','blur'].forEach(evt=>input.addEventListener(evt,()=>setUnitState(row,false)));
     setUnitState(row);
+
+    const preloaded=!!(ev?.precaptura||row.querySelector('.hs104-pill.hs104-ok'));
+    const actions=row.querySelector('.hs-list-head-actions');
+    if(preloaded&&actions&&!actions.querySelector('[data-hs-direct-check]')){
+      const direct=document.createElement('button');
+      direct.type='button';
+      direct.className='cc-btn cc-btn-primary';
+      direct.dataset.hsDirectCheck='1';
+      direct.innerHTML='<i class="fa-solid fa-check"></i> Comprobar';
+      actions.insertBefore(direct,actions.querySelector('[data-hs-edit]')||null);
+    }
   }
   function decorateAll(){document.querySelectorAll('#hs104CompList [data-row]').forEach(decorateRow);}
 
@@ -98,6 +129,17 @@
   }
 
   document.addEventListener('click',async e=>{
+    const direct=e.target.closest?.('#hs104CompList [data-hs-direct-check]');
+    if(direct){
+      const row=direct.closest('[data-row]');if(!row||row.dataset.hsUnitTrailer!=='1')return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const ev=EVIDENCE.get(String(row.dataset.row));
+      if(!confirmPreloaded(row,ev))return;
+      if(direct.disabled)return;direct.disabled=true;const old=direct.innerHTML;direct.textContent='Comprobando...';
+      try{await save(row);document.getElementById('hs104Refresh')?.click();}
+      catch(err){alert(err?.message||err);direct.disabled=false;direct.innerHTML=old;}
+      return;
+    }
     const btn=e.target.closest?.('#hs104CompList [data-save]');if(!btn)return;
     const row=btn.closest('[data-row]');if(!row||row.dataset.hsUnitTrailer!=='1')return;
     e.preventDefault();e.stopImmediatePropagation();
