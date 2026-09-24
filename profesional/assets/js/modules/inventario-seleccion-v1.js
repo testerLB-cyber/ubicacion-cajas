@@ -21,15 +21,31 @@ document.addEventListener('click',e=>{
  if(k==='assignment')copyAssignment(row2);
 });
 async function copyAssignment(row){
- const d=row.dataset, W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
- x.fillStyle='#f8fafc';x.fillRect(0,0,W,H);x.fillStyle='#17365d';x.fillRect(0,0,W,190);
- x.fillStyle='#fff';x.font='bold 48px Arial';x.fillText('ASIGNACIÓN DE UNIDAD',60,82);x.font='bold 34px Arial';x.fillText(d.ccInvNumero||'UNIDAD',60,142);
- x.fillStyle='#e2e8f0';x.fillRect(60,240,360,360);x.fillStyle='#64748b';x.font='bold 30px Arial';x.textAlign='center';x.fillText('TIPO DE UNIDAD',240,380);x.font='bold 52px Arial';x.fillStyle='#17365d';x.fillText((d.ccInvType||d.ccInvCategory||'UNIDAD').toUpperCase(),240,445);x.font='80px Arial';x.fillText('🚛',240,550);x.textAlign='left';
- const lines=[['Identificador',d.ccInvNumero],['Placas',d.ccInvPlates||'—'],['Capacidad',d.ccInvCapacity||'—'],['Dimensiones',[(d.ccInvLength||'—'),(d.ccInvWidth||'—'),(d.ccInvHeight||'—')].join(' × ')+' ft'],['Descripción',d.ccInvDescription||'—']];
- let y=285;for(const [a,v] of lines){x.fillStyle='#64748b';x.font='bold 26px Arial';x.fillText(a.toUpperCase(),475,y);x.fillStyle='#0f172a';x.font='bold 38px Arial';wrap(x,String(v),475,y+42,530,38);y+=125}
- x.fillStyle='#17365d';x.fillRect(0,H-80,W,80);x.fillStyle='#fff';x.font='bold 26px Arial';x.fillText('LOGÍSTICA BALDERRAMA · ASIGNACIÓN',60,H-31);
- cv.toBlob(async blob=>{try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('Imagen de asignación copiada al portapapeles.');}else{throw new Error('clipboard image unsupported')}}catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asignacion_'+(d.ccInvNumero||'unidad')+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert('Este navegador no permitió copiar la imagen; se descargó como PNG.');}},'image/png');
+ const d=row.dataset,W=1200,H=900,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+ const type=(d.ccInvType||'UNIDAD').toUpperCase(),num=(d.ccInvNumero||'UNIDAD').toUpperCase();
+ x.fillStyle='#07182f';x.fillRect(0,0,W,H);x.fillStyle='#0d2748';x.fillRect(0,0,W,175);
+ x.fillStyle='#fff';x.font='900 52px Arial';x.fillText('ASIGNACIÓN DE UNIDAD',58,72);x.fillStyle='#8fc7ff';x.font='bold 25px Arial';x.fillText('LOGÍSTICA BALDERRAMA',60,120);
+ x.fillStyle='#fff';round(x,55,210,1090,610,30);x.fill();
+ x.fillStyle='#eaf3ff';round(x,85,250,430,520,24);x.fill();
+ x.fillStyle='#17365d';x.font='900 32px Arial';x.textAlign='center';x.fillText(type,300,315);
+ drawVehicle(x,type,120,360,360,250);
+ x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('TIPO DE UNIDAD',300,725);x.textAlign='left';
+ x.fillStyle='#17365d';x.font='900 58px Arial';x.fillText(num,565,305);
+ const items=[['PLACAS',d.ccInvPlates||'—'],['CAPACIDAD',d.ccInvCapacity||'—'],['DIMENSIONES',[(d.ccInvLength||'—'),(d.ccInvWidth||'—'),(d.ccInvHeight||'—')].join(' × ')+' FT'],['DESCRIPCIÓN',d.ccInvDescription||'—']];
+ let y=365;for(const [lab,val] of items){x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 35px Arial';wrap(x,String(val),565,y+39,525,38);y+=105}
+ x.fillStyle='#8fc7ff';x.fillRect(55,845,1090,3);x.fillStyle='#dbeafe';x.font='bold 20px Arial';x.fillText('LOGÍSTICA BALDERRAMA  •  ASIGNACIÓN',60,880);
+ cv.toBlob(async blob=>{try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('Imagen de asignación copiada al portapapeles.');}else throw new Error()}catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asignacion_'+num+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert('No fue posible copiar la imagen; se descargó como PNG.');}},'image/png');
 }
+function drawVehicle(x,type,px,py,w,h){
+ x.save();x.translate(px,py);x.fillStyle='#17365d';x.strokeStyle='#17365d';x.lineWidth=10;
+ const t=type.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ if(t.includes('PICK')||t.includes('CAMIONETA')){x.fillRect(45,95,180,80);x.beginPath();x.moveTo(225,95);x.lineTo(275,45);x.lineTo(330,45);x.lineTo(350,175);x.lineTo(225,175);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.fillRect(275,60,45,40);}
+ else if(t.includes('TRACTO')||t.includes('TRAILER')||t.includes('CAMION')){x.fillRect(10,75,210,100);x.beginPath();x.moveTo(220,75);x.lineTo(270,25);x.lineTo(330,25);x.lineTo(350,175);x.lineTo(220,175);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.fillRect(270,45,48,45);}
+ else if(t.includes('VAN')){round(x,35,55,300,120,25);x.fill();x.fillStyle='#eaf3ff';x.fillRect(220,75,80,50);}
+ else{x.beginPath();x.moveTo(45,125);x.lineTo(90,65);x.lineTo(255,65);x.lineTo(310,125);x.lineTo(345,135);x.lineTo(345,175);x.lineTo(25,175);x.lineTo(25,140);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.beginPath();x.moveTo(105,78);x.lineTo(240,78);x.lineTo(275,120);x.lineTo(75,120);x.closePath();x.fill();}
+ x.fillStyle='#0f172a';for(const cx of [95,285]){x.beginPath();x.arc(cx,180,35,0,Math.PI*2);x.fill();x.fillStyle='#cbd5e1';x.beginPath();x.arc(cx,180,14,0,Math.PI*2);x.fill();x.fillStyle='#0f172a';}x.restore();
+}
+function round(x,a,b,w,h,r){x.beginPath();x.roundRect(a,b,w,h,r);return x}
 function wrap(ctx,t,x,y,max,lh){const w=t.split(' ');let l='';for(const z of w){const q=l?l+' '+z:z;if(ctx.measureText(q).width>max&&l){ctx.fillText(l,x,y);l=z;y+=lh}else l=q}ctx.fillText(l,x,y)}
 const obs=new MutationObserver(()=>{if(selected&&!document.querySelector('#ccInventarioBody tr[data-cc-inv-id="'+CSS.escape(selected)+'"]'))selected='';sync()});
 document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('ccInventarioBody');if(b)obs.observe(b,{childList:true});sync()});
