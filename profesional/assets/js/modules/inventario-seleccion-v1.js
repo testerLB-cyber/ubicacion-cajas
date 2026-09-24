@@ -73,7 +73,11 @@ function buildAssignmentCanvas(row,operatorName=''){
  x.fillStyle='#17365d';let ts=fitText(x,type,350,42,26);x.font='900 '+ts+'px Arial';x.textAlign='center';x.fillText(type,300,315);drawVehicle(x,type,115,350,370,270);x.textAlign='left';
  x.fillStyle='#17365d';let ns=fitText(x,num,540,60,34);x.font='900 '+ns+'px Arial';x.fillText(num,565,305);
  let y=360;const line=(lab,val,size=42)=>{x.fillStyle='#64748b';x.font='bold 19px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';const fs=fitText(x,String(val||'—'),520,size,26);x.font='900 '+fs+'px Arial';x.fillText(String(val||'—'),565,y+39);y+=92};
- line('PLACAS MX',mx||'—',40);if(usa&&usa!=='—')line('PLACAS USA',usa,40);line('CAPACIDAD',d.ccInvCapacity||'—',48);
+ line('PLACAS MX',mx||'—',40);if(usa&&usa!=='—')line('PLACAS USA',usa,40);
+ const capType=String(type||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+ const capRaw=String(d.ccInvCapacity||'').trim();
+ const capView=capRaw&&['RABON','ESTAQUITA','TONELADA'].includes(capType)&&!/\bPALLETS?\b/i.test(capRaw)?capRaw+' PALLETS':(capRaw||'—');
+ line('CAPACIDAD',capView,48);
  x.fillStyle='#64748b';x.font='bold 22px Arial';x.fillText('DIMENSIONES',565,y);y+=43;
  for(const [lab,v] of [['LARGO',d.ccInvLength],['ANCHO',d.ccInvWidth],['ALTO',d.ccInvHeight]]){x.fillStyle='#334155';x.font='900 24px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 32px Arial';x.fillText((v||'—')+' ft  /  '+m(v)+' m',690,y);y+=52}
  if(hasOperator){
