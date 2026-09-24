@@ -29,9 +29,9 @@ async function copyAssignment(row){
  x.fillStyle='#fff';x.font='900 52px Arial';x.fillText('ASIGNACIÓN DE UNIDAD',58,72);x.fillStyle='#8fc7ff';x.font='bold 25px Arial';x.fillText('LOGÍSTICA BALDERRAMA',60,120);
  x.fillStyle='#fff';round(x,55,210,1090,690,30);x.fill();
  x.fillStyle='#eaf3ff';round(x,85,250,430,600,24);x.fill();
- x.fillStyle='#17365d';x.font='900 35px Arial';x.textAlign='center';x.fillText(type,300,315);
+ x.fillStyle='#17365d';x.font='900 42px Arial';x.textAlign='center';x.fillText(type,300,315);
  drawVehicle(x,type,115,350,370,270);
- x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('TIPO DE UNIDAD',300,705);x.fillStyle='#17365d';x.font='900 32px Arial';wrap(x,type,130,755,340,36);x.textAlign='left';
+ x.textAlign='left';
  x.fillStyle='#17365d';x.font='900 60px Arial';x.fillText(num,565,305);
  let y=365;const item=(lab,val)=>{x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font=(lab.includes('PLACAS')||lab==='CAPACIDAD')?'900 44px Arial':'900 34px Arial';wrap(x,String(val||'—'),565,y+45,525,(lab.includes('PLACAS')||lab==='CAPACIDAD')?48:38);y+=115};
  item(mx&&usa?'PLACAS MX / PLACAS USA':'PLACAS',plates);item('CAPACIDAD',d.ccInvCapacity||'—');
