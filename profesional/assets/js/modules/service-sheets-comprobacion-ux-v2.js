@@ -253,7 +253,7 @@
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
     try{
       const d=await data(force);
-      const hist=(d.comprobaciones||[]).filter(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA');
+      const hist=(d.comprobaciones||[]).filter(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase()));
 
       body.querySelectorAll('tr[data-hs-hist-row]').forEach(tr=>{
         const folio=String(tr.dataset.hsHistFolio||'').trim();
@@ -343,7 +343,7 @@
         (async()=>{
           try{
             const d=await data(false);
-            const c=(d.comprobaciones||[]).find(x=>String(x.tipo||'').toUpperCase()==='UTILIZADA'&&String(x.folio||'').trim()===folio);
+            const c=(d.comprobaciones||[]).find(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())&&String(x.folio||'').trim()===folio);
             if(!c)throw new Error('No se encontró la comprobación.');
             if(histBtn.matches('[data-edit-h]')) return openEdit(c,d);
             if(histBtn.matches('[data-qr-h]')) return openHistoryQr(c);
