@@ -116,14 +116,14 @@
   async function save(row){
     const val=s=>String(row.querySelector(s)?.value||'').trim();
     const folioId=String(row.dataset.row||''),fechaUso=val('[data-fecha]'),clienteId=val('[data-cliente]'),tipoViaje=val('[data-tipo]'),clasificacion=val('[data-clas]'),observaciones=val('[data-obs]');
-    const unit=setUnitState(row,false),remolqueNumero=val('[data-hs-remolque]');
+    const unit=setUnitState(row,false),remolqueNumero=val('[data-hs-remolque]'),cantidadCobro=val('[data-cantidad-cobro]'),unidadCobro=val('[data-unidad-cobro]');
     if(!fechaUso)throw new Error('Captura la fecha de uso.');
     if(!clienteId)throw new Error('Selecciona un cliente.');
     if(!tipoViaje)throw new Error('Captura el Tipo de servicio.');
-    if(!clasificacion)throw new Error('Captura la Clasificación.');
+    if(!clasificacion)throw new Error('Captura la Clasificación o cantidad.');
     if(!unit)throw new Error('Selecciona una unidad válida del catálogo.');
     if(unit.esTracto&&!remolqueNumero)throw new Error('Captura el número de remolque para el Tracto-camión.');
-    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:''}});
+    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:''}});
     if(r.error)throw r.error;if(r.data?.ok===false)throw new Error(r.data.error||'No se pudo comprobar la hoja.');
     return r.data;
   }
