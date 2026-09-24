@@ -33,7 +33,7 @@ async function copyAssignment(row){
  drawVehicle(x,type,115,350,370,270);
  x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('TIPO DE UNIDAD',300,705);x.fillStyle='#17365d';x.font='900 32px Arial';wrap(x,type,130,755,340,36);x.textAlign='left';
  x.fillStyle='#17365d';x.font='900 60px Arial';x.fillText(num,565,305);
- let y=365;const item=(lab,val)=>{x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 34px Arial';wrap(x,String(val||'—'),565,y+39,525,38);y+=105};
+ let y=365;const item=(lab,val)=>{x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font=(lab.includes('PLACAS')||lab==='CAPACIDAD')?'900 44px Arial':'900 34px Arial';wrap(x,String(val||'—'),565,y+45,525,(lab.includes('PLACAS')||lab==='CAPACIDAD')?48:38);y+=115};
  item(mx&&usa?'PLACAS MX / PLACAS USA':'PLACAS',plates);item('CAPACIDAD',d.ccInvCapacity||'—');
  x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('DIMENSIONES',565,y);y+=38;
  const dims=[['LARGO',d.ccInvLength],['ANCHO',d.ccInvWidth],['ALTO',d.ccInvHeight]];
