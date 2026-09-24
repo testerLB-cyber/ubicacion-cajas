@@ -48,6 +48,16 @@
         #hs104CompList .hs-list-head-actions{width:100%!important;max-width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;overflow:visible!important}
         #hs104CompList .hs-list-head-actions .cc-btn{width:100%!important;min-width:0!important;justify-content:center!important;padding:7px 4px!important;font-size:9px!important;overflow:hidden!important;text-overflow:ellipsis!important}
         #hs104CompList .hs-list-head-actions .hs104-pill{grid-column:1/-1;width:max-content;max-width:100%;font-size:9px!important}
+        #hs104CompList .hs-list-edit-area{padding:6px!important}
+        #hs104CompList .hs-list-dialog{width:100%!important;max-width:100%!important;max-height:98dvh!important;border-radius:10px!important}
+        #hs104CompList .hs-list-dialog-head{padding:10px 12px!important}
+        #hs104CompList .hs-list-dialog-body{padding:10px!important}
+        #hs104CompList .hs-list-dialog-body .hs104-grid{grid-template-columns:1fr!important}
+        #hs104CompList .hs-list-dialog-body input,#hs104CompList .hs-list-dialog-body select,#hs104CompList .hs-list-dialog-body textarea{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+        #hs104CompList .hs-list-dialog-body>.hs104-actions{display:grid!important;grid-template-columns:1fr!important;width:100%!important}
+        #hs104CompList .hs-list-dialog-body>.hs104-actions .cc-btn{width:100%!important;justify-content:center!important}
+        #hs104CompList .hs-photo-methods{display:grid!important;grid-template-columns:1fr!important;width:100%!important}
+        #hs104CompList .hs-photo-methods .cc-btn{width:100%!important;justify-content:center!important}
       }
       @media(max-width:380px){
         #hs104CompList .hs-list-head-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
