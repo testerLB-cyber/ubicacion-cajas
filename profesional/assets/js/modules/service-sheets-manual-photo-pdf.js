@@ -124,7 +124,8 @@
   window.hsHistoryExportPdf=exportPdf;
   window.hsHistoryShowPhoto=showStoredPhoto;
 
-  async function patch(force=false){ensureStyles();const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;const rows=list?[...list.querySelectorAll('[data-row]')]:[];if(!sb())return;try{const d=await getData(force);rows.forEach(row=>{if(!row.isConnected)return;const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});/* Historial lo administra service-sheets-comprobacion-ux-v2 para evitar columnas/botones duplicados. */}catch(e){console.warn('HS FOTO/PDF V2',e);}}
+  let patchBusy=false,lastListEl=null,lastRowsSig='';
+  async function patch(force=false){ensureStyles();const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');if(!list&&!hist)return;const rows=list?[...list.querySelectorAll('[data-row]')]:[];if(!sb()||patchBusy)return;const sig=rows.map(r=>r.dataset.row||'').join('|');if(!force&&list===lastListEl&&sig===lastRowsSig&&rows.every(r=>r.querySelector('[data-hs-manual-photo-box]')))return;patchBusy=true;try{const d=await getData(force);rows.forEach(row=>{if(!row.isConnected)return;const f=(d.foliosAsignadosOperador||[]).find(x=>String(x.id)===String(row.dataset.row));if(f)renderPhotoBox(row,f);});/* Historial lo administra service-sheets-comprobacion-ux-v2 para evitar columnas/botones duplicados. */lastListEl=list;lastRowsSig=sig;}catch(e){console.warn('HS FOTO/PDF V2',e);}finally{patchBusy=false;}}
   document.addEventListener('click',async e=>{
     const button=e.target.closest?.('#hs104CompList [data-hs-manual-photo-box] [data-upload], #hs104CompList [data-hs-manual-photo-box] [data-qr]');
     if(!button)return;
@@ -145,5 +146,5 @@
     try{await uploadManualPhoto(row,input.files[0],status,!!row.dataset.hsCurrentPhotoPath);}
     catch(err){status.textContent='Error: '+(err?.message||err);alert(err?.message||err);}
   },true);
-  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')||e.target.closest?.('#hs104CompShowAll'))setTimeout(()=>patch(true),280);},true);document.addEventListener('change',e=>{if(['hs104CompPerson','hs104CompType','hs104CompShowAll'].includes(e.target?.id))setTimeout(()=>patch(true),240);},true);window.hsPatchManualPhotoPdf=()=>patch(true);setInterval(()=>{if(document.getElementById('hs104CompList')||document.getElementById('hs104Hist'))patch(false);},1600);
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')||e.target.closest?.('#hs104CompShowAll'))setTimeout(()=>patch(true),280);},true);document.addEventListener('change',e=>{if(['hs104CompPerson','hs104CompType','hs104CompShowAll'].includes(e.target?.id))setTimeout(()=>patch(true),240);},true);window.hsPatchManualPhotoPdf=()=>patch(true);/* Sin polling del DOM: evita repintados periódicos que provocaban parpadeo/salto del modal. */
 })();
