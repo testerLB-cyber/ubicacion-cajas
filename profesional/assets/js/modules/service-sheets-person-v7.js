@@ -17,10 +17,10 @@
     load('assets/js/modules/service-sheets-v104.js?v=20260924-acceptedby1','data-correct-hs-main')
       .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260914-1','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
-      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260924-demora1','data-correct-hs-precap'))
+      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260924-resguardo1','data-correct-hs-precap'))
       .then(()=>load('assets/js/modules/service-sheets-show-all.js?v=correcta1','data-correct-hs-all'))
       .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20260923-editqr-stable17','data-correct-hs-photo'))
-      .then(()=>load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260924-directcheck2','data-hs-unit-trailer-v1'))
+      .then(()=>load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260924-resguardo1','data-hs-unit-trailer-v1'))
       .catch(e=>console.warn('Hojas versionescorrectas1',e));
   });
 })();
