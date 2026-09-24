@@ -64,7 +64,19 @@
     grid.appendChild(trailerField);
     const input=unitField.querySelector('[data-hs-unidad]');
     const ev=EVIDENCE.get(String(row.dataset.row));
-    if(ev?.unidadNumero){input.value=ev.unidadNumero;trailerField.querySelector('[data-hs-remolque]').value=ev.remolqueNumero||'';}
+    if(ev?.unidadNumero){
+      input.value=ev.unidadNumero;
+      trailerField.querySelector('[data-hs-remolque]').value=ev.remolqueNumero||'';
+      const info=row.querySelector('.hs-list-info');
+      if(info&&!info.querySelector('[data-hs-unit-summary]')){
+        const summary=document.createElement('div');
+        summary.dataset.hsUnitSummary='1';
+        summary.className='hs104-note';
+        summary.style.cssText='margin-top:4px;font-weight:800;color:#334155';
+        summary.innerHTML='<span><i class="fa-solid fa-truck"></i> Unidad: '+esc(ev.unidadNumero)+'</span>'+(ev.remolqueNumero?' <span style="margin-left:8px"><i class="fa-solid fa-trailer"></i> Remolque: '+esc(ev.remolqueNumero)+'</span>':'');
+        info.appendChild(summary);
+      }
+    }
     ['input','change','blur'].forEach(evt=>input.addEventListener(evt,()=>setUnitState(row,false)));
     setUnitState(row);
   }
