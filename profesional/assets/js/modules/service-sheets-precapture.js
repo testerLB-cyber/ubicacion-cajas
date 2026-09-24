@@ -99,8 +99,8 @@
     const pre=f.precaptura||null,tipo=row.querySelector('[data-tipo]'),clas=row.querySelector('[data-clas]'),cliente=row.querySelector('[data-cliente]'),obs=row.querySelector('[data-obs]');
     if(!tipo||!clas||!cliente)return;
     const tipoSel=document.createElement('select');tipoSel.dataset.tipo='';tipoSel.className=tipo.className||'';tipoSel.innerHTML=options(d.tiposViaje||[],pre?.tipoViaje||'','Seleccionar tipo de viaje…');tipo.replaceWith(tipoSel);
-    const clasSel=document.createElement('select');clasSel.dataset.clas='';clasSel.className=clas.className||'';clas.replaceWith(clasSel);
-    const fill=(selected='')=>{const tid=tipoSel.selectedOptions[0]?.dataset.id||'';const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId||'')===String(tid));clasSel.innerHTML=options(xs,selected,'Seleccionar clasificación…');};
+    let clasSel=document.createElement('select');clasSel.dataset.clas='';clasSel.className=clas.className||'';clas.replaceWith(clasSel);
+    const fill=(selected='')=>{const tid=tipoSel.selectedOptions[0]?.dataset.id||'';const tv=(d.tiposViaje||[]).find(x=>String(x.id)===String(tid));if(tv?.clasificacionManual){const inp=document.createElement('input');inp.type='number';inp.min='0.01';inp.step='0.01';inp.inputMode='decimal';inp.placeholder='Cantidad de horas';inp.dataset.clas='';inp.className=clasSel.className||'';const n=String(selected||'').match(/[0-9]+(?:[.,][0-9]+)?/);if(n)inp.value=n[0].replace(',','.');clasSel.replaceWith(inp);clasSel=inp;return;}if(clasSel.tagName!=='SELECT'){const s=document.createElement('select');s.dataset.clas='';s.className=clasSel.className||'';clasSel.replaceWith(s);clasSel=s;}const xs=(d.clasificaciones||[]).filter(x=>String(x.tipoViajeId||'')===String(tid));clasSel.innerHTML=options(xs,selected,'Seleccionar clasificación…');};
     tipoSel.onchange=()=>fill('');fill(pre?.clasificacion||'');
     if(pre){
       cliente.value=pre.clienteId||'';
