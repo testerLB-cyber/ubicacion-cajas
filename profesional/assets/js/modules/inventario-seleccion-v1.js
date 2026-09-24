@@ -22,7 +22,7 @@ document.addEventListener('click',e=>{
 });
 async function copyAssignment(row){
  const d=row.dataset,W=1200,H=980,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
- const rawType=String(d.ccInvType||'').trim(),desc=String(d.ccInvDescription||'').trim();\n const type=((!rawType||rawType.toUpperCase()==='CARRO')&&desc?desc:rawType||'UNIDAD').toUpperCase(),num=(d.ccInvNumero||'UNIDAD').toUpperCase();
+ const rawType=String(d.ccInvType||'').trim(),desc=String(d.ccInvDescription||'').trim();\n const candidate=(desc&&desc.toUpperCase()!=='CARRO')?desc:rawType;\n const type=(candidate&&candidate.toUpperCase()!=='CARRO'?candidate:'UNIDAD').toUpperCase(),num=(d.ccInvNumero||'UNIDAD').toUpperCase();
  const ft=v=>Number(v||0),m=v=>ft(v)?(ft(v)*0.3048).toFixed(2):'—';
  const mx=d.ccInvPlatesMx||'',usa=d.ccInvPlatesUsa||'',plates=mx&&usa?'MX: '+mx+'   |   USA: '+usa:(mx||usa||d.ccInvPlates||'—');
  x.fillStyle='#07182f';x.fillRect(0,0,W,H);x.fillStyle='#0d2748';x.fillRect(0,0,W,175);
