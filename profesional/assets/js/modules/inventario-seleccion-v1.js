@@ -1,7 +1,7 @@
 (function(){'use strict';if(window.__CC_INV_SELECT_V1__)return;window.__CC_INV_SELECT_V1__=true;let selected='';
 function bar(){return document.getElementById('ccInvSelectedActions')}
 function unitId(row){return String(row?.dataset?.ccInvId||row?.querySelector('[onclick*="ccEditarUnidadDirecto"]')?.getAttribute('onclick')?.match(/ccEditarUnidadDirecto\(['"]([^'"]+)/)?.[1]||'')}
-function decorate(){document.querySelectorAll('#ccInventarioBody tr').forEach(r=>{const id=unitId(r);if(!id)return;r.dataset.ccInvId=id;const btn=r.querySelector('[onclick*="ccEditarUnidadDirecto"]');const call=btn?.getAttribute('onclick')||'';r.dataset.ccInvNumero=(r.cells?.[2]?.innerText||'').trim();r.dataset.ccInvType=(r.cells?.[1]?.innerText||'').trim();r.dataset.ccInvDescription=(r.cells?.[3]?.innerText||'').trim();r.dataset.ccInvCategory=(r.cells?.[1]?.innerText||'').trim();r.dataset.ccInvStatus=(r.cells?.[9]?.innerText||'').trim();})}
+function decorate(){document.querySelectorAll('#ccInventarioBody tr').forEach(r=>{const id=unitId(r);if(!id)return;r.dataset.ccInvId=id;const btn=r.querySelector('[onclick*="ccEditarUnidadDirecto"]');const call=btn?.getAttribute('onclick')||'';r.dataset.ccInvNumero=(r.cells?.[2]?.innerText||'').trim();r.dataset.ccInvType=(r.cells?.[1]?.innerText||'').trim();r.dataset.ccInvDescription=(r.cells?.[3]?.innerText||'').trim();r.dataset.ccInvCategory=(r.cells?.[1]?.innerText||'').trim();r.dataset.ccInvStatus=(r.cells?.[10]?.innerText||'').trim();const pt=r.cells?.[8]?.innerText||'';r.dataset.ccInvPlatesMx=(pt.match(/MX:\s*([^\n]+)/i)?.[1]||'').trim();r.dataset.ccInvPlatesUsa=(pt.match(/USA:\s*([^\n]+)/i)?.[1]||'').trim();r.dataset.ccInvCapacity=(r.cells?.[11]?.innerText||'').trim();const dm=r.cells?.[6]?.innerText||'';const dv=dm.match(/([\d.]+)\s*[×x]\s*([\d.]+)\s*[×x]\s*([\d.]+)\s*ft/i);if(dv){r.dataset.ccInvLength=dv[1];r.dataset.ccInvWidth=dv[2];r.dataset.ccInvHeight=dv[3];}})}
 function sync(){
  const b=bar();if(!b)return;decorate();const row=selected?document.querySelector('#ccInventarioBody tr[data-cc-inv-id="'+CSS.escape(selected)+'"]'):null;
  document.querySelectorAll('#ccInventarioBody tr[data-cc-inv-id]').forEach(r=>{const on=r===row;r.style.cursor='pointer';r.style.outline=on?'2px solid #2563eb':'';r.style.outlineOffset=on?'-2px':'';r.style.background=on?'#eff6ff':'';r.setAttribute('aria-selected',on?'true':'false')});
@@ -25,26 +25,23 @@ document.addEventListener('click',e=>{
 async function copyAssignment(row){
  const d=row.dataset,W=1200,H=980,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
  const rawType=String(d.ccInvType||'').trim(),desc=String(d.ccInvDescription||'').trim();
- const candidate=(desc&&desc.toUpperCase()!=='CARRO')?desc:rawType;
+ const candidate=(rawType&&rawType.toUpperCase()!=='CARRO')?rawType:desc;
  const type=(candidate&&candidate.toUpperCase()!=='CARRO'?candidate:'UNIDAD').toUpperCase(),num=(d.ccInvNumero||'UNIDAD').toUpperCase();
  const ft=v=>Number(v||0),m=v=>ft(v)?(ft(v)*0.3048).toFixed(2):'—';
- const mx=d.ccInvPlatesMx||'',usa=d.ccInvPlatesUsa||'',plates=mx&&usa?'MX: '+mx+'   |   USA: '+usa:(mx||usa||d.ccInvPlates||'—');
+ const mx=String(d.ccInvPlatesMx||'').trim(),usa=String(d.ccInvPlatesUsa||'').trim();
  x.fillStyle='#07182f';x.fillRect(0,0,W,H);x.fillStyle='#0d2748';x.fillRect(0,0,W,175);
  x.fillStyle='#fff';x.font='900 52px Arial';x.fillText('ASIGNACIÓN DE UNIDAD',58,72);x.fillStyle='#8fc7ff';x.font='bold 25px Arial';x.fillText('LOGÍSTICA BALDERRAMA',60,120);
  x.fillStyle='#fff';round(x,55,210,1090,690,30);x.fill();
  x.fillStyle='#eaf3ff';round(x,85,250,430,600,24);x.fill();
- x.fillStyle='#17365d';x.font='900 42px Arial';x.textAlign='center';x.fillText(type,300,315);
- drawVehicle(x,type,115,350,370,270);
- x.textAlign='left';
+ x.fillStyle='#17365d';x.font='900 42px Arial';x.textAlign='center';x.fillText(type,300,315);drawVehicle(x,type,115,350,370,270);x.textAlign='left';
  x.fillStyle='#17365d';x.font='900 60px Arial';x.fillText(num,565,305);
- let y=365;const item=(lab,val)=>{x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font=(lab.includes('PLACAS')||lab==='CAPACIDAD')?'900 44px Arial':'900 34px Arial';wrap(x,String(val||'—'),565,y+45,525,(lab.includes('PLACAS')||lab==='CAPACIDAD')?48:38);y+=115};
- item(mx&&usa?'PLACAS MX / PLACAS USA':'PLACAS',plates);item('CAPACIDAD',d.ccInvCapacity||'—');
- x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('DIMENSIONES',565,y);y+=38;
- const dims=[['LARGO',d.ccInvLength],['ANCHO',d.ccInvWidth],['ALTO',d.ccInvHeight]];
- for(const [lab,v] of dims){x.fillStyle='#334155';x.font='bold 21px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 28px Arial';x.fillText((v||'—')+' ft  /  '+m(v)+' m',690,y);y+=47}
- y+=15;if(desc&&desc.toUpperCase()!==type)item('DESCRIPCIÓN',desc);
+ let y=360;const line=(lab,val,size=42)=>{x.fillStyle='#64748b';x.font='bold 19px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 '+size+'px Arial';x.fillText(String(val||'—'),565,y+39);y+=92};
+ line('PLACAS MX',mx||'—',40);if(usa&&usa!=='—')line('PLACAS USA',usa,40);line('CAPACIDAD',d.ccInvCapacity||'—',48);
+ x.fillStyle='#64748b';x.font='bold 22px Arial';x.fillText('DIMENSIONES',565,y);y+=43;
+ for(const [lab,v] of [['LARGO',d.ccInvLength],['ANCHO',d.ccInvWidth],['ALTO',d.ccInvHeight]]){x.fillStyle='#334155';x.font='900 24px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 34px Arial';x.fillText((v||'—')+' ft  /  '+m(v)+' m',690,y);y+=52}
+ x.fillStyle='#334155';x.font='bold 24px Arial';x.fillText('Buen día, compartimos datos de la unidad programada.',105,875);x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('Logística Balderrama',105,910);
  x.fillStyle='#8fc7ff';x.fillRect(55,925,1090,3);x.fillStyle='#dbeafe';x.font='bold 20px Arial';x.fillText('LOGÍSTICA BALDERRAMA  •  ASIGNACIÓN',60,960);
- cv.toBlob(async blob=>{const msg='Buen día, compartimos datos de la unidad programada.\nLogística Balderrama';try{if(navigator.share&&navigator.canShare){const file=new File([blob],'asignacion_'+num+'.png',{type:'image/png'});if(navigator.canShare({files:[file]})){await navigator.share({text:msg,files:[file]});return;}}if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);try{await navigator.clipboard.writeText(msg)}catch(_){ }alert('Asignación lista. Imagen y mensaje preparados para compartir.');}else throw new Error()}catch(e){if(e&&e.name==='AbortError')return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asignacion_'+num+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);try{await navigator.clipboard?.writeText(msg)}catch(_){ }alert('Se descargó la imagen y se preparó el mensaje para compartir.');}},'image/png');
+ cv.toBlob(async blob=>{try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('Imagen de asignación copiada al portapapeles.');}else throw new Error()}catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asignacion_'+num+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert('No fue posible copiar la imagen; se descargó como PNG.');}},'image/png');
 }
 function drawVehicle(x,type,px,py,w,h){
  x.save();x.translate(px,py);x.fillStyle='#17365d';x.strokeStyle='#17365d';x.lineWidth=8;
