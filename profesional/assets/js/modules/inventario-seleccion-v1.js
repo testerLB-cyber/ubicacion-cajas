@@ -21,29 +21,34 @@ document.addEventListener('click',e=>{
  if(k==='assignment')copyAssignment(row2);
 });
 async function copyAssignment(row){
- const d=row.dataset,W=1200,H=900,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+ const d=row.dataset,W=1200,H=980,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
  const type=(d.ccInvType||'UNIDAD').toUpperCase(),num=(d.ccInvNumero||'UNIDAD').toUpperCase();
+ const ft=v=>Number(v||0),m=v=>ft(v)?(ft(v)*0.3048).toFixed(2):'—';
+ const mx=d.ccInvPlatesMx||'',usa=d.ccInvPlatesUsa||'',plates=mx&&usa?'MX: '+mx+'   |   USA: '+usa:(mx||usa||d.ccInvPlates||'—');
  x.fillStyle='#07182f';x.fillRect(0,0,W,H);x.fillStyle='#0d2748';x.fillRect(0,0,W,175);
  x.fillStyle='#fff';x.font='900 52px Arial';x.fillText('ASIGNACIÓN DE UNIDAD',58,72);x.fillStyle='#8fc7ff';x.font='bold 25px Arial';x.fillText('LOGÍSTICA BALDERRAMA',60,120);
- x.fillStyle='#fff';round(x,55,210,1090,610,30);x.fill();
- x.fillStyle='#eaf3ff';round(x,85,250,430,520,24);x.fill();
- x.fillStyle='#17365d';x.font='900 32px Arial';x.textAlign='center';x.fillText(type,300,315);
- drawVehicle(x,type,120,360,360,250);
- x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('TIPO DE UNIDAD',300,725);x.textAlign='left';
- x.fillStyle='#17365d';x.font='900 58px Arial';x.fillText(num,565,305);
- const items=[['PLACAS',d.ccInvPlates||'—'],['CAPACIDAD',d.ccInvCapacity||'—'],['DIMENSIONES',[(d.ccInvLength||'—'),(d.ccInvWidth||'—'),(d.ccInvHeight||'—')].join(' × ')+' FT'],['DESCRIPCIÓN',d.ccInvDescription||'—']];
- let y=365;for(const [lab,val] of items){x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 35px Arial';wrap(x,String(val),565,y+39,525,38);y+=105}
- x.fillStyle='#8fc7ff';x.fillRect(55,845,1090,3);x.fillStyle='#dbeafe';x.font='bold 20px Arial';x.fillText('LOGÍSTICA BALDERRAMA  •  ASIGNACIÓN',60,880);
+ x.fillStyle='#fff';round(x,55,210,1090,690,30);x.fill();
+ x.fillStyle='#eaf3ff';round(x,85,250,430,600,24);x.fill();
+ x.fillStyle='#17365d';x.font='900 35px Arial';x.textAlign='center';x.fillText(type,300,315);
+ drawVehicle(x,type,115,350,370,270);
+ x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('TIPO DE UNIDAD',300,705);x.fillStyle='#17365d';x.font='900 32px Arial';wrap(x,type,130,755,340,36);x.textAlign='left';
+ x.fillStyle='#17365d';x.font='900 60px Arial';x.fillText(num,565,305);
+ let y=365;const item=(lab,val)=>{x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 34px Arial';wrap(x,String(val||'—'),565,y+39,525,38);y+=105};
+ item(mx&&usa?'PLACAS MX / PLACAS USA':'PLACAS',plates);item('CAPACIDAD',d.ccInvCapacity||'—');
+ x.fillStyle='#64748b';x.font='bold 20px Arial';x.fillText('DIMENSIONES',565,y);y+=38;
+ const dims=[['LARGO',d.ccInvLength],['ANCHO',d.ccInvWidth],['ALTO',d.ccInvHeight]];
+ for(const [lab,v] of dims){x.fillStyle='#334155';x.font='bold 21px Arial';x.fillText(lab,565,y);x.fillStyle='#0f172a';x.font='900 28px Arial';x.fillText((v||'—')+' ft  /  '+m(v)+' m',690,y);y+=47}
+ y+=15;item('DESCRIPCIÓN',d.ccInvDescription||'—');
+ x.fillStyle='#8fc7ff';x.fillRect(55,925,1090,3);x.fillStyle='#dbeafe';x.font='bold 20px Arial';x.fillText('LOGÍSTICA BALDERRAMA  •  ASIGNACIÓN',60,960);
  cv.toBlob(async blob=>{try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);alert('Imagen de asignación copiada al portapapeles.');}else throw new Error()}catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='asignacion_'+num+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);alert('No fue posible copiar la imagen; se descargó como PNG.');}},'image/png');
 }
 function drawVehicle(x,type,px,py,w,h){
- x.save();x.translate(px,py);x.fillStyle='#17365d';x.strokeStyle='#17365d';x.lineWidth=10;
- const t=type.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
- if(t.includes('PICK')||t.includes('CAMIONETA')){x.fillRect(45,95,180,80);x.beginPath();x.moveTo(225,95);x.lineTo(275,45);x.lineTo(330,45);x.lineTo(350,175);x.lineTo(225,175);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.fillRect(275,60,45,40);}
- else if(t.includes('TRACTO')||t.includes('TRAILER')||t.includes('CAMION')){x.fillRect(10,75,210,100);x.beginPath();x.moveTo(220,75);x.lineTo(270,25);x.lineTo(330,25);x.lineTo(350,175);x.lineTo(220,175);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.fillRect(270,45,48,45);}
- else if(t.includes('VAN')){round(x,35,55,300,120,25);x.fill();x.fillStyle='#eaf3ff';x.fillRect(220,75,80,50);}
- else{x.beginPath();x.moveTo(45,125);x.lineTo(90,65);x.lineTo(255,65);x.lineTo(310,125);x.lineTo(345,135);x.lineTo(345,175);x.lineTo(25,175);x.lineTo(25,140);x.closePath();x.fill();x.fillStyle='#eaf3ff';x.beginPath();x.moveTo(105,78);x.lineTo(240,78);x.lineTo(275,120);x.lineTo(75,120);x.closePath();x.fill();}
- x.fillStyle='#0f172a';for(const cx of [95,285]){x.beginPath();x.arc(cx,180,35,0,Math.PI*2);x.fill();x.fillStyle='#cbd5e1';x.beginPath();x.arc(cx,180,14,0,Math.PI*2);x.fill();x.fillStyle='#0f172a';}x.restore();
+ x.save();x.translate(px,py);x.fillStyle='#17365d';x.strokeStyle='#17365d';x.lineWidth=8;
+ /* Camión de carga: la ficha usa el tipo real del catálogo como texto; el gráfico representa una unidad de carga. */
+ x.fillRect(10,85,210,115);x.beginPath();x.moveTo(220,85);x.lineTo(270,30);x.lineTo(335,30);x.lineTo(355,200);x.lineTo(220,200);x.closePath();x.fill();
+ x.fillStyle='#eaf3ff';x.fillRect(270,52,48,48);x.fillStyle='#8fc7ff';x.fillRect(28,105,170,70);
+ x.fillStyle='#0f172a';for(const cx of [85,285]){x.beginPath();x.arc(cx,205,38,0,Math.PI*2);x.fill();x.fillStyle='#cbd5e1';x.beginPath();x.arc(cx,205,15,0,Math.PI*2);x.fill();x.fillStyle='#0f172a';}
+ x.restore();
 }
 function round(x,a,b,w,h,r){x.beginPath();x.roundRect(a,b,w,h,r);return x}
 function wrap(ctx,t,x,y,max,lh){const w=t.split(' ');let l='';for(const z of w){const q=l?l+' '+z:z;if(ctx.measureText(q).width>max&&l){ctx.fillText(l,x,y);l=z;y+=lh}else l=q}ctx.fillText(l,x,y)}
