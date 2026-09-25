@@ -24,7 +24,7 @@
     if(r.data?.ok===false) throw new Error(r.data.error||'Operación no disponible.');
     return r.data;
   }
-  async function load(){ D=await rpc('hs_list'); renderAll(); return D; }
+  async function load(){ D=await rpc('hs_list'); try{const b=await rpc('cc_hojas_beneficiarios_web');D.beneficiarios=Array.isArray(b)?b:[]}catch(e){console.warn('Beneficiarios Web',e);D.beneficiarios=[]} renderAll(); return D; }
 
   function modal(title,body,{width='820px',saveLabel='',onSave=null}={}){
     const ov=document.createElement('div');
