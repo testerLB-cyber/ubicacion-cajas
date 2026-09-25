@@ -7,7 +7,7 @@
   const sb=()=>window.gmSupabase;
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let UNITS=[], EVIDENCE=new Map(), loading=false;
+  let UNITS=[], OPERATORS=[], EVIDENCE=new Map(), loading=false;
 
   function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n)||null;}
   function boxUnits(){return UNITS.filter(x=>x.esCaja);}
@@ -24,10 +24,10 @@
     if(loading||!sb())return;
     loading=true;
     try{
-      const [u,e]=await Promise.all([sb().rpc('hs_unit_catalog'),sb().rpc('hs_mobile_evidence_units')]);
+      const [u,e,h]=await Promise.all([sb().rpc('hs_unit_catalog'),sb().rpc('hs_mobile_evidence_units'),sb().rpc('hs_list')]);
       if(u.error)throw u.error;
       if(u.data?.ok===false)throw new Error(u.data.error||'No se cargaron unidades');
-      UNITS=Array.isArray(u.data?.unidades)?u.data.unidades:[];
+      UNITS=Array.isArray(u.data?.unidades)?u.data.unidades:[];OPERATORS=(!h.error&&h.data?.ok?Array.isArray(h.data.operadores)?h.data.operadores:[]:[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
       if(!e.error&&e.data?.ok)EVIDENCE=new Map((e.data.rows||[]).map(x=>[String(x.folioId),x]));
       ensureLists();decorateAll();
     }catch(err){console.warn('Hojas · catálogo de unidades:',err)}finally{loading=false;}
@@ -79,6 +79,12 @@
     const unitField=document.createElement('div');unitField.className='cc-field';
     unitField.innerHTML='<label>Unidad *</label><input data-hs-unidad list="hsUnitCatalogList" autocomplete="off" placeholder="Escribe número de unidad"><div data-hs-unidad-status class="hs104-note">Escribe para buscar y selecciona una unidad.</div>';
     grid.appendChild(unitField);
+    const isBenef=norm(row.dataset.hsPersonType||'')==='BENEFICIARIO'||!!row.dataset.hsBeneficiary;
+    if(isBenef){
+      const op=document.createElement('div');op.className='cc-field';op.dataset.hsRealOperatorWrap='1';
+      op.innerHTML='<label>Operador que realizó el servicio *</label><select data-hs-real-operator><option value="">Seleccionar operador…</option>'+OPERATORS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:''))+'</option>').join('')+'</select><div class="hs104-note">La hoja sigue controlada por el beneficiario; este operador será el que realizó el viaje.</div>';
+      grid.insertBefore(op,unitField);
+    }
     const trailerField=document.createElement('div');trailerField.className='cc-field';trailerField.dataset.hsRemolqueWrap='1';trailerField.style.display='none';
     trailerField.innerHTML='<label>Número de remolque *</label><input data-hs-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Ej. LB245 o cualquier remolque"><div class="hs104-note">Campo libre. Si escribes LB se sugieren cajas del catálogo; no se valida que exista.</div>';
     grid.appendChild(trailerField);
@@ -116,14 +122,15 @@
   async function save(row){
     const val=s=>String(row.querySelector(s)?.value||'').trim();
     const folioId=String(row.dataset.row||''),fechaUso=val('[data-fecha]'),clienteId=val('[data-cliente]'),tipoViaje=val('[data-tipo]'),clasificacion=val('[data-clas]'),observaciones=val('[data-obs]');
-    const unit=setUnitState(row,false),remolqueNumero=val('[data-hs-remolque]'),cantidadCobro=val('[data-cantidad-cobro]'),unidadCobro=val('[data-unidad-cobro]');
+    const unit=setUnitState(row,false),remolqueNumero=val('[data-hs-remolque]'),cantidadCobro=val('[data-cantidad-cobro]'),unidadCobro=val('[data-unidad-cobro]'),operadorRealId=val('[data-hs-real-operator]');
     if(!fechaUso)throw new Error('Captura la fecha de uso.');
     if(!clienteId)throw new Error('Selecciona un cliente.');
     if(!tipoViaje)throw new Error('Captura el Tipo de servicio.');
     if(!clasificacion)throw new Error('Captura la Clasificación o cantidad.');
+    if(row.querySelector('[data-hs-real-operator]')&&!operadorRealId)throw new Error('Selecciona el operador que realizó el servicio.');
     if(!unit)throw new Error('Selecciona una unidad válida del catálogo.');
     if(unit.esTracto&&!remolqueNumero)throw new Error('Captura el número de remolque para el Tracto-camión.');
-    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:''}});
+    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId}});
     if(r.error)throw r.error;if(r.data?.ok===false)throw new Error(r.data.error||'No se pudo comprobar la hoja.');
     return r.data;
   }
