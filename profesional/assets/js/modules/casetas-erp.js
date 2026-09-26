@@ -13,7 +13,30 @@ function inject(){const v=$('#ccAntViewCasetas');if(!v||v.dataset.erp)return;v.d
  <section class="cas-panel cas-history"><div class="cas-panel-head"><div><b>Movimientos recientes</b><span>Entregas y tickets con acciones administrativas.</span></div><select data-type><option value="">Todos</option><option value="ENTREGA">Entregas</option><option value="TICKET">Tickets</option></select></div><div class="cas-table-wrap"><table><thead><tr><th>Fecha</th><th>Operador</th><th>Tipo</th><th>Referencia</th><th>Importe</th><th>Estatus</th><th>Acciones</th></tr></thead><tbody data-history></tbody></table></div></section>
 </div>`;
 v.querySelector('[data-new]').onclick=()=>openGive();v.querySelector('[data-refresh]').onclick=load;v.querySelector('[data-search]').oninput=renderOps;v.querySelector('[data-type]').onchange=renderHistory}
-async function load(){inject();const r=await sb().rpc('cc_ant_casetas_list');if(r.error)return alert(r.error.message);D=r.data;render()}
+async function hasValidSession(){
+  const c=sb();
+  if(!c?.auth?.getSession)return false;
+  try{
+    const {data,error}=await c.auth.getSession();
+    if(error)return false;
+    return !!data?.session?.user;
+  }catch(_){return false}
+}
+async function load(){
+  inject();
+  const c=sb();
+  if(!c)return;
+  if(!(await hasValidSession()))return;
+  const r=await c.rpc('cc_ant_casetas_list');
+  if(r.error){
+    const msg=String(r.error.message||'');
+    if(/permission denied|jwt|unauthorized|401/i.test(msg))return;
+    console.error('Casetas ERP:',r.error);
+    return;
+  }
+  D=r.data||{cuentas:[],operadores:[],anticipos:[],tickets:[],movimientos:[]};
+  render();
+}
 function render(){const a=agg(),held=a.reduce((s,x)=>s+x.saldo,0),comp=D.tickets.filter(t=>t.estatus==='VALIDO').reduce((s,t)=>s+(+t.total||0),0);$('[data-kpis]').innerHTML=`<div><small>EN PODER DE OPERADORES</small><strong>${money(held)}</strong><span>${a.filter(x=>x.saldo>0).length} operadores con pendiente</span></div><div><small>COMPROBADO EN TICKETS</small><strong>${money(comp)}</strong><span>Histórico registrado</span></div><div><small>CAJA DE CASETAS</small><strong>${esc(D.cuentas[0]?.nombre||'Sin configurar')}</strong><span>Única caja autorizada</span></div>`;renderOps();renderHistory();if(selected)selectOp(selected)}
 function renderOps(){const q=($('[data-search]')?.value||'').toLowerCase(),a=agg().filter(x=>(x.nombre+' '+(x.numero_empleado||'')).toLowerCase().includes(q)).sort((x,y)=>y.saldo-x.saldo);$('[data-ops]').innerHTML=a.map(x=>`<button class="cas-op ${selected===x.id?'active':''}" data-id="${x.id}"><span class="avatar">${esc((x.nombre||'?').slice(0,1))}</span><span class="opname"><b>${esc(x.nombre)}</b><small>${esc(x.numero_empleado||'')}</small></span><span class="opmoney"><small>PENDIENTE</small><b>${money(x.saldo)}</b></span></button>`).join('')||'<div class="cas-none">No se encontraron operadores.</div>';$('[data-ops]').onclick=e=>{const b=e.target.closest('[data-id]');if(b)selectOp(b.dataset.id)}}
 function selectOp(id){selected=id;renderOps();const x=agg().find(z=>z.id===id);if(!x)return;const last=x.fondos.slice().sort((a,b)=>new Date(b.fecha)-new Date(a.fecha))[0];$('[data-detail]').innerHTML=`
@@ -32,5 +55,19 @@ function openTickets(id){let x=agg().find(z=>z.id===id);if(!x?.saldo)return aler
 function openReturn(id){const x=agg().find(z=>z.id===id);if(!x?.saldo)return alert('Sin saldo pendiente.');const funds=x.fondos.filter(a=>+a.pendiente>0);modal('Recibir efectivo de '+x.nombre,operatorCard(x)+`<div class="cas-form-grid"><div class="cas-field"><label>Entrega a aplicar</label><select name="fondo">${funds.map(a=>`<option value="${a.id}">${esc(a.folio)} · ${money(a.pendiente)}</option>`).join('')}</select></div><div class="cas-field"><label>Efectivo recibido *</label><input name="monto" type="number" min=".01" step=".01" required></div><div class="cas-field full"><label>Observaciones</label><input name="obs"></div></div>`,async(m,fd)=>{const f=funds.find(a=>a.id===fd.get('fondo')),n=+fd.get('monto');if(!f||n>+f.pendiente)throw Error('Monto mayor al pendiente.');const r=await sb().rpc('cc_ant_add_cash_movement',{p_item:{cuentaId:f.cuentaId,anticipoId:f.id,tipo:'DEVOLUCION',monto:n,fecha:new Date().toISOString(),referencia:f.folio,observaciones:String(fd.get('obs')||'Devolución Casetas')}});if(r.error)throw r.error},'Recibir efectivo')}
 function editGive(id){const a=D.anticipos.find(x=>x.id===id);if(!a)return;const m=modal('Editar entrega '+a.folio,`<div class="cas-form-grid"><div class="cas-field"><label>Monto</label><input name="monto" type="number" min=".01" step=".01" value="${a.montoEntregado}"></div><div class="cas-field"><label>Fecha</label><input name="fecha" type="date" value="${new Date(a.fecha).toISOString().slice(0,10)}"></div><div class="cas-field full"><label>Observaciones</label><input name="obs" value="${esc(a.observaciones||'')}"></div></div><div class="cas-danger"><button type="button" data-cancel>Cancelar entrega</button><button type="button" data-delete>Eliminar entrega</button></div>`,async(m,fd)=>{const r=await sb().rpc('cc_ant_casetas_editar_entrega',{p_item:{id,monto:+fd.get('monto'),fecha:new Date(fd.get('fecha')+'T12:00:00').toISOString(),observaciones:String(fd.get('obs')||'')}});if(r.error)throw r.error},'Guardar cambios');m.querySelector('[data-cancel]').onclick=async()=>{if(!confirm('¿Cancelar esta entrega? Solo es posible si no tiene comprobaciones.'))return;const r=await sb().rpc('cc_ant_casetas_cancelar_entrega',{p_id:id});if(r.error)return alert(r.error.message);m.remove();load()};m.querySelector('[data-delete]').onclick=async()=>{if(!confirm('¿Eliminar definitivamente esta entrega?'))return;const r=await sb().rpc('cc_ant_casetas_eliminar_entrega',{p_id:id});if(r.error)return alert(r.error.message);m.remove();load()}}
 function renderHistory(){const type=$('[data-type]')?.value||'',om=Object.fromEntries(D.operadores.map(o=>[o.id,o.nombre])),rows=[];D.anticipos.forEach(a=>rows.push({d:a.fecha,op:a.operador,t:'ENTREGA',ref:a.folio,n:+a.montoEntregado,st:a.estatus,id:a.id}));D.tickets.forEach(t=>rows.push({d:t.fecha,op:om[t.operador_id]||'—',t:'TICKET',ref:t.folio_ticket||t.plaza||'—',n:+t.total,st:t.estatus,id:t.id}));rows.sort((a,b)=>new Date(b.d)-new Date(a.d));$('[data-history]').innerHTML=rows.filter(x=>!type||x.t===type).slice(0,100).map(x=>`<tr><td>${day(x.d)}</td><td><b>${esc(x.op)}</b></td><td><span class="cas-tag ${x.t.toLowerCase()}">${x.t}</span></td><td>${esc(x.ref)}</td><td><b>${money(x.n)}</b></td><td>${esc(x.st||'ACTIVO')}</td><td><button data-edit="${x.t}:${x.id}">Editar</button></td></tr>`).join('');$('[data-history]').onclick=e=>{const b=e.target.closest('[data-edit]');if(!b)return;const [t,id]=b.dataset.edit.split(':');if(t==='ENTREGA')editGive(id);else window.ccCasEditarTicket?.(id)}}
-window.ccCasERP={load};setTimeout(()=>{inject();load()},1200);
+window.ccCasERP={load};
+function bootSafe(){
+  inject();
+  const c=sb();
+  if(!c?.auth)return;
+  c.auth.getSession().then(({data})=>{
+    if(data?.session?.user)load();
+  }).catch(()=>{});
+  c.auth.onAuthStateChange?.((event,session)=>{
+    if(session?.user && (event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='INITIAL_SESSION')){
+      setTimeout(load,0);
+    }
+  });
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootSafe,{once:true});else bootSafe();
 })();
