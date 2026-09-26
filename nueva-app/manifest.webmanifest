@@ -1,7 +1,7 @@
 {
   "name":"Tráfico App",
   "short_name":"Tráfico App",
-  "start_url":"./app-v2.html?v=20260926-loginfix10",
+  "start_url":"./app-v2.html?v=20260926-stable11",
   "scope":"./",
   "display":"standalone",
   "background_color":"#f8fafc",
