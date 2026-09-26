@@ -55,16 +55,20 @@
     const trip=$('hsTrip'), cls=$('hsClass'); if(!trip||!cls)return;
     const tripLabel=trip.closest('.field')?.querySelector('label');
     const classLabel=cls.closest('.field')?.querySelector('label');
-    if(tripLabel)tripLabel.textContent='Tipo de servicio / concepto *';
+    const desiredTripLabel='Tipo de servicio / concepto *';
+    if(tripLabel&&tripLabel.textContent!==desiredTripLabel)tripLabel.textContent=desiredTripLabel;
     const selected=trip.options?.[trip.selectedIndex]?.textContent||'';
-    if(classLabel)classLabel.textContent=norm(selected)==='DEMORA'?'Horas de demora *':'Clasificación *';
+    const isDemora=norm(selected)==='DEMORA';
+    const desiredClassLabel=isDemora?'Horas de demora *':'Clasificación *';
+    if(classLabel&&classLabel.textContent!==desiredClassLabel)classLabel.textContent=desiredClassLabel;
     let info=$('hsServiceInfo');
     if(!info){
       info=document.createElement('div');info.id='hsServiceInfo';info.className='mobile-current-service';
       trip.closest('.field')?.insertAdjacentElement('afterend',info);
     }
-    if(norm(selected)==='DEMORA') info.innerHTML='<b>Demora:</b> captura la cantidad real de horas. Es un campo abierto y admite decimales (ej. 1.5, 6, 12, 30).';
-    else info.textContent='Selecciona el tipo de servicio y su clasificación correspondiente.';
+    const desiredInfo=isDemora?'<b>Demora:</b> captura la cantidad real de horas. Es un campo abierto y admite decimales (ej. 1.5, 6, 12, 30).':'Selecciona el tipo de servicio y su clasificación correspondiente.';
+    if(isDemora){if(info.innerHTML!==desiredInfo)info.innerHTML=desiredInfo;}
+    else if(info.textContent!==desiredInfo)info.textContent=desiredInfo;
   }
 
   function ensureCurrentCatalogs(){
@@ -85,7 +89,16 @@
 
   document.addEventListener('change',e=>{if(e.target?.id==='hsTrip')setTimeout(updateServiceLabels,0);},true);
   document.addEventListener('click',e=>{if(e.target?.closest?.('[data-hs],#goHs,#hsRefresh'))setTimeout(decorate,120);},true);
-  const mo=new MutationObserver(()=>decorate());
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{decorate();mo.observe(document.body,{childList:true,subtree:true});},{once:true});
-  else{decorate();mo.observe(document.body,{childList:true,subtree:true});}
+  let scheduled=false;
+  const mo=new MutationObserver(()=>{
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;decorate();});
+  });
+  function start(){
+    decorate();
+    mo.observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })();
