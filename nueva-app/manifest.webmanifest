@@ -1,7 +1,7 @@
 {
-  "name":"Mi App",
-  "short_name":"Mi App",
-  "start_url":"./",
+  "name":"Tráfico App",
+  "short_name":"Tráfico App",
+  "start_url":"./app-v2.html?v=20260926-mobilefix9",
   "scope":"./",
   "display":"standalone",
   "background_color":"#f8fafc",
