@@ -91,7 +91,13 @@ function firstControlTab(){
 }
 function applyAccess(){
  const a=window.CC_ACCESS||{};
- const dashboard=ccPerm('dashboard.ver'),control=ccPerm('control_cajas.ver');
+ const dashboard=ccPerm('dashboard.ver');
+ const controlBase=ccPerm('control_cajas.ver');
+ const hasOperationalModule=[
+   'anticipos.ver','inventario.ver','rentas.ver','historial.ver','proforma.ver',
+   'mantenimiento.ver','mapa.ver','configuracion.ver'
+ ].some(p=>ccPerm(p));
+ const control=controlBase||hasOperationalModule;
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
  if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
@@ -102,15 +108,15 @@ function applyAccess(){
  document.getElementById('ccSessionName').textContent=a.nombre||a.email||'Usuario';
  document.getElementById('ccSessionRole').textContent=a.rol+(a.activo?' · ACTIVO':' · INACTIVO');
 
- tabVisible('anticipos',control&&ccPerm('anticipos.ver'));
- tabVisible('dashboard',control);
- tabVisible('inventario',control&&ccPerm('inventario.ver'));
- tabVisible('renta',control&&ccPerm('rentas.ver'));
- tabVisible('historial',control&&ccPerm('historial.ver'));
- tabVisible('proforma',control&&ccPerm('proforma.ver'));
- tabVisible('mantenimiento',control&&ccPerm('mantenimiento.ver'));
- tabVisible('mapa',control&&ccPerm('mapa.ver'));
- tabVisible('configuracion',control&&ccPerm('configuracion.ver'));
+ tabVisible('anticipos',ccPerm('anticipos.ver'));
+ tabVisible('dashboard',controlBase);
+ tabVisible('inventario',ccPerm('inventario.ver'));
+ tabVisible('renta',ccPerm('rentas.ver'));
+ tabVisible('historial',ccPerm('historial.ver'));
+ tabVisible('proforma',ccPerm('proforma.ver'));
+ tabVisible('mantenimiento',ccPerm('mantenimiento.ver'));
+ tabVisible('mapa',ccPerm('mapa.ver'));
+ tabVisible('configuracion',ccPerm('configuracion.ver'));
 
  protectTabs();
  [
