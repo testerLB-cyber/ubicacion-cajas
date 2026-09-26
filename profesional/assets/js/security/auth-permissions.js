@@ -79,25 +79,34 @@ function protect(name,path){
  const wrapped=function(...args){if(!ccPerm(path)){alert('Tu usuario no tiene permiso para esta acción.');return;}return fn.apply(this,args);};
  wrapped.__ccProtected=true;window[name]=wrapped;
 }
+
+const CC_MODULE_PERMISSIONS={
+ anticipos:'anticipos.ver',
+ dashboard:'control_cajas.ver',
+ inventario:'inventario.ver',
+ renta:'rentas.ver',
+ historial:'historial.ver',
+ proforma:'proforma.ver',
+ mantenimiento:'mantenimiento.ver',
+ mapa:'mapa.ver',
+ configuracion:'configuracion.ver'
+};
+function ccModuleAllowed(tab){const p=CC_MODULE_PERMISSIONS[tab];return !!p&&ccPerm(p);}
+function ccHasAnyOperationalModule(){return Object.keys(CC_MODULE_PERMISSIONS).some(tab=>ccModuleAllowed(tab));}
 function protectTabs(){
  const original=window.ccTab;if(typeof original==='function'&&!original.__ccProtected){
-  const map={anticipos:'anticipos.ver',inventario:'inventario.ver',renta:'rentas.ver',historial:'historial.ver',proforma:'proforma.ver',mantenimiento:'mantenimiento.ver',mapa:'mapa.ver',configuracion:'configuracion.ver',dashboard:'control_cajas.ver'};
-  const w=function(tab,btn){const p=map[tab]||'control_cajas.ver';if(!ccPerm(p)){alert('Tu usuario no tiene permiso para este módulo.');return;}return original(tab,btn);};w.__ccProtected=true;window.ccTab=w;
+  const w=function(tab,btn){if(!ccModuleAllowed(tab)){alert('Tu usuario no tiene permiso para este módulo.');return;}return original(tab,btn);};w.__ccProtected=true;window.ccTab=w;
  }
 }
 function firstControlTab(){
- const order=[['anticipos','anticipos.ver'],['dashboard','control_cajas.ver'],['inventario','inventario.ver'],['renta','rentas.ver'],['historial','historial.ver'],['proforma','proforma.ver'],['mantenimiento','mantenimiento.ver'],['mapa','mapa.ver'],['configuracion','configuracion.ver']];
- for(const [tab,p] of order){if(ccPerm(p)){const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
+ const order=['anticipos','dashboard','inventario','renta','historial','proforma','mantenimiento','mapa','configuracion'];
+ for(const tab of order){if(ccModuleAllowed(tab)){const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
 }
 function applyAccess(){
  const a=window.CC_ACCESS||{};
  const dashboard=ccPerm('dashboard.ver');
  const controlBase=ccPerm('control_cajas.ver');
- const hasOperationalModule=[
-   'anticipos.ver','inventario.ver','rentas.ver','historial.ver','proforma.ver',
-   'mantenimiento.ver','mapa.ver','configuracion.ver'
- ].some(p=>ccPerm(p));
- const control=controlBase||hasOperationalModule;
+ const control=ccHasAnyOperationalModule();
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
  if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
@@ -108,15 +117,7 @@ function applyAccess(){
  document.getElementById('ccSessionName').textContent=a.nombre||a.email||'Usuario';
  document.getElementById('ccSessionRole').textContent=a.rol+(a.activo?' · ACTIVO':' · INACTIVO');
 
- tabVisible('anticipos',ccPerm('anticipos.ver'));
- tabVisible('dashboard',controlBase);
- tabVisible('inventario',ccPerm('inventario.ver'));
- tabVisible('renta',ccPerm('rentas.ver'));
- tabVisible('historial',ccPerm('historial.ver'));
- tabVisible('proforma',ccPerm('proforma.ver'));
- tabVisible('mantenimiento',ccPerm('mantenimiento.ver'));
- tabVisible('mapa',ccPerm('mapa.ver'));
- tabVisible('configuracion',ccPerm('configuracion.ver'));
+ Object.keys(CC_MODULE_PERMISSIONS).forEach(tab=>tabVisible(tab,ccModuleAllowed(tab)));
 
  protectTabs();
  [
