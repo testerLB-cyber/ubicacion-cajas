@@ -171,6 +171,8 @@ window.ccSaveNewUser=async function(){
  const permisos=readPermissions(document.getElementById('ccNewPerms'));
  const {data,error}=await sb.functions.invoke('cc-admin-users',{body:{action:'create_user',email,password,nombre,activo:true,permisos}});
  if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo crear el usuario');return;}
+ if(data.emailSent===true)alert('Usuario creado correctamente. Se envió al correo del usuario la liga de acceso, el usuario y la contraseña.');
+ else alert('Usuario creado correctamente, pero no se pudo enviar el correo de acceso. Detalle: '+(data.emailError||'Error de envío no especificado.'));
  root?.remove();await ccOpenUserAdmin();
 };
 window.ccEditUserModal=function(json){
@@ -191,7 +193,9 @@ window.ccSaveEditedUser=async function(userId){
 window.ccSetUserPassword=async function(userId){
  const password=prompt('Nueva contraseña (mínimo 8 caracteres):');if(password===null)return;if(password.length<8){alert('Mínimo 8 caracteres.');return;}
  const {data,error}=await sb.functions.invoke('cc-admin-users',{body:{action:'set_password',userId,password}});
- if(error||!data?.ok)alert(error?.message||data?.error||'No se pudo cambiar la contraseña');else alert('Contraseña actualizada.');
+ if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo cambiar la contraseña');return;}
+ if(data.emailSent===true)alert('Contraseña actualizada. Se envió al correo del usuario la liga de acceso, el usuario y la nueva contraseña.');
+ else alert('Contraseña actualizada, pero no se pudo enviar el correo. Detalle: '+(data.emailError||'Error de envío no especificado.'));
 };
 window.ccDeleteAppUser=async function(userId,email){
  if(!confirm('¿Eliminar el usuario '+email+'?'))return;
