@@ -6,7 +6,35 @@
   const units=()=>Array.isArray(HS?.unidades)?HS.unidades:[];
   const unitByNumber=v=>units().find(x=>norm(x.numero)===norm(v))||null;
   const boxes=()=>units().filter(x=>x.esCaja);
+  const selectedTripName=()=>String(document.getElementById('hsTrip')?.selectedOptions?.[0]?.textContent||'').trim();
+  const isDelay=()=>norm(selectedTripName())==='DEMORA';
   let ADMIN_FOLIO='';
+
+  function ensureDelayField(){
+    const form=document.getElementById('hsForm'), cls=document.getElementById('hsClass');
+    if(!form||!cls)return;
+    let field=document.getElementById('hsDelayField');
+    if(!field){
+      field=document.createElement('div');
+      field.className='field hidden';
+      field.id='hsDelayField';
+      field.innerHTML='<label>Cantidad de horas *</label><input id="hsDelayHours" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Ej. 1.5, 6, 12, 30"><div class="muted" style="font-size:11px;margin-top:5px">Campo abierto. Captura las horas reales de demora; la matriz cobra cantidad × tarifa por hora.</div>';
+      cls.closest('.field')?.insertAdjacentElement('afterend',field);
+    }
+    syncDelayField();
+  }
+
+  function syncDelayField(){
+    const cls=document.getElementById('hsClass'), field=document.getElementById('hsDelayField'), input=document.getElementById('hsDelayHours');
+    if(!cls||!field||!input)return;
+    const delay=isDelay();
+    field.classList.toggle('hidden',!delay);
+    cls.closest('.field')?.classList.toggle('hidden',delay);
+    input.required=delay;
+    cls.required=!delay;
+    if(delay){cls.disabled=true;} 
+    else if(document.getElementById('hsTrip')?.value){cls.disabled=false;}
+  }
 
   function addStyle(){if(document.getElementById('hsUnitTrailerStyle'))return;const s=document.createElement('style');s.id='hsUnitTrailerStyle';s.textContent='.unit-valid{border-color:#16a34a!important;background:#f0fdf4!important;box-shadow:0 0 0 2px rgba(22,163,74,.12)!important}.unit-invalid{border-color:#ef4444!important;background:#fef2f2!important}.unit-status{font-size:11px;margin-top:5px;font-weight:800}.unit-status.ok{color:#15803d}.unit-status.bad{color:#b91c1c}.unit-status.muted{color:#64748b}';document.head.appendChild(s)}
   function fillLists(){
@@ -21,6 +49,7 @@
     const nodes=[...wrap.children];nodes.forEach(n=>used.parentNode.insertBefore(n,used));
     ['input','change','blur'].forEach(ev=>document.getElementById('hsUnit').addEventListener(ev,syncOperatorUnit));
     fillLists();
+    ensureDelayField();
   }
   function syncInput(input,status,trailerField,trailerInput){
     const u=unitByNumber(input.value);input.classList.remove('unit-valid','unit-invalid');status.className='unit-status muted';
@@ -28,11 +57,12 @@
     input.dataset.unitId='';input.dataset.tracto='0';trailerField.classList.add('hidden');trailerInput.required=false;if(input.value.trim()){input.classList.add('unit-invalid');status.className='unit-status bad';status.textContent='Selecciona una unidad válida del catálogo.';}else status.textContent='Escribe y selecciona una unidad del catálogo.';return null;
   }
   function syncOperatorUnit(){return syncInput(document.getElementById('hsUnit'),document.getElementById('hsUnitStatus'),document.getElementById('hsTrailerField'),document.getElementById('hsTrailer'))}
-  function prefillOperator(){ensureOperatorFields();fillLists();const ev=HS_CURRENT?.evidencia||{};const i=document.getElementById('hsUnit'),t=document.getElementById('hsTrailer');if(i){i.value=ev.unidadNumero||'';t.value=ev.remolqueNumero||'';syncOperatorUnit();}}
+  function prefillOperator(){ensureOperatorFields();fillLists();const ev=HS_CURRENT?.evidencia||{};const i=document.getElementById('hsUnit'),t=document.getElementById('hsTrailer');if(i){i.value=ev.unidadNumero||'';t.value=ev.remolqueNumero||'';syncOperatorUnit();}ensureDelayField();const h=document.getElementById('hsDelayHours');if(h){const parsed=Number(ev.cantidadCobro||String(ev.clasificacion||'').replace(/[^0-9.]/g,''));h.value=Number.isFinite(parsed)&&parsed>0?parsed:'';}syncDelayField();}
 
   const prevOpenHs=typeof openHs==='function'?openHs:null;
   if(prevOpenHs){openHs=function(id){const r=prevOpenHs(id);setTimeout(prefillOperator,0);return r;};}
   ensureOperatorFields();addStyle();
+  document.addEventListener('change',e=>{if(e.target?.id==='hsTrip')setTimeout(()=>{ensureDelayField();syncDelayField();},0);},true);
 
   document.addEventListener('submit',async e=>{
     if(e.target?.id!=='hsForm')return;
@@ -42,10 +72,14 @@
     try{
       const cv=String(document.getElementById('hsClient')?.value||'').trim();if(!cv)throw new Error('Selecciona un cliente válido del catálogo.');const u=syncOperatorUnit();if(!u)throw new Error('La Unidad es obligatoria. Selecciona una unidad válida del catálogo.');
       const rem=String(document.getElementById('hsTrailer')?.value||'').trim();if(u.esTracto&&!rem)throw new Error('La Caja es obligatoria cuando la unidad es Tracto-camión. Selecciona una caja.');
+      const delay=isDelay();const hours=delay?Number(document.getElementById('hsDelayHours')?.value||0):null;
+      if(delay&&!(hours>0))throw new Error('Captura la cantidad real de horas de demora.');
+      const classId=delay?'':String(document.getElementById('hsClass')?.value||'').trim();
+      if(!delay&&!classId)throw new Error('Selecciona una clasificación válida.');
       if(!HS_FILE)throw new Error('La foto es obligatoria.');
       const au=await sb.auth.getUser(),uid=au.data?.user?.id;path=uid+'/'+HS_CURRENT.id+'/'+Date.now()+'.jpg';
       let r=await sb.storage.from('app-hojas-servicio').upload(path,HS_FILE,{contentType:'image/jpeg'});if(r.error)throw r.error;
-      r=await sb.rpc('app_mobile_save_evidence_v3',{p_folio_id:HS_CURRENT.id,p_cliente_id:document.getElementById('hsClient').value,p_tipo_viaje_id:document.getElementById('hsTrip').value,p_clasificacion_id:document.getElementById('hsClass').value,p_donde_utilizado:document.getElementById('hsUsedAt').value.trim(),p_foto_path:path,p_unidad_id:u.id,p_remolque_numero:u.esTracto?rem:''});
+      r=await sb.rpc('app_mobile_save_evidence_v4',{p_folio_id:HS_CURRENT.id,p_cliente_id:document.getElementById('hsClient').value,p_tipo_viaje_id:document.getElementById('hsTrip').value,p_clasificacion_id:classId,p_donde_utilizado:document.getElementById('hsUsedAt').value.trim(),p_foto_path:path,p_unidad_id:u.id,p_remolque_numero:u.esTracto?rem:'',p_cantidad_cobro:delay?hours:null});
       if(r.error||!r.data?.ok)throw new Error(r.error?.message||r.data?.error||'No se pudo guardar');
       msg('hsMsg','Evidencia guardada con unidad'+(u.esTracto?' y remolque':'')+'. Pendiente de comprobación web.','oktxt');await loadAll(false);setTimeout(renderHs,250);
     }catch(err){msg('hsMsg',err.message||err,'err')}finally{b.disabled=false;}
