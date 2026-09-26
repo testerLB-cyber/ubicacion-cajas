@@ -63,7 +63,7 @@
       info=document.createElement('div');info.id='hsServiceInfo';info.className='mobile-current-service';
       trip.closest('.field')?.insertAdjacentElement('afterend',info);
     }
-    if(norm(selected)==='DEMORA') info.innerHTML='<b>Demora:</b> selecciona 1, 2, 3, 4 o 5 horas en el campo siguiente.';
+    if(norm(selected)==='DEMORA') info.innerHTML='<b>Demora:</b> captura la cantidad real de horas. Es un campo abierto y admite decimales (ej. 1.5, 6, 12, 30).';
     else info.textContent='Selecciona el tipo de servicio y su clasificación correspondiente.';
   }
 
