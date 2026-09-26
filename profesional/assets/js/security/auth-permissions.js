@@ -139,6 +139,34 @@ function ccSyncAllPermissionGroups(root){(root||document).querySelectorAll('[dat
 function readPermissions(root){
  const out={};PERM_SCHEMA.forEach(([m,,items])=>{out[m]={};items.forEach(([k])=>{out[m][k]=!!root.querySelector('[data-perm="'+m+'.'+k+'"]')?.checked;});});return out;
 }
+function applyPermissionsToRoot(root,perms={}){
+ if(!root)return;
+ PERM_SCHEMA.forEach(([m,,items])=>items.forEach(([k])=>{
+  const el=root.querySelector('[data-perm="'+m+'.'+k+'"]');
+  if(el)el.checked=getPath(perms,m+'.'+k)===true;
+ }));
+ ccSyncAllPermissionGroups(root);
+}
+window.ccCopyPermissionsFromUser=async function(targetId,currentUserId=''){
+ const target=document.getElementById(targetId);if(!target){alert('No se encontró el bloque de permisos.');return;}
+ const {data,error}=await sb.rpc('cc_admin_list_users');
+ if(error||!data?.ok){alert(error?.message||data?.error||'No se pudieron cargar los usuarios.');return;}
+ const users=(data.usuarios||[]).filter(u=>u.userId!==currentUserId&&u.rol!=='ADMIN');
+ if(!users.length){alert('No hay otro usuario disponible para copiar permisos.');return;}
+ document.getElementById('ccCopyPermModal')?.remove();
+ const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const ov=document.createElement('div');ov.id='ccCopyPermModal';ov.className='cc-user-modal';
+ ov.innerHTML='<div class="cc-user-card" style="width:min(520px,96vw)"><div class="cc-user-head"><b>Copiar permisos de otro usuario</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-field"><label>Usuario origen</label><select id="ccCopyPermSource"><option value="">Selecciona un usuario...</option>'+users.map(u=>'<option value="'+esc(u.userId)+'">'+esc(u.nombre||u.email)+' · '+esc(u.email)+'</option>').join('')+'</select></div><div class="cc-note" style="margin-top:8px">Solo se copiarán los permisos. No se modificará nombre, correo, contraseña, estatus ni otras configuraciones.</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" id="ccCopyPermApply">Copiar permisos</button></div></div></div>';
+ document.body.appendChild(ov);
+ document.getElementById('ccCopyPermApply').onclick=()=>{
+  const id=document.getElementById('ccCopyPermSource')?.value||'';
+  const src=users.find(u=>u.userId===id);
+  if(!src){alert('Selecciona un usuario.');return;}
+  applyPermissionsToRoot(target,src.permisos||{});
+  ov.remove();
+  alert('Permisos copiados. Revisa los checks y guarda para aplicar los cambios.');
+ };
+};
 function closeUserModal(){document.getElementById('ccUserAdminModal')?.remove();}
 window.ccOpenUserAdmin=async function(){
  if(window.CC_ACCESS?.rol!=='ADMIN'){alert('Solo ADMIN puede administrar usuarios.');return;}
@@ -162,7 +190,7 @@ window.ccToggleUserActive=async function(userId,nombre,activar){
 window.ccCreateUserModal=function(){
  document.getElementById('ccUserEditModal')?.remove();
  const ov=document.createElement('div');ov.id='ccUserEditModal';ov.className='cc-user-modal';
- ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Nuevo usuario</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccNewUserName"></div><div class="cc-field"><label>Correo</label><input id="ccNewUserEmail" type="email"></div><div class="cc-field"><label>Contraseña inicial</label><input id="ccNewUserPassword" type="password" minlength="8"></div></div><div style="margin:14px 0 8px;font-weight:900">Permisos</div><div id="ccNewPerms">'+permissionsHtml({})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick="ccSaveNewUser()">Crear usuario</button></div></div></div>';
+ ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Nuevo usuario</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccNewUserName"></div><div class="cc-field"><label>Correo</label><input id="ccNewUserEmail" type="email"></div><div class="cc-field"><label>Contraseña inicial</label><input id="ccNewUserPassword" type="password" minlength="8"></div></div><div style="margin:14px 0 8px;font-weight:900;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Permisos</span><button type="button" class="cc-btn cc-btn-light" onclick="ccCopyPermissionsFromUser('ccNewPerms')"><i class="fa-solid fa-copy"></i> Copiar permisos de...</button></div><div id="ccNewPerms">'+permissionsHtml({})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick="ccSaveNewUser()">Crear usuario</button></div></div></div>';
  document.body.appendChild(ov);ccSyncAllPermissionGroups(ov);
 };
 window.ccSaveNewUser=async function(){
@@ -178,7 +206,7 @@ window.ccSaveNewUser=async function(){
 window.ccEditUserModal=function(json){
  const u=typeof json==='string'?JSON.parse(json):json;document.getElementById('ccUserEditModal')?.remove();
  const ov=document.createElement('div');ov.id='ccUserEditModal';ov.className='cc-user-modal';
- ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Permisos · '+(u.email||'')+'</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccEditUserName" value="'+String(u.nombre||'').replace(/"/g,'&quot;')+'"></div><div class="cc-field"><label>Estatus</label><select id="ccEditUserActive"><option value="1" '+(u.activo?'selected':'')+'>ACTIVO</option><option value="0" '+(!u.activo?'selected':'')+'>DESACTIVADO</option></select></div></div><div style="margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><label style="display:flex;gap:9px;align-items:center;font-weight:900"><input id="ccEditBeneficiarioHojas" type="checkbox" '+(u.beneficiarioHojas?'checked':'')+'> Beneficiario en Control de Hojas</label><div style="font-size:10px;color:#64748b;margin-top:4px">Al marcarlo, este usuario Web aparecerá en la lista de Beneficiarios al asignar hojas.</div></div><div style="margin:14px 0 8px;font-weight:900">Permisos</div><div id="ccEditPerms">'+permissionsHtml(u.permisos||{})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick=\'ccSaveEditedUser('+JSON.stringify(u.userId)+')\'>Guardar permisos</button></div></div></div>';
+ ov.innerHTML='<div class="cc-user-card" style="width:min(820px,98vw)"><div class="cc-user-head"><b>Permisos · '+(u.email||'')+'</b><button class="cc-btn cc-btn-light" onclick="this.closest(\'.cc-user-modal\').remove()">Cerrar</button></div><div class="cc-user-body"><div class="cc-grid"><div class="cc-field"><label>Nombre</label><input id="ccEditUserName" value="'+String(u.nombre||'').replace(/"/g,'&quot;')+'"></div><div class="cc-field"><label>Estatus</label><select id="ccEditUserActive"><option value="1" '+(u.activo?'selected':'')+'>ACTIVO</option><option value="0" '+(!u.activo?'selected':'')+'>DESACTIVADO</option></select></div></div><div style="margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><label style="display:flex;gap:9px;align-items:center;font-weight:900"><input id="ccEditBeneficiarioHojas" type="checkbox" '+(u.beneficiarioHojas?'checked':'')+'> Beneficiario en Control de Hojas</label><div style="font-size:10px;color:#64748b;margin-top:4px">Al marcarlo, este usuario Web aparecerá en la lista de Beneficiarios al asignar hojas.</div></div><div style="margin:14px 0 8px;font-weight:900;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Permisos</span><button type="button" class="cc-btn cc-btn-light" onclick=\'ccCopyPermissionsFromUser("ccEditPerms",'+JSON.stringify(u.userId)+')\'><i class="fa-solid fa-copy"></i> Copiar permisos de...</button></div><div id="ccEditPerms">'+permissionsHtml(u.permisos||{})+'</div><div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="cc-btn cc-btn-primary" onclick=\'ccSaveEditedUser('+JSON.stringify(u.userId)+')\'>Guardar permisos</button></div></div></div>';
  document.body.appendChild(ov);ccSyncAllPermissionGroups(ov);
 };
 window.ccSaveEditedUser=async function(userId){
