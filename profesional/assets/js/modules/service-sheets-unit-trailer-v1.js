@@ -20,8 +20,19 @@
     tl.innerHTML=boxUnits().map(x=>'<option value="'+esc(x.numero)+'" label="'+esc(x.descripcion||'Caja')+'"></option>').join('');
   }
 
+  async function hasSession(){
+    const c=sb();
+    if(!c?.auth?.getSession)return false;
+    try{
+      const {data,error}=await c.auth.getSession();
+      if(error)return false;
+      return !!data?.session?.user;
+    }catch(_){return false}
+  }
+
   async function loadData(){
     if(loading||!sb())return;
+    if(!(await hasSession()))return;
     loading=true;
     try{
       const [u,e,h]=await Promise.all([sb().rpc('hs_unit_catalog'),sb().rpc('hs_mobile_evidence_units'),sb().rpc('hs_list')]);
@@ -159,7 +170,14 @@
   function boot(){
     const root=document.getElementById('controlCajasSection')||document.body;
     observer.observe(root,{childList:true,subtree:true});
-    loadData();setInterval(()=>{if(document.getElementById('hs104CompList'))loadData()},45000);
+    const c=sb();
+    if(c?.auth?.getSession){
+      c.auth.getSession().then(({data})=>{if(data?.session?.user)loadData()}).catch(()=>{});
+      c.auth.onAuthStateChange?.((event,session)=>{
+        if(session?.user && (event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='INITIAL_SESSION')) setTimeout(loadData,0);
+      });
+    }
+    setInterval(()=>{if(document.getElementById('hs104CompList'))loadData()},45000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
