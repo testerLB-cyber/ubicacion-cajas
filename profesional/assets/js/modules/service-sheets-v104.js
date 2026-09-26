@@ -209,8 +209,96 @@
     const fill=()=>{const t=form.tipoPersona.value,xs=t==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores);let selected='';if(t===currentType){if(t==='BENEFICIARIO')selected=x.beneficiarioId||'';else selected=(D.operadores||[]).find(z=>norm(z.nombre)===norm(x.operador||x.persona))?.id||'';}sel.innerHTML=options(xs,z=>z.nombre+(z.numeroEmpleado?' · '+z.numeroEmpleado:''),selected)};
     form.tipoPersona.onchange=fill;fill();
   }
-  async function openAssignPerson(){if(!perm('asignar_operador'))return alert('Sin permiso.');try{const b=await rpc('cc_hojas_beneficiarios_web');D.beneficiarios=Array.isArray(b)?b:[]}catch(e){console.warn('Beneficiarios Web',e);D.beneficiarios=[]}const aa=(D.asignacionesResponsable||[]).filter(x=>x.estatus==='ACEPTADA');if(!aa.length)return alert('No hay rangos aceptados por responsables.');const body='<form><div class="hs104-grid"><div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div><div class="cc-field"><label>Persona *</label><select name="personaId" required></select></div><div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+six(x.desde)+' a '+six(x.hasta))+'</select></div><div class="cc-field"><label>Desde *</label><input name="desde" type="number" min="0" max="999999" required></div><div class="cc-field"><label>Hasta *</label><input name="hasta" type="number" min="0" max="999999" required></div></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones"></textarea></div><div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Asignar hojas</button></div></form>';
-    const o=modal('Asignar hojas a persona',body,{onSave:async fd=>{await rpc('hs_assign_operator_range',{p_item:{asignacionId:fd.get('asignacionId'),tipoPersona:fd.get('tipoPersona'),personaId:fd.get('personaId'),operadorId:fd.get('personaId'),desde:Number(fd.get('desde')),hasta:Number(fd.get('hasta')),observaciones:fd.get('observaciones')}})}});const f=o.querySelector('form'),sel=f.personaId;const fill=()=>{const xs=f.tipoPersona.value==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores);sel.innerHTML=options(xs,x=>x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:''))};f.tipoPersona.onchange=fill;fill();
+  async function openAssignPerson(){
+    if(!perm('asignar_operador'))return alert('Sin permiso.');
+    try{const b=await rpc('cc_hojas_beneficiarios_web');D.beneficiarios=Array.isArray(b)?b:[]}catch(e){console.warn('Beneficiarios Web',e);D.beneficiarios=[]}
+    const aa=(D.asignacionesResponsable||[]).filter(x=>x.estatus==='ACEPTADA');
+    if(!aa.length)return alert('No hay rangos aceptados por responsables.');
+
+    const body='<form><div class="hs104-grid">'+
+      '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
+      '<div class="cc-field"><label>Persona *</label><input name="personaNombre" type="search" autocomplete="off" list="hs104AssignPersonList" placeholder="Escribe 2 letras para buscar..." required><input name="personaId" type="hidden"><datalist id="hs104AssignPersonList"></datalist><div class="hs104-note" data-person-status>Selecciona una persona del catálogo.</div></div>'+
+      '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+six(x.desde)+' a '+six(x.hasta))+'</select></div>'+
+      '<div class="cc-field"><label>Desde *</label><input name="desdeFolio" type="search" autocomplete="off" list="hs104AssignFromList" placeholder="Selecciona hoja generada" required><datalist id="hs104AssignFromList"></datalist></div>'+
+      '<div class="cc-field"><label>Hasta *</label><input name="hastaFolio" type="search" autocomplete="off" list="hs104AssignToList" placeholder="Selecciona hoja generada" required><datalist id="hs104AssignToList"></datalist></div>'+
+      '</div><div class="hs104-note" data-folio-status style="margin-top:8px">Desde y Hasta muestran únicamente hojas generadas y disponibles dentro de la custodia seleccionada.</div>'+
+      '<div class="cc-field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>'+
+      '<div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Asignar hojas</button></div></form>';
+
+    const o=modal('Asignar hojas a persona',body,{onSave:async fd=>{
+      const personId=String(fd.get('personaId')||'').trim();
+      if(!personId)throw new Error('Selecciona un operador o beneficiario válido del catálogo.');
+      const asignacionId=String(fd.get('asignacionId')||'');
+      const a=aa.find(x=>String(x.id)===asignacionId);
+      if(!a)throw new Error('Selecciona una custodia válida.');
+      const available=getAvailableFolios(a);
+      const from=findFolio(available,String(fd.get('desdeFolio')||''));
+      const to=findFolio(available,String(fd.get('hastaFolio')||''));
+      if(!from||!to)throw new Error('Selecciona Desde y Hasta usando hojas generadas disponibles.');
+      if(Number(to.consecutivo)<Number(from.consecutivo))throw new Error('La hoja Hasta no puede ser menor que Desde.');
+      const selectedRange=available.filter(x=>Number(x.consecutivo)>=Number(from.consecutivo)&&Number(x.consecutivo)<=Number(to.consecutivo));
+      const expected=Number(to.consecutivo)-Number(from.consecutivo)+1;
+      if(selectedRange.length!==expected)throw new Error('El rango contiene hojas que ya no están disponibles. Selecciona un rango continuo.');
+      await rpc('hs_assign_operator_range',{p_item:{
+        asignacionId,
+        tipoPersona:fd.get('tipoPersona'),
+        personaId,
+        operadorId:personId,
+        desde:Number(from.consecutivo),
+        hasta:Number(to.consecutivo),
+        observaciones:fd.get('observaciones')
+      }});
+    }});
+
+    const form=o.querySelector('form'),personInput=form.personaNombre,personId=form.personaId,personList=o.querySelector('#hs104AssignPersonList'),personStatus=o.querySelector('[data-person-status]'),from=form.desdeFolio,to=form.hastaFolio,fromList=o.querySelector('#hs104AssignFromList'),toList=o.querySelector('#hs104AssignToList'),folioStatus=o.querySelector('[data-folio-status]');
+
+    function currentPeople(){return form.tipoPersona.value==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores)}
+    function personLabel(x){return x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')}
+    function fillPeople(){
+      const xs=currentPeople();
+      personList.innerHTML=xs.map(x=>'<option value="'+esc(personLabel(x))+'"></option>').join('');
+      personInput.value='';personId.value='';
+      personInput.placeholder=form.tipoPersona.value==='BENEFICIARIO'?'Escribe beneficiario...':'Escribe operador...';
+      personStatus.textContent='Selecciona una persona del catálogo.';
+      personStatus.style.color='#64748b';
+    }
+    function syncPerson(){
+      const q=norm(personInput.value),xs=currentPeople();
+      let m=xs.find(x=>norm(personLabel(x))===q)||xs.find(x=>norm(x.nombre)===q);
+      if(!m&&q.length>=2){const hits=xs.filter(x=>norm(personLabel(x)).includes(q));if(hits.length===1)m=hits[0]}
+      personId.value=m?String(m.id):'';
+      personStatus.textContent=m?'✓ '+personLabel(m):(personInput.value.trim()?'Selecciona una coincidencia válida del catálogo.':'Selecciona una persona del catálogo.');
+      personStatus.style.color=m?'#15803d':(personInput.value.trim()?'#b91c1c':'#64748b');
+    }
+    function selectedAssignment(){return aa.find(x=>String(x.id)===String(form.asignacionId.value))}
+    function getAvailableFolios(a){
+      if(!a)return[];
+      return (D.ultimosFolios||[]).filter(x=>
+        String(x.serie)===String(a.serie)&&
+        String(x.anio)===String(a.anio)&&
+        Number(x.consecutivo)>=Number(a.desde)&&Number(x.consecutivo)<=Number(a.hasta)&&
+        String(x.estatus||'').toUpperCase()==='EN_CUSTODIA'
+      ).sort((x,y)=>Number(x.consecutivo)-Number(y.consecutivo));
+    }
+    function folioLabel(x){return String(x.folio||((x.serie||'')+'-'+(x.anio||'')+'-'+six(x.consecutivo)))}
+    function findFolio(rows,v){
+      const q=norm(v);
+      return rows.find(x=>norm(folioLabel(x))===q)||rows.find(x=>String(x.consecutivo)===String(v).trim())||null;
+    }
+    function fillFolios(){
+      const a=selectedAssignment(),rows=getAvailableFolios(a);
+      const html=rows.map(x=>'<option value="'+esc(folioLabel(x))+'"></option>').join('');
+      fromList.innerHTML=html;toList.innerHTML=html;from.value='';to.value='';
+      folioStatus.textContent=rows.length?rows.length+' hoja(s) generada(s) disponibles en esta custodia.':'No hay hojas disponibles en esta custodia.';
+      folioStatus.style.color=rows.length?'#15803d':'#b91c1c';
+    }
+
+    form.tipoPersona.onchange=fillPeople;
+    personInput.addEventListener('input',syncPerson);
+    personInput.addEventListener('change',syncPerson);
+    personInput.addEventListener('blur',syncPerson);
+    form.asignacionId.onchange=fillFolios;
+    fillPeople();fillFolios();
   }
 
   function personType(x){return String(x.tipoPersona||'OPERADOR').toUpperCase()==='BENEFICIARIO'?'BENEFICIARIO':'OPERADOR'}
