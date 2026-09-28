@@ -437,7 +437,7 @@
 
     const body='<form><div class="hs104-grid">'+
       '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
-      '<div class="cc-field"><label>Persona *</label><input name="personaNombre" type="search" autocomplete="off" list="hs104AssignPersonList" placeholder="Escribe 2 letras para buscar..." required><select name="beneficiarioSelect" style="display:none;width:100%"></select><input name="personaId" type="hidden"><datalist id="hs104AssignPersonList"></datalist><div class="hs104-note" data-person-status>Selecciona una persona del catálogo.</div></div>'+
+      '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><input name="personaId" type="hidden"><div class="hs104-note" data-person-status>Escribe mínimo 3 letras o usa … para buscar en el catálogo.</div></div>'+
       '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+((D.assignmentSelections?.[x.id]?.cantidad)||0)+' hoja(s)')+'</select></div>'+
       '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
@@ -461,35 +461,37 @@
       alert('Hojas asignadas: '+Number(r.asignados||0)+' · '+(r.persona||''));
     }});
 
-    const form=o.querySelector('form'),personInput=form.personaNombre,beneficiarySelect=form.beneficiarioSelect,personId=form.personaId,personList=o.querySelector('#hs104AssignPersonList'),personStatus=o.querySelector('[data-person-status]');
+    const form=o.querySelector('form'),personInput=form.personaNombre,personId=form.personaId,personStatus=o.querySelector('[data-person-status]'),personMore=o.querySelector('[data-person-more]');
     function currentPeople(){return form.tipoPersona.value==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores)}
-    function personLabel(x){return x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')}
-    function fillPeople(){
-      const xs=currentPeople(),isBen=form.tipoPersona.value==='BENEFICIARIO';personId.value='';
-      if(isBen){
-        personInput.style.display='none';personInput.required=false;personInput.value='';personList.innerHTML='';
-        beneficiarySelect.style.display='';beneficiarySelect.required=true;
-        beneficiarySelect.innerHTML='<option value="">Seleccionar beneficiario…</option>'+xs.map(x=>'<option value="'+esc(x.id)+'">'+esc(personLabel(x))+(x.email?' · '+esc(x.email):'')+'</option>').join('');
-        personStatus.textContent=xs.length?xs.length+' usuario(s) WEB activo(s) disponibles.':'No hay usuarios WEB activos disponibles.';
-      }else{
-        beneficiarySelect.style.display='none';beneficiarySelect.required=false;beneficiarySelect.innerHTML='';
-        personInput.style.display='';personInput.required=true;personInput.placeholder='Escribe operador...';
-        personList.innerHTML=xs.map(x=>'<option value="'+esc(personLabel(x))+'"></option>').join('');
-        personStatus.textContent='Selecciona una persona del catálogo.';
-      }
-      personStatus.style.color='#64748b';
-    }
+    function personLabel(x){return String(x.nombre||'')+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.email?' · '+x.email:'')}
+    function clearPerson(){personId.value='';personInput.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar en el catálogo.';personStatus.style.color='#64748b';}
+    function choosePerson(x){personId.value=String(x.id);personInput.value=personLabel(x);personStatus.textContent='✓ '+personLabel(x);personStatus.style.color='#15803d';}
     function syncPerson(){
-      const q=norm(personInput.value),xs=currentPeople();let m=xs.find(x=>norm(personLabel(x))===q)||xs.find(x=>norm(x.nombre)===q);
-      if(!m&&q.length>=2){const hits=xs.filter(x=>norm(personLabel(x)).includes(q));if(hits.length===1)m=hits[0]}
+      const raw=personInput.value.trim(),q=norm(raw),xs=currentPeople();
+      if(q.length<3){personId.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar en el catálogo.';personStatus.style.color='#64748b';return;}
+      let m=xs.find(x=>norm(personLabel(x))===q)||xs.find(x=>norm(x.nombre)===q);
+      const hits=xs.filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q)).slice(0,30);
+      if(!m&&hits.length===1)m=hits[0];
       personId.value=m?String(m.id):'';
-      personStatus.textContent=m?'✓ '+personLabel(m):(personInput.value.trim()?'Selecciona una coincidencia válida del catálogo.':'Selecciona una persona del catálogo.');
-      personStatus.style.color=m?'#15803d':(personInput.value.trim()?'#b91c1c':'#64748b');
+      personStatus.textContent=m?'✓ '+personLabel(m):(hits.length?hits.length+' coincidencia(s). Usa … para seleccionar.':'Sin coincidencias.');
+      personStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
     }
-    form.tipoPersona.onchange=fillPeople;
-    beneficiarySelect.addEventListener('change',()=>{const m=currentPeople().find(x=>String(x.id)===String(beneficiarySelect.value));personId.value=m?String(m.id):'';personStatus.textContent=m?'✓ '+personLabel(m):'Selecciona un beneficiario.';personStatus.style.color=m?'#15803d':'#64748b';});
-    personInput.addEventListener('input',syncPerson);personInput.addEventListener('change',syncPerson);personInput.addEventListener('blur',syncPerson);
-    fillPeople();setupSelectionUI(o,'persona');
+    function openPersonPicker(){
+      document.getElementById('hs104PersonPicker')?.remove();
+      const ov=document.createElement('div');ov.id='hs104PersonPicker';
+      ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:101400;display:flex;align-items:center;justify-content:center;padding:14px';
+      ov.innerHTML='<div style="width:min(680px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005"><div style="padding:13px 15px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center"><strong>Buscar '+(form.tipoPersona.value==='BENEFICIARIO'?'beneficiario':'operador')+'</strong><button type="button" data-x style="border:0;background:none;color:#fff;font-size:24px">×</button></div><div style="padding:14px"><input data-q type="search" class="cc-input" placeholder="Escribe mínimo 3 letras..." style="width:100%;margin-bottom:10px"><div data-list></div></div></div>';
+      document.body.appendChild(ov);
+      const q=ov.querySelector('[data-q]'),list=ov.querySelector('[data-list]'),close=()=>ov.remove();
+      const paint=()=>{const n=norm(q.value),xs=currentPeople().filter(x=>n.length<3||norm(personLabel(x)).includes(n)||norm(x.nombre).includes(n));list.innerHTML=xs.length?xs.slice(0,100).map(x=>'<button type="button" class="cc-btn cc-btn-light" data-person-id="'+esc(x.id)+'" style="display:block;width:100%;text-align:left;margin:5px 0">'+esc(personLabel(x))+'</button>').join(''):'<div class="hs104-note">Sin coincidencias.</div>';list.querySelectorAll('[data-person-id]').forEach(b=>b.onclick=()=>{const x=currentPeople().find(z=>String(z.id)===String(b.dataset.personId));if(x){choosePerson(x);close();}});};
+      q.oninput=paint;ov.querySelector('[data-x]').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};paint();q.focus();
+    }
+    form.tipoPersona.onchange=clearPerson;
+    personInput.addEventListener('input',syncPerson);
+    personInput.addEventListener('change',syncPerson);
+    personInput.addEventListener('blur',syncPerson);
+    personMore.onclick=openPersonPicker;
+    clearPerson();setupSelectionUI(o,'persona');
   }
 
   function clientLabel(x){return String(x?.nombre||'')+(x?.razonSocial&&x.razonSocial!==x.nombre?' · '+x.razonSocial:'');}
