@@ -11,6 +11,21 @@
 
   function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n)||null;}
   function boxUnits(){return UNITS.filter(x=>x.esCaja);}
+  function operatorLabel(x){return String(x?.nombre||'')+(x?.numeroEmpleado?' · '+x.numeroEmpleado:'');}
+  function operatorByLabel(v){
+    const q=norm(v);
+    return OPERATORS.find(x=>norm(operatorLabel(x))===q)||OPERATORS.find(x=>norm(x.nombre)===q)||null;
+  }
+  function openOperatorPicker(row){
+    document.getElementById('hsOperatorPickerModal')?.remove();
+    const ov=document.createElement('div');ov.id='hsOperatorPickerModal';
+    ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:101200;display:flex;align-items:center;justify-content:center;padding:14px';
+    ov.innerHTML='<div style="width:min(620px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005"><div style="padding:13px 15px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center"><strong>Buscar operador</strong><button type="button" data-x style="border:0;background:none;color:#fff;font-size:24px">×</button></div><div style="padding:14px"><input data-q type="search" class="cc-input" placeholder="Escribe nombre o número de empleado..." style="width:100%;margin-bottom:10px"><div data-list></div></div></div>';
+    document.body.appendChild(ov);
+    const close=()=>ov.remove(),q=ov.querySelector('[data-q]'),list=ov.querySelector('[data-list]');
+    const paint=()=>{const n=norm(q.value);const xs=OPERATORS.filter(x=>!n||norm(operatorLabel(x)).includes(n));list.innerHTML=xs.length?xs.map(x=>'<button type="button" class="cc-btn cc-btn-light" data-op="'+esc(x.id)+'" style="display:block;width:100%;text-align:left;margin:5px 0">'+esc(operatorLabel(x))+'</button>').join(''):'<div class="hs104-note">Sin coincidencias.</div>';list.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{const x=OPERATORS.find(z=>String(z.id)===String(b.dataset.op));if(x){const inp=row.querySelector('[data-hs-real-operator-search]'),hid=row.querySelector('[data-hs-real-operator]'),st=row.querySelector('[data-hs-real-operator-status]');inp.value=operatorLabel(x);hid.value=String(x.id);if(st){st.textContent='✓ '+operatorLabel(x);st.style.color='#15803d';}}close();});};
+    q.oninput=paint;ov.querySelector('[data-x]').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};paint();q.focus();
+  }
   function ensureLists(){
     let dl=document.getElementById('hsUnitCatalogList');
     if(!dl){dl=document.createElement('datalist');dl.id='hsUnitCatalogList';document.body.appendChild(dl);}
@@ -93,8 +108,23 @@
     const isBenef=norm(row.dataset.hsPersonType||'')==='BENEFICIARIO'||!!row.dataset.hsBeneficiary;
     if(isBenef){
       const op=document.createElement('div');op.className='cc-field';op.dataset.hsRealOperatorWrap='1';
-      op.innerHTML='<label>Operador que realizó el servicio *</label><select data-hs-real-operator><option value="">Seleccionar operador…</option>'+OPERATORS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:''))+'</option>').join('')+'</select><div class="hs104-note">La hoja sigue controlada por el beneficiario; este operador será el que realizó el viaje.</div>';
+      op.innerHTML='<label>Operador que realizó el servicio *</label><div style="display:flex;gap:6px;align-items:center"><input data-hs-real-operator-search type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1"><button type="button" class="cc-btn cc-btn-light" data-hs-real-operator-more title="Buscar en catálogo">...</button></div><input type="hidden" data-hs-real-operator><datalist data-hs-real-operator-list></datalist><div data-hs-real-operator-status class="hs104-note">Escribe 3 letras para buscar o usa … para ver todos.</div><div class="hs104-note">La hoja sigue controlada por el beneficiario; este operador será el que realizó el viaje.</div>';
       grid.insertBefore(op,unitField);
+      const oi=op.querySelector('[data-hs-real-operator-search]'),oh=op.querySelector('[data-hs-real-operator]'),od=op.querySelector('[data-hs-real-operator-list]'),os=op.querySelector('[data-hs-real-operator-status]');
+      const dlId='hsOpList_'+String(row.dataset.row||Math.random()).replace(/[^a-zA-Z0-9_-]/g,'');
+      od.id=dlId;oi.setAttribute('list',dlId);
+      const syncOp=()=>{
+        const q=oi.value.trim(),n=norm(q);
+        if(n.length<3){od.innerHTML='';oh.value='';os.textContent='Escribe 3 letras para buscar o usa … para ver todos.';os.style.color='#64748b';return;}
+        const hits=OPERATORS.filter(x=>norm(operatorLabel(x)).includes(n)).slice(0,30);
+        od.innerHTML=hits.map(x=>'<option value="'+esc(operatorLabel(x))+'"></option>').join('');
+        const m=operatorByLabel(q);
+        oh.value=m?String(m.id):'';
+        os.textContent=m?'✓ '+operatorLabel(m):(hits.length?hits.length+' coincidencia(s). Selecciona una opción válida.':'Sin coincidencias.');
+        os.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
+      };
+      ['input','change','blur'].forEach(evt=>oi.addEventListener(evt,syncOp));
+      op.querySelector('[data-hs-real-operator-more]').onclick=()=>openOperatorPicker(row);
     }
     const trailerField=document.createElement('div');trailerField.className='cc-field';trailerField.dataset.hsRemolqueWrap='1';trailerField.style.display='none';
     trailerField.innerHTML='<label>Número de remolque *</label><input data-hs-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Ej. LB245 o cualquier remolque"><div class="hs104-note">Campo libre. Si escribes LB se sugieren cajas del catálogo; no se valida que exista.</div>';
