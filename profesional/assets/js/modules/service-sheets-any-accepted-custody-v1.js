@@ -13,7 +13,7 @@
     document.getElementById('hsAnyCustodyModal')?.remove();
     const ov=document.createElement('div');ov.id='hsAnyCustodyModal';
     ov.style='position:fixed;inset:0;background:rgba(15,23,42,.74);z-index:2147483200;display:flex;align-items:center;justify-content:center;padding:14px';
-    ov.innerHTML='<div style="width:min(820px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 70px #0f172a55"><div style="background:#0f172a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center"><div><strong>Asignar hojas a persona</strong><div style="font-size:10px;color:#cbd5e1;margin-top:3px">Operador o Beneficiario · Rango, Individual o Varias hojas.</div></div><button type="button" data-x style="border:0;background:none;color:#fff;font-size:23px">×</button></div><div style="padding:16px">'+html+'</div></div>';
+    ov.innerHTML='<div style="width:min(820px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 24px 70px #0f172a55"><div style="background:#0f172a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center"><div><strong>Asignar hojas a persona</strong><div style="font-size:10px;color:#cbd5e1;margin-top:3px">Selecciona Serie / Año. La custodia se detecta automáticamente entre las aceptadas.</div></div><button type="button" data-x style="border:0;background:none;color:#fff;font-size:23px">×</button></div><div style="padding:16px">'+html+'</div></div>';
     document.body.appendChild(ov);ov.querySelector('[data-x]').onclick=()=>ov.remove();ov.addEventListener('click',e=>{if(e.target===ov)ov.remove()});return ov;
   }
   function conflictText(xs){
@@ -27,11 +27,14 @@
     const aa=(d.asignacionesResponsable||[]).filter(x=>String(x.estatus||'').toUpperCase()==='ACEPTADA');
     if(!aa.length)return alert('No hay hojas en custodias aceptadas disponibles.');
 
+    const acceptedCombos=[];const seenCombos=new Set();
+    aa.forEach(a=>{const ser=(d.series||[]).find(x=>String(x.codigo)===String(a.serie));const yr=(d.anios||[]).find(x=>String(x.anio)===String(a.anio));if(!ser||!yr)return;const k=String(ser.id)+'|'+String(yr.id);if(seenCombos.has(k))return;seenCombos.add(k);acceptedCombos.push({serieId:String(ser.id),anioId:String(yr.id),serie:String(a.serie),anio:String(a.anio)});});
+    if(!acceptedCombos.length)return alert('No hay Serie / Año con custodias aceptadas disponibles.');
     const body='<form id="hsAnyCustodyForm">'+
       '<div class="hs104-grid">'+
         '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
         '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><input name="personaId" type="hidden"><div class="cc-note" data-person-status>Escribe mínimo 3 letras o usa … para buscar.</div></div>'+
-        '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required><option value="">Seleccionar…</option>'+aa.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+String(x.desde).padStart(5,'0')+' a '+String(x.hasta).padStart(5,'0'))+'</option>').join('')+'</select></div>'+
+        '<div class="cc-field"><label>Serie / Año *</label><select name="serieAnio" required><option value="">Seleccionar…</option>'+acceptedCombos.map(x=>'<option value="'+esc(x.serieId+'|'+x.anioId)+'">'+esc(x.serie+' · '+x.anio)+'</option>').join('')+'</select><div class="cc-note">Solo se muestran Series/Años que tienen hojas en custodias aceptadas.</div></div>'+
         '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
       '<div data-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
@@ -70,8 +73,10 @@
     };
 
     const selectedItem=()=>{
-      const modo=f.modo.value,item={modo,asignacionId:f.asignacionId.value};
-      if(!item.asignacionId)throw new Error('Selecciona una custodia.');
+      const modo=f.modo.value,item={modo};
+      const parts=String(f.serieAnio.value||'').split('|');
+      item.serieId=parts[0]||'';item.anioId=parts[1]||'';
+      if(!item.serieId||!item.anioId)throw new Error('Selecciona Serie / Año.');
       if(modo==='RANGO'){
         const ds=String(f.desde.value||''),hs=String(f.hasta.value||'');
         if(!/^\d{5}$/.test(ds)||!/^\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener exactamente 5 dígitos.');
@@ -88,7 +93,7 @@
       const my=++seq;
       try{
         const item=selectedItem();status.textContent='Validando disponibilidad…';status.style.color='#64748b';
-        const r=await rpc('hs_validate_person_selection',{p_item:item});
+        const r=await rpc('hs_validate_person_selection_any_custody',{p_item:item});
         if(my!==seq)return;
         if(r.available){status.textContent='✓ '+Number(r.total||0)+' hoja(s) disponibles.';status.style.color='#15803d';}
         else{status.textContent='✕ '+conflictText(r.conflicts);status.style.color='#b91c1c';}
@@ -102,7 +107,7 @@
     ['desde','hasta','individual'].forEach(n=>f[n]?.addEventListener('input',()=>{f[n].value=f[n].value.replace(/\D/g,'').slice(0,5);if(f[n].value.length===5)validate();}));
     f.varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
     f.varios.addEventListener('input',()=>{f.varios.value=f.varios.value.replace(/[^0-9,\s]/g,'');if(/^\d{5}$/.test(f.varios.value.trim()))processMulti();});
-    f.asignacionId.onchange=()=>{f.__set.clear();renderChips();status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';};
+    f.serieAnio.onchange=()=>{f.__set.clear();renderChips();['desde','hasta','individual','varios'].forEach(n=>{if(f[n])f[n].value='';});status.textContent='Captura las hojas para validar disponibilidad entre todas las custodias aceptadas de esa Serie / Año.';status.style.color='#64748b';};
     ov.querySelector('[data-cancel]').onclick=()=>ov.remove();
 
     f.onsubmit=async e=>{
@@ -111,9 +116,9 @@
         if(!personId.value)throw new Error('Selecciona un operador o beneficiario válido.');
         const item=selectedItem();
         item.tipoPersona=f.tipoPersona.value;item.personaId=personId.value;item.operadorId=personId.value;item.observaciones=f.observaciones.value;
-        const check=await rpc('hs_validate_person_selection',{p_item:item});
+        const check=await rpc('hs_validate_person_selection_any_custody',{p_item:item});
         if(!check.available)throw new Error('No se puede asignar. '+conflictText(check.conflicts));
-        const r=await rpc('hs_assign_person_selection',{p_item:item});
+        const r=await rpc('hs_assign_person_selection_any_custody',{p_item:item});
         alert('Hojas asignadas: '+Number(r.asignados||0)+' · '+(r.persona||''));ov.remove();if(typeof window.ccHsOpen==='function')window.ccHsOpen();
       }catch(err){alert(err.message||err);btn.disabled=false}
     };
