@@ -60,6 +60,7 @@
       const hits=xs.filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q));
       if(!m&&hits.length===1)m=hits[0];
       personId.value=m?String(m.id):'';
+      if(m) personInput.value=personLabel(m);
       personStatus.textContent=m?'✓ '+personLabel(m):(hits.length?hits.length+' coincidencia(s). Usa … para seleccionar.':'Sin coincidencias.');
       personStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
     };
@@ -102,7 +103,7 @@
     const renderChips=()=>{chips.innerHTML=[...f.__set].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(n)+'<button type="button" data-chip="'+esc(n)+'" style="border:0;background:transparent;cursor:pointer;font-size:16px">×</button></span>').join('');chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{f.__set.delete(String(b.dataset.chip));renderChips();validate();});};
     const processMulti=()=>{const parts=String(f.varios.value||'').split(/[\s,]+/).filter(Boolean);if(!parts.length)return;f.varios.value='';for(const p of parts){const n=String(p).replace(/\D/g,'');if(n.length!==5){status.textContent='El folio '+p+' debe tener exactamente 5 dígitos.';status.style.color='#b91c1c';return;}f.__set.add(n);}renderChips();validate();};
 
-    f.tipoPersona.onchange=clearPerson;personInput.oninput=syncPerson;personInput.onchange=syncPerson;personInput.onblur=syncPerson;ov.querySelector('[data-person-more]').onclick=openPicker;
+    f.tipoPersona.onchange=clearPerson;personInput.oninput=syncPerson;personInput.onchange=syncPerson;personInput.onblur=syncPerson;personInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPerson();}});ov.querySelector('[data-person-more]').onclick=openPicker;
     f.modo.onchange=()=>{ov.querySelectorAll('[data-mode]').forEach(x=>x.style.display=x.dataset.mode===f.modo.value?'':'none');f.__set.clear();renderChips();['desde','hasta','individual','varios'].forEach(n=>{if(f[n])f[n].value='';});status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';};
     ['desde','hasta','individual'].forEach(n=>f[n]?.addEventListener('input',()=>{f[n].value=f[n].value.replace(/\D/g,'').slice(0,5);if(f[n].value.length===5)validate();}));
     f.varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
