@@ -151,17 +151,23 @@
   function renderFolios(){
     const v=view();if(!v)return;
     const rows=D.ultimosFolios||[];
-    const body=rows.map(x=>{
-      const used=String(x.estatus||'').toUpperCase()==='UTILIZADO';
-      const actions=used
-        ? '<span class="hs104-pill hs104-ok">Utilizado · protegido</span>'
-        : '<button type="button" class="cc-btn cc-btn-light" data-edit-folio="'+esc(x.id)+'"><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-delete-folio="'+esc(x.id)+'" style="color:#b91c1c"><i class="fa-solid fa-trash"></i> Eliminar</button>';
-      return '<tr><td><strong>'+esc(x.folio)+'</strong></td><td>'+esc(x.estatus)+'</td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+fmt(x.created_at)+'</td><td><div class="hs104-actions">'+actions+'</div></td></tr>';
-    }).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px">Sin folios.</td></tr>';
-    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Folios</strong><div class="hs104-note">Puedes corregir o eliminar folios mientras no hayan sido utilizados.</div></div><button class="cc-btn cc-btn-primary" id="hs104Generate">Generar folios</button></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>ESTATUS</th><th>RESPONSABLE</th><th>PERSONA</th><th>CREADO</th><th>ACCIONES</th></tr></thead><tbody>'+body+'</tbody></table></div></div>';
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Folios</strong><div class="hs104-note">Puedes corregir o eliminar folios mientras no hayan sido utilizados.</div></div><div class="hs104-actions"><input id="hs104FolioSearch" class="cc-input" type="search" placeholder="Buscar folio, responsable o persona..."><button class="cc-btn cc-btn-primary" id="hs104Generate">Generar folios</button></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>ESTATUS</th><th>RESPONSABLE</th><th>PERSONA</th><th>CREADO</th><th>ACCIONES</th></tr></thead><tbody id="hs104FoliosBody"></tbody></table></div></div>';
+    const draw=()=>{
+      const q=norm(v.querySelector('#hs104FolioSearch').value);
+      const filtered=rows.filter(x=>!q||norm([x.folio,x.estatus,x.responsable_nombre,x.beneficiario_nombre,x.operador_nombre].join(' ')).includes(q));
+      v.querySelector('#hs104FoliosBody').innerHTML=filtered.length?filtered.map(x=>{
+        const used=String(x.estatus||'').toUpperCase()==='UTILIZADO';
+        const actions=used
+          ? '<span class="hs104-pill hs104-ok">Utilizado · protegido</span>'
+          : '<button type="button" class="cc-btn cc-btn-light" data-edit-folio="'+esc(x.id)+'"><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-delete-folio="'+esc(x.id)+'" style="color:#b91c1c"><i class="fa-solid fa-trash"></i> Eliminar</button>';
+        return '<tr><td><strong>'+esc(x.folio)+'</strong></td><td>'+esc(x.estatus)+'</td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+fmt(x.created_at)+'</td><td><div class="hs104-actions">'+actions+'</div></td></tr>';
+      }).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px">Sin resultados.</td></tr>';
+      v.querySelectorAll('[data-edit-folio]').forEach(b=>b.onclick=()=>editFolioFromList(rows.find(x=>String(x.id)===String(b.dataset.editFolio))));
+      v.querySelectorAll('[data-delete-folio]').forEach(b=>b.onclick=()=>deleteUnusedFolio(rows.find(x=>String(x.id)===String(b.dataset.deleteFolio))));
+    };
+    v.querySelector('#hs104FolioSearch').oninput=draw;
     v.querySelector('#hs104Generate').onclick=openGenerate;
-    v.querySelectorAll('[data-edit-folio]').forEach(b=>b.onclick=()=>editFolioFromList((D.ultimosFolios||[]).find(x=>String(x.id)===String(b.dataset.editFolio))));
-    v.querySelectorAll('[data-delete-folio]').forEach(b=>b.onclick=()=>deleteUnusedFolio((D.ultimosFolios||[]).find(x=>String(x.id)===String(b.dataset.deleteFolio))));
+    draw();
   }
   function editFolioFromList(x){
     if(!x)return;
@@ -190,16 +196,115 @@
     if(!confirm('¿Eliminar el folio '+x.folio+'?\n\nSolo se permitirá si NO ha sido utilizado. Esta acción quitará también sus asignaciones o registros previos no utilizados.'))return;
     try{await rpc('hs_delete_unused_folio',{p_folio_id:x.id});await load();alert('Folio '+x.folio+' eliminado.')}catch(e){alert(e.message||e)}
   }
-  function openGenerate(){if(!perm('generar'))return alert('Sin permiso para generar folios.');const ss=active(D.series),ys=active(D.anios);if(!ss.length||!ys.length)return alert('Primero agrega Serie y Año en Catálogos.');modal('Generar folios','<form><div class="hs104-grid"><div class="cc-field"><label>Serie *</label><select name="serieId" required>'+options(ss,x=>x.codigo)+'</select></div><div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div><div class="cc-field"><label>Desde *</label><input name="desde" type="number" min="0" max="999999" required></div><div class="cc-field"><label>Hasta *</label><input name="hasta" type="number" min="0" max="999999" required></div></div><div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Generar</button></div></form>',{onSave:async fd=>{const d=Number(fd.get('desde')),h=Number(fd.get('hasta'));if(h<d)throw new Error('El folio Hasta no puede ser menor que Desde.');const r=await rpc('hs_generate_folios',{p_item:{serieId:fd.get('serieId'),anioId:fd.get('anioId'),desde:d,hasta:h}});alert('Folios generados: '+Number(r.generados||0))}})}
+  function openGenerate(){
+    if(!perm('generar'))return alert('Sin permiso para generar folios.');
+    const ss=active(D.series),ys=active(D.anios);
+    if(!ss.length||!ys.length)return alert('Primero agrega Serie y Año en Catálogos.');
+
+    const body='<form><div class="hs104-grid">'+
+      '<div class="cc-field"><label>Serie *</label><select name="serieId" required>'+options(ss,x=>x.codigo)+'</select></div>'+
+      '<div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div>'+
+      '<div class="cc-field"><label>Forma de generación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Folio individual</option><option value="VARIOS">Varios folios</option></select></div>'+
+      '</div>'+
+      '<div data-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="Ej. 12313"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="Ej. 12320"></div></div>'+
+      '<div data-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos, ej. 12313"><div class="hs104-note" data-individual-status>Captura exactamente 5 dígitos.</div></div></div>'+
+      '<div data-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varios folios *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada folio se valida al completar 5 dígitos. Puedes separarlos con coma o Enter.</div></div><div data-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div><div class="hs104-note" data-multi-status></div></div>'+
+      '<div data-error style="display:none;margin-top:10px;padding:10px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-weight:700"></div>'+
+      '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Generar folios</button></div></form>';
+
+    const o=modal('Generar folios',body,{onSave:async(fd,form)=>{
+      const modo=String(fd.get('modo')||'RANGO');
+      const serieId=String(fd.get('serieId')||''),anioId=String(fd.get('anioId')||'');
+      const err=form.querySelector('[data-error]');
+      err.style.display='none';err.textContent='';
+      if(modo==='RANGO'){
+        const ds=String(fd.get('desde')||'').trim(),hs=String(fd.get('hasta')||'').trim();
+        if(!/^\\d{5}$/.test(ds))throw new Error('Desde debe tener exactamente 5 dígitos.');
+        if(!/^\\d{5}$/.test(hs))throw new Error('Hasta debe tener exactamente 5 dígitos.');
+        const d=Number(ds),h=Number(hs);
+        if(h<d)throw new Error('El folio Hasta no puede ser menor que Desde.');
+        const r=await rpc('hs_generate_folios',{p_item:{serieId,anioId,desde:d,hasta:h}});
+        if(Number(r.generados||0)===0&&Number(r.existentes||0)>0)throw new Error('No se generó ningún folio: todo el rango ya existe.');
+        alert('Folios generados: '+Number(r.generados||0)+(Number(r.existentes||0)?' · Ya existentes: '+Number(r.existentes||0):''));
+        return;
+      }
+      if(modo==='INDIVIDUAL'){
+        const raw=String(fd.get('individual')||'').trim();
+        if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener exactamente 5 dígitos.');
+        const check=await rpc('hs_check_folio_number',{p_serie_id:serieId,p_anio_id:anioId,p_consecutivo:Number(raw)});
+        if(check.exists)throw new Error('El folio '+check.folio+' ya existe. Estatus: '+(check.estatus||'sin estatus')+(check.responsable?' · Responsable: '+check.responsable:''));
+        const r=await rpc('hs_generate_folio_list',{p_item:{serieId,anioId,folios:[Number(raw)]}});
+        alert('Folio generado: '+(r.foliosGenerados?.[0]||raw));
+        return;
+      }
+      if(modo==='VARIOS'){
+        const nums=[...form.__folioSet||[]];
+        if(!nums.length)throw new Error('Agrega al menos un folio válido.');
+        const r=await rpc('hs_generate_folio_list',{p_item:{serieId,anioId,folios:nums}});
+        if((r.foliosExistentes||[]).length)throw new Error('No se generaron todos los folios porque ya existen: '+r.foliosExistentes.join(', '));
+        alert('Folios generados: '+Number(r.generados||0));
+      }
+    }});
+
+    const form=o.querySelector('form'),mode=form.modo,serie=form.serieId,anio=form.anioId,individual=form.individual,varios=form.varios,chips=o.querySelector('[data-chips]'),multiStatus=o.querySelector('[data-multi-status]'),individualStatus=o.querySelector('[data-individual-status]');
+    form.__folioSet=new Set();
+
+    const showMode=()=>{
+      o.querySelectorAll('[data-mode]').forEach(x=>x.style.display=x.dataset.mode===mode.value?'':'none');
+      form.__folioSet.clear();chips.innerHTML='';varios.value='';individual.value='';multiStatus.textContent='';individualStatus.textContent='Captura exactamente 5 dígitos.';
+    };
+    const validateOne=async raw=>{
+      const n=String(raw||'').replace(/\\D/g,'');
+      if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener exactamente 5 dígitos.');
+      if(form.__folioSet.has(Number(n)))throw new Error('El folio '+n+' ya fue agregado.');
+      if(!serie.value||!anio.value)throw new Error('Selecciona primero Serie y Año.');
+      const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(n)});
+      if(r.exists)throw new Error('El folio '+r.folio+' ya existe. Estatus: '+(r.estatus||'sin estatus')+(r.responsable?' · Responsable: '+r.responsable:'')+(r.operador?' · Persona: '+r.operador:''));
+      form.__folioSet.add(Number(n));
+      renderChips();
+      multiStatus.textContent='✓ '+form.__folioSet.size+' folio(s) listos para generar.';
+      multiStatus.style.color='#15803d';
+    };
+    const renderChips=()=>{
+      chips.innerHTML=[...form.__folioSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(String(n))+'<button type="button" data-chip="'+esc(String(n))+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
+      chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{form.__folioSet.delete(Number(b.dataset.chip));renderChips();multiStatus.textContent=form.__folioSet.size?form.__folioSet.size+' folio(s) listos.':'Agrega folios de 5 dígitos.';});
+    };
+    const processMulti=async()=>{
+      const parts=String(varios.value||'').split(/[\\s,]+/).filter(Boolean);
+      if(!parts.length)return;
+      varios.value='';
+      for(const p of parts){
+        try{await validateOne(p)}
+        catch(e){multiStatus.textContent=e.message||e;multiStatus.style.color='#b91c1c';return;}
+      }
+    };
+    mode.onchange=showMode;
+    varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
+    varios.addEventListener('input',()=>{const clean=varios.value.replace(/[^0-9,\\s]/g,'');if(clean!==varios.value)varios.value=clean;if(/^\\d{5}$/.test(varios.value.trim()))processMulti();});
+    individual.addEventListener('input',async()=>{
+      individual.value=individual.value.replace(/\\D/g,'').slice(0,5);
+      if(individual.value.length<5){individualStatus.textContent='Captura exactamente 5 dígitos.';individualStatus.style.color='#64748b';return;}
+      if(!serie.value||!anio.value){individualStatus.textContent='Selecciona primero Serie y Año.';individualStatus.style.color='#b91c1c';return;}
+      try{const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(individual.value)});individualStatus.textContent=r.exists?'✕ '+r.folio+' ya existe · '+(r.estatus||''):'✓ '+r.folio+' disponible';individualStatus.style.color=r.exists?'#b91c1c':'#15803d';}catch(e){individualStatus.textContent=e.message||e;individualStatus.style.color='#b91c1c';}
+    });
+    [serie,anio].forEach(x=>x.onchange=()=>{form.__folioSet.clear();renderChips();multiStatus.textContent='';if(individual.value.length===5)individual.dispatchEvent(new Event('input'));});
+    showMode();
+  }
 
   function renderResponsables(){
     const v=view();if(!v)return;const rows=D.asignacionesResponsable||[];
-    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Custodia por responsable</strong><div class="hs104-note">Asigna rangos, acepta manualmente, reenvía enlace o corrige el responsable.</div></div><button class="cc-btn cc-btn-primary" id="hs104AssignResp">Asignar rango</button></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>RANGO</th><th>RESPONSABLE</th><th>ESTATUS</th><th>ACEPTADO</th><th>ACCIONES</th></tr></thead><tbody id="hs104RespBody"></tbody></table></div></div>';
-    v.querySelector('#hs104RespBody').innerHTML=rows.length?rows.map(x=>'<tr><td>'+esc(x.serie)+'-'+esc(x.anio)+' · '+six(x.desde)+' → '+six(x.hasta)+'</td><td><strong>'+esc(x.responsableNombre)+'</strong><div class="hs104-note">'+esc(x.responsableEmail||'Sin correo')+'</div></td><td>'+esc(x.estatus)+'</td><td>'+fmt(x.aceptadoAt)+'</td><td><div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-resp-assign="'+esc(x.id)+'"><i class="fa-solid fa-pen"></i> Editar</button>'+(x.estatus==='ACEPTADA'?'<span class="hs104-pill hs104-ok">Aceptada</span>':'<button class="cc-btn cc-btn-light" data-accept="'+esc(x.id)+'">Aceptar manual</button><button class="cc-btn cc-btn-primary" data-resend="'+esc(x.id)+'">Reenviar enlace</button>')+'</div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;padding:20px">Sin asignaciones.</td></tr>';
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Custodia por responsable</strong><div class="hs104-note">Asigna rangos, acepta manualmente, reenvía enlace o corrige el responsable.</div></div><div class="hs104-actions"><input id="hs104RespSearch" class="cc-input" type="search" placeholder="Buscar responsable, rango o estatus..."><button class="cc-btn cc-btn-primary" id="hs104AssignResp">Asignar rango</button></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>RANGO</th><th>RESPONSABLE</th><th>ESTATUS</th><th>ACEPTADO</th><th>ACCIONES</th></tr></thead><tbody id="hs104RespBody"></tbody></table></div></div>';
+    const draw=()=>{
+      const q=norm(v.querySelector('#hs104RespSearch').value);
+      const filtered=rows.filter(x=>!q||norm([x.serie,x.anio,x.desde,x.hasta,x.responsableNombre,x.responsableEmail,x.estatus].join(' ')).includes(q));
+      v.querySelector('#hs104RespBody').innerHTML=filtered.length?filtered.map(x=>'<tr><td>'+esc(x.serie)+'-'+esc(x.anio)+' · '+six(x.desde)+' → '+six(x.hasta)+'</td><td><strong>'+esc(x.responsableNombre)+'</strong><div class="hs104-note">'+esc(x.responsableEmail||'Sin correo')+'</div></td><td>'+esc(x.estatus)+'</td><td>'+fmt(x.aceptadoAt)+'</td><td><div class="hs104-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-resp-assign="'+esc(x.id)+'"><i class="fa-solid fa-pen"></i> Editar</button>'+(x.estatus==='ACEPTADA'?'<span class="hs104-pill hs104-ok">Aceptada</span>':'<button class="cc-btn cc-btn-light" data-accept="'+esc(x.id)+'">Aceptar manual</button><button class="cc-btn cc-btn-primary" data-resend="'+esc(x.id)+'">Reenviar enlace</button>')+'</div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;padding:20px">Sin resultados.</td></tr>';
+      v.querySelectorAll('[data-edit-resp-assign]').forEach(b=>b.onclick=()=>openEditResponsible(rows.find(x=>String(x.id)===String(b.dataset.editRespAssign))));
+      v.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Aceptar manualmente esta asignación?'))return;try{await rpc('hs_accept_assignment_manual',{p_asignacion_id:b.dataset.accept});await load()}catch(e){alert(e.message||e)}});
+      v.querySelectorAll('[data-resend]').forEach(b=>b.onclick=()=>reissue(b.dataset.resend));
+    };
+    v.querySelector('#hs104RespSearch').oninput=draw;
     v.querySelector('#hs104AssignResp').onclick=openAssignResponsible;
-    v.querySelectorAll('[data-edit-resp-assign]').forEach(b=>b.onclick=()=>openEditResponsible(rows.find(x=>String(x.id)===String(b.dataset.editRespAssign))));
-    v.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Aceptar manualmente esta asignación?'))return;try{await rpc('hs_accept_assignment_manual',{p_asignacion_id:b.dataset.accept});await load()}catch(e){alert(e.message||e)}});
-    v.querySelectorAll('[data-resend]').forEach(b=>b.onclick=()=>reissue(b.dataset.resend));
+    draw();
   }
   function openEditResponsible(x){
     if(!x)return;
