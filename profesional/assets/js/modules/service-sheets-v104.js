@@ -125,9 +125,27 @@
   const view=()=>document.getElementById('hs104View');
 
   function renderControl(){
-    const v=view();if(!v)return;v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Rastreo general</strong><div class="hs104-note">Busca por folio, responsable, operador, beneficiario o servicio.</div></div><div class="hs104-actions"><select id="hs104CtlStatus" class="cc-input"><option value="">Todos los estados</option><option value="NUEVO">Nuevas</option><option value="PENDIENTE_ACEPTACION">Pend. aceptación</option><option value="EN_CUSTODIA">Con responsable</option><option value="ASIGNADO_OPERADOR">Pend. comprobar</option><option value="UTILIZADO">Comprobadas</option></select><input id="hs104CtlSearch" class="cc-input" type="search" placeholder="Buscar..."></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div></div>';
-    const draw=()=>{const q=norm(v.querySelector('#hs104CtlSearch').value),st=v.querySelector('#hs104CtlStatus').value;let rows=D.ultimosFolios||[];rows=rows.filter(x=>(!st||x.estatus===st)&&(!q||norm([x.folio,x.responsable_nombre,x.operador_nombre,x.beneficiario_nombre,x.servicio,x.cliente_nombre].join(' ')).includes(q)));v.querySelector('#hs104CtlBody').innerHTML=rows.length?rows.map(x=>'<tr><td><strong>'+esc(x.folio)+'</strong></td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;padding:22px">Sin resultados.</td></tr>'};
-    v.querySelector('#hs104CtlSearch').oninput=draw;v.querySelector('#hs104CtlStatus').onchange=draw;draw();
+    const v=view();if(!v)return;
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Rastreo general</strong><div class="hs104-note">Búsqueda global en todos los folios. La tabla se muestra paginada.</div></div><div class="hs104-actions"><select id="hs104CtlStatus" class="cc-input"><option value="">Todos los estados</option><option value="NUEVO">Nuevas</option><option value="PENDIENTE_ACEPTACION">Pend. aceptación</option><option value="EN_CUSTODIA">Con responsable</option><option value="ASIGNADO_OPERADOR">Pend. comprobar</option><option value="UTILIZADO">Comprobadas</option></select><input id="hs104CtlSearch" class="cc-input" type="search" placeholder="Buscar en todos los folios..."></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div><div class="hs104-actions" style="margin-top:10px;align-items:center"><span id="hs104CtlPageInfo" class="hs104-note"></span><button type="button" class="cc-btn cc-btn-light" id="hs104CtlPrev">Anterior</button><button type="button" class="cc-btn cc-btn-light" id="hs104CtlNext">Siguiente</button></div></div>';
+    const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
+    let page=1,pages=1,timer=null,req=0;
+    const paint=rows=>{body.innerHTML=rows.length?rows.map(x=>'<tr><td><strong>'+esc(x.folio)+'</strong></td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;padding:22px">Sin resultados.</td></tr>'};
+    const loadPage=async()=>{
+      const my=++req;body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:22px">Buscando…</td></tr>';
+      try{
+        const r=await rpc('hs_control_page',{p_page:page,p_page_size:100,p_search:search.value.trim()||null,p_status:status.value||null});
+        if(my!==req)return;
+        pages=Number(r.pages||1);if(page>pages){page=pages;return loadPage()}
+        paint(Array.isArray(r.rows)?r.rows:[]);
+        info.textContent='Página '+page+' de '+pages+' · '+Number(r.total||0).toLocaleString('es-MX')+' folio(s)';
+        prev.disabled=page<=1;next.disabled=page>=pages;
+      }catch(e){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:22px;color:#b91c1c">'+esc(e.message||e)+'</td></tr>';}
+    };
+    search.oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>{page=1;loadPage()},250)};
+    status.onchange=()=>{page=1;loadPage()};
+    prev.onclick=()=>{if(page>1){page--;loadPage()}};
+    next.onclick=()=>{if(page<pages){page++;loadPage()}};
+    loadPage();
   }
 
   function renderFolios(){
