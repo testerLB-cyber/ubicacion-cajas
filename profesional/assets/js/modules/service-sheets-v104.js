@@ -217,7 +217,7 @@
 
     const body='<form><div class="hs104-grid">'+
       '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
-      '<div class="cc-field"><label>Persona *</label><input name="personaNombre" type="search" autocomplete="off" list="hs104AssignPersonList" placeholder="Escribe 2 letras para buscar..." required><input name="personaId" type="hidden"><datalist id="hs104AssignPersonList"></datalist><div class="hs104-note" data-person-status>Selecciona una persona del catálogo.</div></div>'+
+      '<div class="cc-field"><label>Persona *</label><input name="personaNombre" type="search" autocomplete="off" list="hs104AssignPersonList" placeholder="Escribe 2 letras para buscar..." required><select name="beneficiarioSelect" style="display:none;width:100%"></select><input name="personaId" type="hidden"><datalist id="hs104AssignPersonList"></datalist><div class="hs104-note" data-person-status>Selecciona una persona del catálogo.</div></div>'+
       '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+six(x.desde)+' a '+six(x.hasta))+'</select></div>'+
       '<div class="cc-field"><label>Desde *</label><input name="desdeFolio" type="search" autocomplete="off" list="hs104AssignFromList" placeholder="Selecciona hoja generada" required><datalist id="hs104AssignFromList"></datalist></div>'+
       '<div class="cc-field"><label>Hasta *</label><input name="hastaFolio" type="search" autocomplete="off" list="hs104AssignToList" placeholder="Selecciona hoja generada" required><datalist id="hs104AssignToList"></datalist></div>'+
@@ -250,17 +250,34 @@
       }});
     }});
 
-    const form=o.querySelector('form'),personInput=form.personaNombre,personId=form.personaId,personList=o.querySelector('#hs104AssignPersonList'),personStatus=o.querySelector('[data-person-status]'),from=form.desdeFolio,to=form.hastaFolio,fromList=o.querySelector('#hs104AssignFromList'),toList=o.querySelector('#hs104AssignToList'),folioStatus=o.querySelector('[data-folio-status]');
+    const form=o.querySelector('form'),personInput=form.personaNombre,beneficiarySelect=form.beneficiarioSelect,personId=form.personaId,personList=o.querySelector('#hs104AssignPersonList'),personStatus=o.querySelector('[data-person-status]'),from=form.desdeFolio,to=form.hastaFolio,fromList=o.querySelector('#hs104AssignFromList'),toList=o.querySelector('#hs104AssignToList'),folioStatus=o.querySelector('[data-folio-status]');
 
     function currentPeople(){return form.tipoPersona.value==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores)}
     function personLabel(x){return x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')}
     function fillPeople(){
-      const xs=currentPeople();
-      personList.innerHTML=xs.map(x=>'<option value="'+esc(personLabel(x))+'"></option>').join('');
-      personInput.value='';personId.value='';
-      personInput.placeholder=form.tipoPersona.value==='BENEFICIARIO'?'Escribe beneficiario...':'Escribe operador...';
-      personStatus.textContent='Selecciona una persona del catálogo.';
-      personStatus.style.color='#64748b';
+      const xs=currentPeople(),isBen=form.tipoPersona.value==='BENEFICIARIO';
+      personId.value='';
+      if(isBen){
+        personInput.style.display='none';
+        personInput.required=false;
+        personInput.value='';
+        personList.innerHTML='';
+        beneficiarySelect.style.display='';
+        beneficiarySelect.required=true;
+        beneficiarySelect.innerHTML='<option value="">Seleccionar beneficiario…</option>'+xs.map(x=>'<option value="'+esc(x.id)+'">'+esc(personLabel(x))+(x.email?' · '+esc(x.email):'')+'</option>').join('');
+        personStatus.textContent=xs.length?xs.length+' usuario(s) WEB activo(s) disponibles.':'No hay usuarios WEB activos disponibles.';
+        personStatus.style.color=xs.length?'#15803d':'#b91c1c';
+      }else{
+        beneficiarySelect.style.display='none';
+        beneficiarySelect.required=false;
+        beneficiarySelect.innerHTML='';
+        personInput.style.display='';
+        personInput.required=true;
+        personInput.placeholder='Escribe operador...';
+        personList.innerHTML=xs.map(x=>'<option value="'+esc(personLabel(x))+'"></option>').join('');
+        personStatus.textContent='Selecciona una persona del catálogo.';
+        personStatus.style.color='#64748b';
+      }
     }
     function syncPerson(){
       const q=norm(personInput.value),xs=currentPeople();
@@ -294,6 +311,12 @@
     }
 
     form.tipoPersona.onchange=fillPeople;
+    beneficiarySelect.addEventListener('change',()=>{
+      const xs=currentPeople(),m=xs.find(x=>String(x.id)===String(beneficiarySelect.value));
+      personId.value=m?String(m.id):'';
+      personStatus.textContent=m?'✓ '+personLabel(m):'Selecciona un beneficiario.';
+      personStatus.style.color=m?'#15803d':'#64748b';
+    });
     personInput.addEventListener('input',syncPerson);
     personInput.addEventListener('change',syncPerson);
     personInput.addEventListener('blur',syncPerson);
