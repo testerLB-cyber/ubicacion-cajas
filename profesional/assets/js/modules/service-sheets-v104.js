@@ -473,6 +473,7 @@
       const hits=xs.filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q)).slice(0,30);
       if(!m&&hits.length===1)m=hits[0];
       personId.value=m?String(m.id):'';
+      if(m) personInput.value=personLabel(m);
       personStatus.textContent=m?'✓ '+personLabel(m):(hits.length?hits.length+' coincidencia(s). Usa … para seleccionar.':'Sin coincidencias.');
       personStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
     }
@@ -490,6 +491,7 @@
     personInput.addEventListener('input',syncPerson);
     personInput.addEventListener('change',syncPerson);
     personInput.addEventListener('blur',syncPerson);
+    personInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPerson();}});
     personMore.onclick=openPersonPicker;
     clearPerson();setupSelectionUI(o,'persona');
   }
