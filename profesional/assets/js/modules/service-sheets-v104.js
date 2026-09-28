@@ -238,7 +238,7 @@
         return;
       }
       if(modo==='VARIOS'){
-        const nums=[...form.__folioSet||[]];
+        const nums=[...form.__folioSet||[]].map(x=>Number(x));
         if(!nums.length)throw new Error('Agrega al menos un folio válido.');
         const r=await rpc('hs_generate_folio_list',{p_item:{serieId,anioId,folios:nums}});
         if((r.foliosExistentes||[]).length)throw new Error('No se generaron todos los folios porque ya existen: '+r.foliosExistentes.join(', '));
@@ -256,18 +256,18 @@
     const validateOne=async raw=>{
       const n=String(raw||'').replace(/\\D/g,'');
       if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener exactamente 5 dígitos.');
-      if(form.__folioSet.has(Number(n)))throw new Error('El folio '+n+' ya fue agregado.');
+      if(form.__folioSet.has(n))throw new Error('El folio '+n+' ya fue agregado.');
       if(!serie.value||!anio.value)throw new Error('Selecciona primero Serie y Año.');
       const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(n)});
       if(r.exists)throw new Error('El folio '+r.folio+' ya existe. Estatus: '+(r.estatus||'sin estatus')+(r.responsable?' · Responsable: '+r.responsable:'')+(r.operador?' · Persona: '+r.operador:''));
-      form.__folioSet.add(Number(n));
+      form.__folioSet.add(n);
       renderChips();
       multiStatus.textContent='✓ '+form.__folioSet.size+' folio(s) listos para generar.';
       multiStatus.style.color='#15803d';
     };
     const renderChips=()=>{
-      chips.innerHTML=[...form.__folioSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(String(n))+'<button type="button" data-chip="'+esc(String(n))+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
-      chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{form.__folioSet.delete(Number(b.dataset.chip));renderChips();multiStatus.textContent=form.__folioSet.size?form.__folioSet.size+' folio(s) listos.':'Agrega folios de 5 dígitos.';});
+      chips.innerHTML=[...form.__folioSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(String(n).padStart(5,'0'))+'<button type="button" data-chip="'+esc(String(n))+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
+      chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{form.__folioSet.delete(String(b.dataset.chip));renderChips();multiStatus.textContent=form.__folioSet.size?form.__folioSet.size+' folio(s) listos.':'Agrega folios de 5 dígitos.';});
     };
     const processMulti=async()=>{
       const parts=String(varios.value||'').split(/[\\s,]+/).filter(Boolean);
