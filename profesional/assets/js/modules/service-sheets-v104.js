@@ -342,6 +342,20 @@
     fillPeople();fillFolios();
   }
 
+  function clientLabel(x){return String(x?.nombre||'')+(x?.razonSocial&&x.razonSocial!==x.nombre?' · '+x.razonSocial:'');}
+  function activeClients(){return active(D.clientes||[]);}
+  function openClientPicker(row){
+    document.getElementById('hs104ClientPicker')?.remove();
+    const ov=document.createElement('div');ov.id='hs104ClientPicker';
+    ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:101300;display:flex;align-items:center;justify-content:center;padding:14px';
+    ov.innerHTML='<div style="width:min(650px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005"><div style="padding:13px 15px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center"><strong>Buscar cliente</strong><button type="button" data-x style="border:0;background:none;color:#fff;font-size:24px">×</button></div><div style="padding:14px"><input data-q type="search" class="cc-input" placeholder="Buscar cliente..." style="width:100%;margin-bottom:10px"><div data-list></div></div></div>';
+    document.body.appendChild(ov);
+    const close=()=>ov.remove(),q=ov.querySelector('[data-q]'),list=ov.querySelector('[data-list]');
+    const choose=x=>{const sel=row.querySelector('[data-cliente]'),inp=row.querySelector('[data-cliente-search]'),st=row.querySelector('[data-cliente-status]');sel.value=String(x.id);inp.value=clientLabel(x);sel.dispatchEvent(new Event('change',{bubbles:true}));if(st){st.textContent='✓ '+clientLabel(x);st.style.color='#15803d';}close();};
+    const paint=()=>{const n=norm(q.value),xs=activeClients().filter(x=>!n||norm(clientLabel(x)).includes(n));list.innerHTML=xs.length?xs.map(x=>'<button type="button" class="cc-btn cc-btn-light" data-client-id="'+esc(x.id)+'" style="display:block;width:100%;text-align:left;margin:5px 0">'+esc(clientLabel(x))+'</button>').join(''):'<div class="hs104-note">Sin coincidencias.</div>';list.querySelectorAll('[data-client-id]').forEach(b=>b.onclick=()=>{const x=activeClients().find(z=>String(z.id)===String(b.dataset.clientId));if(x)choose(x);});};
+    q.oninput=paint;ov.querySelector('[data-x]').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};paint();q.focus();
+  }
+
   function personType(x){return String(x.tipoPersona||'OPERADOR').toUpperCase()==='BENEFICIARIO'?'BENEFICIARIO':'OPERADOR'}
   function personName(x){return personType(x)==='BENEFICIARIO'?(x.beneficiario||x.beneficiarioNombre||x.operador||''):(x.operador||'')}
   function renderComprobacion(){
@@ -366,7 +380,7 @@
             <div class="hs-list-dialog"><div class="hs-list-dialog-head"><strong>${pre?'Revisar y comprobar':'Llenar hoja'} · ${esc(x.folio)}</strong><button type="button" class="hs-list-dialog-close" data-hs-close aria-label="Cerrar">×</button></div>
               <div class="hs-list-dialog-body">
                 <div class="hs-manual-photo-box" data-hs-manual-photo-box="1" data-photo-path=""><label>Evidencia fotográfica</label><div class="hs-photo-methods"><button type="button" class="cc-btn cc-btn-light" data-upload><i class="fa-solid fa-upload"></i> Subir imagen</button><button type="button" class="cc-btn cc-btn-light" data-qr><i class="fa-solid fa-qrcode"></i> Tomar foto con QR</button><input type="file" accept="image/*" data-file></div><div class="hs-manual-photo-status">Sube una foto o muestra el QR para tomarla desde tu teléfono.</div></div>
-                <div class="hs104-grid"><div class="cc-field"><label>Fecha de uso *</label><input data-fecha type="date" value="${today()}"></div><div class="cc-field"><label>Cliente *</label><select data-cliente>${options(active(D.clientes||[]),c=>c.nombre+(c.razonSocial&&c.razonSocial!==c.nombre?' · '+c.razonSocial:''))}</select></div><div class="cc-field"><label>Tipo de servicio *</label><input data-tipo placeholder="Ej. Exportación, Importación, Cruce..."></div><div class="cc-field"><label>Clasificación *</label><input data-clas placeholder="Ej. Cargado, Vacío, Foráneo..."></div></div>
+                <div class="hs104-grid"><div class="cc-field"><label>Fecha de uso *</label><input data-fecha type="date" value="${today()}"></div><div class="cc-field"><label>Cliente *</label><div style="display:flex;gap:6px;align-items:center"><input data-cliente-search type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1"><button type="button" class="cc-btn cc-btn-light" data-cliente-more title="Buscar en catálogo">...</button></div><select data-cliente style="display:none">${options(active(D.clientes||[]),c=>clientLabel(c))}</select><datalist data-cliente-list></datalist><div data-cliente-status class="hs104-note">Escribe 3 letras para buscar o usa … para ver todos.</div></div><div class="cc-field"><label>Tipo de servicio *</label><input data-tipo placeholder="Ej. Exportación, Importación, Cruce..."></div><div class="cc-field"><label>Clasificación *</label><input data-clas placeholder="Ej. Cargado, Vacío, Foráneo..."></div></div>
                 <div class="cc-field"><label>Observaciones</label><textarea data-obs placeholder="Opcional"></textarea></div>
                 <div class="hs104-actions"><button type="button" class="cc-btn cc-btn-primary" data-save>Comprobar hoja</button></div>
               </div>
@@ -376,7 +390,17 @@
       list.querySelectorAll('[data-row]').forEach(row=>{
         const area=row.querySelector('.hs-list-edit-area');
         const close=()=>{row.classList.remove('hs-list-modal-open');if(!list.querySelector('.hs-list-modal-open'))document.body.style.overflow='';};
-        row.querySelector('[data-hs-edit]').onclick=()=>{list.querySelectorAll('.hs-list-modal-open').forEach(other=>other.classList.remove('hs-list-modal-open'));row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();};
+        const clientSel=row.querySelector('[data-cliente]'),clientInput=row.querySelector('[data-cliente-search]'),clientList=row.querySelector('[data-cliente-list]'),clientStatus=row.querySelector('[data-cliente-status]');
+        if(clientSel&&clientInput&&clientList){
+          const listId='hs104ClientList_'+String(row.dataset.row||'').replace(/[^a-zA-Z0-9_-]/g,'');clientList.id=listId;clientInput.setAttribute('list',listId);
+          const syncClientFromSelect=()=>{const x=activeClients().find(z=>String(z.id)===String(clientSel.value));if(x){clientInput.value=clientLabel(x);clientStatus.textContent='✓ '+clientLabel(x);clientStatus.style.color='#15803d';}};
+          const syncClient=()=>{const q=clientInput.value.trim(),n=norm(q);if(n.length<3){clientList.innerHTML='';if(!activeClients().some(x=>norm(clientLabel(x))===n)){clientSel.value='';}clientStatus.textContent='Escribe 3 letras para buscar o usa … para ver todos.';clientStatus.style.color='#64748b';return;}const hits=activeClients().filter(x=>norm(clientLabel(x)).includes(n)).slice(0,30);clientList.innerHTML=hits.map(x=>'<option value="'+esc(clientLabel(x))+'"></option>').join('');let m=activeClients().find(x=>norm(clientLabel(x))===n)||activeClients().find(x=>norm(x.nombre)===n);if(!m&&hits.length===1&&norm(clientLabel(hits[0]))===n)m=hits[0];clientSel.value=m?String(m.id):'';clientStatus.textContent=m?'✓ '+clientLabel(m):(hits.length?hits.length+' coincidencia(s). Selecciona una opción válida.':'Sin coincidencias.');clientStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');};
+          ['input','change','blur'].forEach(evt=>clientInput.addEventListener(evt,syncClient));
+          clientSel.addEventListener('change',syncClientFromSelect);
+          row.querySelector('[data-cliente-more]').onclick=()=>openClientPicker(row);
+          syncClientFromSelect();
+        }
+        row.querySelector('[data-hs-edit]').onclick=()=>{list.querySelectorAll('.hs-list-modal-open').forEach(other=>other.classList.remove('hs-list-modal-open'));row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();setTimeout(()=>{const sel=row.querySelector('[data-cliente]');if(sel)sel.dispatchEvent(new Event('change',{bubbles:true}));},0);};
         row.querySelector('[data-hs-close]').onclick=close;
         area.onclick=e=>{if(e.target===area)close();};
         row.querySelector('[data-save]').onclick=()=>saveUsed(row);
