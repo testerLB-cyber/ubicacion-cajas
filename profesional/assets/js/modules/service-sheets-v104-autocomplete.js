@@ -68,10 +68,21 @@
           return;
         }
         const opts=[...select.options].filter(o=>o.value);
-        const exact=opts.find(o=>norm(o.textContent)===q);
-        if(exact&&select.value!==exact.value){
-          select.value=exact.value;
-          select.dispatchEvent(new Event('change',{bubbles:true}));
+        let match=opts.find(o=>norm(o.textContent)===q);
+        if(!match){
+          const starts=opts.filter(o=>norm(o.textContent).startsWith(q));
+          if(starts.length===1) match=starts[0];
+        }
+        if(!match){
+          const contains=opts.filter(o=>norm(o.textContent).includes(q));
+          if(contains.length===1) match=contains[0];
+        }
+        if(match){
+          input.value=match.textContent.trim();
+          if(select.value!==match.value){
+            select.value=match.value;
+            select.dispatchEvent(new Event('change',{bubbles:true}));
+          }
         }
       });
     }
