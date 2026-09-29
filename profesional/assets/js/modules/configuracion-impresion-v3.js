@@ -27,9 +27,59 @@ async function tokenFor(id){const d=await rpc('cc_ensure_unit_qr_token',{p_unida
 async function qrData(url){await ensureQRLib();const h=document.createElement('div');h.style='position:fixed;left:-10000px;top:-10000px;width:340px;height:340px;background:#fff';document.body.appendChild(h);new QRCode(h,{text:url,width:320,height:320,correctLevel:QRCode.CorrectLevel.H});await sleep(150);const c=h.querySelector('canvas'),i=h.querySelector('img');const out=c?.toDataURL('image/png')||i?.src||'';h.remove();if(!out)throw Error('No se pudo construir el QR.');return out;}
 
 function exportPDF(items){
-  const JSPDF=window.jspdf?.jsPDF;if(!JSPDF)return alert('No está disponible el generador de PDF.');
-  const doc=new JSPDF({orientation:'portrait',unit:'mm',format:'a4'}),qr=49.48,mx=10,my=10,cw=(210-mx*2)/3,ch=(297-my*2)/3;
-  items.forEach((it,idx)=>{if(idx&&idx%9===0)doc.addPage('a4','portrait');const p=idx%9,row=Math.floor(p/3),col=p%3,cellX=mx+col*cw,cellY=my+row*ch,x=cellX+(cw-qr)/2,y=cellY+12+(ch-27-qr)/2;doc.setDrawColor(210,218,228);doc.roundedRect(cellX+1,cellY+1,cw-2,ch-2,2,2,'S');doc.setDrawColor(70,70,70);doc.setLineWidth(.35);[[cellX+5,cellY+5],[cellX+cw-5,cellY+5],[cellX+5,cellY+ch-5],[cellX+cw-5,cellY+ch-5]].forEach(([sx,sy])=>{doc.line(sx-1.8,sy-1.8,sx+1.8,sy+1.8);doc.line(sx-1.8,sy+1.8,sx+1.8,sy-1.8);});doc.setDrawColor(210,218,228);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(String(it.numero||'UNIDAD'),cellX+cw/2,cellY+7,{align:'center'});doc.addImage(it.qr,'PNG',x,y,qr,qr,'','FAST');doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(80);const d=[it.tipo,it.descripcion].filter(Boolean).join(' · ').slice(0,44);if(d)doc.text(d,cellX+cw/2,y+qr+5,{align:'center',maxWidth:cw-6});doc.setFontSize(7);doc.text('Escanea para actualizar ubicación',cellX+cw/2,y+qr+10,{align:'center'});doc.setTextColor(0);});
+  const JSPDF=window.jspdf?.jsPDF;
+  if(!JSPDF)return alert('No está disponible el generador de PDF.');
+
+  const doc=new JSPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const mx=10,my=10,cw=(210-mx*2)/3,ch=(297-my*2)/3;
+  const qr=46,markSize=1.8,markInset=5;
+
+  const drawX=(cx,cy)=>{
+    doc.setDrawColor(60,60,60);
+    doc.setLineWidth(.35);
+    doc.line(cx-markSize,cy-markSize,cx+markSize,cy+markSize);
+    doc.line(cx-markSize,cy+markSize,cx+markSize,cy-markSize);
+  };
+
+  items.forEach((it,idx)=>{
+    if(idx&&idx%9===0)doc.addPage('a4','portrait');
+
+    const p=idx%9,row=Math.floor(p/3),col=p%3;
+    const cellX=mx+col*cw,cellY=my+row*ch;
+    const boxX=cellX+1,boxY=cellY+1,boxW=cw-2,boxH=ch-2;
+
+    doc.setDrawColor(210,218,228);
+    doc.setLineWidth(.2);
+    doc.roundedRect(boxX,boxY,boxW,boxH,2,2,'S');
+
+    drawX(boxX+markInset,boxY+markInset);
+    drawX(boxX+boxW-markInset,boxY+markInset);
+    drawX(boxX+markInset,boxY+boxH-markInset);
+    drawX(boxX+boxW-markInset,boxY+boxH-markInset);
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(0);
+    doc.text(String(it.numero||'UNIDAD'),cellX+cw/2,cellY+8,{align:'center'});
+
+    const topArea=cellY+16;
+    const bottomArea=cellY+ch-18;
+    const qrX=cellX+(cw-qr)/2;
+    const qrY=topArea+((bottomArea-topArea-qr)/2);
+
+    doc.addImage(it.qr,'PNG',qrX,qrY,qr,qr,'','FAST');
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(80);
+    const d=[it.tipo,it.descripcion].filter(Boolean).join(' · ').slice(0,44);
+    if(d)doc.text(d,cellX+cw/2,qrY+qr+5,{align:'center',maxWidth:cw-10});
+
+    doc.setFontSize(7);
+    doc.text('Escanea para actualizar ubicación',cellX+cw/2,qrY+qr+10,{align:'center',maxWidth:cw-10});
+    doc.setTextColor(0);
+  });
+
   doc.save('QR_Unidades_9_por_pagina.pdf');
 }
 function preview(items){
