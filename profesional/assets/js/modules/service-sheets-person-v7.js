@@ -4,7 +4,7 @@
   function load(src,attr){return new Promise((resolve,reject)=>{if(document.querySelector('script['+attr+']'))return resolve();const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
   function safe(src,attr){return load(src,attr).catch(e=>console.warn('No se pudo cargar '+src,e));}
   document.addEventListener('DOMContentLoaded',()=>{
-    safe('assets/js/security/mobile-app-users.js?v=20260929-password-mobile1','data-correct-mobile-users');
+    safe('assets/js/security/mobile-app-users.js?v=20260929-superadmin-mobile2','data-correct-mobile-users');
     safe('assets/js/modules/anticipos-mobile-pending-badge.js?v=correcta1','data-correct-ant-badge');
     safe('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=correcta1','data-correct-ant-cierre');
     safe('assets/js/modules/anticipos-final-cleanup-v6.js?v=correcta1','data-correct-ant-clean');
@@ -17,7 +17,7 @@
     load('assets/js/modules/service-sheets-v104.js?v=20260928-persona-autocomplete3','data-correct-hs-main')
       .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260928-normal-autocomplete-v5','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
-      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260924-resguardo1','data-correct-hs-precap'))
+      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260929-autosync1','data-correct-hs-precap'))
       .then(()=>load('assets/js/modules/service-sheets-show-all.js?v=correcta1','data-correct-hs-all'))
       .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20260923-editqr-stable17','data-correct-hs-photo'))
       .then(()=>load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260926-authunit2','data-hs-unit-trailer-v1'))
