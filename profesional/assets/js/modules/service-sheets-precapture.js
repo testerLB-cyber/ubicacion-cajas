@@ -122,5 +122,37 @@
 
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]'))setTimeout(()=>patch(true),180);},true);
   document.addEventListener('change',e=>{if(e.target?.id==='hs104CompPerson'||e.target?.id==='hs104CompType')setTimeout(()=>patch(true),80);},true);
+  let autoSyncSig='';
+  let autoSyncBusy=false;
+  function precaptureSignature(d){
+    return (d?.foliosAsignadosOperador||[]).map(f=>{
+      const p=f?.precaptura;
+      return String(f?.id||'')+'|'+String(p?.id||'')+'|'+String(p?.capturadoAt||'')+'|'+String(p?.fotoPath||'');
+    }).join('~');
+  }
+  async function autoSync(){
+    if(autoSyncBusy||!sb())return;
+    const panel=document.getElementById('ccPanelHojasServicio');
+    const list=document.getElementById('hs104CompList');
+    if(!panel?.classList.contains('active')||!list)return;
+    autoSyncBusy=true;
+    try{
+      const d=await data(true);
+      const sig=precaptureSignature(d);
+      if(autoSyncSig&&sig!==autoSyncSig){
+        const btn=document.getElementById('hs104Refresh');
+        if(btn){
+          btn.click();
+          setTimeout(()=>patch(true),350);
+          setTimeout(()=>patch(true),900);
+        }else{
+          await patch(true);
+        }
+      }
+      autoSyncSig=sig;
+    }catch(e){console.warn('HS PRECAPTURA AUTO SYNC',e);}finally{autoSyncBusy=false;}
+  }
+  setInterval(autoSync,2500);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(autoSync,80);});
   window.hsPatchPrecapture=()=>patch(true);
 })();
