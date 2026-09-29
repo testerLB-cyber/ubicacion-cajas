@@ -4,7 +4,7 @@
   function load(src,attr){return new Promise((resolve,reject)=>{if(document.querySelector('script['+attr+']'))return resolve();const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});}
   function safe(src,attr){return load(src,attr).catch(e=>console.warn('No se pudo cargar '+src,e));}
   document.addEventListener('DOMContentLoaded',()=>{
-    safe('assets/js/security/mobile-app-users.js?v=correcta1','data-correct-mobile-users');
+    safe('assets/js/security/mobile-app-users.js?v=20260929-perm-edit-mobile1','data-correct-mobile-users');
     safe('assets/js/modules/anticipos-mobile-pending-badge.js?v=correcta1','data-correct-ant-badge');
     safe('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=correcta1','data-correct-ant-cierre');
     safe('assets/js/modules/anticipos-final-cleanup-v6.js?v=correcta1','data-correct-ant-clean');
