@@ -9,12 +9,12 @@
     btn.id='gmSideMobileUsers'; btn.style.display='none'; btn.innerHTML='<i class="fa-solid fa-mobile-screen-button"></i><span>Usuarios App</span>';
     btn.onclick=openAdmin;
     usersBtn.insertAdjacentElement('afterend',btn);
-    const sync=()=>{btn.style.display=(window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('usuarios.administrar')))?'':'none';};
+    const sync=()=>{btn.style.display=(window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('usuarios.administrar')))?'':'none';};
     sync(); setInterval(sync,1200);
   }
   async function getData(){const {data,error}=await sb().rpc('cc_admin_mobile_data'); if(error||!data?.ok) throw new Error(error?.message||data?.error||'No se pudo cargar'); return data;}
   async function openAdmin(){
-    if(!(window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('usuarios.administrar')))){alert('Tu usuario no tiene permiso para administrar usuarios de la app.');return;}
+    if(!(window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('usuarios.administrar')))){alert('Tu usuario no tiene permiso para administrar usuarios de la app.');return;}
     let data; try{data=await getData();}catch(e){alert(e.message);return;}
     document.getElementById('ccMobileUsersModal')?.remove();
     const ov=document.createElement('div'); ov.id='ccMobileUsersModal'; ov.className='cc-user-modal';
