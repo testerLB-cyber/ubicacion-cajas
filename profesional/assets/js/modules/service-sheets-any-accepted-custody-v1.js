@@ -33,7 +33,7 @@
     const body='<form id="hsAnyCustodyForm">'+
       '<div class="hs104-grid">'+
         '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
-        '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><input name="personaId" type="hidden"><div class="cc-note" data-person-status>Escribe mínimo 3 letras o usa … para buscar.</div></div>'+
+        '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="position:relative"><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><div data-person-suggestions style="display:none;position:absolute;left:0;right:42px;top:100%;z-index:20;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 24px #0f172a22;max-height:220px;overflow:auto;margin-top:4px"></div></div><input name="personaId" type="hidden"><div class="cc-note" data-person-status>Escribe mínimo 3 letras y selecciona una opción.</div></div>'+
         '<div class="cc-field"><label>Serie / Año *</label><select name="serieAnio" required><option value="">Seleccionar…</option>'+acceptedCombos.map(x=>'<option value="'+esc(x.serieId+'|'+x.anioId)+'">'+esc(x.serie+' · '+x.anio)+'</option>').join('')+'</select><div class="cc-note">Solo se muestran Series/Años que tienen hojas en custodias aceptadas.</div></div>'+
         '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
@@ -46,23 +46,24 @@
     '</form>';
 
     const ov=modal(body),f=ov.querySelector('#hsAnyCustodyForm');
-    const status=ov.querySelector('[data-status]'),chips=ov.querySelector('[data-chips]'),personInput=f.personaNombre,personId=f.personaId,personStatus=ov.querySelector('[data-person-status]');
+    const status=ov.querySelector('[data-status]'),chips=ov.querySelector('[data-chips]'),personInput=f.personaNombre,personId=f.personaId,personStatus=ov.querySelector('[data-person-status]'),personSuggestions=ov.querySelector('[data-person-suggestions]');
     f.__set=new Set();
 
     const people=()=>f.tipoPersona.value==='BENEFICIARIO'?active(d.beneficiarios):active(d.operadores);
     const personLabel=x=>String(x.nombre||'')+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.email?' · '+x.email:'');
-    const choosePerson=x=>{personId.value=String(x.id);personInput.value=personLabel(x);personStatus.textContent='✓ '+personLabel(x);personStatus.style.color='#15803d';};
-    const clearPerson=()=>{personId.value='';personInput.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar.';personStatus.style.color='#64748b';};
-    const syncPerson=()=>{
-      const q=norm(personInput.value),xs=people();
-      if(q.length<3){personId.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar.';personStatus.style.color='#64748b';return;}
-      let m=xs.find(x=>norm(personLabel(x))===q)||xs.find(x=>norm(x.nombre)===q);
-      const hits=xs.filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q));
-      if(!m&&hits.length===1)m=hits[0];
-      personId.value=m?String(m.id):'';
-      if(m) personInput.value=personLabel(m);
-      personStatus.textContent=m?'✓ '+personLabel(m):(hits.length?hits.length+' coincidencia(s). Usa … para seleccionar.':'Sin coincidencias.');
-      personStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
+    const hideSuggestions=()=>{if(personSuggestions){personSuggestions.style.display='none';personSuggestions.innerHTML='';}};
+    const choosePerson=x=>{personId.value=String(x.id);personInput.value=personLabel(x);personStatus.textContent='Seleccionado';personStatus.style.color='#15803d';hideSuggestions();};
+    const clearPerson=()=>{personId.value='';personInput.value='';personStatus.textContent='Escribe mínimo 3 letras y selecciona una opción.';personStatus.style.color='#64748b';hideSuggestions();};
+    const renderSuggestions=()=>{
+      const raw=personInput.value.trim(),q=norm(raw);
+      personId.value='';
+      if(q.length<3){personStatus.textContent='Escribe mínimo 3 letras y selecciona una opción.';personStatus.style.color='#64748b';hideSuggestions();return;}
+      const hits=people().filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q)).slice(0,12);
+      if(!hits.length){personStatus.textContent='Sin coincidencias.';personStatus.style.color='#b91c1c';hideSuggestions();return;}
+      personStatus.textContent='Selecciona una opción de la lista.';personStatus.style.color='#64748b';
+      personSuggestions.innerHTML=hits.map(x=>'<button type="button" data-suggest-person="'+esc(x.id)+'" style="display:block;width:100%;border:0;background:#fff;padding:9px 10px;text-align:left;cursor:pointer;border-bottom:1px solid #eef2f7">'+esc(personLabel(x))+'</button>').join('');
+      personSuggestions.style.display='block';
+      personSuggestions.querySelectorAll('[data-suggest-person]').forEach(b=>b.onclick=()=>{const x=people().find(z=>String(z.id)===String(b.dataset.suggestPerson));if(x)choosePerson(x);});
     };
     const openPicker=()=>{
       document.getElementById('hsAnyPersonPicker')?.remove();
@@ -103,7 +104,7 @@
     const renderChips=()=>{chips.innerHTML=[...f.__set].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(n)+'<button type="button" data-chip="'+esc(n)+'" style="border:0;background:transparent;cursor:pointer;font-size:16px">×</button></span>').join('');chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{f.__set.delete(String(b.dataset.chip));renderChips();validate();});};
     const processMulti=()=>{const parts=String(f.varios.value||'').split(/[\s,]+/).filter(Boolean);if(!parts.length)return;f.varios.value='';for(const p of parts){const n=String(p).replace(/\D/g,'');if(n.length!==5){status.textContent='El folio '+p+' debe tener exactamente 5 dígitos.';status.style.color='#b91c1c';return;}f.__set.add(n);}renderChips();validate();};
 
-    f.tipoPersona.onchange=clearPerson;personInput.oninput=syncPerson;personInput.onchange=syncPerson;personInput.onblur=syncPerson;personInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPerson();}});ov.querySelector('[data-person-more]').onclick=openPicker;
+    f.tipoPersona.onchange=clearPerson;personInput.oninput=renderSuggestions;personInput.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();});personInput.addEventListener('blur',()=>setTimeout(hideSuggestions,150));ov.querySelector('[data-person-more]').onclick=openPicker;
     f.modo.onchange=()=>{ov.querySelectorAll('[data-mode]').forEach(x=>x.style.display=x.dataset.mode===f.modo.value?'':'none');f.__set.clear();renderChips();['desde','hasta','individual','varios'].forEach(n=>{if(f[n])f[n].value='';});status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';};
     ['desde','hasta','individual'].forEach(n=>f[n]?.addEventListener('input',()=>{f[n].value=f[n].value.replace(/\D/g,'').slice(0,5);if(f[n].value.length===5)validate();}));
     f.varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
