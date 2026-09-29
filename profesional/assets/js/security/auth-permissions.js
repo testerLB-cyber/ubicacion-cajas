@@ -27,7 +27,7 @@ const PERM_SCHEMA=[
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
 ];
 function getPath(obj,path){return String(path).split('.').reduce((a,k)=>a&&a[k],obj);}
-window.ccPerm=function(path){return window.CC_ACCESS?.rol==='ADMIN'||getPath(window.CC_ACCESS?.permisos||{},path)===true;};
+window.ccPerm=function(path){return window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='ADMIN'||getPath(window.CC_ACCESS?.permisos||{},path)===true;};
 function msg(text,type='info'){const el=document.getElementById('ccLoginMsg');if(!el)return;el.className='cc-login-msg show '+type;el.textContent=text;}
 function setBusy(b){const el=document.getElementById('ccLoginBtn');if(el)el.disabled=b;}
 async function bootstrapStatus(){
@@ -110,7 +110,7 @@ function applyAccess(){
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
  if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
- const isAdmin=a.rol==='ADMIN';
+ const isAdmin=a.superAdmin===true||a.rol==='ADMIN';
  document.getElementById('ccAdminSideSection').style.display=isAdmin?'':'none';
  document.getElementById('gmSideUsers').style.display=isAdmin?'':'none';
  const session=document.getElementById('ccSessionBox');if(session)session.style.display='block';
@@ -176,7 +176,7 @@ window.ccCopyPermissionsFromUser=async function(targetId,currentUserId=''){
 };
 function closeUserModal(){document.getElementById('ccUserAdminModal')?.remove();}
 window.ccOpenUserAdmin=async function(){
- if(window.CC_ACCESS?.rol!=='ADMIN'){alert('Solo ADMIN puede administrar usuarios.');return;}
+ if(window.CC_ACCESS?.superAdmin!==true&&window.CC_ACCESS?.rol!=='ADMIN'&&!ccPerm('usuarios.administrar')){alert('Tu usuario no tiene permiso para administrar usuarios.');return;}
  const {data,error}=await sb.rpc('cc_admin_list_users');if(error||!data?.ok){alert(error?.message||data?.error||'No se pudieron cargar usuarios');return;}
  closeUserModal();
  const ov=document.createElement('div');ov.id='ccUserAdminModal';ov.className='cc-user-modal';
