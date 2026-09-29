@@ -437,7 +437,7 @@
 
     const body='<form><div class="hs104-grid">'+
       '<div class="cc-field"><label>Tipo *</label><select name="tipoPersona"><option value="OPERADOR">Operador</option><option value="BENEFICIARIO">Beneficiario</option></select></div>'+
-      '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><input name="personaId" type="hidden"><div class="hs104-note" data-person-status>Escribe mínimo 3 letras o usa … para buscar en el catálogo.</div></div>'+
+      '<div class="cc-field"><label>Operador / Beneficiario *</label><div style="position:relative"><div style="display:flex;gap:6px;align-items:center"><input name="personaNombre" type="search" autocomplete="off" placeholder="Escribe mínimo 3 letras..." style="flex:1" required><button type="button" class="cc-btn cc-btn-light" data-person-more title="Buscar en catálogo">...</button></div><div data-person-suggestions style="display:none;position:absolute;left:0;right:42px;top:100%;z-index:20;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 24px #0f172a22;max-height:220px;overflow:auto;margin-top:4px"></div></div><input name="personaId" type="hidden"><div class="hs104-note" data-person-status>Escribe mínimo 3 letras y selecciona una opción.</div></div>'+
       '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+((D.assignmentSelections?.[x.id]?.cantidad)||0)+' hoja(s)')+'</select></div>'+
       '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
@@ -461,21 +461,22 @@
       alert('Hojas asignadas: '+Number(r.asignados||0)+' · '+(r.persona||''));
     }});
 
-    const form=o.querySelector('form'),personInput=form.personaNombre,personId=form.personaId,personStatus=o.querySelector('[data-person-status]'),personMore=o.querySelector('[data-person-more]');
+    const form=o.querySelector('form'),personInput=form.personaNombre,personId=form.personaId,personStatus=o.querySelector('[data-person-status]'),personMore=o.querySelector('[data-person-more]'),personSuggestions=o.querySelector('[data-person-suggestions]');
     function currentPeople(){return form.tipoPersona.value==='BENEFICIARIO'?active(D.beneficiarios):active(D.operadores)}
     function personLabel(x){return String(x.nombre||'')+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.email?' · '+x.email:'')}
-    function clearPerson(){personId.value='';personInput.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar en el catálogo.';personStatus.style.color='#64748b';}
-    function choosePerson(x){personId.value=String(x.id);personInput.value=personLabel(x);personStatus.textContent='✓ '+personLabel(x);personStatus.style.color='#15803d';}
-    function syncPerson(){
-      const raw=personInput.value.trim(),q=norm(raw),xs=currentPeople();
-      if(q.length<3){personId.value='';personStatus.textContent='Escribe mínimo 3 letras o usa … para buscar en el catálogo.';personStatus.style.color='#64748b';return;}
-      let m=xs.find(x=>norm(personLabel(x))===q)||xs.find(x=>norm(x.nombre)===q);
-      const hits=xs.filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q)).slice(0,30);
-      if(!m&&hits.length===1)m=hits[0];
-      personId.value=m?String(m.id):'';
-      if(m) personInput.value=personLabel(m);
-      personStatus.textContent=m?'✓ '+personLabel(m):(hits.length?hits.length+' coincidencia(s). Usa … para seleccionar.':'Sin coincidencias.');
-      personStatus.style.color=m?'#15803d':(hits.length?'#64748b':'#b91c1c');
+    function hideSuggestions(){if(personSuggestions){personSuggestions.style.display='none';personSuggestions.innerHTML='';}}
+    function clearPerson(){personId.value='';personInput.value='';personStatus.textContent='Escribe mínimo 3 letras y selecciona una opción.';personStatus.style.color='#64748b';hideSuggestions();}
+    function choosePerson(x){personId.value=String(x.id);personInput.value=personLabel(x);personStatus.textContent='Seleccionado';personStatus.style.color='#15803d';hideSuggestions();}
+    function renderSuggestions(){
+      const q=norm(personInput.value.trim());
+      personId.value='';
+      if(q.length<3){personStatus.textContent='Escribe mínimo 3 letras y selecciona una opción.';personStatus.style.color='#64748b';hideSuggestions();return;}
+      const hits=currentPeople().filter(x=>norm(personLabel(x)).includes(q)||norm(x.nombre).includes(q)).slice(0,12);
+      if(!hits.length){personStatus.textContent='Sin coincidencias.';personStatus.style.color='#b91c1c';hideSuggestions();return;}
+      personStatus.textContent='Selecciona una opción de la lista.';personStatus.style.color='#64748b';
+      personSuggestions.innerHTML=hits.map(x=>'<button type="button" data-suggest-person="'+esc(x.id)+'" style="display:block;width:100%;border:0;background:#fff;padding:9px 10px;text-align:left;cursor:pointer;border-bottom:1px solid #eef2f7">'+esc(personLabel(x))+'</button>').join('');
+      personSuggestions.style.display='block';
+      personSuggestions.querySelectorAll('[data-suggest-person]').forEach(b=>b.onclick=()=>{const x=currentPeople().find(z=>String(z.id)===String(b.dataset.suggestPerson));if(x)choosePerson(x);});
     }
     function openPersonPicker(){
       document.getElementById('hs104PersonPicker')?.remove();
@@ -488,10 +489,9 @@
       q.oninput=paint;ov.querySelector('[data-x]').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};paint();q.focus();
     }
     form.tipoPersona.onchange=clearPerson;
-    personInput.addEventListener('input',syncPerson);
-    personInput.addEventListener('change',syncPerson);
-    personInput.addEventListener('blur',syncPerson);
-    personInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPerson();}});
+    personInput.addEventListener('input',renderSuggestions);
+    personInput.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();});
+    personInput.addEventListener('blur',()=>setTimeout(hideSuggestions,150));
     personMore.onclick=openPersonPicker;
     clearPerson();setupSelectionUI(o,'persona');
   }
