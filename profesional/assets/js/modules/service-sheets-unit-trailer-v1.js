@@ -9,7 +9,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let UNITS=[], OPERATORS=[], EVIDENCE=new Map(), loading=false;
 
-  function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n)||null;}
+  function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n&&norm(x.estatus||'ACTIVO')!=='INACTIVO')||null;}
   function boxUnits(){return UNITS.filter(x=>x.esCaja);}
   function boxByNumber(v){const n=norm(v);return boxUnits().find(x=>norm(x.numero)===n)||null;}
   function operatorLabel(x){return String(x?.nombre||'')+(x?.numeroEmpleado?' · '+x.numeroEmpleado:'');}
@@ -30,10 +30,10 @@
   function ensureLists(){
     let dl=document.getElementById('hsUnitCatalogList');
     if(!dl){dl=document.createElement('datalist');dl.id='hsUnitCatalogList';document.body.appendChild(dl);}
-    dl.innerHTML=UNITS.map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.tipoUnidad||x.categoria||'')+(x.descripcion?' · '+x.descripcion:''))+'"></option>').join('');
+    dl.innerHTML=UNITS.filter(x=>norm(x.estatus||'ACTIVO')!=='INACTIVO').map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.tipoUnidad||x.categoria||'')+(x.descripcion?' · '+x.descripcion:''))+'"></option>').join('');
     let tl=document.getElementById('hsTrailerCatalogList');
     if(!tl){tl=document.createElement('datalist');tl.id='hsTrailerCatalogList';document.body.appendChild(tl);}
-    tl.innerHTML=boxUnits().map(x=>'<option value="'+esc(x.numero)+'" label="'+esc(x.descripcion||'Caja')+'"></option>').join('');
+    tl.innerHTML=boxUnits().map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.descripcion||'Caja')+(norm(x.estatus||'ACTIVO')==='INACTIVO'?' · INACTIVA':''))+'"></option>').join('');
   }
 
   async function hasSession(){
