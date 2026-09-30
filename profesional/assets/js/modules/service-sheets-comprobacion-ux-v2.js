@@ -80,14 +80,10 @@
     const pendingCard=cardOf(list),histCard=cardOf(hist);
     if(!pendingCard||!histCard)return;
 
-    let box=document.getElementById('hsCompUxSwitch');
-    if(!box){
-      box=document.createElement('div');box.id='hsCompUxSwitch';box.className='hs-comp-switch';
-      box.innerHTML='<label><input id="hsCompUxHistory" type="checkbox"> Mostrar historial de comprobaciones</label><div style="font-size:11px;color:#475569">Solo se muestra una vista a la vez: pendientes o historial.</div>';
-      pendingCard.parentNode.insertBefore(box,pendingCard);
-      box.querySelector('#hsCompUxHistory').checked=showHistory;
-      box.querySelector('#hsCompUxHistory').onchange=e=>{showHistory=!!e.target.checked;applyMode();};
-    }
+    // La navegación Pendientes/Historial la controla el selector de botones estable.
+    // Se elimina el check duplicado para evitar dos controles haciendo lo mismo.
+    document.getElementById('hsCompUxSwitch')?.remove();
+
     applyMode();
     ensurePendingSearch(pendingCard);
     ensureHistorySearch(histCard);
@@ -101,6 +97,11 @@
     const ch=document.getElementById('hsCompUxHistory');if(ch)ch.checked=showHistory;
     if(showHistory)setTimeout(()=>patchHistory(true),40);else setTimeout(()=>patchPending(),40);
   }
+
+  window.hsSetComprobacionHistory=function(v){
+    showHistory=!!v;
+    applyMode();
+  };
 
   function ensurePendingSearch(card){
     if(card.querySelector('#hsCompUxFolioSearch'))return;
