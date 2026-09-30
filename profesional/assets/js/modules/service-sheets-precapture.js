@@ -104,6 +104,18 @@
     tipoSel.onchange=()=>fill('');fill(pre?.clasificacion||'');
     if(pre){
       cliente.value=pre.clienteId||'';
+      const clientObj=(d.clientes||[]).find(x=>String(x.id)===String(pre.clienteId||''));
+      const clientSearch=row.querySelector('[data-cliente-search]');
+      const clientStatus=row.querySelector('[data-cliente-status]');
+      if(clientObj&&clientSearch){
+        const lbl=String(clientObj.nombre||'')+(clientObj.razonSocial&&clientObj.razonSocial!==clientObj.nombre?' · '+clientObj.razonSocial:'');
+        clientSearch.value=lbl;
+        if(clientStatus){clientStatus.textContent='✓ '+lbl;clientStatus.style.color='#15803d';}
+      }else if(pre.cliente&&clientSearch){
+        clientSearch.value=pre.cliente;
+        if(clientStatus){clientStatus.textContent='✓ '+pre.cliente;clientStatus.style.color='#15803d';}
+      }
+      cliente.dispatchEvent(new Event('change',{bubbles:true}));
       if(obs&&!String(obs.value||'').trim()&&pre.dondeUtilizado)obs.value='Dónde se utilizó: '+pre.dondeUtilizado;
       const pill=row.querySelector('.hs104-pill');if(pill){pill.textContent='PRECARGADA APP';pill.classList.remove('hs104-danger');pill.classList.add('hs104-ok');}
       const note=document.createElement('div');note.className='hs104-note';note.style.cssText='margin:10px 0;padding:9px 10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:9px;color:#166534';
