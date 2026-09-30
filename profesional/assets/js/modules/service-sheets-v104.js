@@ -123,7 +123,29 @@
   }
 
   const navItems=[['Control','fa-location-crosshairs'],['Folios','fa-file-lines'],['Responsables','fa-user-shield'],['Operadores','fa-users'],['Comprobacion','fa-clipboard-check'],['Proforma','fa-file-invoice-dollar'],['Catalogos','fa-list']];
-  function renderNav(){const n=document.getElementById('hs104Nav');if(!n)return;n.innerHTML=navItems.map(([v,i])=>'<button class="cc-btn '+(currentView===v?'cc-btn-primary':'cc-btn-light')+'" data-v="'+v+'"><i class="fa-solid '+i+' mr-1"></i>'+({Comprobacion:'Comprobación'}[v]||v)+'</button>').join('');n.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{if(b.dataset.v==='Proforma'){currentView='Proforma';renderNav();if(typeof window.hsOpenProformas==='function')return window.hsOpenProformas();return alert('Cargando Proforma, intenta nuevamente.');}currentView=b.dataset.v;renderNav();renderView()})}
+  async function openProformaView(){
+    currentView='Proforma';renderNav();
+    if(typeof window.hsOpenProformas==='function')return window.hsOpenProformas();
+    const h=view();if(h)h.innerHTML='<div class="hs104-card" style="padding:22px;text-align:center"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando Proforma…</div>';
+    try{
+      let s=document.querySelector('script[data-hs-proforma-loader]');
+      if(!s){
+        s=document.createElement('script');
+        s.src='assets/js/modules/service-sheets-proformas-v1.js?v=20260929-openfix1';
+        s.dataset.hsProformaLoader='1';
+        document.body.appendChild(s);
+      }
+      await new Promise((resolve,reject)=>{
+        if(typeof window.hsOpenProformas==='function')return resolve();
+        const started=Date.now(),check=()=>{if(typeof window.hsOpenProformas==='function')return resolve();if(Date.now()-started>8000)return reject(new Error('No se pudo cargar el módulo de Proformas.'));setTimeout(check,80)};check();
+      });
+      return window.hsOpenProformas();
+    }catch(e){
+      if(h)h.innerHTML='<div class="hs104-card" style="padding:22px;color:#b91c1c"><b>No se pudo abrir Proforma.</b><div class="hs104-note" style="margin-top:6px">'+esc(e.message||e)+'</div><button type="button" class="cc-btn cc-btn-light" id="hs104RetryProforma" style="margin-top:10px">Reintentar</button></div>';
+      document.getElementById('hs104RetryProforma')?.addEventListener('click',openProformaView);
+    }
+  }
+  function renderNav(){const n=document.getElementById('hs104Nav');if(!n)return;n.innerHTML=navItems.map(([v,i])=>'<button class="cc-btn '+(currentView===v?'cc-btn-primary':'cc-btn-light')+'" data-v="'+v+'"><i class="fa-solid '+i+' mr-1"></i>'+({Comprobacion:'Comprobación'}[v]||v)+'</button>').join('');n.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{if(b.dataset.v==='Proforma')return openProformaView();currentView=b.dataset.v;renderNav();renderView()})}
   function renderKpis(){const r=D.resumen||{},k=document.getElementById('hs104Kpis');if(!k)return;k.innerHTML=[['Total',r.total],['Nuevas',r.nuevos],['Pend. aceptación',r.pendienteAceptacion],['Con responsable',r.enCustodia],['Pend. comprobar',r.asignadosOperador],['Comprobadas',r.utilizados]].map(x=>'<div class="cc-ant-kpi"><small>'+x[0]+'</small><strong>'+Number(x[1]||0).toLocaleString('es-MX')+'</strong></div>').join('')}
   function renderAll(){renderKpis();renderNav();renderView()}
   function renderView(){if(document.querySelector('#hs104CompList .hs-list-modal-open'))document.body.style.overflow='';({Control:renderControl,Folios:renderFolios,Responsables:renderResponsables,Operadores:renderOperadores,Comprobacion:renderComprobacion,Catalogos:renderCatalogos}[currentView]||renderControl)()}
