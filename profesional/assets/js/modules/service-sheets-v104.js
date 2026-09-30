@@ -154,7 +154,7 @@
   function renderControl(){
     const v=view();if(!v)return;
     const series=(D.series||[]).slice().sort((a,b)=>String(a.codigo||'').localeCompare(String(b.codigo||''),'es',{numeric:true,sensitivity:'base'}));
-    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar" style="align-items:flex-start"><div><strong>Rastreo general</strong><div class="hs104-note">Filtra todo el historial por estado, serie, rango de folios, fecha de registro o búsqueda general.</div></div></div>'+
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar" style="align-items:flex-start"><div><strong>Rastreo general</strong><div class="hs104-note">Filtra todo el historial por estado, serie, rango de folios, fecha de registro o búsqueda general.</div></div><div class="hs104-actions"><button type="button" class="cc-btn cc-btn-primary" id="hs104CtlExcel"><i class="fa-solid fa-file-excel"></i> Exportar a Excel</button></div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:10px 0 12px">'+
         '<div class="cc-field"><label>Estado</label><select id="hs104CtlStatus" class="cc-input"><option value="">Todos los estados</option><option value="NUEVO">Nuevas</option><option value="PENDIENTE_ACEPTACION">Pend. aceptación</option><option value="EN_CUSTODIA">Con responsable</option><option value="ASIGNADO_OPERADOR">Pend. comprobar</option><option value="UTILIZADO">Comprobadas</option></select></div>'+
         '<div class="cc-field"><label>Serie</label><select id="hs104CtlSerie" class="cc-input"><option value="">Todas las series</option>'+series.map(x=>'<option value="'+esc(x.codigo)+'">'+esc(x.codigo)+'</option>').join('')+'</select></div>'+
@@ -167,7 +167,7 @@
       '</div>'+
       '<div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div>'+
       '<div class="hs104-actions" style="margin-top:10px;align-items:center"><span id="hs104CtlPageInfo" class="hs104-note"></span><button type="button" class="cc-btn cc-btn-light" id="hs104CtlPrev">Anterior</button><button type="button" class="cc-btn cc-btn-light" id="hs104CtlNext">Siguiente</button></div></div>';
-    const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),serie=v.querySelector('#hs104CtlSerie'),desde=v.querySelector('#hs104CtlDesde'),hasta=v.querySelector('#hs104CtlHasta'),fechaDesde=v.querySelector('#hs104CtlFechaDesde'),fechaHasta=v.querySelector('#hs104CtlFechaHasta'),clear=v.querySelector('#hs104CtlClear'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
+    const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),serie=v.querySelector('#hs104CtlSerie'),desde=v.querySelector('#hs104CtlDesde'),hasta=v.querySelector('#hs104CtlHasta'),fechaDesde=v.querySelector('#hs104CtlFechaDesde'),fechaHasta=v.querySelector('#hs104CtlFechaHasta'),clear=v.querySelector('#hs104CtlClear'),excel=v.querySelector('#hs104CtlExcel'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
     let page=1,pages=1,timer=null,req=0;
     const paint=rows=>{body.innerHTML=rows.length?rows.map(x=>{const fd=x.fecha_control||x.created_at,lab=x.tipo_fecha_control==='ASIGNACION_RESPONSABLE'?'Asignación responsable':'Creación';return '<tr><td><strong>'+esc(x.folio)+'</strong></td><td>'+esc(fd?new Date(fd).toLocaleDateString('es-MX'):'—')+'<div class="hs104-note">'+lab+'</div></td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>'}).join(''):'<tr><td colspan="6" style="text-align:center;padding:22px">Sin resultados con los filtros seleccionados.</td></tr>'};
     const n=v=>{const x=Number(v);return Number.isFinite(x)&&v!==''?Math.trunc(x):null};
@@ -186,11 +186,49 @@
         prev.disabled=page<=1;next.disabled=page>=pages;
       }catch(e){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#b91c1c">'+esc(e.message||e)+'</td></tr>';}
     };
+    const getFilters=()=>({
+      p_search:search.value.trim()||null,p_status:status.value||null,p_serie:serie.value||null,
+      p_folio_desde:n(desde.value),p_folio_hasta:n(hasta.value),
+      p_fecha_desde:fechaDesde.value||null,p_fecha_hasta:fechaHasta.value||null
+    });
+    const exportExcel=async()=>{
+      if(!window.XLSX)return alert('No está disponible el componente para exportar Excel.');
+      const old=excel.innerHTML;excel.disabled=true;excel.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
+      try{
+        const filters=getFilters(),all=[];
+        let p=1,totalPages=1;
+        do{
+          const r=await rpc('hs_control_page_v2',{p_page:p,p_page_size:200,...filters});
+          if(Array.isArray(r.rows))all.push(...r.rows);
+          totalPages=Math.max(1,Number(r.pages||1));p++;
+        }while(p<=totalPages);
+        if(!all.length)return alert('No hay resultados para exportar con los filtros actuales.');
+        const data=all.map(x=>({
+          'Folio':x.folio||'',
+          'Serie':x.serie||'',
+          'Año':x.anio||'',
+          'Fecha':x.fecha_control?new Date(x.fecha_control).toLocaleDateString('es-MX'):(x.created_at?new Date(x.created_at).toLocaleDateString('es-MX'):''),
+          'Tipo de fecha':x.tipo_fecha_control==='ASIGNACION_RESPONSABLE'?'Asignación responsable':'Creación',
+          'Estado':x.estatus||'',
+          'Responsable':x.responsable_nombre||'',
+          'Persona':x.beneficiario_nombre||x.operador_nombre||'',
+          'Servicio':x.servicio||'',
+          'Cliente':x.cliente_nombre||''
+        }));
+        const ws=XLSX.utils.json_to_sheet(data);
+        ws['!cols']=[{wch:20},{wch:12},{wch:8},{wch:14},{wch:24},{wch:22},{wch:28},{wch:28},{wch:28},{wch:32}];
+        const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Control de Hojas');
+        const stamp=new Date().toISOString().slice(0,10);
+        XLSX.writeFile(wb,'Control_Hojas_'+stamp+'.xlsx');
+      }catch(e){alert('No se pudo exportar a Excel: '+(e.message||e))}
+      finally{excel.disabled=false;excel.innerHTML=old}
+    };
     const refresh=()=>{page=1;loadPage()};
     search.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)};
     [status,serie,fechaDesde,fechaHasta].forEach(x=>x.onchange=refresh);
     [desde,hasta].forEach(x=>x.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)});
     clear.onclick=()=>{status.value='';serie.value='';desde.value='';hasta.value='';fechaDesde.value='';fechaHasta.value='';search.value='';refresh()};
+    excel.onclick=exportExcel;
     prev.onclick=()=>{if(page>1){page--;loadPage()}};
     next.onclick=()=>{if(page<pages){page++;loadPage()}};
     loadPage();
