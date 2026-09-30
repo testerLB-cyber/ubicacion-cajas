@@ -31,7 +31,8 @@
   if(!cid){body.innerHTML='<tr><td colspan="'+(us.length+4)+'" style="text-align:center;padding:28px;color:#64748b">Selecciona un cliente para mostrar la matriz.</td></tr>';if(sum)sum.textContent='';if(saveAll)saveAll.disabled=true;return}
   if(!us.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:28px;color:#b45309">No hay tipos de unidad CARRO activos.</td></tr>';if(sum)sum.textContent='';if(saveAll)saveAll.disabled=true;return}
   let specific=0,inherited=0;
-  body.innerHTML=(D.servicios||[]).map((s,si)=>{
+  const serviciosVisibles=(D.servicios||[]).filter(s=>{const tipo=String(s.tipoViaje||'').trim().toUpperCase(),clas=String(s.clasificacion||'').trim().toUpperCase();if(tipo==='FORANEO'||tipo==='FORÁNEO')return false;if((tipo==='EXPO'||tipo==='IMPO')&&(clas==='CARGADO'||clas==='CARGADA'||clas==='QUIMICO'||clas==='QUÍMICO'))return false;return true;});
+  body.innerHTML=serviciosVisibles.map((s,si)=>{
    const beh=behavior(cid,s),cobra=beh?.cobraCliente??s.cobraClienteDefault??true,comisiona=beh?.comisionaOperador??s.comisionaOperadorDefault??true;
    return '<tr data-service="'+si+'"><td><strong>'+esc(s.tipoViaje)+'</strong></td><td>'+esc(s.clasificacion||'Sin clasificación')+'</td>'+
    us.map(u=>{const p=exact(cid,s,u.id),g=general(cid,s),v=p||g;if(p)specific++;else if(g)inherited++;const na=v?.aplica===false;return '<td style="vertical-align:top"><div style="display:flex;align-items:center;gap:4px;justify-content:center"><span>$</span><input data-price="'+esc(u.id)+'" type="number" min="0" step="0.01" value="'+(!na&&v?Number(v.precio).toFixed(2):'')+'" placeholder="0.00" '+(na?'disabled':'')+' style="width:105px;font-weight:800;text-align:right"></div><label style="display:flex;justify-content:center;gap:5px;align-items:center;font-size:9px;margin-top:4px"><input data-na="'+esc(u.id)+'" type="checkbox" '+(na?'checked':'')+'> N/A</label>'+(!p&&g?'<div style="font-size:8px;color:#b45309;text-align:center;margin-top:2px">General heredada</div>':'')+'</td>'}).join('')+
@@ -39,7 +40,7 @@
    '<td style="text-align:center"><input data-comisiona type="checkbox" '+(comisiona?'checked':'')+' '+(canEdit()?'':'disabled')+'></td></tr>';
   }).join('');
   body.querySelectorAll('tr[data-service]').forEach(tr=>{tr.querySelectorAll('[data-na]').forEach(ch=>ch.onchange=()=>{const inp=tr.querySelector('[data-price="'+CSS.escape(ch.dataset.na)+'"]');inp.disabled=ch.checked;if(ch.checked)inp.value='';});});
-  if(sum)sum.textContent=D.servicios.length+' servicios · '+us.length+' tipos de unidad · '+specific+' tarifas específicas · '+inherited+' valores heredados';
+  if(sum)sum.textContent=serviciosVisibles.length+' servicios · '+us.length+' tipos de unidad · '+specific+' tarifas específicas · '+inherited+' valores heredados';
   if(saveAll)saveAll.disabled=!canEdit();
  }
  async function saveAll(){
@@ -47,7 +48,8 @@
   const cid=document.getElementById('ccMatrizCliente')?.value;if(!cid)return alert('Selecciona un cliente.');
   const btn=document.getElementById('ccMatrizSaveAll'),body=document.getElementById('ccMatrizBody'),us=units();let ops=[];
   for(const tr of body.querySelectorAll('tr[data-service]')){
-   const s=D.servicios[Number(tr.dataset.service)];
+   const serviciosVisibles=(D.servicios||[]).filter(s=>{const tipo=String(s.tipoViaje||'').trim().toUpperCase(),clas=String(s.clasificacion||'').trim().toUpperCase();if(tipo==='FORANEO'||tipo==='FORÁNEO')return false;if((tipo==='EXPO'||tipo==='IMPO')&&(clas==='CARGADO'||clas==='CARGADA'||clas==='QUIMICO'||clas==='QUÍMICO'))return false;return true;});
+   const s=serviciosVisibles[Number(tr.dataset.service)];
    for(const u of us){
     const inp=tr.querySelector('[data-price="'+CSS.escape(u.id)+'"]'),na=tr.querySelector('[data-na="'+CSS.escape(u.id)+'"]')?.checked;
     if(!inp)continue;
