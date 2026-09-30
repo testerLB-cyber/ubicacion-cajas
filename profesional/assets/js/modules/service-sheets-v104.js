@@ -131,23 +131,44 @@
 
   function renderControl(){
     const v=view();if(!v)return;
-    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Rastreo general</strong><div class="hs104-note">Búsqueda global en todos los folios. La tabla se muestra paginada.</div></div><div class="hs104-actions"><select id="hs104CtlStatus" class="cc-input"><option value="">Todos los estados</option><option value="NUEVO">Nuevas</option><option value="PENDIENTE_ACEPTACION">Pend. aceptación</option><option value="EN_CUSTODIA">Con responsable</option><option value="ASIGNADO_OPERADOR">Pend. comprobar</option><option value="UTILIZADO">Comprobadas</option></select><input id="hs104CtlSearch" class="cc-input" type="search" placeholder="Buscar en todos los folios..."></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div><div class="hs104-actions" style="margin-top:10px;align-items:center"><span id="hs104CtlPageInfo" class="hs104-note"></span><button type="button" class="cc-btn cc-btn-light" id="hs104CtlPrev">Anterior</button><button type="button" class="cc-btn cc-btn-light" id="hs104CtlNext">Siguiente</button></div></div>';
-    const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
+    const series=(D.series||[]).slice().sort((a,b)=>String(a.codigo||'').localeCompare(String(b.codigo||''),'es',{numeric:true,sensitivity:'base'}));
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar" style="align-items:flex-start"><div><strong>Rastreo general</strong><div class="hs104-note">Filtra todo el historial por estado, serie, rango de folios, fecha de registro o búsqueda general.</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:10px 0 12px">'+
+        '<div class="cc-field"><label>Estado</label><select id="hs104CtlStatus" class="cc-input"><option value="">Todos los estados</option><option value="NUEVO">Nuevas</option><option value="PENDIENTE_ACEPTACION">Pend. aceptación</option><option value="EN_CUSTODIA">Con responsable</option><option value="ASIGNADO_OPERADOR">Pend. comprobar</option><option value="UTILIZADO">Comprobadas</option></select></div>'+
+        '<div class="cc-field"><label>Serie</label><select id="hs104CtlSerie" class="cc-input"><option value="">Todas las series</option>'+series.map(x=>'<option value="'+esc(x.codigo)+'">'+esc(x.codigo)+'</option>').join('')+'</select></div>'+
+        '<div class="cc-field"><label>Folio desde</label><input id="hs104CtlDesde" class="cc-input" type="number" min="0" step="1" placeholder="Ej. 12000"></div>'+
+        '<div class="cc-field"><label>Folio hasta</label><input id="hs104CtlHasta" class="cc-input" type="number" min="0" step="1" placeholder="Ej. 12500"></div>'+
+        '<div class="cc-field"><label>Fecha desde</label><input id="hs104CtlFechaDesde" class="cc-input" type="date"></div>'+
+        '<div class="cc-field"><label>Fecha hasta</label><input id="hs104CtlFechaHasta" class="cc-input" type="date"></div>'+
+        '<div class="cc-field" style="grid-column:span 2"><label>Búsqueda general</label><input id="hs104CtlSearch" class="cc-input" type="search" placeholder="Folio, responsable, operador, cliente o servicio..."></div>'+
+        '<div class="cc-field" style="display:flex;align-items:flex-end"><button type="button" class="cc-btn cc-btn-light" id="hs104CtlClear" style="width:100%"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button></div>'+
+      '</div>'+
+      '<div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div>'+
+      '<div class="hs104-actions" style="margin-top:10px;align-items:center"><span id="hs104CtlPageInfo" class="hs104-note"></span><button type="button" class="cc-btn cc-btn-light" id="hs104CtlPrev">Anterior</button><button type="button" class="cc-btn cc-btn-light" id="hs104CtlNext">Siguiente</button></div></div>';
+    const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),serie=v.querySelector('#hs104CtlSerie'),desde=v.querySelector('#hs104CtlDesde'),hasta=v.querySelector('#hs104CtlHasta'),fechaDesde=v.querySelector('#hs104CtlFechaDesde'),fechaHasta=v.querySelector('#hs104CtlFechaHasta'),clear=v.querySelector('#hs104CtlClear'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
     let page=1,pages=1,timer=null,req=0;
-    const paint=rows=>{body.innerHTML=rows.length?rows.map(x=>'<tr><td><strong>'+esc(x.folio)+'</strong></td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;padding:22px">Sin resultados.</td></tr>'};
+    const paint=rows=>{body.innerHTML=rows.length?rows.map(x=>'<tr><td><strong>'+esc(x.folio)+'</strong></td><td>'+esc(x.created_at?new Date(x.created_at).toLocaleDateString('es-MX'):'—')+'</td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:22px">Sin resultados con los filtros seleccionados.</td></tr>'};
+    const n=v=>{const x=Number(v);return Number.isFinite(x)&&v!==''?Math.trunc(x):null};
     const loadPage=async()=>{
-      const my=++req;body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:22px">Buscando…</td></tr>';
+      const my=++req;body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px">Buscando…</td></tr>';
       try{
-        const r=await rpc('hs_control_page',{p_page:page,p_page_size:100,p_search:search.value.trim()||null,p_status:status.value||null});
+        const r=await rpc('hs_control_page_v2',{
+          p_page:page,p_page_size:100,p_search:search.value.trim()||null,p_status:status.value||null,
+          p_serie:serie.value||null,p_folio_desde:n(desde.value),p_folio_hasta:n(hasta.value),
+          p_fecha_desde:fechaDesde.value||null,p_fecha_hasta:fechaHasta.value||null
+        });
         if(my!==req)return;
         pages=Number(r.pages||1);if(page>pages){page=pages;return loadPage()}
         paint(Array.isArray(r.rows)?r.rows:[]);
         info.textContent='Página '+page+' de '+pages+' · '+Number(r.total||0).toLocaleString('es-MX')+' folio(s)';
         prev.disabled=page<=1;next.disabled=page>=pages;
-      }catch(e){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:22px;color:#b91c1c">'+esc(e.message||e)+'</td></tr>';}
+      }catch(e){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:22px;color:#b91c1c">'+esc(e.message||e)+'</td></tr>';}
     };
-    search.oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>{page=1;loadPage()},250)};
-    status.onchange=()=>{page=1;loadPage()};
+    const refresh=()=>{page=1;loadPage()};
+    search.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)};
+    [status,serie,fechaDesde,fechaHasta].forEach(x=>x.onchange=refresh);
+    [desde,hasta].forEach(x=>x.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)});
+    clear.onclick=()=>{status.value='';serie.value='';desde.value='';hasta.value='';fechaDesde.value='';fechaHasta.value='';search.value='';refresh()};
     prev.onclick=()=>{if(page>1){page--;loadPage()}};
     next.onclick=()=>{if(page<pages){page++;loadPage()}};
     loadPage();
