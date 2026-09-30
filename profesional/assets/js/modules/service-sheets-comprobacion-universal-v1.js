@@ -18,7 +18,7 @@ function selectedRows(){
 }
 function harvest(){
  const list=document.getElementById('hs104CompList');if(!list)return;
- list.querySelectorAll('[data-row]').forEach(r=>{const folio=r.dataset.hsFolio||'';if(!folio)return;if(!allRows.some(x=>x.folio===folio)){allRows.push({folio,person:r.dataset.hsPerson||'',ptype:r.dataset.hsPersonType||'',personId:document.getElementById('hs104CompPerson')?.value||'',status:r.querySelector('.hs104-ok')?'PRECARGADA':'PENDIENTE',note:r.querySelector('.hs104-note')?.textContent||'',row:r.cloneNode(true),source:r})}});
+ list.querySelectorAll('[data-row]').forEach(r=>{const folio=r.dataset.hsFolio||'';if(!folio)return;if(!allRows.some(x=>x.folio===folio)){allRows.push({folio,rowId:r.dataset.row||'',person:r.dataset.hsPerson||'',ptype:r.dataset.hsPersonType||'',personId:document.getElementById('hs104CompPerson')?.value||'',status:r.querySelector('.hs104-ok')?'PRECARGADA':'PENDIENTE',note:r.querySelector('.hs104-note')?.textContent||'',row:r.cloneNode(true),source:r})}});
 }
 async function collect(){
  const type=document.getElementById('hs104CompType'),person=document.getElementById('hs104CompPerson');if(!type||!person)return;
@@ -37,14 +37,25 @@ async function collect(){
  draw();
 }
 function openOriginal(item){
- const type=document.getElementById('hs104CompType'),person=document.getElementById('hs104CompPerson'),search=document.getElementById('hs104CompPersonSearch');
- if(!type||!person)return;
- type.value=item.ptype||'OPERADOR';type.dispatchEvent(new Event('change',{bubbles:true}));
+ const type=document.getElementById('hs104CompType'),person=document.getElementById('hs104CompPerson'),search=document.getElementById('hs104CompPersonSearch'),list=document.getElementById('hs104CompList');
+ if(!type||!person||!list){alert('No se pudo abrir la comprobación. Recarga la página e intenta nuevamente.');return;}
+ type.value=item.ptype||'OPERADOR';
+ type.dispatchEvent(new Event('change',{bubbles:true}));
  setTimeout(()=>{
-   const opt=[...person.options].find(o=>String(o.value)===String(item.personId))||[...person.options].find(o=>norm(o.textContent).includes(norm(item.person)));
-   if(opt){person.value=opt.value;if(search)search.value=opt.textContent;person.dispatchEvent(new Event('change',{bubbles:true}));
-     setTimeout(()=>{const row=[...document.querySelectorAll('#hs104CompList [data-row]')].find(r=>r.dataset.hsFolio===item.folio);row?.querySelector('[data-hs-edit]')?.click()},50)}
- },50);
+   const opt=[...person.options].find(o=>String(o.value)===String(item.personId));
+   if(!opt){alert('No se encontró la asignación actual de '+item.folio+'. Pulsa Actualizar y vuelve a intentar.');return;}
+   person.value=opt.value;if(search)search.value=opt.textContent;
+   person.dispatchEvent(new Event('change',{bubbles:true}));
+   let tries=0;
+   const open=()=>{
+     const row=[...list.querySelectorAll('[data-row]')].find(r=>String(r.dataset.row)===String(item.rowId))||[...list.querySelectorAll('[data-row]')].find(r=>String(r.dataset.hsFolio)===String(item.folio));
+     if(row){
+       const btn=row.querySelector('[data-hs-edit]');
+       if(btn){btn.click();setTimeout(()=>{if(!row.classList.contains('hs-list-modal-open')){row.classList.add('hs-list-modal-open');document.body.style.overflow='hidden';window.hsPatchPrecapture?.();window.hsPatchComprobacionFinal?.();}},30);return;}
+     }
+     if(++tries<12)setTimeout(open,60);else alert('No se pudo abrir '+item.folio+'. Pulsa Actualizar y vuelve a intentar.');
+   };open();
+ },80);
 }
 function draw(){
  if(!host)return;const q=norm(host.querySelector('[data-q]')?.value),f=host.querySelector('.hscu-filter.active')?.dataset.f||'TODAS';
