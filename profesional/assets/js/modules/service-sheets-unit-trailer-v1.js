@@ -128,7 +128,7 @@
       op.querySelector('[data-hs-real-operator-more]').onclick=()=>openOperatorPicker(row);
     }
     const trailerField=document.createElement('div');trailerField.className='cc-field';trailerField.dataset.hsRemolqueWrap='1';trailerField.style.display='none';
-    trailerField.innerHTML='<label>Caja / remolque *</label><input data-hs-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Selecciona una caja del catálogo"><div data-hs-remolque-status class="hs104-note">Obligatorio para TRACTO-CAMIÓN. Debe existir en el catálogo y estar clasificada como CAJA; puede estar activa o inactiva.</div>';
+    trailerField.innerHTML='<label>Caja / remolque *</label><input data-hs-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Escribe número de caja o remolque"><div data-hs-remolque-status class="hs104-note">Campo abierto. Si existe en catálogo se sugiere; si no existe también se permite. Obligatorio para TRACTO-CAMIÓN.</div>';
     grid.appendChild(trailerField);
     const input=unitField.querySelector('[data-hs-unidad]');
     const ev=EVIDENCE.get(String(row.dataset.row));
@@ -147,7 +147,7 @@
     }
     ['input','change','blur'].forEach(evt=>input.addEventListener(evt,()=>setUnitState(row,false)));
     const trailerInput=trailerField.querySelector('[data-hs-remolque]'),trailerStatus=trailerField.querySelector('[data-hs-remolque-status]');
-    const syncTrailer=()=>{const u=unitByNumber(input.value),b=boxByNumber(trailerInput.value);if(!u?.esTracto){trailerInput.style.borderColor='';trailerStatus.textContent='Obligatorio para TRACTO-CAMIÓN. Debe existir como CAJA en el catálogo; puede estar activa o inactiva.';trailerStatus.style.color='#64748b';return;}if(!trailerInput.value.trim()){trailerInput.style.borderColor='#ef4444';trailerStatus.textContent='Selecciona la caja/remolque antes de comprobar.';trailerStatus.style.color='#b91c1c';return;}if(!b){trailerInput.style.borderColor='#ef4444';trailerStatus.textContent='La caja/remolque no existe en el catálogo o no está clasificada como CAJA.';trailerStatus.style.color='#b91c1c';return;}trailerInput.style.borderColor='#16a34a';trailerStatus.textContent='✓ Caja válida del catálogo';trailerStatus.style.color='#15803d';};
+    const syncTrailer=()=>{const u=unitByNumber(input.value),b=boxByNumber(trailerInput.value);if(!u?.esTracto){trailerInput.style.borderColor='';trailerStatus.textContent='Campo abierto. Si existe en catálogo se sugiere; si no existe también se permite.';trailerStatus.style.color='#64748b';return;}if(!trailerInput.value.trim()){trailerInput.style.borderColor='#ef4444';trailerStatus.textContent='Captura la caja/remolque antes de comprobar.';trailerStatus.style.color='#b91c1c';return;}trailerInput.style.borderColor='#16a34a';trailerStatus.textContent=b?'✓ Caja encontrada en catálogo':'✓ Caja capturada manualmente';trailerStatus.style.color='#15803d';};
     ['input','change','blur'].forEach(evt=>trailerInput.addEventListener(evt,syncTrailer));
     setUnitState(row);syncTrailer();
 
@@ -174,9 +174,8 @@
     if(!clasificacion)throw new Error('Captura la Clasificación o cantidad.');
     if(row.querySelector('[data-hs-real-operator]')&&!operadorRealId)throw new Error('Selecciona el operador que realizó el servicio.');
     if(!unit)throw new Error('Selecciona una unidad válida del catálogo.');
-    if(unit.esTracto&&!remolqueNumero)throw new Error('Selecciona una caja/remolque para el TRACTO-CAMIÓN.');
-    if(unit.esTracto&&!boxByNumber(remolqueNumero))throw new Error('La caja/remolque debe existir en el catálogo y estar clasificada como CAJA.');
-    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?boxByNumber(remolqueNumero)?.numero||remolqueNumero:'',operadorRealId}});
+    if(unit.esTracto&&!remolqueNumero)throw new Error('Captura la caja/remolque para el TRACTO-CAMIÓN.');
+    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId}});
     if(r.error)throw r.error;if(r.data?.ok===false)throw new Error(r.data.error||'No se pudo comprobar la hoja.');
     return r.data;
   }
