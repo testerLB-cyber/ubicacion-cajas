@@ -18,7 +18,7 @@ function selectedRows(){
 }
 function harvest(){
  const list=document.getElementById('hs104CompList');if(!list)return;
- list.querySelectorAll('[data-row]').forEach(r=>{const folio=r.dataset.hsFolio||'';if(!folio)return;if(!allRows.some(x=>x.folio===folio)){allRows.push({folio,person:r.dataset.hsPerson||'',ptype:r.dataset.hsPersonType||'',status:r.querySelector('.hs104-ok')?'PRECARGADA':'PENDIENTE',note:r.querySelector('.hs104-note')?.textContent||'',row:r.cloneNode(true),source:r})}});
+ list.querySelectorAll('[data-row]').forEach(r=>{const folio=r.dataset.hsFolio||'';if(!folio)return;if(!allRows.some(x=>x.folio===folio)){allRows.push({folio,person:r.dataset.hsPerson||'',ptype:r.dataset.hsPersonType||'',personId:document.getElementById('hs104CompPerson')?.value||'',status:r.querySelector('.hs104-ok')?'PRECARGADA':'PENDIENTE',note:r.querySelector('.hs104-note')?.textContent||'',row:r.cloneNode(true),source:r})}});
 }
 async function collect(){
  const type=document.getElementById('hs104CompType'),person=document.getElementById('hs104CompPerson');if(!type||!person)return;
@@ -41,7 +41,7 @@ function openOriginal(item){
  if(!type||!person)return;
  type.value=item.ptype||'OPERADOR';type.dispatchEvent(new Event('change',{bubbles:true}));
  setTimeout(()=>{
-   const opt=[...person.options].find(o=>norm(o.textContent).includes(norm(item.person)));
+   const opt=[...person.options].find(o=>String(o.value)===String(item.personId))||[...person.options].find(o=>norm(o.textContent).includes(norm(item.person)));
    if(opt){person.value=opt.value;if(search)search.value=opt.textContent;person.dispatchEvent(new Event('change',{bubbles:true}));
      setTimeout(()=>{const row=[...document.querySelectorAll('#hs104CompList [data-row]')].find(r=>r.dataset.hsFolio===item.folio);row?.querySelector('[data-hs-edit]')?.click()},50)}
  },50);
