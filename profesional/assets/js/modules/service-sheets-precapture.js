@@ -135,6 +135,9 @@
     const panel=document.getElementById('ccPanelHojasServicio');
     const list=document.getElementById('hs104CompList');
     if(!panel?.classList.contains('active')||!list)return;
+    // Nunca reconstruir la vista mientras el usuario está capturando una comprobación.
+    // Si llega una precaptura nueva durante la edición, se procesará al cerrar el modal.
+    if(list.querySelector('.hs-list-modal-open'))return;
     autoSyncBusy=true;
     try{
       const d=await data(true);
