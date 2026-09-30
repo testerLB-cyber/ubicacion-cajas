@@ -1,18 +1,19 @@
-/* Tráfico App · Matriz de precios por cliente + tipo de unidad */
+/* Tráfico App · Matriz de precios horizontal por tipo de unidad */
 (function(){
- if(window.__CC_MATRIZ_COBRO_V3__)return;window.__CC_MATRIZ_COBRO_V3__=true;
+ if(window.__CC_MATRIZ_COBRO_V4__)return;window.__CC_MATRIZ_COBRO_V4__=true;
  const sb=()=>window.gmSupabase,esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  let D={clientes:[],servicios:[],tiposUnidad:[],precios:[]};
  const canEdit=()=>window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('configuracion.editar'));
  const key=(a,b)=>String(a)+'|'+String(b||'');
+ const units=()=> (D.tiposUnidad||[]).filter(x=>String(x.categoria||'CARRO').toUpperCase()==='CARRO');
  function sameService(x,cid,s){return String(x.clienteId)===String(cid)&&key(x.tipoViajeId,x.clasificacionId)===key(s.tipoViajeId,s.clasificacionId)}
- function priceExact(cid,s,uid){return D.precios.find(x=>sameService(x,cid,s)&&String(x.tipoUnidadId||'')===String(uid||''))}
- function priceGeneral(cid,s){return D.precios.find(x=>sameService(x,cid,s)&&!x.tipoUnidadId)}
+ function exact(cid,s,uid){return D.precios.find(x=>sameService(x,cid,s)&&String(x.tipoUnidadId||'')===String(uid||''))}
+ function general(cid,s){return D.precios.find(x=>sameService(x,cid,s)&&!x.tipoUnidadId)}
  function behavior(cid,s){return D.precios.find(x=>sameService(x,cid,s)&&!x.tipoUnidadId&&(x.cobraCliente!=null||x.comisionaOperador!=null))||D.precios.find(x=>sameService(x,cid,s)&&(x.cobraCliente!=null||x.comisionaOperador!=null))}
  async function load(){
   const body=document.getElementById('ccMatrizBody'),sel=document.getElementById('ccMatrizCliente');if(!body||!sel)return;
-  if(!sb()){body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px">Conectando con Supabase…</td></tr>';return setTimeout(load,500)}
-  body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px">Cargando matriz…</td></tr>';
+  if(!sb()){body.innerHTML='<tr><td style="padding:24px">Conectando con Supabase…</td></tr>';return setTimeout(load,500)}
+  body.innerHTML='<tr><td style="padding:24px">Cargando matriz…</td></tr>';
   try{
    const r=await sb().rpc('cc_matriz_cobro_list');if(r.error)throw r.error;
    D=Object.assign({clientes:[],servicios:[],tiposUnidad:[],precios:[]},r.data||{});
@@ -20,50 +21,51 @@
    sel.innerHTML='<option value="">Selecciona un cliente</option>'+D.clientes.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');
    if(D.clientes.some(x=>String(x.id)===String(old)))sel.value=old;
    render();
-  }catch(e){console.error(e);body.innerHTML='<tr><td colspan="8" style="padding:24px;text-align:center;color:#b91c1c">No se pudo cargar: '+esc(e.message||e)+'</td></tr>'}
+  }catch(e){console.error(e);body.innerHTML='<tr><td style="padding:24px;color:#b91c1c">No se pudo cargar: '+esc(e.message||e)+'</td></tr>'}
  }
  function render(){
-  const cid=document.getElementById('ccMatrizCliente')?.value,body=document.getElementById('ccMatrizBody'),sum=document.getElementById('ccMatrizResumen');if(!body)return;
-  if(!cid){body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#64748b">Selecciona un cliente arriba para mostrar su matriz completa.</td></tr>';if(sum)sum.textContent='';return}
-  const units=(D.tiposUnidad||[]).filter(x=>String(x.categoria||'CARRO').toUpperCase()==='CARRO');
-  if(!units.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#b45309">No hay tipos de unidad CARRO activos en Configuración → Tipos de unidad.</td></tr>';if(sum)sum.textContent='';return}
-  const rows=[];
-  (D.servicios||[]).forEach((s,si)=>units.forEach((u,ui)=>rows.push({s,u,si,ui})));
-  let specific=0,inherited=0,na=0;
-  body.innerHTML=rows.map((r,i)=>{
-   const s=r.s,u=r.u,px=priceExact(cid,s,u.id),gen=priceGeneral(cid,s),p=px||gen,aplica=p?.aplica!==false;
-   if(px&&aplica)specific++;else if(!px&&gen)inherited++;
-   if(p&&!aplica)na++;
+  const cid=document.getElementById('ccMatrizCliente')?.value,body=document.getElementById('ccMatrizBody'),head=document.getElementById('ccMatrizHead'),sum=document.getElementById('ccMatrizResumen'),saveAll=document.getElementById('ccMatrizSaveAll');
+  if(!body||!head)return;
+  const us=units();
+  head.innerHTML='<tr><th>TIPO DE VIAJE</th><th>CLASIFICACIÓN</th>'+us.map(u=>'<th style="min-width:150px;text-align:center">'+esc(u.nombre)+'</th>').join('')+'<th style="min-width:150px;text-align:center">COBRA CLIENTE</th><th style="min-width:170px;text-align:center">COMISIONA OPERADOR</th></tr>';
+  if(!cid){body.innerHTML='<tr><td colspan="'+(us.length+4)+'" style="text-align:center;padding:28px;color:#64748b">Selecciona un cliente para mostrar la matriz.</td></tr>';if(sum)sum.textContent='';if(saveAll)saveAll.disabled=true;return}
+  if(!us.length){body.innerHTML='<tr><td colspan="4" style="text-align:center;padding:28px;color:#b45309">No hay tipos de unidad CARRO activos.</td></tr>';if(sum)sum.textContent='';if(saveAll)saveAll.disabled=true;return}
+  let specific=0,inherited=0;
+  body.innerHTML=(D.servicios||[]).map((s,si)=>{
    const beh=behavior(cid,s),cobra=beh?.cobraCliente??s.cobraClienteDefault??true,comisiona=beh?.comisionaOperador??s.comisionaOperadorDefault??true;
-   const suf=s.clasificacionManual?(String(s.tipoViaje||'').toUpperCase()==='RESGUARDO'?' / DÍA':' / HORA'):'';
-   const inheritedNote=!px&&gen?'<div style="font-size:9px;color:#b45309;margin-top:3px;font-weight:800">Tarifa general heredada</div>':'';
-   return '<tr data-row="'+i+'"><td><strong>'+esc(s.tipoViaje)+'</strong></td><td>'+esc(s.clasificacion||'Sin clasificación')+'</td><td><span class="cc-badge" style="white-space:nowrap">'+esc(u.nombre)+'</span></td><td><div style="display:flex;align-items:center;gap:6px"><span>$</span><input type="number" min="0" step="0.01" data-price value="'+(p&&aplica?Number(p.precio).toFixed(2):'')+'" placeholder="0.00" '+(!aplica?'disabled':'')+' style="width:145px">'+(suf?'<b style="font-size:9px;color:#64748b">'+suf+'</b>':'')+'</div>'+inheritedNote+'</td><td style="text-align:center"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:800"><input type="checkbox" data-na '+(!aplica?'checked':'')+'> N/A</label></td><td style="text-align:center"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:800"><input type="checkbox" data-cobra '+(cobra?'checked':'')+' '+(canEdit()?'':'disabled')+'> Sí</label></td><td style="text-align:center"><label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:800"><input type="checkbox" data-comisiona '+(comisiona?'checked':'')+' '+(canEdit()?'':'disabled')+'> Sí</label></td><td><button type="button" class="cc-btn cc-btn-primary" data-save="'+i+'" '+(canEdit()?'':'disabled')+'>Guardar</button></td></tr>';
+   return '<tr data-service="'+si+'"><td><strong>'+esc(s.tipoViaje)+'</strong></td><td>'+esc(s.clasificacion||'Sin clasificación')+'</td>'+
+   us.map(u=>{const p=exact(cid,s,u.id),g=general(cid,s),v=p||g;if(p)specific++;else if(g)inherited++;const na=v?.aplica===false;return '<td style="vertical-align:top"><div style="display:flex;align-items:center;gap:4px;justify-content:center"><span>$</span><input data-price="'+esc(u.id)+'" type="number" min="0" step="0.01" value="'+(!na&&v?Number(v.precio).toFixed(2):'')+'" placeholder="0.00" '+(na?'disabled':'')+' style="width:105px;font-weight:800;text-align:right"></div><label style="display:flex;justify-content:center;gap:5px;align-items:center;font-size:9px;margin-top:4px"><input data-na="'+esc(u.id)+'" type="checkbox" '+(na?'checked':'')+'> N/A</label>'+(!p&&g?'<div style="font-size:8px;color:#b45309;text-align:center;margin-top:2px">General heredada</div>':'')+'</td>'}).join('')+
+   '<td style="text-align:center"><input data-cobra type="checkbox" '+(cobra?'checked':'')+' '+(canEdit()?'':'disabled')+'></td>'+
+   '<td style="text-align:center"><input data-comisiona type="checkbox" '+(comisiona?'checked':'')+' '+(canEdit()?'':'disabled')+'></td></tr>';
   }).join('');
-  if(sum)sum.textContent=D.servicios.length+' servicios × '+units.length+' tipos de unidad = '+rows.length+' combinaciones · '+specific+' tarifas específicas · '+inherited+' usando tarifa general · '+na+' N/A';
-  body.querySelectorAll('tr[data-row]').forEach(tr=>{
-   const naEl=tr.querySelector('[data-na]'),inp=tr.querySelector('[data-price]');
-   naEl.onchange=()=>{inp.disabled=naEl.checked;if(naEl.checked)inp.value=''};
-   tr.querySelector('[data-save]').onclick=()=>save(tr,rows[Number(tr.dataset.row)]);
-  });
+  body.querySelectorAll('tr[data-service]').forEach(tr=>{tr.querySelectorAll('[data-na]').forEach(ch=>ch.onchange=()=>{const inp=tr.querySelector('[data-price="'+CSS.escape(ch.dataset.na)+'"]');inp.disabled=ch.checked;if(ch.checked)inp.value='';});});
+  if(sum)sum.textContent=D.servicios.length+' servicios · '+us.length+' tipos de unidad · '+specific+' tarifas específicas · '+inherited+' valores heredados';
+  if(saveAll)saveAll.disabled=!canEdit();
  }
- async function save(tr,row){
+ async function saveAll(){
   if(!canEdit())return alert('Sin permiso para editar Configuración.');
-  const s=row.s,u=row.u,cid=document.getElementById('ccMatrizCliente').value,na=tr.querySelector('[data-na]').checked,inp=tr.querySelector('[data-price]'),precio=na?0:Number(inp.value),b=tr.querySelector('[data-save]');
-  if(!na&&(inp.value===''||!Number.isFinite(precio)||precio<0))return alert('Captura el total o marca N/A.');
-  const cobra=tr.querySelector('[data-cobra]').checked,comisiona=tr.querySelector('[data-comisiona]').checked;
-  b.disabled=true;b.textContent='Guardando…';
+  const cid=document.getElementById('ccMatrizCliente')?.value;if(!cid)return alert('Selecciona un cliente.');
+  const btn=document.getElementById('ccMatrizSaveAll'),body=document.getElementById('ccMatrizBody'),us=units();let ops=[];
+  for(const tr of body.querySelectorAll('tr[data-service]')){
+   const s=D.servicios[Number(tr.dataset.service)];
+   for(const u of us){
+    const inp=tr.querySelector('[data-price="'+CSS.escape(u.id)+'"]'),na=tr.querySelector('[data-na="'+CSS.escape(u.id)+'"]')?.checked;
+    if(!inp)continue;
+    const raw=inp.value.trim();
+    if(!na&&raw==='')continue;
+    const precio=na?0:Number(raw);
+    if(!na&&(!Number.isFinite(precio)||precio<0))return alert('Revisa los importes capturados en '+s.tipoViaje+'.');
+    ops.push(sb().rpc('cc_matriz_cobro_save',{p_cliente_id:cid,p_tipo_viaje_id:s.tipoViajeId,p_clasificacion_id:s.clasificacionId||null,p_precio:precio,p_aplica:!na,p_tipo_unidad_id:u.id}));
+   }
+   ops.push(sb().rpc('cc_matriz_behavior_save',{p_cliente_id:cid,p_tipo_viaje_id:s.tipoViajeId,p_clasificacion_id:s.clasificacionId||null,p_cobra_cliente:tr.querySelector('[data-cobra]').checked,p_comisiona_operador:tr.querySelector('[data-comisiona]').checked}));
+  }
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Guardando…';
   try{
-   const r=await sb().rpc('cc_matriz_cobro_save',{p_cliente_id:cid,p_tipo_viaje_id:s.tipoViajeId,p_clasificacion_id:s.clasificacionId||null,p_precio:precio,p_aplica:!na,p_tipo_unidad_id:u.id});
-   if(r.error)throw r.error;
-   const rb=await sb().rpc('cc_matriz_behavior_save',{p_cliente_id:cid,p_tipo_viaje_id:s.tipoViajeId,p_clasificacion_id:s.clasificacionId||null,p_cobra_cliente:cobra,p_comisiona_operador:comisiona});
-   if(rb.error)throw rb.error;
-   b.textContent='Guardado ✓';await load();
-  }catch(e){alert('No se pudo guardar.\n'+(e.message||e));b.disabled=false;b.textContent='Guardar'}
+   const rs=await Promise.all(ops);const err=rs.find(x=>x.error);if(err)throw err.error;
+   btn.innerHTML='<i class="fa-solid fa-check"></i> Guardado';setTimeout(()=>{btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';},1200);await load();
+  }catch(e){alert('No se pudo guardar la matriz.\n'+(e.message||e));btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Guardar cambios'}
  }
- window.ccMatrizCobroCargar=load;
- function wire(){
-  const sel=document.getElementById('ccMatrizCliente'),ref=document.getElementById('ccMatrizRefresh');
-  if(sel)sel.onchange=render;if(ref)ref.onclick=load;
- }
+ window.ccMatrizCobroCargar=load;window.ccMatrizGuardarTodo=saveAll;
+ function wire(){const sel=document.getElementById('ccMatrizCliente'),ref=document.getElementById('ccMatrizRefresh'),save=document.getElementById('ccMatrizSaveAll');if(sel)sel.onchange=render;if(ref)ref.onclick=load;if(save)save.onclick=saveAll}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
 })();
