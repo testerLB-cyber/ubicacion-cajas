@@ -18,7 +18,7 @@
       .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260928-normal-autocomplete-v5','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
       .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260929-autosync1','data-correct-hs-precap'))
-      .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20260923-editqr-stable17','data-correct-hs-photo'))
+      .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20260930-thumbnail1','data-correct-hs-photo'))
       .then(()=>load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260926-authunit2','data-hs-unit-trailer-v1'))
       .catch(e=>console.warn('Hojas versionescorrectas1',e));
   });
