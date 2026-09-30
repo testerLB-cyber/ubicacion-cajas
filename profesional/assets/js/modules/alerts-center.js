@@ -12,7 +12,7 @@ function ccAlertAllowed(a){
   if(nt.startsWith('RENTA')&&!ccAlertPerm('notificaciones.rentas'))return false;
   if(nt==='SIN_UBICACION'&&!ccAlertPerm('notificaciones.ubicacion'))return false;
   if(['SIN_DISPONIBILIDAD'].includes(nt)&&!ccAlertPerm('notificaciones.disponibilidad'))return false;
-  if(nt==='COMPROBACION_ENLACE'&&!ccAlertPerm('notificaciones.comprobacion_enlace'))return false;
+  if(nt==='COMPROBACION_ENLACE'&&!ccAlertPerm('notificaciones.comprobacion_enlace'))return false;\n  if(nt==='HOJA_PRECAPTURADA')return window.CC_ACCESS?.rol==='ADMIN'||ccAlertPerm('hojas_servicio.ver')||ccAlertPerm('hojas_servicio.comprobar');
   switch(String(a.tipo||'').toUpperCase()){
     case 'MANTENIMIENTO':
     case 'EMAIL_MANTENIMIENTO':
@@ -35,7 +35,7 @@ function ccAlertDestinationPerm(dest){
   if(d==='mantenimiento')return ccAlertPerm('mantenimiento.ver');
   if(d==='renta')return ccAlertPerm('rentas.ver');
   if(d==='mapa')return ccAlertPerm('mapa.ver');
-  if(d==='inventario')return ccAlertPerm('inventario.ver');
+  if(d==='inventario')return ccAlertPerm('inventario.ver');\n  if(d==='hojas_servicio')return window.CC_ACCESS?.rol==='ADMIN'||ccAlertPerm('hojas_servicio.ver')||ccAlertPerm('hojas_servicio.comprobar');
   return ccAlertPerm('control_cajas.ver');
 }
 function ccAlertGo(dest){
@@ -48,6 +48,14 @@ function ccAlertGo(dest){
     },80);
   }catch(e){console.warn('NAVEGACION ALERTA',e);}
   document.getElementById('ccGlobalAlertsModal')?.remove();
+}
+function ccServiceSheetPreloadAlerts(){
+  const out=[];try{
+    if(!(window.CC_ACCESS?.rol==='ADMIN'||ccAlertPerm('hojas_servicio.ver')||ccAlertPerm('hojas_servicio.comprobar')))return out;
+    const rows=[...document.querySelectorAll('#hs104CompList [data-row]')].filter(r=>r.querySelector('.hs104-ok'));
+    rows.forEach(r=>out.push({tipo:'HOJA_PRECAPTURADA',prioridad:2,unidad:r.dataset.hsFolio||'HOJA',titulo:'Hoja precargada por operador',detalle:(r.dataset.hsPerson||'Operador')+' · lista para revisar/comprobar',destino:'hojas_servicio'}));
+  }catch(_){}
+  return out;
 }
 function ccLocalOperationalAlerts(){
   const out=[];
@@ -74,7 +82,7 @@ async function ccLoadGlobalAlerts(silent=true){
     const {data,error}=await window.gmSupabase.rpc('cc_alert_center');
     if(error)throw error;
     const server=(data?.ok&&Array.isArray(data.alertas)?data.alertas:[]);
-    ccGlobalAlerts=[...server,...ccLocalOperationalAlerts()].filter(ccAlertAllowed);
+    ccGlobalAlerts=[...server,...ccLocalOperationalAlerts(),...ccServiceSheetPreloadAlerts()].filter(ccAlertAllowed);
     const btn=document.getElementById('ccGlobalAlertsBtn'),badge=document.getElementById('ccGlobalAlertsBadge');
     if(btn)btn.style.display='flex';
     if(badge){
