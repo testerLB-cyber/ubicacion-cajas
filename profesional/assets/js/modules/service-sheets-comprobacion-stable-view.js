@@ -13,7 +13,12 @@ function install(){
 }
 function mode(m){
  const bar=document.getElementById('hsCompStableBar'),p=card(document.getElementById('hs104CompList')),h=card(document.getElementById('hs104Hist'));if(!bar||!p||!h)return;
- bar.dataset.mode=m;p.style.display=m==='P'?'':'none';h.style.display=m==='H'?'':'none';
+ bar.dataset.mode=m;
+ if(typeof window.hsSetComprobacionHistory==='function'){
+   window.hsSetComprobacionHistory(m==='H');
+ }else{
+   p.style.display=m==='P'?'':'none';h.style.display=m==='H'?'':'none';
+ }
  bar.querySelectorAll('[data-hsv]').forEach(b=>{const on=b.dataset.hsv===m;b.classList.toggle('cc-btn-primary',on);b.classList.toggle('cc-btn-light',!on)});
 }
 new MutationObserver(()=>{if(document.getElementById('hs104CompList')&&document.getElementById('hs104Hist'))setTimeout(install,30)}).observe(document.body,{childList:true,subtree:true});
