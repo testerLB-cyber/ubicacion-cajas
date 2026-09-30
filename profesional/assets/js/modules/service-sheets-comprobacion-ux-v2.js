@@ -332,6 +332,28 @@
     }catch(e){console.warn('HS COMPROBACION UX V2',e);}
   }
 
+  async function historyAction(action,folio){
+    try{
+      const d=await data(false);
+      const c=(d.comprobaciones||[]).find(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())&&String(x.folio||'').trim()===String(folio||'').trim());
+      if(!c)throw new Error('No se encontró la comprobación.');
+      if(action==='edit')return openEdit(c,d);
+      if(action==='qr')return openHistoryQr(c);
+      if(action==='pdf'){
+        if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
+        return window.hsHistoryExportPdf(c);
+      }
+      if(action==='photo'){
+        if(c.fotoPath){
+          if(typeof window.hsHistoryShowPhoto!=='function')throw new Error('El visor de foto todavía no está disponible.');
+          return window.hsHistoryShowPhoto(c.fotoPath,'Evidencia · '+c.folio);
+        }
+        return openEdit(c,d);
+      }
+    }catch(err){alert(err?.message||err);throw err;}
+  }
+  window.hsHistoryAction=historyAction;
+
   function patch(){
     style();
     ensureSwitch();patchPending();if(showHistory)patchHistory(false);
@@ -368,21 +390,9 @@
             const d=await data(false);
             const c=(d.comprobaciones||[]).find(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())&&String(x.folio||'').trim()===folio);
             if(!c)throw new Error('No se encontró la comprobación.');
-            if(histBtn.matches('[data-edit-h]')) return openEdit(c,d);
-            if(histBtn.matches('[data-qr-h]')) return openHistoryQr(c);
-            if(histBtn.matches('[data-pdf-h]')){
-              histBtn.disabled=true;
-              try{
-                if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
-                await window.hsHistoryExportPdf(c);
-              } finally {histBtn.disabled=false;}
-              return;
-            }
-            if(histBtn.matches('[data-photo-h]')){
-              if(!c.fotoPath)return;
-              if(typeof window.hsHistoryShowPhoto!=='function')throw new Error('El visor de foto todavía no está disponible.');
-              return window.hsHistoryShowPhoto(c.fotoPath,'Evidencia · '+c.folio);
-            }
+            const action=histBtn.matches('[data-edit-h]')?'edit':histBtn.matches('[data-qr-h]')?'qr':histBtn.matches('[data-pdf-h]')?'pdf':'photo';
+            histBtn.disabled=true;
+            try{return await historyAction(action,folio);}finally{histBtn.disabled=false;}
           }catch(err){alert(err?.message||err);}
         })();
       }
