@@ -26,6 +26,7 @@
       .hs-photo-methods{display:flex;align-items:center;gap:7px;flex-wrap:wrap;width:auto}
       .hs-photo-methods .cc-btn{width:auto;min-width:0;white-space:nowrap;min-height:36px}
       .hs-photo-methods input[type=file]{display:none}
+      .hs-photo-preview{display:none;align-items:center;gap:10px;margin:0 0 10px;padding:8px;border:1px solid #dbe3ee;border-radius:11px;background:#fff}.hs-photo-preview.is-visible{display:flex}.hs-photo-preview img{width:112px;height:82px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;background:#f1f5f9}.hs-photo-preview-meta{font-size:10px;color:#64748b}.hs-photo-preview-meta strong{display:block;color:#166534;font-size:11px;margin-bottom:4px}
       #hs104Hist th[data-hs-pdf-head],#hs104Hist td[data-hs-pdf-cell]{text-align:right;white-space:nowrap}
       .hs-qr-modal{position:fixed;inset:0;z-index:100900;background:rgba(15,23,42,.82);display:flex;align-items:center;justify-content:center;padding:16px}
       .hs-qr-card{width:min(500px,96vw);background:#fff;border-radius:17px;overflow:hidden;box-shadow:0 25px 80px #0008}
@@ -45,6 +46,9 @@
     document.getElementById('hs-manual-photo-modal')?.remove();const ov=document.createElement('div');ov.id='hs-manual-photo-modal';ov.style.cssText='position:fixed;inset:0;z-index:100950;background:rgba(15,23,42,.82);display:flex;align-items:center;justify-content:center;padding:16px';ov.innerHTML='<div style="width:min(920px,97vw);max-height:94vh;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 80px #0008"><div style="background:#0f172a;color:#fff;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px"><strong>'+esc(title)+'</strong><button type="button" data-x style="border:0;background:none;color:#fff;font-size:26px;cursor:pointer">×</button></div><div style="padding:12px;background:#f8fafc;display:flex;align-items:center;justify-content:center;max-height:82vh;overflow:auto"><img src="'+esc(url)+'" alt="Evidencia" style="display:block;max-width:100%;max-height:78vh;object-fit:contain;border-radius:10px"></div></div>';document.body.appendChild(ov);const close=()=>ov.remove();ov.querySelector('[data-x]').onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
   }
   async function showStoredPhoto(path,title){if(!path)return;const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error||!data?.signedUrl)throw new Error(error?.message||'No se pudo abrir la foto.');openPhotoModal(data.signedUrl,title);}
+  async function signedPhotoUrl(path){if(!path)return '';const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error||!data?.signedUrl)throw new Error(error?.message||'No se pudo abrir la foto.');return data.signedUrl;}
+  function ensurePreview(box){let p=box.querySelector('[data-photo-preview]');if(p)return p;p=document.createElement('div');p.className='hs-photo-preview';p.dataset.photoPreview='1';p.innerHTML='<img data-photo-preview-img alt="Miniatura de evidencia"><div class="hs-photo-preview-meta"><strong>✓ Evidencia cargada</strong><span data-photo-preview-text>Toca la miniatura para verla grande.</span></div>';const methods=box.querySelector('.hs-photo-methods');methods?.insertAdjacentElement('beforebegin',p);return p;}
+  async function setStoredPreview(box,path,title){const p=ensurePreview(box),img=p.querySelector('[data-photo-preview-img]');if(!path){p.classList.remove('is-visible');img.removeAttribute('src');return;}try{const url=await signedPhotoUrl(path);if(!box.isConnected)return;img.src=url;p.classList.add('is-visible');img.onclick=()=>openPhotoModal(url,title);}catch(e){console.warn('Miniatura evidencia',e);}}
 
   async function uploadManualPhoto(row,file,status,replacing=false){
     const folioId=row.dataset.row;if(!folioId)throw new Error('No se identificó el folio.');
@@ -86,6 +90,7 @@
     if(path)row.dataset.hsCurrentPhotoPath=path;else delete row.dataset.hsCurrentPhotoPath;
     row.dataset.hsPhotoSource=exists?'MANUAL':'';
     box.dataset.photoPath=path;
+    setStoredPreview(box,path,'Evidencia · '+(folio.folio||''));
 
     // IMPORTANTE: no reconstruir box.innerHTML. Los botones Upload/QR son nodos estables.
     // Solo actualizar estado y el botón opcional "Ver foto".
@@ -143,8 +148,9 @@
     if(!input?.files?.[0])return;
     const row=input.closest('[data-row]'),status=input.closest('[data-hs-manual-photo-box]')?.querySelector('.hs-manual-photo-status');
     if(!row||!status)return;
+    const box=input.closest('[data-hs-manual-photo-box]'),preview=box?ensurePreview(box):null,img=preview?.querySelector('[data-photo-preview-img]');let localUrl='';if(img){localUrl=URL.createObjectURL(input.files[0]);img.src=localUrl;preview.classList.add('is-visible');preview.querySelector('[data-photo-preview-text]').textContent='Vista previa de la nueva foto · subiendo…';img.onclick=()=>openPhotoModal(localUrl,'Vista previa de evidencia');}
     try{await uploadManualPhoto(row,input.files[0],status,!!row.dataset.hsCurrentPhotoPath);}
-    catch(err){status.textContent='Error: '+(err?.message||err);alert(err?.message||err);}
+    catch(err){status.textContent='Error: '+(err?.message||err);alert(err?.message||err);}finally{if(localUrl)setTimeout(()=>URL.revokeObjectURL(localUrl),30000);}
   },true);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')||e.target.closest?.('#hs104CompShowAll'))setTimeout(()=>patch(true),280);},true);document.addEventListener('change',e=>{if(['hs104CompPerson','hs104CompType','hs104CompShowAll'].includes(e.target?.id))setTimeout(()=>patch(true),240);},true);window.hsPatchManualPhotoPdf=()=>patch(true);/* Sin polling del DOM: evita repintados periódicos que provocaban parpadeo/salto del modal. */
 })();
