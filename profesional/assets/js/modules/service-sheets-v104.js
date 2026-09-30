@@ -93,9 +93,9 @@
       #hs104CompList .hs-list-head-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
       #hs104CompList .hs-list-edit-area{display:none;position:fixed;inset:0;z-index:100700;padding:14px;background:rgba(15,23,42,.78);align-items:center;justify-content:center}
       #hs104CompList .hs-list-modal-open .hs-list-edit-area{display:flex}
-      #hs104CompList .hs-list-dialog{width:min(780px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005}
+      #hs104CompList .hs-list-dialog{width:min(1080px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 24px 70px #0005}
       #hs104CompList .hs-list-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;background:#0f172a;color:#fff}
-      #hs104CompList .hs-list-dialog-body{padding:16px}
+      #hs104CompList .hs-list-dialog-body{padding:18px 20px}
       #hs104CompList .hs-list-dialog-close{border:0;background:transparent;color:#fff;font-size:25px;cursor:pointer}
       #hs104CompList .hs-list-modal-open{position:static}
       #hs104CompList .hs-list-dialog-body>.cc-field{margin:10px 0}
