@@ -39,8 +39,14 @@ async function bootstrapStatus(){
  }catch(e){console.warn('BOOTSTRAP STATUS',e);}
 }
 async function loadAccess(){
- const {data,error}=await sb.rpc('cc_my_access');
- if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudo leer el perfil');
+ let data=null,lastError=null;
+ for(let intento=1;intento<=3;intento++){
+  const r=await sb.rpc('cc_my_access');
+  if(!r.error&&r.data?.ok){data=r.data;break;}
+  lastError=r.error||new Error(r.data?.error||'No se pudo leer el perfil');
+  if(intento<3)await new Promise(res=>setTimeout(res,intento*700));
+ }
+ if(!data)throw new Error(lastError?.message||'No se pudo leer el perfil. Intenta nuevamente.');
  if(data.activo!==true)throw new Error('Tu usuario está desactivado. Contacta al administrador.');
  window.CC_ACCESS=data;
  window.CC_AUTH_READY=true;
