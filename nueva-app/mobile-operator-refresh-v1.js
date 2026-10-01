@@ -1,104 +1,14 @@
-/* Tráfico App Móvil · Operador UX refresh 2026-09-26 */
+/* Tráfico App Móvil · Operador UX refresh · optimizado para red/móvil */
 (function(){
-  'use strict';
-  if(window.__MOBILE_OPERATOR_REFRESH_V1__) return;
-  window.__MOBILE_OPERATOR_REFRESH_V1__=true;
-
-  const $=id=>document.getElementById(id);
-  const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
-
-  function addStyles(){
-    if(document.getElementById('mobileOperatorRefreshStyle'))return;
-    const s=document.createElement('style');
-    s.id='mobileOperatorRefreshStyle';
-    s.textContent=`
-      .mobile-global-logout{position:fixed;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:9999;border:0;border-radius:999px;padding:9px 12px;background:#fff;color:#991b1b;font-weight:900;font-size:12px;box-shadow:0 8px 25px #0f172a33;border:1px solid #fecaca}
-      .mobile-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
-      .mobile-photo-actions button{border:0;border-radius:12px;padding:11px 10px;font-weight:900;font-size:12px}
-      .mobile-photo-camera{background:#2563eb;color:#fff}.mobile-photo-gallery{background:#e2e8f0;color:#334155}
-      .mobile-photo-ok{margin-top:7px;color:#166534;font-weight:800;font-size:11px}
-      .mobile-current-service{margin:8px 0 12px;padding:10px 11px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#475569}
-      body:has(#login:not(.hidden)) .mobile-global-logout{display:none}
-    `;
-    document.head.appendChild(s);
-  }
-
-  function addLogout(){
-    if(document.getElementById('mobileGlobalLogout'))return;
-    const b=document.createElement('button');
-    b.type='button'; b.id='mobileGlobalLogout'; b.className='mobile-global-logout'; b.textContent='Cerrar sesión';
-    b.onclick=async()=>{try{if(typeof logout==='function')await logout();else{await sb.auth.signOut();location.reload();}}catch(_){location.reload();}};
-    document.body.appendChild(b);
-  }
-
-  function addPhotoControls(){
-    const input=$('hsPhoto'); if(!input || input.dataset.proUx==='1')return;
-    input.dataset.proUx='1';
-    input.style.display='none';
-    const host=input.closest('.photo'); if(!host)return;
-    const actions=document.createElement('div'); actions.className='mobile-photo-actions';
-    actions.innerHTML='<button type="button" class="mobile-photo-camera" data-hs-camera>📷 Tomar foto</button><button type="button" class="mobile-photo-gallery" data-hs-gallery>🖼️ Elegir foto</button>';
-    host.insertBefore(actions,$('hsPhotoInfo'));
-    const ok=document.createElement('div'); ok.id='hsPhotoReady'; ok.className='mobile-photo-ok'; ok.style.display='none'; ok.textContent='✓ Foto lista para enviar';
-    host.appendChild(ok);
-
-    actions.querySelector('[data-hs-camera]').onclick=()=>{input.setAttribute('capture','environment');input.click();};
-    actions.querySelector('[data-hs-gallery]').onclick=()=>{
-      input.removeAttribute('capture');
-      input.click();
-      setTimeout(()=>input.setAttribute('capture','environment'),500);
-    };
-    input.addEventListener('change',()=>{setTimeout(()=>{const ready=!!window.HS_FILE||!!input.files?.length;ok.style.display=ready?'block':'none';if(ready&&$('hsPhotoInfo'))$('hsPhotoInfo').textContent='Foto preparada y comprimida para la comprobación.';},80);});
-  }
-
-  function updateServiceLabels(){
-    const trip=$('hsTrip'), cls=$('hsClass'); if(!trip||!cls)return;
-    const tripLabel=trip.closest('.field')?.querySelector('label');
-    const classLabel=cls.closest('.field')?.querySelector('label');
-    const desiredTripLabel='Tipo de servicio / concepto *';
-    if(tripLabel&&tripLabel.textContent!==desiredTripLabel)tripLabel.textContent=desiredTripLabel;
-    const selected=trip.options?.[trip.selectedIndex]?.textContent||'';
-    const isDemora=norm(selected)==='DEMORA';
-    const desiredClassLabel=isDemora?'Horas de demora *':'Clasificación *';
-    if(classLabel&&classLabel.textContent!==desiredClassLabel)classLabel.textContent=desiredClassLabel;
-    let info=$('hsServiceInfo');
-    if(!info){
-      info=document.createElement('div');info.id='hsServiceInfo';info.className='mobile-current-service';
-      trip.closest('.field')?.insertAdjacentElement('afterend',info);
-    }
-    const desiredInfo=isDemora?'<b>Demora:</b> captura la cantidad real de horas. Es un campo abierto y admite decimales (ej. 1.5, 6, 12, 30).':'Selecciona el tipo de servicio y su clasificación correspondiente.';
-    if(isDemora){if(info.innerHTML!==desiredInfo)info.innerHTML=desiredInfo;}
-    else if(info.textContent!==desiredInfo)info.textContent=desiredInfo;
-  }
-
-  function ensureCurrentCatalogs(){
-    const trip=$('hsTrip'); if(!trip || !Array.isArray(window.HS?.tiposViaje))return;
-    const current=trip.value;
-    const active=HS.tiposViaje||[];
-    const ids=new Set([...trip.options].map(o=>String(o.value)));
-    active.forEach(x=>{if(!ids.has(String(x.id))){const o=document.createElement('option');o.value=x.id;o.textContent=x.nombre;trip.appendChild(o);}});
-    if(current)trip.value=current;
-    updateServiceLabels();
-  }
-
-  function decorate(){
-    addStyles(); addLogout(); addPhotoControls(); updateServiceLabels(); ensureCurrentCatalogs();
-    const used=$('hsUsedAt'); if(used){used.required=false;used.removeAttribute('required');used.placeholder='Comentarios opcionales';}
-    const save=$('hsSave'); if(save)save.textContent='Guardar comprobación y evidencia';
-  }
-
-  document.addEventListener('change',e=>{if(e.target?.id==='hsTrip')setTimeout(updateServiceLabels,0);},true);
-  document.addEventListener('click',e=>{if(e.target?.closest?.('[data-hs],#goHs,#hsRefresh'))setTimeout(decorate,120);},true);
-  let scheduled=false;
-  const mo=new MutationObserver(()=>{
-    if(scheduled)return;
-    scheduled=true;
-    requestAnimationFrame(()=>{scheduled=false;decorate();});
-  });
-  function start(){
-    decorate();
-    mo.observe(document.body,{childList:true,subtree:true});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+'use strict';if(window.__MOBILE_OPERATOR_REFRESH_V2__)return;window.__MOBILE_OPERATOR_REFRESH_V2__=true;
+const $=id=>document.getElementById(id),norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+function addStyles(){if(document.getElementById('mobileOperatorRefreshStyle'))return;const s=document.createElement('style');s.id='mobileOperatorRefreshStyle';s.textContent='.mobile-global-logout{position:fixed;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:9999;border:1px solid #fecaca;border-radius:999px;padding:9px 12px;background:#fff;color:#991b1b;font-weight:900;font-size:12px;box-shadow:0 8px 25px #0f172a33}.mobile-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.mobile-photo-actions button{border:0;border-radius:12px;padding:11px 10px;font-weight:900;font-size:12px}.mobile-photo-camera{background:#2563eb;color:#fff}.mobile-photo-gallery{background:#e2e8f0;color:#334155}.mobile-photo-ok{margin-top:7px;color:#166534;font-weight:800;font-size:11px}.mobile-current-service{margin:8px 0 12px;padding:10px 11px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#475569}body:has(#login:not(.hidden)) .mobile-global-logout{display:none}';document.head.appendChild(s)}
+function addLogout(){if($('mobileGlobalLogout'))return;const b=document.createElement('button');b.type='button';b.id='mobileGlobalLogout';b.className='mobile-global-logout';b.textContent='Cerrar sesión';b.onclick=async()=>{try{if(typeof logout==='function')await logout();else{await sb.auth.signOut();location.reload()}}catch(_){location.reload()}};document.body.appendChild(b)}
+function addPhotoControls(){const input=$('hsPhoto');if(!input||input.dataset.proUx==='1')return;input.dataset.proUx='1';input.style.display='none';const host=input.closest('.photo');if(!host)return;const actions=document.createElement('div');actions.className='mobile-photo-actions';actions.innerHTML='<button type="button" class="mobile-photo-camera" data-hs-camera>📷 Tomar foto</button><button type="button" class="mobile-photo-gallery" data-hs-gallery>🖼️ Elegir foto</button>';host.insertBefore(actions,$('hsPhotoInfo'));const ok=document.createElement('div');ok.id='hsPhotoReady';ok.className='mobile-photo-ok';ok.style.display='none';ok.textContent='✓ Foto lista para enviar';host.appendChild(ok);actions.querySelector('[data-hs-camera]').onclick=()=>{input.setAttribute('capture','environment');input.click()};actions.querySelector('[data-hs-gallery]').onclick=()=>{input.removeAttribute('capture');input.click();setTimeout(()=>input.setAttribute('capture','environment'),500)};input.addEventListener('change',()=>{const ready=!!window.HS_FILE||!!input.files?.length;ok.style.display=ready?'block':'none';if(ready&&$('hsPhotoInfo'))$('hsPhotoInfo').textContent='Foto preparada y comprimida para la comprobación.'})}
+function labels(){const trip=$('hsTrip'),cls=$('hsClass');if(!trip||!cls)return;const tl=trip.closest('.field')?.querySelector('label'),cl=cls.closest('.field')?.querySelector('label');if(tl)tl.textContent='Tipo de servicio / concepto *';const demora=norm(trip.options?.[trip.selectedIndex]?.textContent)==='DEMORA';if(cl)cl.textContent=demora?'Horas de demora *':'Clasificación *';let info=$('hsServiceInfo');if(!info){info=document.createElement('div');info.id='hsServiceInfo';info.className='mobile-current-service';trip.closest('.field')?.insertAdjacentElement('afterend',info)}info.textContent=demora?'Demora: captura la cantidad real de horas. Admite decimales (ej. 1.5, 6, 12).':'Selecciona el tipo de servicio y su clasificación correspondiente.'}
+function catalogs(){const trip=$('hsTrip');if(!trip||!Array.isArray(window.HS?.tiposViaje))return;const current=trip.value,ids=new Set([...trip.options].map(o=>String(o.value)));HS.tiposViaje.forEach(x=>{if(!ids.has(String(x.id))){const o=document.createElement('option');o.value=x.id;o.textContent=x.nombre;trip.appendChild(o)}});if(current)trip.value=current;labels()}
+function decorate(){addStyles();addLogout();addPhotoControls();labels();catalogs();const used=$('hsUsedAt');if(used){used.required=false;used.removeAttribute('required');used.placeholder='Comentarios opcionales'}const save=$('hsSave');if(save)save.textContent='Guardar comprobación y evidencia'}
+document.addEventListener('change',e=>{if(e.target?.id==='hsTrip')labels()},true);document.addEventListener('click',e=>{if(e.target?.closest?.('[data-hs],#goHs,#hsRefresh,#hsBack'))requestAnimationFrame(decorate)},true);
+function start(){decorate();const capture=$('hsCapture');if(capture)new MutationObserver(()=>requestAnimationFrame(decorate)).observe(capture,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
