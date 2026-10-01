@@ -292,7 +292,7 @@
       '<div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div>'+
       '<div class="cc-field"><label>Forma de generación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Folio individual</option><option value="VARIOS">Varios folios</option></select></div>'+
       '</div>'+
-      '<div data-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="Ej. 12313"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="Ej. 12320"></div></div>'+
+      '<div data-mode="RANGO" style="margin-top:10px"><div class="hs104-grid"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="Ej. 12313"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="Ej. 12320"></div></div><div data-range-status class="hs104-note" style="margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">Captura Desde y Hasta para revisar cuántas hojas se pueden generar.</div></div>'+
       '<div data-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos, ej. 12313"><div class="hs104-note" data-individual-status>Captura exactamente 5 dígitos.</div></div></div>'+
       '<div data-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varios folios *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada folio se valida al completar 5 dígitos. Puedes separarlos con coma o Enter.</div></div><div data-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div><div class="hs104-note" data-multi-status></div></div>'+
       '<div data-error style="display:none;margin-top:10px;padding:10px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-weight:700"></div>'+
@@ -309,9 +309,19 @@
         if(!/^\\d{5}$/.test(hs))throw new Error('Hasta debe tener exactamente 5 dígitos.');
         const d=Number(ds),h=Number(hs);
         if(h<d)throw new Error('El folio Hasta no puede ser menor que Desde.');
+        const pre=await rpc('hs_preview_folio_range',{p_item:{serieId,anioId,desde:d,hasta:h}});
+        if(pre.posible===false){
+          if(pre.error==='RANGO_MAXIMO_200000')throw new Error('El rango solicita '+Number(pre.solicitados||0).toLocaleString('es-MX')+' hojas y el máximo permitido es '+Number(pre.maximo||200000).toLocaleString('es-MX')+'.');
+          throw new Error(Number(pre.generables||0)===0?'No se puede generar: todas las hojas de ese rango ya existen.':'El rango no es válido.');
+        }
+        const solicitadas=Number(pre.solicitados||0),existentes=Number(pre.existentes||0),generables=Number(pre.generables||0);
+        const detalle='Rango '+pre.folioDesde+' → '+pre.folioHasta+'\n\nSolicitadas: '+solicitadas.toLocaleString('es-MX')+'\nYa existentes: '+existentes.toLocaleString('es-MX')+'\nSe van a generar: '+generables.toLocaleString('es-MX');
+        if(!confirm(detalle+'\n\n¿Generar ahora?'))return;
         const r=await rpc('hs_generate_folios',{p_item:{serieId,anioId,desde:d,hasta:h}});
-        if(Number(r.generados||0)===0&&Number(r.existentes||0)>0)throw new Error('No se generó ningún folio: todo el rango ya existe.');
-        alert('Folios generados: '+Number(r.generados||0)+(Number(r.existentes||0)?' · Ya existentes: '+Number(r.existentes||0):''));
+        const gen=Number(r.generados||0),ex=Number(r.existentes||0);
+        if(gen!==generables)throw new Error('Verificación: se esperaban '+generables+' folios nuevos pero se generaron '+gen+'. Actualiza y revisa antes de continuar.');
+        if(gen===0&&ex>0)throw new Error('No se generó ningún folio: todo el rango ya existe.');
+        alert('Generación verificada.\nFolios generados: '+gen.toLocaleString('es-MX')+(ex?'\nYa existentes: '+ex.toLocaleString('es-MX'):''));
         return;
       }
       if(modo==='INDIVIDUAL'){
@@ -332,13 +342,38 @@
       }
     }});
 
-    const form=o.querySelector('form'),mode=form.modo,serie=form.serieId,anio=form.anioId,individual=form.individual,varios=form.varios,chips=o.querySelector('[data-chips]'),multiStatus=o.querySelector('[data-multi-status]'),individualStatus=o.querySelector('[data-individual-status]');
+    const form=o.querySelector('form'),mode=form.modo,serie=form.serieId,anio=form.anioId,individual=form.individual,varios=form.varios,desde=form.desde,hasta=form.hasta,chips=o.querySelector('[data-chips]'),multiStatus=o.querySelector('[data-multi-status]'),individualStatus=o.querySelector('[data-individual-status]'),rangeStatus=o.querySelector('[data-range-status]');
     form.__folioSet=new Set();
 
     const showMode=()=>{
       o.querySelectorAll('[data-mode]').forEach(x=>x.style.display=x.dataset.mode===mode.value?'':'none');
       form.__folioSet.clear();chips.innerHTML='';varios.value='';individual.value='';multiStatus.textContent='';individualStatus.textContent='Captura exactamente 5 dígitos.';
     };
+    let rangeTimer=null,rangeSeq=0;
+    const previewRange=async()=>{
+      if(!rangeStatus)return;
+      const ds=String(desde?.value||'').replace(/\D/g,'').slice(0,5),hs=String(hasta?.value||'').replace(/\D/g,'').slice(0,5);
+      if(desde)desde.value=ds;if(hasta)hasta.value=hs;
+      if(mode.value!=='RANGO')return;
+      if(!serie.value||!anio.value){rangeStatus.textContent='Selecciona Serie y Año para revisar el rango.';rangeStatus.style.color='#64748b';return;}
+      if(ds.length!==5||hs.length!==5){rangeStatus.textContent='Captura Desde y Hasta con 5 dígitos para calcular las hojas.';rangeStatus.style.color='#64748b';return;}
+      const d=Number(ds),h=Number(hs);
+      if(h<d){rangeStatus.textContent='✕ Hasta no puede ser menor que Desde.';rangeStatus.style.color='#b91c1c';return;}
+      const seq=++rangeSeq;rangeStatus.textContent='Revisando rango…';rangeStatus.style.color='#475569';
+      try{
+        const r=await rpc('hs_preview_folio_range',{p_item:{serieId:serie.value,anioId:anio.value,desde:d,hasta:h}});
+        if(seq!==rangeSeq)return;
+        if(r.posible===false){
+          if(r.error==='RANGO_MAXIMO_200000')rangeStatus.textContent='✕ '+Number(r.solicitados||0).toLocaleString('es-MX')+' hojas solicitadas. Máximo permitido: '+Number(r.maximo||200000).toLocaleString('es-MX')+'.';
+          else rangeStatus.textContent='✕ '+Number(r.solicitados||0).toLocaleString('es-MX')+' hojas en el rango · '+Number(r.existentes||0).toLocaleString('es-MX')+' ya existen · 0 por generar.';
+          rangeStatus.style.color='#b91c1c';return;
+        }
+        rangeStatus.innerHTML='<b>✓ Rango disponible</b> · '+Number(r.solicitados||0).toLocaleString('es-MX')+' solicitadas · '+Number(r.existentes||0).toLocaleString('es-MX')+' ya existen · <b>'+Number(r.generables||0).toLocaleString('es-MX')+' se generarán</b><br>'+esc(r.folioDesde||'')+' → '+esc(r.folioHasta||'');
+        rangeStatus.style.color='#15803d';
+      }catch(e){if(seq!==rangeSeq)return;rangeStatus.textContent=e.message||e;rangeStatus.style.color='#b91c1c';}
+    };
+    const scheduleRange=()=>{clearTimeout(rangeTimer);rangeTimer=setTimeout(previewRange,280);};
+    [desde,hasta].forEach(x=>x&&x.addEventListener('input',scheduleRange));
     const validateOne=async raw=>{
       const n=String(raw||'').replace(/\\D/g,'');
       if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener exactamente 5 dígitos.');
@@ -373,7 +408,7 @@
       if(!serie.value||!anio.value){individualStatus.textContent='Selecciona primero Serie y Año.';individualStatus.style.color='#b91c1c';return;}
       try{const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(individual.value)});individualStatus.textContent=r.exists?'✕ '+r.folio+' ya existe · '+(r.estatus||''):'✓ '+r.folio+' disponible';individualStatus.style.color=r.exists?'#b91c1c':'#15803d';}catch(e){individualStatus.textContent=e.message||e;individualStatus.style.color='#b91c1c';}
     });
-    [serie,anio].forEach(x=>x.onchange=()=>{form.__folioSet.clear();renderChips();multiStatus.textContent='';if(individual.value.length===5)individual.dispatchEvent(new Event('input'));});
+    [serie,anio].forEach(x=>x.onchange=()=>{form.__folioSet.clear();renderChips();multiStatus.textContent='';if(individual.value.length===5)individual.dispatchEvent(new Event('input'));scheduleRange();});
     showMode();
   }
 
