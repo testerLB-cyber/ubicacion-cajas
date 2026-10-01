@@ -1,0 +1,1 @@
+(function(){var h=document.head;var l=document.createElement('link');l.rel='stylesheet';l.href='assets/css/utileria-sin-caja-v1.css?v=20260930-1';h.appendChild(l);var s=document.createElement('script');s.src='assets/js/modules/utileria-sin-caja-v1.js?v=20260930-1';s.defer=true;h.appendChild(s);})();
