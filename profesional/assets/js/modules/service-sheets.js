@@ -23,4 +23,7 @@
 
   /* Anticipos: catálogos administrables, multi-concepto y tipo automático desde unidad. */
   load('assets/js/modules/anticipos-final-cleanup-v6.js?v=20260913-integral2','anticipos-integral');
+
+  /* Proformas: botón Texto en historial para copiar datos organizados a facturación. */
+  load('assets/js/modules/service-sheets-proforma-texto-v1.js?v=20260930-1','proforma-texto-facturacion');
 })();
