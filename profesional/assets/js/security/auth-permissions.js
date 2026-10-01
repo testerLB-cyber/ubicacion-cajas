@@ -244,23 +244,50 @@ window.ccDeleteAppUser=async function(userId,email){
  if(error||!data?.ok){alert(error?.message||data?.error||'No se pudo eliminar');return;}await ccOpenUserAdmin();
 };
 
-document.addEventListener('DOMContentLoaded',async()=>{
+document.addEventListener('DOMContentLoaded',()=>{
  if(!sb){msg('Supabase no está disponible.','error');return;}
- await bootstrapStatus();
- document.getElementById('ccRememberSession').checked=localStorage.getItem('cc_remember_session')!=='0';
- document.getElementById('ccLoginForm').addEventListener('submit',e=>{e.preventDefault();const remember=document.getElementById('ccRememberSession').checked;localStorage.setItem('cc_remember_session',remember?'1':'0');if(remember)sessionStorage.setItem('cc_session_current','1');login(document.getElementById('ccLoginEmail').value,document.getElementById('ccLoginPassword').value);});
- document.getElementById('ccBootstrapForm').addEventListener('submit',async e=>{
-  e.preventDefault();const nombre=document.getElementById('ccBootstrapName').value.trim(),email=document.getElementById('ccBootstrapEmail').value.trim(),password=document.getElementById('ccBootstrapPassword').value;
-  msg('Activando usuario maestro…','info');
-  const {data,error}=await sb.auth.signUp({email,password,options:{data:{nombre}}});
-  if(error){msg(error.message,'error');return;}
-  if(data?.session){try{await loadAccess();}catch(err){msg(err.message,'error');}}
-  else msg('Cuenta creada. Revisa el correo de confirmación y después inicia sesión.','ok');
-  await bootstrapStatus();
- });
- const remember=localStorage.getItem('cc_remember_session')!=='0';
- if(!remember&&!sessionStorage.getItem('cc_session_current')){await sb.auth.signOut().catch(()=>{});}
- const {data}=await sb.auth.getSession();
- if(data?.session){sessionStorage.setItem('cc_session_current','1');try{await loadAccess();}catch(e){await sb.auth.signOut();msg(e.message||String(e),'error');}}
+
+ const rememberEl=document.getElementById('ccRememberSession');
+ const loginForm=document.getElementById('ccLoginForm');
+ const bootstrapForm=document.getElementById('ccBootstrapForm');
+
+ if(rememberEl)rememberEl.checked=localStorage.getItem('cc_remember_session')!=='0';
+
+ if(loginForm){
+  loginForm.addEventListener('submit',e=>{
+   e.preventDefault();
+   const remember=!!document.getElementById('ccRememberSession')?.checked;
+   localStorage.setItem('cc_remember_session',remember?'1':'0');
+   if(remember)sessionStorage.setItem('cc_session_current','1');
+   login(document.getElementById('ccLoginEmail')?.value||'',document.getElementById('ccLoginPassword')?.value||'');
+  });
+ }
+
+ if(bootstrapForm){
+  bootstrapForm.addEventListener('submit',async e=>{
+   e.preventDefault();const nombre=document.getElementById('ccBootstrapName').value.trim(),email=document.getElementById('ccBootstrapEmail').value.trim(),password=document.getElementById('ccBootstrapPassword').value;
+   msg('Activando usuario maestro…','info');
+   const {data,error}=await sb.auth.signUp({email,password,options:{data:{nombre}}});
+   if(error){msg(error.message,'error');return;}
+   if(data?.session){try{await loadAccess();}catch(err){msg(err.message,'error');}}
+   else msg('Cuenta creada. Revisa el correo de confirmación y después inicia sesión.','ok');
+   bootstrapStatus().catch(()=>{});
+  });
+ }
+
+ // No bloquear el botón de login esperando RPC secundarios.
+ bootstrapStatus().catch(()=>{});
+
+ (async()=>{
+  try{
+   const remember=localStorage.getItem('cc_remember_session')!=='0';
+   if(!remember&&!sessionStorage.getItem('cc_session_current'))await sb.auth.signOut().catch(()=>{});
+   const {data}=await sb.auth.getSession();
+   if(data?.session){
+    sessionStorage.setItem('cc_session_current','1');
+    try{await loadAccess();}catch(e){await sb.auth.signOut().catch(()=>{});msg(e.message||String(e),'error');}
+   }
+  }catch(e){console.warn('AUTH INIT',e);}
+ })();
 });
 })();
