@@ -22,9 +22,29 @@ function openFactura1x1Seleccion(cid,xs,b){
  const importes={};ids.forEach(id=>{const a=b.querySelector('.hspAmt[data-id="'+CSS.escape(id)+'"]');importes[id]=Number(a?.value||0)});
  document.getElementById('hspFact1x1Modal')?.remove();
  const m=document.createElement('div');m.id='hspFact1x1Modal';m.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:18px';
- m.innerHTML='<div style="width:min(980px,96vw);max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden"><div style="padding:16px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;align-items:center"><div><div style="font-size:18px;font-weight:900">Factura 1x1</div><div style="font-size:12px;color:#64748b">'+hojas.length+' hoja(s) seleccionada(s)</div></div><button class="cc-btn cc-btn-light" data-close>✕</button></div><div style="padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569">Captura la factura correspondiente a cada hoja. Al guardar se generará la proforma directamente como <b>FACTURADA</b>.</div><div style="padding:14px 18px;overflow:auto"><table class="cc-table-list" style="width:100%;min-width:760px"><thead><tr><th>Hoja</th><th>Fecha</th><th>Tipo</th><th>Clasificación</th><th>Importe</th><th>Número de factura</th></tr></thead><tbody>'+sortFolios(hojas).map(x=>'<tr><td><b>'+E(x.folio||'—')+'</b></td><td>'+E(x.fecha||'—')+'</td><td>'+E(x.tipoViaje||'—')+'</td><td>'+E(x.clasificacion||'—')+'</td><td><b>'+M(importes[x.id]||0)+'</b></td><td><input data-f1="'+E(x.id)+'" placeholder="Número de factura" style="width:190px;font-weight:800"></td></tr>').join('')+'</tbody></table></div><div style="padding:14px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px"><button class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button class="cc-btn cc-btn-primary" data-save>Guardar Factura 1x1</button></div></div>';
+ m.innerHTML='<div style="width:min(980px,96vw);max-height:90vh;background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden"><div style="padding:16px 18px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;align-items:center"><div><div style="font-size:18px;font-weight:900">Factura 1x1</div><div style="font-size:12px;color:#64748b">'+hojas.length+' hoja(s) seleccionada(s)</div></div><button class="cc-btn cc-btn-light" data-close>✕</button></div><div style="padding:12px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="font-size:12px;color:#475569">Primero puedes copiar los datos de las hojas para facturación. Después captura la factura correspondiente a cada hoja.</div><button type="button" class="cc-btn cc-btn-light" data-texto><i class="fa-solid fa-copy"></i> Texto</button></div><div style="padding:14px 18px;overflow:auto"><table class="cc-table-list" style="width:100%;min-width:760px"><thead><tr><th>Hoja</th><th>Fecha</th><th>Tipo</th><th>Clasificación</th><th>Importe</th><th>Número de factura</th></tr></thead><tbody>'+sortFolios(hojas).map(x=>'<tr><td><b>'+E(x.folio||'—')+'</b></td><td>'+E(x.fecha||'—')+'</td><td>'+E(x.tipoViaje||'—')+'</td><td>'+E(x.clasificacion||'—')+'</td><td><b>'+M(importes[x.id]||0)+'</b></td><td><input data-f1="'+E(x.id)+'" placeholder="Número de factura" style="width:190px;font-weight:800"></td></tr>').join('')+'</tbody></table></div><div style="padding:14px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px"><button class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button class="cc-btn cc-btn-primary" data-save>Guardar Factura 1x1</button></div></div>';
  document.body.appendChild(m);
  const close=()=>m.remove();m.querySelector('[data-close]').onclick=close;m.querySelector('[data-cancel]').onclick=close;
+ m.querySelector('[data-texto]').onclick=async e=>{
+   const fecha=v=>{if(!v)return'—';const s=String(v).slice(0,10).split('-');return s.length===3?s[2]+'/'+s[1]+'/'+s[0]:String(v)};
+   const orden=sortFolios(hojas);
+   const tx=orden.map(x=>{
+     const a=[];
+     a.push('HOJA: '+(x.folio||'—'));
+     a.push('FECHA: '+fecha(x.fecha));
+     a.push('CLIENTE: '+(x.cliente||x.clienteNombre||'—'));
+     a.push('TIPO: '+(x.tipoViaje||x.tipo_viaje||x.tipo||'—'));
+     a.push('CLASIFICACIÓN: '+(x.clasificacion||'—'));
+     a.push('UNIDAD: '+(x.unidad||x.unidadNumero||x.unidad_numero||'—'));
+     const r=x.remolque||x.remolqueNumero||x.remolque_numero;if(r)a.push('REMOLQUE: '+r);
+     a.push('OPERADOR: '+(x.operador||x.operadorNombre||x.operador_nombre||'—'));
+     return a.join('\n');
+   }).join('\n\n');
+   try{await navigator.clipboard.writeText(tx)}catch(_){
+     const ta=document.createElement('textarea');ta.value=tx;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+   }
+   const btn=e.currentTarget,old=btn.innerHTML;btn.innerHTML='✓ Texto copiado';btn.disabled=true;setTimeout(()=>{btn.innerHTML=old;btn.disabled=false},1600);
+ };
  m.querySelector('[data-save]').onclick=async()=>{
    const inputs=[...m.querySelectorAll('[data-f1]')];
    const faltan=inputs.filter(i=>!i.value.trim());
