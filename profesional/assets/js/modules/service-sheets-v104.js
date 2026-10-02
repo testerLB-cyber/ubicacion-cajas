@@ -131,7 +131,7 @@
       let s=document.querySelector('script[data-hs-proforma-loader]');
       if(!s){
         s=document.createElement('script');
-        s.src='assets/js/modules/service-sheets-proformas-v1.js?v=20261002-no-facturable1';
+        s.src='assets/js/modules/service-sheets-proformas-v1.js?v=20261002-no-facturable2';
         s.dataset.hsProformaLoader='1';
         document.body.appendChild(s);
       }
