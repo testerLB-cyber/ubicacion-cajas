@@ -9,10 +9,12 @@
 (function(){
   var p=new URLSearchParams(location.search);
   var token=(p.get('token')||p.get('q')||p.get('t')||'').trim();
-  var url='../unidad-ubicacion.html'+(token?'?token='+encodeURIComponent(token):'');
+  var base='https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html';
+  var url=base+(token?'?token='+encodeURIComponent(token):'');
+  var a=document.getElementById('fallbackLink');if(a)a.href=url;
   location.replace(url);
 })();
 </script>
 </head>
-<body style="font-family:system-ui,sans-serif;padding:24px">Abriendo actualización de ubicación…</body>
+<body style="font-family:system-ui,sans-serif;padding:24px">Abriendo actualización de ubicación…<div style="margin-top:12px"><a id="fallbackLink" href="https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html">Abrir directamente</a></div></body>
 </html>
