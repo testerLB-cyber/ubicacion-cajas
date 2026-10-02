@@ -2,124 +2,75 @@
 
 <html lang="es">
 <head>
-<meta name="trafico-app-build" content="profesional-20261002-mobile-load-safe1"/>
+<meta name="trafico-app-build" content="profesional-20261002-mobile-load-safe2"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
+<style id="ccCriticalBootStyle">
+html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif}
+#ccBootSplash{position:fixed;inset:0;z-index:2147483647;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+#ccBootSplash .box{max-width:360px}
+#ccBootSplash b{display:block;font-size:20px;margin-bottom:8px}
+#ccBootSplash span{font-size:12px;color:#cbd5e1;line-height:1.5}
+</style>
 <!-- Tailwind CSS -->
-<script defer src="https://cdn.tailwindcss.com">
-async function generarVideoResumen() {
-    alert("Iniciando generación de video resumen... por favor espere.");
-    const canvas = document.createElement("canvas");
-    canvas.width = 1280;
-    canvas.height = 720;
-    const stream = canvas.captureStream(30);
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-    const chunks = [];
-    
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Resumen_Operacion.webm';
-        a.click();
-    };
 
-    mediaRecorder.start();
-
-    // Narración y presentación visual
-    const synth = window.speechSynthesis;
-    const textoResumen = "Este es el reporte ejecutivo de operaciones de G.M. Transporte. Analizando métricas clave, observamos un desempeño positivo en la eficiencia logística.";
-    
-    // Simulación de grabación visual simple
-    const ctx = canvas.getContext('2d');
-    const draw = () => {
-        ctx.fillStyle = '#f8f9fa';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#333';
-        ctx.font = '40px Arial';
-        ctx.fillText("Reporte de Operación G.M. Transporte", 100, 100);
-        ctx.font = '24px Arial';
-        ctx.fillText(textoResumen, 100, 200);
-        if (mediaRecorder.state !== 'inactive') requestAnimationFrame(draw);
-    };
-    draw();
-
-    // Hablar y esperar
-    const utterance = new SpeechSynthesisUtterance(textoResumen);
-    utterance.lang = 'es-ES';
-    synth.speak(utterance);
-
-    await new Promise(resolve => utterance.onend = resolve);
-    mediaRecorder.stop();
-    alert("Video generado con éxito.");
-}
-
-async function handleReporteGeneracion() {
-    // Llamar al original
-    await exportReporteGerencialPDF();
-    // Llamar al nuevo
-    await generarVideoResumen();
-}
-</script>
 <!-- SheetJS para Excel -->
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <!-- jsPDF y jspdf-autotable para exportar PDF -->
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+
 <!-- FontAwesome Font Icons -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="assets/css/style-001.css"/>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<link rel="stylesheet" href="assets/css/style-002.css"/>
-<link rel="stylesheet" href="assets/css/style-003.css" id="gm-modern-overhaul"/>
-<link rel="stylesheet" href="assets/css/style-004.css" id="gm-control-cajas-css"/>
-<link rel="stylesheet" href="assets/css/style-005.css" id="cc-medidas-simulacion-css"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-001.css"/ media="print" onload="this.media='all'">
+
+<link rel="stylesheet" href="assets/css/style-002.css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-003.css" id="gm-modern-overhaul"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-004.css" id="gm-control-cajas-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-005.css" id="cc-medidas-simulacion-css"/ media="print" onload="this.media='all'">
 </style>
 
-<link rel="stylesheet" href="assets/css/style-006.css" id="gm-kpi-tracto-carro-css"/>
-<link rel="stylesheet" href="assets/css/style-007.css" id="gm-kpi-operators-css"/>
-<link rel="stylesheet" href="assets/css/style-008.css" id="gm-sidebar-cajas-css"/>
-<link rel="stylesheet" href="assets/css/style-009.css" id="cc-fullscreen-responsive"/>
+<link rel="stylesheet" href="assets/css/style-006.css" id="gm-kpi-tracto-carro-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-007.css" id="gm-kpi-operators-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-008.css" id="gm-sidebar-cajas-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-009.css" id="cc-fullscreen-responsive"/ media="print" onload="this.media='all'">
 
-<link rel="stylesheet" href="assets/css/style-010.css" id="cc-dot-css"/>
-
-
-<link rel="stylesheet" href="assets/css/style-011.css" id="cc-inventory-scroll-fix"/>
+<link rel="stylesheet" href="assets/css/style-010.css" id="cc-dot-css"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-012.css" id="cc-storage-inventory-highlight"/>
+<link rel="stylesheet" href="assets/css/style-011.css" id="cc-inventory-scroll-fix"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-013.css" id="cc-renta-compact-list"/>
+<link rel="stylesheet" href="assets/css/style-012.css" id="cc-storage-inventory-highlight"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-014.css" id="cc-refresh-visible-style"/>
+<link rel="stylesheet" href="assets/css/style-013.css" id="cc-renta-compact-list"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-015.css" id="cc-inventory-visual-performance-plus"/>
+<link rel="stylesheet" href="assets/css/style-014.css" id="cc-refresh-visible-style"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-016.css" id="cc-renta-edit-button-added"/>
+<link rel="stylesheet" href="assets/css/style-015.css" id="cc-inventory-visual-performance-plus"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-017.css" id="cc-hist-performance-fix"/>
+<link rel="stylesheet" href="assets/css/style-016.css" id="cc-renta-edit-button-added"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-018.css" id="cc-location-module-css"/>
+<link rel="stylesheet" href="assets/css/style-017.css" id="cc-hist-performance-fix"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-019.css" id="cc-map-units-search-labels"/>
+<link rel="stylesheet" href="assets/css/style-018.css" id="cc-location-module-css"/ media="print" onload="this.media='all'">
 
 
-<link rel="stylesheet" href="assets/css/style-020.css" id="gm-responsive-scroll-fix"/>
+<link rel="stylesheet" href="assets/css/style-019.css" id="cc-map-units-search-labels"/ media="print" onload="this.media='all'">
 
-<link rel="stylesheet" href="assets/css/style-021.css" id="cc-auth-security-css"/>
-<link rel="stylesheet" href="assets/css/style-022.css" id="cc-anticipos-css"/>
-<link rel="stylesheet" href="assets/css/casetas-profesional-v2.css?v=20260926-4"/>
-<link rel="stylesheet" href="assets/css/style-023.css"/>
+
+<link rel="stylesheet" href="assets/css/style-020.css" id="gm-responsive-scroll-fix"/ media="print" onload="this.media='all'">
+
+<link rel="stylesheet" href="assets/css/style-021.css" id="cc-auth-security-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-022.css" id="cc-anticipos-css"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/casetas-profesional-v2.css?v=20260926-4"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-023.css"/ media="print" onload="this.media='all'">
 
 <style id="ccAntCompactActionsStyle">
 #ccAntBody td:last-child{min-width:340px;vertical-align:middle}
@@ -128,9 +79,18 @@ async function handleReporteGeneracion() {
 #ccAntBody td:last-child .cc-btn i{font-size:9px!important;margin-right:3px!important}
 @media (max-width:900px){#ccAntBody td:last-child{min-width:300px}#ccAntBody td:last-child .cc-btn{font-size:8.5px!important;padding:4px 6px!important}}
 </style>
-<link rel="stylesheet" href="assets/css/casetas-erp.css?v=20260926-safe3">
+<link rel="stylesheet" href="assets/css/casetas-erp.css?v=20260926-safe3" media="print" onload="this.media='all'">
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
+<div id="ccBootSplash"><div class="box"><b>Tráfico App</b><span id="ccBootSplashText">Abriendo Control Logístico…</span></div></div>
+<script>
+(function(){
+ var el=document.getElementById('ccBootSplash'),txt=document.getElementById('ccBootSplashText');
+ window.__ccBootStarted=Date.now();
+ setTimeout(function(){if(txt)txt.innerHTML='La conexión está tardando. La aplicación seguirá intentando cargar…';},5000);
+ setTimeout(function(){if(el){el.style.background='#fff';el.style.color='#991b1b';if(txt)txt.innerHTML='No fue posible terminar de cargar. Revisa señal o abre nuevamente la página.';}},15000);
+})();
+</script>
 <div id="ccLoginGate">
   <div class="cc-login-card">
     <div class="cc-login-brand">
@@ -1209,10 +1169,10 @@ async function handleReporteGeneracion() {
 </div>
 </div>
 </div>
-<link rel="stylesheet" href="assets/css/style-024.css" id="gm-command-center-v4"/>
-<link rel="stylesheet" href="assets/css/style-025.css"/>
+<link rel="stylesheet" href="assets/css/style-024.css" id="gm-command-center-v4"/ media="print" onload="this.media='all'">
+<link rel="stylesheet" href="assets/css/style-025.css"/ media="print" onload="this.media='all'">
 <script src="assets/js/ui/dashboard-shell.js"></script>
-<link rel="stylesheet" href="assets/css/style-026.css"/>
+<link rel="stylesheet" href="assets/css/style-026.css"/ media="print" onload="this.media='all'">
 <div aria-hidden="true" class="gm-detail-modal" id="gmInteractiveModal">
 <div aria-modal="true" class="gm-detail-box" role="dialog">
 <div class="gm-detail-head"><div><h2 id="gmModalTitle">Análisis gerencial</h2><p id="gmModalSubtitle">Detalle interactivo del indicador seleccionado.</p></div><button class="gm-close" onclick="cerrarPanelGerencialInteractivo()"><i class="fa-solid fa-xmark"></i></button></div>
@@ -1220,7 +1180,7 @@ async function handleReporteGeneracion() {
 </div>
 </div>
 <script src="assets/js/modules/gerencial-analytics.js"></script>
-<link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/>
+<link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/ media="print" onload="this.media='all'">
 <script id="gm-supabase-inline" src="assets/js/vendor/supabase-sdk.js"></script>
 <script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>
 <script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js?v=20260924-capacidad-pallets1"></script>
@@ -1245,7 +1205,7 @@ async function handleReporteGeneracion() {
 <script id="cc-performance-tuning" src="assets/js/core/performance-flags.js"></script>
 
 
-<link rel="stylesheet" href="assets/css/style-028.css" id="cc-global-alerts-css"/>
+<link rel="stylesheet" href="assets/css/style-028.css" id="cc-global-alerts-css"/ media="print" onload="this.media='all'">
 <button id="ccGlobalAlertsBtn" type="button" title="Centro de alertas" aria-label="Centro de alertas">
   <i class="fa-solid fa-bell"></i><span class="cc-alert-label">Alertas</span><span id="ccGlobalAlertsBadge">0</span>
 </button>
@@ -1260,5 +1220,24 @@ async function handleReporteGeneracion() {
 <script src="assets/js/modules/service-sheets-comprobacion-final-v1.js?v=20260923-editqr-stable17"></script>
 <script src="assets/js/modules/service-sheets-proformas-v1.js?v=20261002-no-facturable2"></script>\n\n\n\n<script src="assets/js/modules/service-sheets-comprobacion-stable-view.js?v=20260930-history-button-unified2"></script>
 <script src="assets/js/modules/service-sheets-comprobacion-ux-v2.js?v=20261001-history-actions-fix1"></script>
-<script src="assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261001-history-full-fields3"></script>\n</body>
+<script src="assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261001-history-full-fields3"></script>\n<script id="ccMobileLazyExternal">
+(function(){
+ function addScript(src){var s=document.createElement('script');s.src=src;s.async=true;document.body.appendChild(s);}
+ function loadOptional(){
+   addScript('https://cdn.tailwindcss.com');
+   addScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+   addScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+   addScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js');
+   addScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+ }
+ function reveal(){
+   var el=document.getElementById('ccBootSplash');
+   if(el)el.style.display='none';
+   setTimeout(loadOptional,1200);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(reveal,50);},{once:true});
+ else setTimeout(reveal,50);
+})();
+</script>
+</body>
 </html>
