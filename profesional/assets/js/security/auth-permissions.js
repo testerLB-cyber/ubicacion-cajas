@@ -23,6 +23,7 @@ const PERM_SCHEMA=[
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
  ['hojas_servicio','Control de Hojas de Servicio',[['ver','Ver módulo'],['generar','Generar folios'],['asignar_responsable','Asignar a responsable'],['asignar_operador','Asignar a operadores'],['comprobar','Comprobar uso / devolución'],['catalogos','Catálogos']]],
+ ['carta_porte','Carta Porte',[['ver','Ver módulo'],['generar','Generar Carta Porte'],['catalogos','Catálogos Carta Porte']]],
  ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
 ];
@@ -76,6 +77,7 @@ window.ccLogout=async function(){
  await bootstrapStatus();
 };
 function tabVisible(tab,visible){
+ if(tab==='carta_porte'){const cp=document.getElementById('ccTabCartaPorte');if(cp)cp.style.display=visible?'':'none';return;}
  const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));
  if(b)b.style.display=visible?'':'none';
  const p=document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1));if(p&&!visible)p.classList.remove('active');
@@ -95,18 +97,20 @@ const CC_MODULE_PERMISSIONS={
  proforma:'proforma.ver',
  mantenimiento:'mantenimiento.ver',
  mapa:'mapa.ver',
+ carta_porte:'carta_porte.ver',
  configuracion:'configuracion.ver'
 };
 function ccModuleAllowed(tab){const p=CC_MODULE_PERMISSIONS[tab];return !!p&&ccPerm(p);}
 function ccHasAnyOperationalModule(){return Object.keys(CC_MODULE_PERMISSIONS).some(tab=>ccModuleAllowed(tab));}
+window.ccOpenCartaPorte=function(){if(!ccPerm('carta_porte.ver')){alert('Tu usuario no tiene permiso para Carta Porte.');return;}window.location.href='carta-porte-demo.html?v=20261002-CARTA-PORTE-PERM1';};
 function protectTabs(){
  const original=window.ccTab;if(typeof original==='function'&&!original.__ccProtected){
   const w=function(tab,btn){if(!ccModuleAllowed(tab)){alert('Tu usuario no tiene permiso para este módulo.');return;}return original(tab,btn);};w.__ccProtected=true;window.ccTab=w;
  }
 }
 function firstControlTab(){
- const order=['anticipos','dashboard','inventario','renta','historial','proforma','mantenimiento','mapa','configuracion'];
- for(const tab of order){if(ccModuleAllowed(tab)){const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
+ const order=['anticipos','dashboard','inventario','renta','historial','proforma','mantenimiento','mapa','carta_porte','configuracion'];
+ for(const tab of order){if(ccModuleAllowed(tab)){if(tab==='carta_porte'){window.ccOpenCartaPorte();break;}const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
 }
 function applyAccess(){
  const a=window.CC_ACCESS||{};
