@@ -26,7 +26,7 @@
     return '';
   }
   var token=(qparam('token')||qparam('q')||qparam('t')||'').replace(/^\s+|\s+$/g,'');
-  var base='https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html';
+  var base=window.location.origin+'/unidad-ubicacion.html';
   var url=base+(token?'?token='+encodeURIComponent(token):'');
   document.getElementById('fallbackLink').href=url;
   window.location.replace(url);
