@@ -5,16 +5,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <title>Ubicación de unidad · Tráfico App</title>
+</head>
+<body style="font-family:Arial,Helvetica,sans-serif;padding:24px">
+<div>Abriendo actualización de ubicación…</div>
+<div style="margin-top:12px"><a id="fallbackLink" href="https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html">Abrir directamente</a></div>
 <script>
 (function(){
-  var p=new URLSearchParams(location.search);
-  var token=(p.get('token')||p.get('q')||p.get('t')||'').trim();
+  function qparam(name){
+    var s=window.location.search||'';
+    if(s.charAt(0)==='?')s=s.substring(1);
+    var a=s.split('&'),i,p,k,v;
+    for(i=0;i<a.length;i++){
+      p=a[i].split('=');
+      k=decodeURIComponent((p[0]||'').replace(/\+/g,' '));
+      if(k===name){
+        v=decodeURIComponent((p.slice(1).join('=')||'').replace(/\+/g,' '));
+        return v;
+      }
+    }
+    return '';
+  }
+  var token=(qparam('token')||qparam('q')||qparam('t')||'').replace(/^\s+|\s+$/g,'');
   var base='https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html';
   var url=base+(token?'?token='+encodeURIComponent(token):'');
-  var a=document.getElementById('fallbackLink');if(a)a.href=url;
-  location.replace(url);
+  document.getElementById('fallbackLink').href=url;
+  window.location.replace(url);
 })();
 </script>
-</head>
-<body style="font-family:system-ui,sans-serif;padding:24px">Abriendo actualización de ubicación…<div style="margin-top:12px"><a id="fallbackLink" href="https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html">Abrir directamente</a></div></body>
+</body>
 </html>
