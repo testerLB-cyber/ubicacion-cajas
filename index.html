@@ -12,7 +12,7 @@
   const p=new URLSearchParams(location.search);
   const q=(p.get('q')||p.get('token')||p.get('t')||'').trim();
   const target=q
-    ? 'ubicacion.html?q='+encodeURIComponent(q)
+    ? 'https://ubicacion-cajas.pages.dev/unidad-ubicacion.html?token='+encodeURIComponent(q)
     : 'profesional/'+location.search+location.hash;
   location.replace(target);
 })();
