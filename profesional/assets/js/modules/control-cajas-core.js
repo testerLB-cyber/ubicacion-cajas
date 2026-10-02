@@ -1375,13 +1375,13 @@ window.ccMostrarQrUnidad=async function(id){
     }
 
     // Construir la URL mediante URL() evita errores de slash, ? y espacios.
-    const target='https://testerlb-cyber.github.io/ubicacion-cajas/?q='+encodeURIComponent(token);
+    const target='https://ubicacion-cajas.pages.dev/unidad-ubicacion.html?token='+encodeURIComponent(token);
 
     // Validación robusta de la URL final.
     const checkUrl=new URL(target);
-    const hostOk=checkUrl.hostname.toLowerCase()==='testerlb-cyber.github.io';
-    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/ubicacion-cajas';
-    const tokenOk=checkUrl.searchParams.get('q')===token;
+    const hostOk=checkUrl.hostname.toLowerCase()==='ubicacion-cajas.pages.dev';
+    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/unidad-ubicacion.html';
+    const tokenOk=checkUrl.searchParams.get('token')===token;
     if(!(checkUrl.protocol==='https:'&&hostOk&&pathOk&&tokenOk)){
       throw new Error('La liga QR no se construyó correctamente.');
     }
