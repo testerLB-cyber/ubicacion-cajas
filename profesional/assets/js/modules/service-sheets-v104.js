@@ -292,7 +292,7 @@
       '<div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div>'+
       '<div class="cc-field"><label>Forma de generación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Folio individual</option><option value="VARIOS">Varios folios</option></select></div>'+
       '</div>'+
-      '<div data-mode="RANGO" style="margin-top:10px"><div class="hs104-grid"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="Ej. 12313"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="Ej. 12320"></div></div><div data-range-status class="hs104-note" style="margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">Captura Desde y Hasta para revisar cuántas hojas se pueden generar.</div></div>'+
+      '<div data-mode="RANGO" style="margin-top:10px"><div class="hs104-grid"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12202 ó 012202"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12251 ó 012251"></div></div><div data-range-status class="hs104-note" style="margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">Acepta 5 dígitos o 6 posiciones cuando incluye el cero inicial.</div></div>'+
       '<div data-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos, ej. 12313"><div class="hs104-note" data-individual-status>Captura exactamente 5 dígitos.</div></div></div>'+
       '<div data-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varios folios *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada folio se valida al completar 5 dígitos. Puedes separarlos con coma o Enter.</div></div><div data-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div><div class="hs104-note" data-multi-status></div></div>'+
       '<div data-error style="display:none;margin-top:10px;padding:10px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-weight:700"></div>'+
@@ -304,9 +304,14 @@
       const err=form.querySelector('[data-error]');
       err.style.display='none';err.textContent='';
       if(modo==='RANGO'){
-        const ds=String(fd.get('desde')||'').trim(),hs=String(fd.get('hasta')||'').trim();
-        if(!/^\\d{5}$/.test(ds))throw new Error('Desde debe tener exactamente 5 dígitos.');
-        if(!/^\\d{5}$/.test(hs))throw new Error('Hasta debe tener exactamente 5 dígitos.');
+        const normalizeRangeFolio=value=>{
+          let n=String(value||'').replace(/\D/g,'');
+          if(n.length===6&&n.startsWith('0'))n=n.slice(1);
+          return n;
+        };
+        const ds=normalizeRangeFolio(fd.get('desde')),hs=normalizeRangeFolio(fd.get('hasta'));
+        if(!/^\d{5}$/.test(ds))throw new Error('Desde debe tener 5 dígitos; también se acepta con cero inicial, por ejemplo 012202.');
+        if(!/^\d{5}$/.test(hs))throw new Error('Hasta debe tener 5 dígitos; también se acepta con cero inicial, por ejemplo 012251.');
         const d=Number(ds),h=Number(hs);
         if(h<d)throw new Error('El folio Hasta no puede ser menor que Desde.');
         const pre=await rpc('hs_preview_folio_range',{p_item:{serieId,anioId,desde:d,hasta:h}});
@@ -352,11 +357,13 @@
     let rangeTimer=null,rangeSeq=0;
     const previewRange=async()=>{
       if(!rangeStatus)return;
-      const ds=String(desde?.value||'').replace(/\D/g,'').slice(0,5),hs=String(hasta?.value||'').replace(/\D/g,'').slice(0,5);
-      if(desde)desde.value=ds;if(hasta)hasta.value=hs;
+      const clean=v=>String(v||'').replace(/\D/g,'').slice(0,6);
+      const normalize=v=>v.length===6&&v.startsWith('0')?v.slice(1):v;
+      const dsRaw=clean(desde?.value),hsRaw=clean(hasta?.value),ds=normalize(dsRaw),hs=normalize(hsRaw);
+      if(desde)desde.value=dsRaw;if(hasta)hasta.value=hsRaw;
       if(mode.value!=='RANGO')return;
       if(!serie.value||!anio.value){rangeStatus.textContent='Selecciona Serie y Año para revisar el rango.';rangeStatus.style.color='#64748b';return;}
-      if(ds.length!==5||hs.length!==5){rangeStatus.textContent='Captura Desde y Hasta con 5 dígitos para calcular las hojas.';rangeStatus.style.color='#64748b';return;}
+      if(ds.length!==5||hs.length!==5){rangeStatus.textContent='Captura 5 dígitos, o 6 si incluye el cero inicial del folio mostrado.';rangeStatus.style.color='#64748b';return;}
       const d=Number(ds),h=Number(hs);
       if(h<d){rangeStatus.textContent='✕ Hasta no puede ser menor que Desde.';rangeStatus.style.color='#b91c1c';return;}
       const seq=++rangeSeq;rangeStatus.textContent='Revisando rango…';rangeStatus.style.color='#475569';
