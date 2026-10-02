@@ -16,6 +16,7 @@
 
   let D={series:[],anios:[],responsables:[],operadores:[],beneficiarios:[],clientes:[],resumen:{},asignacionesResponsable:[],foliosAsignadosOperador:[],asignacionesOperador:[],comprobaciones:[],ultimosFolios:[]};
   let currentView='Control';
+  let loadSeq=0;
 
   async function rpc(name,args={}){
     if(!sb()) throw new Error('Supabase no está disponible.');
@@ -25,10 +26,32 @@
     return r.data;
   }
   async function load(){
-    D=await rpc('hs_list');
-    try{const b=await rpc('cc_hojas_beneficiarios_web');D.beneficiarios=Array.isArray(b)?b:[]}catch(e){console.warn('Beneficiarios Web',e);D.beneficiarios=[]}
-    try{D.assignmentSelections=await rpc('hs_assignment_selected_folios')}catch(e){console.warn('Detalle asignaciones',e);D.assignmentSelections={}}
-    renderAll(); return D;
+    const seq=++loadSeq;
+    const refreshBtn=document.getElementById('hs104Refresh');
+    if(refreshBtn){refreshBtn.disabled=true;refreshBtn.innerHTML='<i class="fa-solid fa-rotate fa-spin"></i> Actualizando…';}
+    try{
+      const next=await rpc('hs_list');
+      const extras=await Promise.allSettled([
+        rpc('cc_hojas_beneficiarios_web'),
+        rpc('hs_assignment_selected_folios')
+      ]);
+      if(seq!==loadSeq)return D;
+      D=next||{};
+      const ben=extras[0];
+      D.beneficiarios=ben.status==='fulfilled'&&Array.isArray(ben.value)?ben.value:[];
+      if(ben.status==='rejected')console.warn('Beneficiarios Web',ben.reason);
+      const sel=extras[1];
+      D.assignmentSelections=sel.status==='fulfilled'?(sel.value||{}):{};
+      if(sel.status==='rejected')console.warn('Detalle asignaciones',sel.reason);
+      renderAll();
+      try{document.dispatchEvent(new CustomEvent('hs104:data-refreshed',{detail:{view:currentView}}));}catch(_){}
+      return D;
+    }finally{
+      if(seq===loadSeq&&refreshBtn){
+        refreshBtn.disabled=false;
+        refreshBtn.innerHTML='<i class="fa-solid fa-rotate"></i> Actualizar';
+      }
+    }
   }
 
   function modal(title,body,{width='820px',saveLabel='',onSave=null}={}){
@@ -147,7 +170,7 @@
   }
   function renderNav(){const n=document.getElementById('hs104Nav');if(!n)return;n.innerHTML=navItems.map(([v,i])=>'<button class="cc-btn '+(currentView===v?'cc-btn-primary':'cc-btn-light')+'" data-v="'+v+'"><i class="fa-solid '+i+' mr-1"></i>'+({Comprobacion:'Comprobación'}[v]||v)+'</button>').join('');n.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{if(b.dataset.v==='Proforma')return openProformaView();currentView=b.dataset.v;renderNav();renderView()})}
   function renderKpis(){const r=D.resumen||{},k=document.getElementById('hs104Kpis');if(!k)return;k.innerHTML=[['Total',r.total],['Nuevas',r.nuevos],['Pend. aceptación',r.pendienteAceptacion],['Con responsable',r.enCustodia],['Pend. comprobar',r.asignadosOperador],['Comprobadas',r.utilizados]].map(x=>'<div class="cc-ant-kpi"><small>'+x[0]+'</small><strong>'+Number(x[1]||0).toLocaleString('es-MX')+'</strong></div>').join('')}
-  function renderAll(){renderKpis();renderNav();renderView()}
+  function renderAll(){renderKpis();renderNav();if(currentView==='Proforma')openProformaView();else renderView()}
   function renderView(){if(document.querySelector('#hs104CompList .hs-list-modal-open'))document.body.style.overflow='';({Control:renderControl,Folios:renderFolios,Responsables:renderResponsables,Operadores:renderOperadores,Comprobacion:renderComprobacion,Catalogos:renderCatalogos}[currentView]||renderControl)()}
   const view=()=>document.getElementById('hs104View');
 
