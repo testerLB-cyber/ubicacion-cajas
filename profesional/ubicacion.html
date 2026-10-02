@@ -9,7 +9,7 @@
 (function(){
   var p=new URLSearchParams(location.search);
   var token=(p.get('token')||p.get('q')||p.get('t')||'').trim();
-  var url='unidad-ubicacion.html'+(token?'?token='+encodeURIComponent(token):'');
+  var url='../unidad-ubicacion.html'+(token?'?token='+encodeURIComponent(token):'');
   location.replace(url);
 })();
 </script>
