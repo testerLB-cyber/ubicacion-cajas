@@ -450,7 +450,7 @@
       '<div class="cc-field"><label>Responsable *</label><select name="responsableId" required>'+options(rs,x=>x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.correo?' · '+x.correo:''))+'</select></div>'+
       '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
-      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
+      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div></div>'+
       '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
       '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada hoja se agrega como etiqueta y puedes quitarla con ×.</div></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
       '<div data-assign-status class="hs104-note" style="margin-top:10px">Captura las hojas para validar disponibilidad.</div>'+
@@ -473,8 +473,13 @@
     const modo=String(form.modo?.value||'RANGO');
     const item={modo};
     if(modo==='RANGO'){
-      const ds=String(form.desde?.value||'').trim(),hs=String(form.hasta?.value||'').trim();
-      if(!/^\\d{5}$/.test(ds)||!/^\\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener exactamente 5 dígitos.');
+      const normalizeRangeFolio=value=>{
+        let n=String(value||'').replace(/\\D/g,'');
+        if(n.length===6&&n.startsWith('0'))n=n.slice(1);
+        return n;
+      };
+      const ds=normalizeRangeFolio(form.desde?.value),hs=normalizeRangeFolio(form.hasta?.value);
+      if(!/^\\d{5}$/.test(ds)||!/^\\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener 5 dígitos, o 6 posiciones cuando incluyen cero inicial.');
       item.desde=Number(ds);item.hasta=Number(hs);
       if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
     }else if(modo==='INDIVIDUAL'){
@@ -525,7 +530,8 @@
       ['desde','hasta','individual','varios'].forEach(n=>{if(form[n])form[n].value='';});
       status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';
     };
-    ['desde','hasta','individual'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\\D/g,'').slice(0,5);if(form[n].value.length===5)validate();}));
+    ['desde','hasta'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\\D/g,'').slice(0,6);const v=form[n].value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
+    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\\D/g,'').slice(0,5);if(form.individual.value.length===5)validate();});
     varios?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();process();}});
     varios?.addEventListener('input',()=>{varios.value=varios.value.replace(/[^0-9,\\s]/g,'');if(/^\\d{5}$/.test(varios.value.trim()))process();});
     form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();if((form.individual?.value||'').length===5)validate();});
