@@ -245,7 +245,7 @@ async function handleReporteGeneracion() {
 
 <button class="cc-tab active" onclick="ccTab('dashboard',this)"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</button>
 <button class="cc-tab" onclick="ccTab('inventario',this)"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventario de Unidades</button>
-<button class="cc-tab" onclick="ccTab('renta',this)"><i class="fa-solid fa-calendar-check mr-1"></i>Control de renta</button><button class="cc-tab" onclick="ccTab('historial',this)"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial / Reporte de renta</button><button class="cc-tab" onclick="ccTab('proforma',this)"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Proforma</button><button class="cc-tab" onclick="ccTab('mantenimiento',this)"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mantenimiento</button><button class="cc-tab" onclick="ccTab('mapa',this)"><i class="fa-solid fa-map-location-dot mr-1"></i>Mapa de cajas</button><button class="cc-tab" onclick="ccTab('anticipos',this)"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Control de Anticipos</button><button class="cc-tab" onclick="window.location.href='carta-porte-demo.html?v=ERP-DEMO-02'"><i class="fa-solid fa-file-invoice mr-1"></i>Carta Porte</button><button class="cc-tab" onclick="ccTab('configuracion',this)"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
+<button class="cc-tab" onclick="ccTab('renta',this)"><i class="fa-solid fa-calendar-check mr-1"></i>Control de renta</button><button class="cc-tab" onclick="ccTab('historial',this)"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial / Reporte de renta</button><button class="cc-tab" onclick="ccTab('proforma',this)"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Proforma</button><button class="cc-tab" onclick="ccTab('mantenimiento',this)"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mantenimiento</button><button class="cc-tab" onclick="ccTab('mapa',this)"><i class="fa-solid fa-map-location-dot mr-1"></i>Mapa de cajas</button><button class="cc-tab" onclick="ccTab('anticipos',this)"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Control de Anticipos</button><button class="cc-tab" id="ccTabCartaPorte" onclick="ccOpenCartaPorte()"><i class="fa-solid fa-file-invoice mr-1"></i>Carta Porte</button><button class="cc-tab" onclick="ccTab('configuracion',this)"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
 </div>
 <div class="cc-panel" id="ccPanelAnticipos">
 <div class="cc-toolbar"><div><strong>Control de Anticipos</strong><div class="cc-note">Anticipos a operadores, comprobaciones y balance de caja.</div></div><div class="cc-actions"><button id="ccAntNuevoBtn" class="cc-btn cc-btn-primary" onclick="ccAntNuevoAnticipo()">Nuevo anticipo</button></div></div>
@@ -1239,7 +1239,7 @@ async function handleReporteGeneracion() {
 <script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20260926-safe3"></script>
 <script src="assets/js/modules/casetas-erp.js?v=20260926-safe4"></script>
 <script src="assets/js/modules/anticipos-profesional-flow.js?v=selector-v6"></script>
-<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261001-login-submit-fix2"></script>
+<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261002-carta-porte-perm1"></script>
 
 <script id="cc-db-location-preservation-note" src="assets/js/core/location-preservation.js"></script>
 <script id="cc-performance-tuning" src="assets/js/core/performance-flags.js"></script>
