@@ -1,7 +1,7 @@
 /* Tráfico App · Configuración > Impresión v2.1 · módulo aislado */
 (function(){
   if(window.__CC_CONFIG_PRINT_V21__)return;window.__CC_CONFIG_PRINT_V21__=true;
-  const SCAN='https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html';
+  const SCAN='https://trafico.logisticabalderrama.com/profesional/ubicacion.html';
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   async function qrLib(){if(window.QRCode)return;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
