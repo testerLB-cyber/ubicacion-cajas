@@ -17,7 +17,7 @@
  function panel(){return document.getElementById('ccPanelConfiguracion');}
  function nav(){const p=panel();return p?.querySelector('.cc-config-nav')||p?.querySelector('.cc-config-sidebar')||p?.querySelector('.cc-config-menu')||p?.querySelector('.cc-config-nav-btn')?.parentElement;}
 
- const QR_SCAN='https://testerlb-cyber.github.io/ubicacion-cajas/unidad-ubicacion.html';
+ const QR_SCAN='https://trafico.logisticabalderrama.com/profesional/ubicacion.html';
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
  async function qrLib(){if(window.QRCode)return;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
  async function qrToken(id){const s=sb();if(!s)throw Error('Supabase no está disponible.');const{data,error}=await s.rpc('cc_ensure_unit_qr_token',{p_unidad_id:id});if(error)throw error;const d=Array.isArray(data)?data[0]:data;if(!d?.ok||!d.token)throw Error(d?.error||'No se pudo obtener token QR.');return String(d.token);}
