@@ -565,7 +565,7 @@
         const validator=kind==='responsable'?'hs_validate_responsible_selection':(kind==='retorno'?'hs_validate_responsible_return_selection':'hs_validate_person_selection');
         const r=await rpc(validator,{p_item:item});
         if(my!==seq)return;
-        if(r.available){status.textContent='✓ '+Number(r.total||0)+' hoja(s) disponibles para asignar.';status.style.color='#15803d';}
+        if(r.available){status.textContent='✓ '+Number(r.total||0)+(kind==='retorno'?' hoja(s) listas para retornar.':' hoja(s) disponibles para asignar.');status.style.color='#15803d';}
         else{status.textContent=conflictText(r.conflicts,'✕ Conflicto:');status.style.color='#b91c1c';}
       }catch(e){if(my!==seq)return;status.textContent=e.message||e;status.style.color='#b91c1c';}
     };
