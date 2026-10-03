@@ -1,7 +1,7 @@
 /* Tráfico App · Configuración > Impresión · modal aislado QR v2 */
 (function(){
  if(window.__CC_CONFIG_PRINT_QR_ISOLATED_V2__)return;window.__CC_CONFIG_PRINT_QR_ISOLATED_V2__=true;
- const SCAN='https://ubicacion-cajas.pages.dev/unidad-ubicacion.html';
+ const SCAN='https://trafico.logisticabalderrama.com/profesional/ubicacion.html';
  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
  async function qrlib(){if(window.QRCode)return;await new Promise((r,j)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=r;s.onerror=j;document.head.appendChild(s);});}
