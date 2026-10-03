@@ -1375,12 +1375,12 @@ window.ccMostrarQrUnidad=async function(id){
     }
 
     // Construir la URL mediante URL() evita errores de slash, ? y espacios.
-    const target='https://trafico.logisticabalderrama.com/unidad-ubicacion.html?token='+encodeURIComponent(token);
+    const target='https://trafico.logisticabalderrama.com/profesional/ubicacion.html?token='+encodeURIComponent(token);
 
     // Validación robusta de la URL final.
     const checkUrl=new URL(target);
     const hostOk=checkUrl.hostname.toLowerCase()==='trafico.logisticabalderrama.com';
-    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/unidad-ubicacion.html';
+    const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/profesional/ubicacion.html';
     const tokenOk=checkUrl.searchParams.get('token')===token;
     if(!(checkUrl.protocol==='https:'&&hostOk&&pathOk&&tokenOk)){
       throw new Error('La liga QR no se construyó correctamente.');
