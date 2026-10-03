@@ -1340,11 +1340,11 @@ window.ccMostrarQrUnidad=async function(id){
 
   try{
     // URL canónica de GitHub Pages.
-    const URL_CANONICA='https://testerLB-cyber.github.io/ubicacion-cajas/';
+    const URL_CANONICA='https://trafico.logisticabalderrama.com/';
     let base=String(configuracion.ubicacionPublicaUrl||URL_CANONICA).trim();
 
     // Corrige automáticamente cualquier URL anterior/incompleta.
-    if(!/^https:\/\/testerLB-cyber\.github\.io\/ubicacion-cajas\/?$/i.test(base)){
+    if(!/^https:\/\/trafico\.logisticabalderrama\.com\/?$/i.test(base)){
       base=URL_CANONICA;
       try{
         const {data,error}=await gmSupabase.rpc('cc_save_location_page_url',{p_url:base});
@@ -1375,11 +1375,11 @@ window.ccMostrarQrUnidad=async function(id){
     }
 
     // Construir la URL mediante URL() evita errores de slash, ? y espacios.
-    const target='https://ubicacion-cajas.pages.dev/unidad-ubicacion.html?token='+encodeURIComponent(token);
+    const target='https://trafico.logisticabalderrama.com/unidad-ubicacion.html?token='+encodeURIComponent(token);
 
     // Validación robusta de la URL final.
     const checkUrl=new URL(target);
-    const hostOk=checkUrl.hostname.toLowerCase()==='ubicacion-cajas.pages.dev';
+    const hostOk=checkUrl.hostname.toLowerCase()==='trafico.logisticabalderrama.com';
     const pathOk=checkUrl.pathname.replace(/\/+$/,'')==='/unidad-ubicacion.html';
     const tokenOk=checkUrl.searchParams.get('token')===token;
     if(!(checkUrl.protocol==='https:'&&hostOk&&pathOk&&tokenOk)){
@@ -1408,7 +1408,7 @@ window.ccMostrarQrUnidad=async function(id){
             <summary style="cursor:pointer;font-size:10px;font-weight:900;color:#475569">QR de prueba para iPhone</summary>
             <div style="padding:12px;text-align:center">
               <div id="ccQrIphoneTest" style="display:inline-block;padding:22px;background:#fff;border:14px solid #fff"></div>
-              <div style="font-size:9px;color:#64748b;margin-top:6px">Prueba: https://testerlb-cyber.github.io/ubicacion-cajas/</div>
+              <div style="font-size:9px;color:#64748b;margin-top:6px">Prueba: https://trafico.logisticabalderrama.com/</div>
             </div>
           </details>
 
@@ -1444,7 +1444,7 @@ window.ccMostrarQrUnidad=async function(id){
     const iphoneTest=ov.querySelector('#ccQrIphoneTest');
     if(iphoneTest){
       new QRCode(iphoneTest,{
-        text:'https://testerlb-cyber.github.io/ubicacion-cajas/',
+        text:'https://trafico.logisticabalderrama.com/',
         width:260,
         height:260,
         colorDark:'#000000',
