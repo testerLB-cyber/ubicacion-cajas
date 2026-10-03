@@ -67,6 +67,11 @@
 
   async function data(force=false){
     if(cache&&!force)return cache;
+    const shared=typeof window.hs104GetData==='function'?window.hs104GetData():null;
+    if(shared&&shared.comprobaciones){
+      cache=shared;
+      return shared;
+    }
     const {data,error}=await sb().rpc('hs_list');
     if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudo cargar Hojas de Servicio.');
     cache=data;return data;
