@@ -323,7 +323,7 @@
       '<div class="cc-field"><label>Forma de generación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Folio individual</option><option value="VARIOS">Varios folios</option></select></div>'+
       '</div>'+
       '<div data-mode="RANGO" style="margin-top:10px"><div class="hs104-grid"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12202 ó 012202"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12251 ó 012251"></div></div><div data-range-status class="hs104-note" style="margin-top:8px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">Acepta 5 dígitos o 6 posiciones cuando incluye el cero inicial.</div></div>'+
-      '<div data-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos, ej. 12313"><div class="hs104-note" data-individual-status>Captura exactamente 5 dígitos.</div></div></div>'+
+      '<div data-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="6" placeholder="Ej. 12313 ó 012313"><div class="hs104-note" data-individual-status>Captura exactamente 5 dígitos.</div></div></div>'+
       '<div data-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varios folios *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada folio se valida al completar 5 dígitos. Puedes separarlos con coma o Enter.</div></div><div data-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div><div class="hs104-note" data-multi-status></div></div>'+
       '<div data-error style="display:none;margin-top:10px;padding:10px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-weight:700"></div>'+
       '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Generar folios</button></div></form>';
@@ -360,8 +360,9 @@
         return;
       }
       if(modo==='INDIVIDUAL'){
-        const raw=String(fd.get('individual')||'').trim();
-        if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener exactamente 5 dígitos.');
+        const raw0=String(fd.get('individual')||'').replace(/\\D/g,'');
+        const raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
+        if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones si incluye el cero inicial.');
         const check=await rpc('hs_check_folio_number',{p_serie_id:serieId,p_anio_id:anioId,p_consecutivo:Number(raw)});
         if(check.exists)throw new Error('El folio '+check.folio+' ya existe. Estatus: '+(check.estatus||'sin estatus')+(check.responsable?' · Responsable: '+check.responsable:''));
         const r=await rpc('hs_generate_folio_list',{p_item:{serieId,anioId,folios:[Number(raw)]}});
@@ -412,8 +413,9 @@
     const scheduleRange=()=>{clearTimeout(rangeTimer);rangeTimer=setTimeout(previewRange,280);};
     [desde,hasta].forEach(x=>x&&x.addEventListener('input',scheduleRange));
     const validateOne=async raw=>{
-      const n=String(raw||'').replace(/\\D/g,'');
-      if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener exactamente 5 dígitos.');
+      const n0=String(raw||'').replace(/\\D/g,'');
+      const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
+      if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener 5 dígitos, o 6 posiciones si incluye el cero inicial.');
       if(form.__folioSet.has(n))throw new Error('El folio '+n+' ya fue agregado.');
       if(!serie.value||!anio.value)throw new Error('Selecciona primero Serie y Año.');
       const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(n)});
@@ -438,12 +440,13 @@
     };
     mode.onchange=showMode;
     varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
-    varios.addEventListener('input',()=>{const clean=varios.value.replace(/[^0-9,\\s]/g,'');if(clean!==varios.value)varios.value=clean;if(/^\\d{5}$/.test(varios.value.trim()))processMulti();});
+    varios.addEventListener('input',()=>{const clean=varios.value.replace(/[^0-9,\\s]/g,'');if(clean!==varios.value)varios.value=clean;{const v=varios.value.trim();if(/^\\d{5}$/.test(v)||/^0\\d{5}$/.test(v))processMulti();}});
     individual.addEventListener('input',async()=>{
-      individual.value=individual.value.replace(/\\D/g,'').slice(0,5);
-      if(individual.value.length<5){individualStatus.textContent='Captura exactamente 5 dígitos.';individualStatus.style.color='#64748b';return;}
+      individual.value=individual.value.replace(/\\D/g,'').slice(0,6);
+      const raw0=individual.value,raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
+      if(raw.length!==5){individualStatus.textContent='Captura 5 dígitos, o 6 posiciones con cero inicial.';individualStatus.style.color='#64748b';return;}
       if(!serie.value||!anio.value){individualStatus.textContent='Selecciona primero Serie y Año.';individualStatus.style.color='#b91c1c';return;}
-      try{const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(individual.value)});individualStatus.textContent=r.exists?'✕ '+r.folio+' ya existe · '+(r.estatus||''):'✓ '+r.folio+' disponible';individualStatus.style.color=r.exists?'#b91c1c':'#15803d';}catch(e){individualStatus.textContent=e.message||e;individualStatus.style.color='#b91c1c';}
+      try{const r=await rpc('hs_check_folio_number',{p_serie_id:serie.value,p_anio_id:anio.value,p_consecutivo:Number(raw)});individualStatus.textContent=r.exists?'✕ '+r.folio+' ya existe · '+(r.estatus||''):'✓ '+r.folio+' disponible';individualStatus.style.color=r.exists?'#b91c1c':'#15803d';}catch(e){individualStatus.textContent=e.message||e;individualStatus.style.color='#b91c1c';}
     });
     [serie,anio].forEach(x=>x.onchange=()=>{form.__folioSet.clear();renderChips();multiStatus.textContent='';if(individual.value.length===5)individual.dispatchEvent(new Event('input'));scheduleRange();});
     showMode();
@@ -482,7 +485,7 @@
       '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
       '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div></div>'+
-      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
+      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"></div></div>'+
       '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada hoja se agrega como etiqueta y puedes quitarla con ×.</div></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
       '<div data-assign-status class="hs104-note" style="margin-top:10px">Captura las hojas para validar disponibilidad.</div>'+
       '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Validar y asignar</button></div></form>';
@@ -507,7 +510,7 @@
       '<div class="cc-field"><label>Forma de retorno *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
       '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div></div>'+
-      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
+      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"></div></div>'+
       '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada hoja se agrega como etiqueta y puedes quitarla con ×.</div></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
       '<div data-assign-status class="hs104-note" style="margin-top:10px">Captura las hojas para validar que todavía estén bajo custodia del responsable.</div>'+
       '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
@@ -544,8 +547,9 @@
       item.desde=Number(ds);item.hasta=Number(hs);
       if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
     }else if(modo==='INDIVIDUAL'){
-      const raw=String(form.individual?.value||'').trim();
-      if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener exactamente 5 dígitos.');
+      const raw0=String(form.individual?.value||'').replace(/\\D/g,'');
+      const raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
+      if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
       item.individual=Number(raw);
     }else{
       const nums=[...(form.__assignSet||[])];
@@ -580,11 +584,14 @@
       const parts=String(varios?.value||'').split(/[\\s,]+/).filter(Boolean);if(!parts.length)return;
       varios.value='';
       for(const p of parts){
-        const n=String(p).replace(/\\D/g,'');
-        if(n.length!==5){status.textContent='El folio '+p+' debe tener exactamente 5 dígitos.';status.style.color='#b91c1c';return;}
+        const n0=String(p).replace(/\\D/g,'');
+        const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
+        if(n.length!==5){status.textContent='El folio '+p+' debe tener 5 dígitos, o 6 posiciones si incluye cero inicial.';status.style.color='#b91c1c';return;}
         form.__assignSet.add(n);
       }
-      renderChips();validate();
+      renderChips();
+      status.textContent='✓ '+form.__assignSet.size+' hoja(s) capturadas. Se validarán juntas al confirmar.';
+      status.style.color='#15803d';
     };
     form.modo.onchange=()=>{
       o.querySelectorAll('[data-assign-mode]').forEach(x=>x.style.display=x.dataset.assignMode===form.modo.value?'':'none');
@@ -593,11 +600,11 @@
       status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';
     };
     ['desde','hasta'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\\D/g,'').slice(0,6);const v=form[n].value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
-    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\\D/g,'').slice(0,5);if(form.individual.value.length===5)validate();});
+    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\\D/g,'').slice(0,6);const v=form.individual.value;const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();});
     varios?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();process();}});
     varios?.addEventListener('input',()=>{varios.value=varios.value.replace(/[^0-9,\\s]/g,'');if(/^\\d{5}$/.test(varios.value.trim()))process();});
-    form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();if((form.individual?.value||'').length===5)validate();});
-    form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();if((form.individual?.value||'').length===5)validate();});
+    form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
+    form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
     form.asignacionId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
     form.responsableId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Captura las hojas para validar que pertenezcan a este responsable.';status.style.color='#64748b';});
   }
@@ -633,8 +640,8 @@
       '<div class="cc-field"><label>Custodia *</label><select name="asignacionId" required>'+options(aa,x=>x.responsableNombre+' · '+x.serie+'-'+x.anio+' · '+((D.assignmentSelections?.[x.id]?.cantidad)||0)+' hoja(s)')+'</select></div>'+
       '<div class="cc-field"><label>Forma de asignación *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
-      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
-      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
+      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"></div></div>'+
+      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"></div></div>'+
       '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
       '<div data-assign-status class="hs104-note" style="margin-top:8px">Captura las hojas para validar disponibilidad dentro de la custodia.</div>'+
       '<div class="cc-field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>'+
