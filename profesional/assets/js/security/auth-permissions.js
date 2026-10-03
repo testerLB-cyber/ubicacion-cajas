@@ -11,6 +11,30 @@ if(!sb && window.supabase && typeof window.supabase.createClient==='function' &&
 window.CC_ACCESS=null;
 window.CC_AUTH_READY=false;
 
+/* Evita que módulos secundarios saturen Supabase antes de validar acceso. */
+(function installRpcGate(){
+  if(!sb||typeof sb.rpc!=='function'||sb.__ccAuthRpcGate)return;
+  const originalRpc=sb.rpc.bind(sb);
+  const authRpc=new Set(['cc_my_access','cc_admin_bootstrap_status']);
+  const waitAuth=()=>new Promise((resolve,reject)=>{
+    const started=Date.now();
+    const tick=()=>{
+      if(window.CC_AUTH_READY===true)return resolve();
+      if(Date.now()-started>15000)return reject(new Error('Acceso no validado todavía.'));
+      setTimeout(tick,100);
+    };
+    tick();
+  });
+  sb.rpc=async function(name,args,options){
+    if(authRpc.has(String(name||''))||window.CC_AUTH_READY===true){
+      return originalRpc(name,args,options);
+    }
+    await waitAuth();
+    return originalRpc(name,args,options);
+  };
+  sb.__ccAuthRpcGate=true;
+})();
+
 const PERM_SCHEMA=[
  ['dashboard','Dashboard',[['ver','Ver Dashboard']]],
  ['control_cajas','Control de Cajas',[['ver','Entrar a Control de Cajas']]],
@@ -51,6 +75,7 @@ async function loadAccess(){
  if(data.activo!==true)throw new Error('Tu usuario está desactivado. Contacta al administrador.');
  window.CC_ACCESS=data;
  window.CC_AUTH_READY=true;
+ try{document.dispatchEvent(new CustomEvent('cc:auth-ready',{detail:{access:data}}));}catch(_){}
  document.body.classList.remove('cc-auth-locked');
  document.getElementById('ccLoginGate')?.classList.add('cc-hidden');
  applyAccess();
