@@ -164,17 +164,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.ccEnableSystemNotifications=requestSystem;
 
   async function pollLinkProofs(){
-    if(loading||!window.CC_AUTH_READY||!sb()||!allowed())return;
+    if(loading||document.hidden||!window.CC_AUTH_READY||!sb()||!allowed())return;
     loading=true;
     try{
-      const r=await sb().rpc('cc_ant_list');if(r.error)throw r.error;if(!r.data?.ok)return;
-      const comps=(r.data.comprobaciones||[]).filter(c=>['ENLACE','LINK','PUBLICO','QR'].includes(String(c.origen||'').toUpperCase())&&String(c.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
-      const ants=r.data.anticipos||[];const s=seen();
+      const r=await sb().rpc('cc_ant_link_proofs_recent',{p_minutes:15});
+      if(r.error)throw r.error;
+      const comps=Array.isArray(r.data?.rows)?r.data.rows:[];
+      const s=seen();
       if(!bootstrapped){comps.forEach(c=>s.add(c.id));saveSeen(s);bootstrapped=true;return}
       const fresh=comps.filter(c=>!s.has(c.id));
       fresh.forEach(c=>{
-        s.add(c.id);const a=ants.find(x=>x.id===c.anticipo_id)||{};
-        const n={id:'link-'+c.id,tipo:'COMPROBACION_ENLACE',titulo:'Comprobación recibida por enlace',detalle:(a.folio||'Anticipo')+' · '+(a.operador||a.responsable||'')+' · '+(c.concepto||'Comprobante')+' · '+money(c.monto),anticipoId:c.anticipo_id,createdAt:c.created_at||c.fecha||new Date().toISOString(),atendidaAt:null};
+        s.add(c.id);
+        const n={id:'link-'+c.id,tipo:'COMPROBACION_ENLACE',titulo:'Comprobación recibida por enlace',detalle:(c.folio||'Anticipo')+' · '+(c.operador||c.responsable||'')+' · '+(c.concepto||'Comprobante')+' · '+money(c.monto),anticipoId:c.anticipoId,createdAt:c.createdAt||new Date().toISOString(),atendidaAt:null};
         const items=localItems();items.unshift(n);saveItems(items);toast(n);systemNotify(n);
       });saveSeen(s);
       if(fresh.length)updateBadge();
@@ -207,7 +208,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const o=window.ccOpenGlobalAlerts;const w=async function(){const r=await o.apply(this,arguments);setTimeout(augmentModal,0);return r};w.__notifUserV1=true;window.ccOpenGlobalAlerts=w;
   }
   function boot(){
-    if(window.CC_AUTH_READY&&sb()){wrapOpen();pollLinkProofs();if(!timer)timer=setInterval(pollLinkProofs,15000)}else setTimeout(boot,700)
+    if(window.CC_AUTH_READY&&sb()){wrapOpen();pollLinkProofs();if(!timer)timer=setInterval(pollLinkProofs,120000)}else setTimeout(boot,700)
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,900));else setTimeout(boot,900);
 })();
