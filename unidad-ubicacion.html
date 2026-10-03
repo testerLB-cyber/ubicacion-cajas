@@ -8,9 +8,10 @@
 <title>Unidad · Tráfico App</title>
 <script>
 (function(){
-  if(window.location.hostname==='testerlb-cyber.github.io'){
+  var h=String(window.location.hostname||'').toLowerCase();
+  if(h==='testerlb-cyber.github.io'||h==='ubicacion-cajas.pages.dev'){
     var s=window.location.search||'';
-    window.location.replace('https://ubicacion-cajas.pages.dev/unidad-ubicacion.html'+s);
+    window.location.replace('https://trafico.logisticabalderrama.com/unidad-ubicacion.html'+s);
   }
 })();
 </script>
