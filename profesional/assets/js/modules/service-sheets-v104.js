@@ -17,6 +17,8 @@
   let D={series:[],anios:[],responsables:[],operadores:[],beneficiarios:[],clientes:[],resumen:{},asignacionesResponsable:[],foliosAsignadosOperador:[],asignacionesOperador:[],comprobaciones:[],ultimosFolios:[]};
   let currentView='Control';
   let loadSeq=0;
+  let loadPromise=null;
+  window.hs104GetData=()=>D;
 
   async function rpc(name,args={}){
     if(!sb()) throw new Error('Supabase no está disponible.');
@@ -26,6 +28,8 @@
     return r.data;
   }
   async function load(){
+    if(loadPromise)return loadPromise;
+    loadPromise=(async()=>{
     const seq=++loadSeq;
     const refreshBtn=document.getElementById('hs104Refresh');
     if(refreshBtn){refreshBtn.disabled=true;refreshBtn.innerHTML='<i class="fa-solid fa-rotate fa-spin"></i> Actualizando…';}
@@ -52,6 +56,8 @@
         refreshBtn.innerHTML='<i class="fa-solid fa-rotate"></i> Actualizar';
       }
     }
+    })();
+    try{return await loadPromise;}finally{loadPromise=null;}
   }
 
   function modal(title,body,{width='820px',saveLabel='',onSave=null}={}){
