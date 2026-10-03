@@ -7,9 +7,8 @@ const esc=v=>txt(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&
 const num=v=>v==null?'':String(v);
 
 async function currentByFolio(folio){
-  const {data,error}=await sb().rpc('hs_list');
-  if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudo cargar la comprobación.');
-  const item=(data.comprobaciones||[]).find(x=>txt(x.folio)===txt(folio));
+  const shared=typeof window.hs104GetData==='function'?window.hs104GetData():null;
+  const item=(shared?.comprobaciones||[]).find(x=>txt(x.folio)===txt(folio));
   if(!item)throw new Error('No se encontró la comprobación.');
   if(!item.id)return item;
   const r=await sb().from('hs_comprobaciones').select('*').eq('id',item.id).maybeSingle();
