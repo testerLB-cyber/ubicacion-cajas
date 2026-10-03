@@ -1,0 +1,15 @@
+name: temp-hs-export
+on:
+  push:
+    branches: [fix-hs-list-excess-20261003]
+    paths:
+      - 'tmp/hs_export_20261003.csv'
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hs-export-20261003
+          path: tmp/hs_export_20261003.csv
