@@ -444,7 +444,7 @@
 
   function renderResponsables(){
     const v=view();if(!v)return;const rows=D.asignacionesResponsable||[];
-    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Custodia por responsable</strong><div class="hs104-note">Asigna una hoja, un rango continuo o varias hojas específicas. Todas se validan antes de confirmar.</div></div><div class="hs104-actions"><input id="hs104RespSearch" class="cc-input" type="search" placeholder="Buscar responsable, rango o estatus..."><button class="cc-btn cc-btn-primary" id="hs104AssignResp">Asignar hojas</button></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>RANGO</th><th>RESPONSABLE</th><th>ESTATUS</th><th>ACEPTADO</th><th>ACCIONES</th></tr></thead><tbody id="hs104RespBody"></tbody></table></div></div>';
+    v.innerHTML='<div class="hs104-card"><div class="cc-toolbar"><div><strong>Custodia por responsable</strong><div class="hs104-note">Asigna una hoja, un rango continuo o varias hojas específicas. Todas se validan antes de confirmar.</div></div><div class="hs104-actions"><input id="hs104RespSearch" class="cc-input" type="search" placeholder="Buscar responsable, rango o estatus..."><button class="cc-btn" id="hs104ReturnResp" style="background:#dc2626;color:#fff;border-color:#dc2626"><i class="fa-solid fa-arrow-rotate-left"></i> Retornar hojas</button><button class="cc-btn cc-btn-primary" id="hs104AssignResp">Asignar hojas</button></div></div><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>RANGO</th><th>RESPONSABLE</th><th>ESTATUS</th><th>ACEPTADO</th><th>ACCIONES</th></tr></thead><tbody id="hs104RespBody"></tbody></table></div></div>';
     const draw=()=>{
       const q=norm(v.querySelector('#hs104RespSearch').value);
       const filtered=rows.filter(x=>!q||norm([x.serie,x.anio,x.desde,x.hasta,x.responsableNombre,x.responsableEmail,x.estatus,...(D.assignmentSelections?.[x.id]?.folios||[])].join(' ')).includes(q));
@@ -454,6 +454,7 @@
       v.querySelectorAll('[data-resend]').forEach(b=>b.onclick=()=>reissue(b.dataset.resend));
     };
     v.querySelector('#hs104RespSearch').oninput=draw;
+    v.querySelector('#hs104ReturnResp').onclick=openReturnResponsible;
     v.querySelector('#hs104AssignResp').onclick=openAssignResponsible;
     draw();
   }
@@ -488,6 +489,36 @@
     }});
     setupSelectionUI(o,'responsable');
   }
+  function openReturnResponsible(){
+    if(!perm('asignar_responsable'))return alert('Sin permiso.');
+    const rs=active(D.responsables),ss=active(D.series),ys=active(D.anios);
+    if(!rs.length)return alert('Primero agrega un responsable en Catálogos.');
+    const body='<form><div class="hs104-grid">'+
+      '<div class="cc-field"><label>Serie *</label><select name="serieId" required>'+options(ss,x=>x.codigo)+'</select></div>'+
+      '<div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div>'+
+      '<div class="cc-field"><label>Responsable que retorna *</label><select name="responsableId" required>'+options(rs,x=>x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.correo?' · '+x.correo:''))+'</select></div>'+
+      '<div class="cc-field"><label>Forma de retorno *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
+      '</div>'+
+      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div></div>'+
+      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="5" placeholder="5 dígitos"></div></div>'+
+      '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada hoja se agrega como etiqueta y puedes quitarla con ×.</div></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
+      '<div data-assign-status class="hs104-note" style="margin-top:10px">Captura las hojas para validar que todavía estén bajo custodia del responsable.</div>'+
+      '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
+      '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn" style="background:#dc2626;color:#fff;border-color:#dc2626">Retornar hojas</button></div></form>';
+    const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
+      const item=selectionItem(form);
+      item.serieId=String(fd.get('serieId')||'');
+      item.anioId=String(fd.get('anioId')||'');
+      item.responsableId=String(fd.get('responsableId')||'');
+      const check=await rpc('hs_validate_responsible_return_selection',{p_item:item});
+      if(!check.available)throw new Error(conflictText(check.conflicts,'No se pueden retornar. Hojas con conflicto:'));
+      if(!confirm('¿Confirmas retornar '+Number(check.total||0)+' hoja(s) de '+(check.responsable||'este responsable')+'?\n\nQuedarán en estatus NUEVO y sin responsable.'))return;
+      const r=await rpc('hs_return_responsible_selection',{p_item:item});
+      alert('Hojas retornadas: '+Number(r.retornadas||0)+'\nEstatus: NUEVO\nResponsable eliminado.');
+    }});
+    setupSelectionUI(o,'retorno');
+  }
+
   function conflictText(xs,prefix){
     const rows=Array.isArray(xs)?xs:[];
     return prefix+' '+rows.map(x=>String(x.consecutivo).padStart(5,'0')+' ['+(x.estatus||'NO DISPONIBLE')+']'+(x.responsable?' · '+x.responsable:'')+(x.persona?' · '+x.persona:'')).join(', ');
@@ -524,14 +555,15 @@
       chips.innerHTML=[...form.__assignSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(n)+'<button type="button" data-assign-chip="'+esc(n)+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
       chips.querySelectorAll('[data-assign-chip]').forEach(b=>b.onclick=()=>{form.__assignSet.delete(String(b.dataset.assignChip));renderChips();validate();});
     };
-    const payload=()=>{const item=selectionItem(form);if(kind==='responsable'){item.serieId=form.serieId.value;item.anioId=form.anioId.value;}else item.asignacionId=form.asignacionId.value;return item;};
+    const payload=()=>{const item=selectionItem(form);if(kind==='responsable'||kind==='retorno'){item.serieId=form.serieId.value;item.anioId=form.anioId.value;if(kind==='retorno')item.responsableId=form.responsableId.value;}else item.asignacionId=form.asignacionId.value;return item;};
     let seq=0;
     const validate=async()=>{
       const my=++seq;
       try{
         const item=payload();
         status.textContent='Validando disponibilidad…';status.style.color='#64748b';
-        const r=await rpc(kind==='responsable'?'hs_validate_responsible_selection':'hs_validate_person_selection',{p_item:item});
+        const validator=kind==='responsable'?'hs_validate_responsible_selection':(kind==='retorno'?'hs_validate_responsible_return_selection':'hs_validate_person_selection');
+        const r=await rpc(validator,{p_item:item});
         if(my!==seq)return;
         if(r.available){status.textContent='✓ '+Number(r.total||0)+' hoja(s) disponibles para asignar.';status.style.color='#15803d';}
         else{status.textContent=conflictText(r.conflicts,'✕ Conflicto:');status.style.color='#b91c1c';}
@@ -560,6 +592,7 @@
     form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();if((form.individual?.value||'').length===5)validate();});
     form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();if((form.individual?.value||'').length===5)validate();});
     form.asignacionId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
+    form.responsableId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Captura las hojas para validar que pertenezcan a este responsable.';status.style.color='#64748b';});
   }
 
   async function reissue(id){try{const r=await rpc('hs_reissue_assignment_link',{p_asignacion_id:id});if(r.aceptada)return alert('La asignación ya fue aceptada.');await sendAssignmentEmail(id,r.token)}catch(e){alert(e.message||e)}}
