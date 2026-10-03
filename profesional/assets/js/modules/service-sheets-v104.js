@@ -360,9 +360,9 @@
         return;
       }
       if(modo==='INDIVIDUAL'){
-        const raw0=String(fd.get('individual')||'').replace(/\\D/g,'');
+        const raw0=String(fd.get('individual')||'').replace(/\D/g,'');
         const raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
-        if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones si incluye el cero inicial.');
+        if(!/^\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones si incluye el cero inicial.');
         const check=await rpc('hs_check_folio_number',{p_serie_id:serieId,p_anio_id:anioId,p_consecutivo:Number(raw)});
         if(check.exists)throw new Error('El folio '+check.folio+' ya existe. Estatus: '+(check.estatus||'sin estatus')+(check.responsable?' · Responsable: '+check.responsable:''));
         const r=await rpc('hs_generate_folio_list',{p_item:{serieId,anioId,folios:[Number(raw)]}});
@@ -413,7 +413,7 @@
     const scheduleRange=()=>{clearTimeout(rangeTimer);rangeTimer=setTimeout(previewRange,280);};
     [desde,hasta].forEach(x=>x&&x.addEventListener('input',scheduleRange));
     const validateOne=async raw=>{
-      const n0=String(raw||'').replace(/\\D/g,'');
+      const n0=String(raw||'').replace(/\D/g,'');
       const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
       if(n.length!==5)throw new Error('El folio '+(raw||'')+' debe tener 5 dígitos, o 6 posiciones si incluye el cero inicial.');
       if(form.__folioSet.has(n))throw new Error('El folio '+n+' ya fue agregado.');
@@ -430,7 +430,7 @@
       chips.querySelectorAll('[data-chip]').forEach(b=>b.onclick=()=>{form.__folioSet.delete(String(b.dataset.chip));renderChips();multiStatus.textContent=form.__folioSet.size?form.__folioSet.size+' folio(s) listos.':'Agrega folios de 5 dígitos.';});
     };
     const processMulti=async()=>{
-      const parts=String(varios.value||'').split(/[\\s,]+/).filter(Boolean);
+      const parts=String(varios.value||'').split(/[\s,]+/).filter(Boolean);
       if(!parts.length)return;
       varios.value='';
       for(const p of parts){
@@ -440,9 +440,9 @@
     };
     mode.onchange=showMode;
     varios.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();processMulti();}});
-    varios.addEventListener('input',()=>{const clean=varios.value.replace(/[^0-9,\\s]/g,'');if(clean!==varios.value)varios.value=clean;{const v=varios.value.trim();if(/^\\d{5}$/.test(v)||/^0\\d{5}$/.test(v))processMulti();}});
+    varios.addEventListener('input',()=>{const clean=varios.value.replace(/[^0-9,\s]/g,'');if(clean!==varios.value)varios.value=clean;{const v=varios.value.trim();if(/^\d{5}$/.test(v)||/^0\d{5}$/.test(v))processMulti();}});
     individual.addEventListener('input',async()=>{
-      individual.value=individual.value.replace(/\\D/g,'').slice(0,6);
+      individual.value=individual.value.replace(/\D/g,'').slice(0,6);
       const raw0=individual.value,raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
       if(raw.length!==5){individualStatus.textContent='Captura 5 dígitos, o 6 posiciones con cero inicial.';individualStatus.style.color='#64748b';return;}
       if(!serie.value||!anio.value){individualStatus.textContent='Selecciona primero Serie y Año.';individualStatus.style.color='#b91c1c';return;}
@@ -538,18 +538,18 @@
     const item={modo};
     if(modo==='RANGO'){
       const normalizeRangeFolio=value=>{
-        let n=String(value||'').replace(/\\D/g,'');
+        let n=String(value||'').replace(/\D/g,'');
         if(n.length===6&&n.startsWith('0'))n=n.slice(1);
         return n;
       };
       const ds=normalizeRangeFolio(form.desde?.value),hs=normalizeRangeFolio(form.hasta?.value);
-      if(!/^\\d{5}$/.test(ds)||!/^\\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener 5 dígitos, o 6 posiciones cuando incluyen cero inicial.');
+      if(!/^\d{5}$/.test(ds)||!/^\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener 5 dígitos, o 6 posiciones cuando incluyen cero inicial.');
       item.desde=Number(ds);item.hasta=Number(hs);
       if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
     }else if(modo==='INDIVIDUAL'){
-      const raw0=String(form.individual?.value||'').replace(/\\D/g,'');
+      const raw0=String(form.individual?.value||'').replace(/\D/g,'');
       const raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
-      if(!/^\\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
+      if(!/^\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
       item.individual=Number(raw);
     }else{
       const nums=[...(form.__assignSet||[])];
@@ -581,10 +581,10 @@
       }catch(e){if(my!==seq)return;status.textContent=e.message||e;status.style.color='#b91c1c';}
     };
     const process=()=>{
-      const parts=String(varios?.value||'').split(/[\\s,]+/).filter(Boolean);if(!parts.length)return;
+      const parts=String(varios?.value||'').split(/[\s,]+/).filter(Boolean);if(!parts.length)return;
       varios.value='';
       for(const p of parts){
-        const n0=String(p).replace(/\\D/g,'');
+        const n0=String(p).replace(/\D/g,'');
         const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
         if(n.length!==5){status.textContent='El folio '+p+' debe tener 5 dígitos, o 6 posiciones si incluye cero inicial.';status.style.color='#b91c1c';return;}
         form.__assignSet.add(n);
@@ -599,10 +599,10 @@
       ['desde','hasta','individual','varios'].forEach(n=>{if(form[n])form[n].value='';});
       status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';
     };
-    ['desde','hasta'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\\D/g,'').slice(0,6);const v=form[n].value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
-    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\\D/g,'').slice(0,6);const v=form.individual.value;const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();});
+    ['desde','hasta'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\D/g,'').slice(0,6);const v=form[n].value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
+    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\D/g,'').slice(0,6);const v=form.individual.value;const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();});
     varios?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();process();}});
-    varios?.addEventListener('input',()=>{varios.value=varios.value.replace(/[^0-9,\\s]/g,'');if(/^\\d{5}$/.test(varios.value.trim()))process();});
+    varios?.addEventListener('input',()=>{varios.value=varios.value.replace(/[^0-9,\s]/g,'');if(/^\d{5}$/.test(varios.value.trim()))process();});
     form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
     form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
     form.asignacionId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
