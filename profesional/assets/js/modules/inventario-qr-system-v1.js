@@ -1,7 +1,7 @@
 /* Tráfico App · Sistema QR de unidades · vista previa + PDF */
 (function(){
  if(window.__CC_UNIT_QR_SYSTEM_V2__)return;window.__CC_UNIT_QR_SYSTEM_V2__=true;
- const SCAN='https://ubicacion-cajas.pages.dev/unidad-ubicacion.html';
+ const SCAN='https://trafico.logisticabalderrama.com/profesional/ubicacion.html';
  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
  let previewItems=[];
