@@ -10,7 +10,7 @@ function tableRows(xs,checks=true){return sortFolios(xs).map(x=>'<tr data-row-id
 function rows(cid,filtered){window.__HSP_CLIENT_SELECTED__=!!cid;const b=document.getElementById('hspRows'),xs=filtered||D.comprobaciones||[];if(!xs.length){b.innerHTML='No hay hojas comprobadas disponibles con estos filtros.';return}b.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:8px"><div><b>'+xs.length+' hojas disponibles · <span id="hspN">0 seleccionadas</span></b><div id="hspNFCount" class="hs104-note">0 no facturables</div></div><div style="text-align:right;min-width:230px"><div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:9px 12px;margin-bottom:8px"><div style="font-size:11px;font-weight:800;letter-spacing:.04em;color:#475569">TOTAL FACTURABLE SELECCIONADO</div><div id="hspTotal" style="font-size:26px;font-weight:900;line-height:1.15;margin-top:3px">$0.00</div></div><div style="display:flex;gap:8px"><button id="hspMake" class="cc-btn cc-btn-primary" style="flex:1" disabled>Generar proforma</button><button id="hspMake1x1" class="cc-btn cc-btn-light" style="flex:1;font-weight:900" disabled>Factura 1x1</button></div></div></div><div class="hs104-note" style="margin-bottom:8px"><b>No facturable:</b> cierra el ciclo de la hoja sin cobrar al cliente. La comprobación permanece válida para liquidación del operador.</div><div style="overflow:auto;max-height:58vh"><table class="cc-table-list" style="min-width:1360px"><thead><tr><th><input id="hspAll" type="checkbox" '+(cid?'':'disabled')+'></th><th>No facturable</th><th>Folio</th><th>Serie</th><th>Fecha</th><th>Cliente</th><th>Tipo viaje</th><th>Clasificación</th><th>Operador</th><th>Unidad</th><th>Remolque</th><th>Tarifa</th><th>Error</th></tr></thead><tbody>'+tableRows(xs)+'</tbody></table></div>';const u=()=>{const checked=[...b.querySelectorAll('.hspC:checked')],nf=[...b.querySelectorAll('.hspNF:checked')];let n=checked.length,total=0;checked.forEach(ch=>{const a=b.querySelector('.hspAmt[data-id="'+CSS.escape(ch.value)+'"]');const val=Number(a?.value||0);if(Number.isFinite(val))total+=val});b.querySelector('#hspN').textContent=n+' facturable'+(n===1?'':'s');b.querySelector('#hspNFCount').textContent=nf.length+' no facturable'+(nf.length===1?'':'s');b.querySelector('#hspTotal').textContent=total.toLocaleString('es-MX',{style:'currency',currency:'MXN'});b.querySelector('#hspMake').disabled=(!n&&!nf.length)||!P('proforma.generar_pdf');b.querySelector('#hspMake1x1').disabled=!n||!P('proforma.generar_pdf')};b.querySelectorAll('.hspC').forEach(x=>x.onchange=()=>{if(x.checked){const nf=b.querySelector('.hspNF[value="'+CSS.escape(x.value)+'"]');if(nf)nf.checked=false;const a=b.querySelector('.hspAmt[data-id="'+CSS.escape(x.value)+'"]');if(a)a.disabled=false;}u()});b.querySelectorAll('.hspNF').forEach(x=>x.onchange=()=>{const row=x.closest('tr');const bill=row?.querySelector('.hspC'),amt=row?.querySelector('.hspAmt');if(x.checked&&bill)bill.checked=false;if(amt)amt.disabled=x.checked;row?.style.setProperty('opacity',x.checked?'.72':'1');u()});b.querySelectorAll('.hspAmt').forEach(x=>{x.oninput=u;x.onchange=u});b.querySelectorAll('[data-pre-error]').forEach(x=>x.onclick=()=>reportError(null,x.dataset.preError));b.querySelector('#hspAll').onchange=e=>{b.querySelectorAll('.hspC').forEach(x=>{x.checked=e.target.checked;if(x.checked){const nf=b.querySelector('.hspNF[value="'+CSS.escape(x.value)+'"]');if(nf)nf.checked=false;const a=b.querySelector('.hspAmt[data-id="'+CSS.escape(x.value)+'"]');if(a)a.disabled=false;}});u()};b.querySelector('#hspMake').onclick=async()=>{let ids=[...b.querySelectorAll('.hspC:checked')].map(x=>x.value),nfIds=[...b.querySelectorAll('.hspNF:checked')].map(x=>x.value),importes={};ids.forEach(id=>{const a=b.querySelector('.hspAmt[data-id="'+CSS.escape(id)+'"]');if(a)importes[id]=Number(a.value||0)});if(!ids.length&&!nfIds.length)return;const msg='¿Guardar este cierre?\\n\\nFacturables: '+ids.length+'\\nNo facturables: '+nfIds.length+(nfIds.length?'\\n\\nLas no facturables NO se cobrarán al cliente y quedarán cerradas para liquidación.':'');if(!confirm(msg))return;try{let d=await R('hs_proforma_create_with_nonbillable',{p_cliente_id:cid,p_comprobacion_ids:ids,p_importes:importes,p_no_facturable_ids:nfIds});let out=[];if(d.numero)out.push('Proforma '+d.numero+' creada.');if(Number(d.noFacturables||0))out.push(d.noFacturables+' hoja(s) cerradas como NO FACTURABLE.');alert(out.join('\\n')||'Proceso guardado.');D=await R('hs_proforma_data',{p_cliente_id:null});hist()}catch(e){alert(e.message||e)}};b.querySelector('#hspMake1x1').onclick=()=>openFactura1x1Seleccion(cid,xs,b);u()}
 async function delProforma(id,numero){if(!confirm('¿Eliminar la proforma '+numero+'? Las hojas quedarán disponibles nuevamente.'))return;try{await R('hs_proforma_delete',{p_proforma_id:id});alert('Proforma eliminada.');D=await R('hs_proforma_data',{p_cliente_id:null});hist()}catch(e){alert(e.message||e)}}
 function badge(x){return x==='FACTURADA'?'<span style="background:#dcfce7;color:#166534;padding:5px 8px;border-radius:999px;font-weight:800">FACTURADA</span>':'<span style="background:#fef3c7;color:#92400e;padding:5px 8px;border-radius:999px;font-weight:800">PENDIENTE DE FACTURAR</span>'}
-function hist(){const b=document.getElementById('hspBody'),xs=D.historial||[];if(!b)return;const clientes=[...new Set(xs.map(x=>x.cliente).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));b.innerHTML='<div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap"><h4 style="margin:0">Historial de proformas</h4><div class="cc-field" style="min-width:280px"><label>Filtrar cliente</label><select id="hspHistClient"><option value="">Todos los clientes</option>'+clientes.map(x=>'<option value="'+E(x)+'">'+E(x)+'</option>').join('')+'</select></div></div><div id="hspHistTable" style="overflow:auto;margin-top:10px"></div>';const draw=()=>{const q=b.querySelector('#hspHistClient').value,ys=q?xs.filter(x=>x.cliente===q):xs,t=b.querySelector('#hspHistTable');t.innerHTML='<table class="cc-table-list" style="min-width:1050px"><thead><tr><th>Proforma</th><th>Fecha</th><th>Cliente</th><th>Hojas</th><th>Gran total</th><th>Estatus</th><th>Factura</th><th>Acciones</th></tr></thead><tbody>'+(ys.length?ys.map(x=>'<tr><td><b>'+E(x.numero)+'</b></td><td>'+E(new Date(x.createdAt).toLocaleString('es-MX'))+'</td><td>'+E(x.cliente)+'</td><td>'+E(x.totalHojas)+'</td><td><b>'+M(x.granTotal||0)+'</b></td><td>'+badge(x.estatus)+'</td><td>'+E(x.facturaNumero==='1X1'?'1x1 · por hoja':(x.facturaNumero||'—'))+'</td><td style="white-space:nowrap"><button class="cc-btn cc-btn-light" data-view="'+x.id+'">Ver</button> '+(x.estatus!=='FACTURADA'&&!x.facturaNumero?'<button class="cc-btn cc-btn-light" data-edit="'+x.id+'">Editar</button> ':'')+'<button class="cc-btn cc-btn-light" data-pdf="'+x.id+'">PDF</button> '+(x.estatus!=='FACTURADA'?'<button class="cc-btn cc-btn-light" data-fact="'+x.id+'">Facturada</button> <button class="cc-btn cc-btn-light" data-del="'+x.id+'" data-num="'+E(x.numero)+'" style="color:#b91c1c">Eliminar</button>':'')+'</td></tr>').join(''):'<tr><td colspan="8">No hay proformas para este cliente.</td></tr>')+'</tbody></table>';t.querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>viewProforma(x.dataset.view));t.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>edit(x.dataset.edit));t.querySelectorAll('[data-pdf]').forEach(x=>x.onclick=()=>pdf(x.dataset.pdf));t.querySelectorAll('[data-fact]').forEach(x=>x.onclick=()=>facturar(x.dataset.fact));t.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>delProforma(x.dataset.del,x.dataset.num))};b.querySelector('#hspHistClient').onchange=draw;draw()}
+function hist(){const b=document.getElementById('hspBody'),xs=D.historial||[];if(!b)return;const clientes=[...new Set(xs.map(x=>x.cliente).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));b.innerHTML='<div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap"><h4 style="margin:0">Historial de proformas</h4><div class="cc-field" style="min-width:280px"><label>Filtrar cliente</label><select id="hspHistClient"><option value="">Todos los clientes</option>'+clientes.map(x=>'<option value="'+E(x)+'">'+E(x)+'</option>').join('')+'</select></div></div><div id="hspHistTable" style="overflow:auto;margin-top:10px"></div>';const draw=()=>{const q=b.querySelector('#hspHistClient').value,ys=q?xs.filter(x=>x.cliente===q):xs,t=b.querySelector('#hspHistTable');t.innerHTML='<table class="cc-table-list" style="min-width:1050px"><thead><tr><th>Proforma</th><th>Fecha</th><th>Cliente</th><th>Hojas</th><th>Gran total</th><th>Estatus</th><th>Factura</th><th>Acciones</th></tr></thead><tbody>'+(ys.length?ys.map(x=>'<tr><td><b>'+E(x.numero)+'</b></td><td>'+E(new Date(x.createdAt).toLocaleString('es-MX'))+'</td><td>'+E(x.cliente)+'</td><td>'+E(x.totalHojas)+'</td><td><b>'+M(x.granTotal||0)+'</b></td><td>'+badge(x.estatus)+'</td><td>'+E(x.facturaNumero==='1X1'?'1x1 · por hoja':(x.facturaNumero||'—'))+'</td><td style="white-space:nowrap"><button class="cc-btn cc-btn-light" data-view="'+x.id+'">Ver</button> '+(x.estatus!=='FACTURADA'&&!x.facturaNumero?'<button class="cc-btn cc-btn-light" data-edit="'+x.id+'">Editar</button> ':'')+'<button class="cc-btn cc-btn-light" data-pdf="'+x.id+'">PDF</button> '+(x.estatus!=='FACTURADA'?'<button class="cc-btn cc-btn-light" data-fact="'+x.id+'">Facturada</button> <button class="cc-btn cc-btn-light" data-del="'+x.id+'" data-num="'+E(x.numero)+'" style="color:#b91c1c">Eliminar</button>':'')+'</td></tr>').join(''):'<tr><td colspan="8">No hay proformas para este cliente.</td></tr>')+'</tbody></table>';t.querySelectorAll('[data-view]').forEach(x=>x.onclick=()=>viewProforma(x.dataset.view));t.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>edit(x.dataset.edit));t.querySelectorAll('[data-pdf]').forEach(x=>x.onclick=()=>pdfChoice(x.dataset.pdf));t.querySelectorAll('[data-fact]').forEach(x=>x.onclick=()=>facturar(x.dataset.fact));t.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>delProforma(x.dataset.del,x.dataset.num))};b.querySelector('#hspHistClient').onchange=draw;draw()}
 async function viewProforma(id){try{const d=await R('hs_proforma_detail',{p_proforma_id:id}),p=d.proforma,b=document.getElementById('hspBody'),total=(d.hojas||[]).reduce((s,x)=>s+Number(x.importe||0),0);b.innerHTML='<div class="cc-toolbar"><div><b>'+E(p.numero)+'</b><div class="hs104-note">'+E(p.cliente)+' · '+badge(p.estatus)+'</div></div><button class="cc-btn cc-btn-light" id="hspViewBack">Volver al historial</button></div><div style="margin:10px 0"><b>'+E((d.hojas||[]).length)+' hojas · Gran total '+M(total)+'</b></div><div style="overflow:auto"><table class="cc-table-list" style="min-width:1150px"><thead><tr><th>Folio</th><th>Fecha</th><th>Tipo viaje</th><th>Clasificación</th><th>Operador</th><th>Unidad</th><th>Remolque</th><th>Factura</th><th>Importe</th></tr></thead><tbody>'+(d.hojas||[]).map(x=>'<tr><td><b>'+E(x.folio)+'</b></td><td>'+E(x.fecha)+'</td><td>'+E(x.tipoViaje)+'</td><td>'+E(x.clasificacion)+'</td><td>'+E(x.operador)+'</td><td>'+E(x.unidad)+'</td><td>'+E(x.remolque||'—')+'</td><td><b>'+E(x.facturaNumero||'—')+'</b></td><td><b>'+M(x.importe)+'</b></td></tr>').join('')+'</tbody></table></div>';b.querySelector('#hspViewBack').onclick=async()=>{D=await R('hs_proforma_data',{p_cliente_id:null});hist()}}catch(e){alert(e.message||e)}}
 async function edit(id){try{const d=await R('hs_proforma_detail',{p_proforma_id:id}),p=d.proforma,b=document.getElementById('hspBody');if(p.estatus==='FACTURADA'||p.facturaNumero){alert('Esta proforma ya tiene factura registrada y no se puede editar.');return;}const av=await R('hs_proforma_data',{p_cliente_id:p.clienteId});b.innerHTML='<div class="cc-toolbar"><div><b>Editar '+E(p.numero)+'</b><div class="hs104-note">'+E(p.cliente)+' · '+(p.estatus==='FACTURADA'?'Facturada':'Pendiente de facturar')+'</div></div><button class="cc-btn cc-btn-light" id="hspBack">Volver</button></div><div style="overflow:auto"><table class="cc-table-list" style="min-width:1350px"><thead><tr><th>Quitar</th><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Tipo viaje</th><th>Clasificación</th><th>Operador</th><th>Unidad</th><th>Remolque</th><th>Importe</th><th>Error</th></tr></thead><tbody>'+d.hojas.map(x=>'<tr><td>'+(p.estatus!=='FACTURADA'?'<input type="checkbox" data-remove="'+x.id+'">':'')+'</td><td><b>'+E(x.folio)+'</b></td><td>'+E(x.fecha)+'</td><td>'+E(x.cliente)+'</td><td>'+E(x.tipoViaje)+'</td><td>'+E(x.clasificacion)+'</td><td>'+E(x.operador)+'</td><td>'+E(x.unidad)+'</td><td>'+E(x.remolque||'—')+'</td><td><input type="number" min="0" step=".01" data-amt="'+x.detalleId+'" value="'+(x.importe??'')+'" '+(p.estatus==='FACTURADA'?'disabled':'')+' style="width:110px"></td><td><button class="cc-btn cc-btn-light" data-error="'+x.id+'">Notificar error</button></td></tr>').join('')+'</tbody></table></div>'+(p.estatus!=='FACTURADA'?'<div style="margin:14px 0"><b>Agregar más hojas comprobadas</b><div style="max-height:230px;overflow:auto;margin-top:7px">'+((av.comprobaciones||[]).length?'<table class="cc-table-list"><tbody>'+av.comprobaciones.map(x=>'<tr><td><input type="checkbox" data-add="'+x.id+'"></td><td>'+E(x.folio)+'</td><td>'+E(x.tipoViaje)+'</td><td>'+E(x.clasificacion)+'</td><td>'+M(x.importe)+'</td></tr>').join('')+'</tbody></table>':'No hay más hojas disponibles para este cliente.')+'</div><button id="hspSaveEdit" class="cc-btn cc-btn-primary" style="margin-top:10px">Guardar cambios</button></div>':'') ;b.querySelector('#hspBack').onclick=async()=>{D=await R('hs_proforma_data',{p_cliente_id:null});hist()};b.querySelectorAll('[data-error]').forEach(x=>x.onclick=()=>reportError(id,x.dataset.error));b.querySelector('#hspSaveEdit')?.addEventListener('click',async()=>{const add=[...b.querySelectorAll('[data-add]:checked')].map(x=>x.dataset.add),rem=[...b.querySelectorAll('[data-remove]:checked')].map(x=>x.dataset.remove);await R('hs_proforma_update',{p_proforma_id:id,p_add_ids:add,p_remove_ids:rem});alert('Proforma actualizada.');await edit(id)})}catch(e){alert(e.message||e)}}
 function openFactura1x1Seleccion(cid,xs,b){
@@ -65,6 +65,138 @@ async function facturar(id){const n=prompt('Número de factura:');if(!n?.trim())
 async function reportError(pid,cid){const m=prompt('Describe qué información está incorrecta en esta hoja:');if(!m?.trim())return;try{await R('hs_proforma_report_error',{p_proforma_id:pid||null,p_comprobacion_id:cid,p_motivo:m.trim()});const r=await S().functions.invoke('cc-send-proforma-error-email',{body:{proformaId:pid||null,comprobacionId:cid,motivo:m.trim()}});if(r.error||r.data?.ok===false)throw Error(r.data?.message||r.error?.message||'No se pudo enviar correo');alert('Error notificado por correo a la persona que comprobó la hoja.')}catch(e){alert('El reporte quedó registrado. Correo: '+(e.message||e))}}
 async function jsPDF(){if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;await new Promise((ok,no)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)});return window.jspdf.jsPDF}
 async function img(path){if(!path)return null;try{const r=await S().storage.from('app-hojas-servicio').createSignedUrl(path,300);if(r.error)return null;const z=await fetch(r.data.signedUrl),bl=await z.blob();return await new Promise(q=>{let f=new FileReader;f.onload=()=>q(f.result);f.onerror=()=>q(null);f.readAsDataURL(bl)})}catch{return null}}
-async function pdf(id){try{const d=await R('hs_proforma_detail',{p_proforma_id:id}),J=await jsPDF(),doc=new J({unit:'mm',format:'a4'}),p=d.proforma,hojas=d.hojas||[],total=hojas.reduce((s,x)=>s+Number(x.importe||0),0);doc.setFontSize(18);doc.text('PROFORMA',105,18,{align:'center'});doc.setFontSize(12);doc.text(String(p.numero||''),105,25,{align:'center'});doc.setFontSize(10);doc.text('Cliente: '+String(p.cliente||'—'),15,35);doc.text('Fecha: '+new Date(p.createdAt).toLocaleString('es-MX'),15,41);doc.text('Estatus: '+(p.estatus==='FACTURADA'?'FACTURADA · Factura '+(p.facturaNumero||''):'PENDIENTE DE FACTURAR'),15,47);doc.setFontSize(12);doc.text('Gran total: '+M(total),195,47,{align:'right'});for(let i=0;i<hojas.length;i++){const x=hojas[i];doc.addPage();let y=18;doc.setFontSize(13);doc.text('Hoja '+(x.folio||''),15,y);y+=8;doc.setFontSize(9);for(const [k,v] of [['Fecha',x.fecha],['Cliente',x.cliente],['Tipo de viaje',x.tipoViaje],['Clasificación',x.clasificacion],['Operador',x.operador],['Unidad',x.unidad],['Remolque',x.remolque||'—'],['Factura',x.facturaNumero||'—'],['Importe',M(x.importe)]]){doc.text(k+': '+String(v||'—'),15,y);y+=6}const im=await img(x.fotoPath);if(im){try{const pr=doc.getImageProperties(im);let w=170,h=w*pr.height/pr.width;if(h>120){h=120;w=h*pr.width/pr.height}doc.addImage(im,pr.fileType||'JPEG',15,y+3,w,h)}catch{}}}doc.addPage();doc.setFontSize(16);doc.text('LISTADO DE HOJAS Y FACTURAS',105,18,{align:'center'});let ly=30;doc.setFontSize(9);doc.text('Hoja',15,ly);doc.text('Factura',80,ly);doc.text('Importe',195,ly,{align:'right'});ly+=6;for(const x of hojas){if(ly>282){doc.addPage();ly=20;doc.text('Hoja',15,ly);doc.text('Factura',80,ly);doc.text('Importe',195,ly,{align:'right'});ly+=6}doc.text(String(x.folio||'—'),15,ly);doc.text(String(x.facturaNumero||'—'),80,ly);doc.text(M(x.importe),195,ly,{align:'right'});ly+=6}doc.addPage();doc.setFontSize(16);doc.text('CONCENTRADO DE SERVICIOS',105,18,{align:'center'});const g={};hojas.forEach(x=>{const k=x.tipoViaje||'SIN TIPO';if(!g[k])g[k]={n:0,total:0};g[k].n++;g[k].total+=Number(x.importe||0)});let y=32;doc.setFontSize(10);doc.text('Tipo de viaje',15,y);doc.text('Servicios',120,y,{align:'right'});doc.text('Total',195,y,{align:'right'});y+=7;Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0],'es')).forEach(([k,v])=>{doc.text(String(k),15,y);doc.text(String(v.n),120,y,{align:'right'});doc.text(M(v.total),195,y,{align:'right'});y+=7});y+=5;doc.setFontSize(12);doc.text('Total de servicios: '+hojas.length,15,y);doc.text('GRAN TOTAL: '+M(total),195,y,{align:'right'});doc.save('Proforma_'+p.numero+'.pdf')}catch(e){alert(e.message||e)}}
+
+function pdfChoice(id){
+  document.getElementById('hspPdfModeModal')?.remove();
+  const m=document.createElement('div');
+  m.id='hspPdfModeModal';
+  m.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.60);display:flex;align-items:center;justify-content:center;padding:18px';
+  m.innerHTML='<div style="width:min(560px,96vw);background:#fff;border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.28);overflow:hidden">'+
+    '<div style="padding:18px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:14px;align-items:center"><div><div style="font-size:19px;font-weight:900;color:#0f172a">Generar PDF de proforma</div><div style="font-size:12px;color:#64748b;margin-top:3px">Selecciona cómo debe mostrarse la información económica.</div></div><button type="button" class="cc-btn cc-btn-light" data-close>✕</button></div>'+
+    '<div style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+      '<button type="button" data-mode="with" style="text-align:left;border:1px solid #cbd5e1;background:#f8fafc;border-radius:14px;padding:16px;cursor:pointer"><div style="font-size:15px;font-weight:900;color:#0f172a">PDF con tarifa</div><div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.45">Incluye tarifa por hoja, gran total y concentrado económico.</div></button>'+
+      '<button type="button" data-mode="without" style="text-align:left;border:1px solid #cbd5e1;background:#fff;border-radius:14px;padding:16px;cursor:pointer"><div style="font-size:15px;font-weight:900;color:#0f172a">PDF sin tarifa</div><div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.45">Oculta importes y totales; conserva hojas, datos operativos, facturas y evidencias.</div></button>'+
+    '</div>'+
+    '<div style="padding:0 20px 18px;color:#475569;font-size:11px">La evidencia fotográfica se conserva en ambas versiones.</div>'+
+  '</div>';
+  document.body.appendChild(m);
+  const close=()=>m.remove();
+  m.querySelector('[data-close]').onclick=close;
+  m.onclick=e=>{if(e.target===m)close()};
+  m.querySelector('[data-mode="with"]').onclick=()=>{close();pdf(id,true)};
+  m.querySelector('[data-mode="without"]').onclick=()=>{close();pdf(id,false)};
+}
+async function pdf(id,showAmounts=true){
+  try{
+    const d=await R('hs_proforma_detail',{p_proforma_id:id}),J=await jsPDF(),doc=new J({unit:'mm',format:'a4'}),p=d.proforma,hojas=sortFolios(d.hojas||[]),total=hojas.reduce((s,x)=>s+Number(x.importe||0),0);
+    const W=210,H=297,ml=14,mr=14,contentW=W-ml-mr;
+    const money=v=>Number(v||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});
+    const safe=v=>String(v==null||v===''?'—':v);
+    const fecha=v=>{if(!v)return'—';try{return new Date(v).toLocaleDateString('es-MX',{year:'numeric',month:'2-digit',day:'2-digit'})}catch{return String(v)}};
+    const statusTxt=p.estatus==='FACTURADA'?'FACTURADA'+(p.facturaNumero&&p.facturaNumero!=='1X1'?' · Factura '+p.facturaNumero:''):'PENDIENTE DE FACTURAR';
+    const line=(y)=>{doc.setDrawColor(203,213,225);doc.setLineWidth(.25);doc.line(ml,y,W-mr,y)};
+    const footer=(pageLabel='')=>{
+      doc.setDrawColor(226,232,240);doc.line(ml,286,W-mr,286);
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,116,139);
+      doc.text('Documento de soporte de proforma · '+safe(p.numero),ml,291);
+      doc.text((showAmounts?'Versión con tarifas':'Versión sin tarifas')+(pageLabel?' · '+pageLabel:''),W-mr,291,{align:'right'});
+      doc.setTextColor(15,23,42);
+    };
+    const header=(title,subtitle)=>{
+      doc.setFillColor(15,23,42);doc.rect(0,0,W,28,'F');
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text(title,ml,12);
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.text(subtitle||safe(p.numero),ml,19);
+      doc.setTextColor(15,23,42);
+    };
+
+    header('PROFORMA DE SERVICIOS',safe(p.numero));
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('CLIENTE',ml,39);
+    doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text(safe(p.cliente),ml,45);
+    doc.setFontSize(8.5);doc.setTextColor(71,85,105);doc.text('Fecha de emisión',ml,54);doc.text('Estatus',76,54);doc.text('Servicios',142,54);
+    doc.setTextColor(15,23,42);doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text(fecha(p.createdAt),ml,60);doc.text(statusTxt,76,60);doc.text(String(hojas.length),142,60);
+    if(showAmounts){
+      doc.setFillColor(248,250,252);doc.roundedRect(ml,69,contentW,23,3,3,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(71,85,105);doc.text('GRAN TOTAL',ml+6,78);
+      doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(15,23,42);doc.text(money(total),W-mr-6,84,{align:'right'});
+    }else{
+      doc.setFillColor(248,250,252);doc.roundedRect(ml,69,contentW,18,3,3,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(71,85,105);doc.text('VERSIÓN SIN TARIFAS · IMPORTES OMITIDOS',ml+6,80);
+    }
+    let y=showAmounts?105:100;
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(15,23,42);doc.text('Resumen de servicios',ml,y);y+=7;
+    doc.setFillColor(241,245,249);doc.rect(ml,y,contentW,9,'F');
+    doc.setFontSize(8);doc.text('Tipo de viaje',ml+3,y+6);doc.text('Servicios',showAmounts?142:W-mr-3,y+6,{align:'right'});
+    if(showAmounts)doc.text('Importe',W-mr-3,y+6,{align:'right'});
+    y+=12;
+    const g={};hojas.forEach(x=>{const k=x.tipoViaje||'SIN TIPO';if(!g[k])g[k]={n:0,total:0};g[k].n++;g[k].total+=Number(x.importe||0)});
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+    for(const [k,v] of Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0],'es'))){
+      if(y>273){footer();doc.addPage();header('RESUMEN DE SERVICIOS',safe(p.numero));y=39}
+      doc.text(safe(k).slice(0,62),ml+3,y);doc.text(String(v.n),showAmounts?142:W-mr-3,y,{align:'right'});if(showAmounts)doc.text(money(v.total),W-mr-3,y,{align:'right'});y+=7;line(y-3);
+    }
+    footer('Resumen');
+
+    for(let i=0;i<hojas.length;i++){
+      const x=hojas[i];doc.addPage();header('DETALLE DE SERVICIO',safe(x.folio));
+      doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text(safe(x.folio),ml,39);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,116,139);doc.text('Hoja '+(i+1)+' de '+hojas.length,W-mr,39,{align:'right'});doc.setTextColor(15,23,42);
+      const cells=[
+        ['Fecha',fecha(x.fecha)],['Cliente',x.cliente],['Tipo de viaje',x.tipoViaje],['Clasificación',x.clasificacion],
+        ['Operador',x.operador],['Unidad',x.unidad],['Remolque',x.remolque||'—'],['Factura',x.facturaNumero||'—']
+      ];
+      let cy=49;
+      for(let r=0;r<cells.length;r+=2){
+        const a=cells[r],b=cells[r+1];
+        doc.setFillColor(248,250,252);doc.roundedRect(ml,cy,88,18,2,2,'F');doc.roundedRect(108,cy,88,18,2,2,'F');
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,116,139);doc.text(a[0],ml+4,cy+6);doc.text(b[0],112,cy+6);
+        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(15,23,42);
+        doc.text(doc.splitTextToSize(safe(a[1]),80).slice(0,2),ml+4,cy+12);
+        doc.text(doc.splitTextToSize(safe(b[1]),80).slice(0,2),112,cy+12);
+        cy+=22;
+      }
+      if(showAmounts){
+        doc.setFillColor(15,23,42);doc.roundedRect(ml,cy,contentW,16,2,2,'F');
+        doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text('TARIFA DEL SERVICIO',ml+5,cy+10);
+        doc.setFontSize(12);doc.text(money(x.importe),W-mr-5,cy+10,{align:'right'});doc.setTextColor(15,23,42);cy+=22;
+      }
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text('EVIDENCIA',ml,cy);cy+=5;
+      const im=await img(x.fotoPath);
+      if(im){
+        try{
+          const pr=doc.getImageProperties(im),maxW=contentW,maxH=286-cy-8;let w=maxW,h=w*pr.height/pr.width;
+          if(h>maxH){h=maxH;w=h*pr.width/pr.height}
+          const ix=ml+(contentW-w)/2;
+          doc.setDrawColor(226,232,240);doc.roundedRect(ix-1,cy-1,w+2,h+2,2,2);
+          doc.addImage(im,pr.fileType||'JPEG',ix,cy,w,h);
+        }catch{
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,116,139);doc.text('No fue posible insertar la evidencia en el PDF.',ml,cy+8);doc.setTextColor(15,23,42);
+        }
+      }else{
+        doc.setFillColor(248,250,252);doc.roundedRect(ml,cy,contentW,24,2,2,'F');
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(100,116,139);doc.text('Sin evidencia fotográfica disponible.',ml+5,cy+14);doc.setTextColor(15,23,42);
+      }
+      footer('Detalle '+(i+1)+'/'+hojas.length);
+    }
+
+    doc.addPage();header('LISTADO DE HOJAS Y FACTURAS',safe(p.numero));
+    let ly=39;
+    doc.setFillColor(241,245,249);doc.rect(ml,ly,contentW,9,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text('Hoja',ml+3,ly+6);doc.text('Factura',90,ly+6);
+    if(showAmounts)doc.text('Importe',W-mr-3,ly+6,{align:'right'});
+    ly+=14;doc.setFont('helvetica','normal');
+    for(const x of hojas){
+      if(ly>277){footer();doc.addPage();header('LISTADO DE HOJAS Y FACTURAS',safe(p.numero));ly=39}
+      doc.text(safe(x.folio),ml+3,ly);doc.text(safe(x.facturaNumero||'—'),90,ly);
+      if(showAmounts)doc.text(money(x.importe),W-mr-3,ly,{align:'right'});
+      ly+=7;line(ly-3);
+    }
+    if(showAmounts){ly+=3;doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('GRAN TOTAL',ml,ly);doc.text(money(total),W-mr,ly,{align:'right'})}
+    footer('Listado');
+
+    const suffix=showAmounts?'_CON_TARIFA':'_SIN_TARIFA';
+    doc.save('Proforma_'+String(p.numero||'')+suffix+'.pdf');
+  }catch(e){alert(e.message||e)}
+}
+
 function install(){const n=document.getElementById('hs104Nav');if(!n||n.querySelector('[data-proforma]')||!P('proforma.ver'))return;let b=document.createElement('button');b.className='cc-btn cc-btn-light';b.dataset.proforma='1';b.textContent='Proforma';b.onclick=open;n.appendChild(b)}
 window.hsOpenProformas=open;if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{install();setTimeout(install,1200)});else{install();setTimeout(install,1200)}})();
