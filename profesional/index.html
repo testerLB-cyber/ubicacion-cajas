@@ -4,12 +4,13 @@
 <head>
 <script>
 (function(){
-  if(location.hostname==='testerlb-cyber.github.io'){
-    location.replace('https://ubicacion-cajas.pages.dev/profesional/'+location.search+location.hash);
+  var h=String(location.hostname||'').toLowerCase();
+  if(h==='testerlb-cyber.github.io'||h==='ubicacion-cajas.pages.dev'){
+    location.replace('https://trafico.logisticabalderrama.com/profesional/'+location.search+location.hash);
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261002-cloudflare-qr1"/>
+<meta name="trafico-app-build" content="profesional-20261003-custom-domain-qr2"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -1190,7 +1191,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/ media="print" onload="this.media='all'">
 <script id="gm-supabase-inline" src="assets/js/vendor/supabase-sdk.js"></script>
 <script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>
-<script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js?v=20261003-custom-domain-qr1"></script>
+<script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js?v=20261003-custom-domain-qr2"></script>
 <script src="assets/js/core/module-registry.js?v=20260924-invoice-status2"></script>
 <script src="assets/js/modules/inventario.js"></script>
 <script src="assets/js/modules/rentas.js"></script>
@@ -1199,7 +1200,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script src="assets/js/modules/configuracion.js?v=20260928-beneficiarios-web1"></script>
 <script src="assets/js/modules/config-tipos-viaje-clasificaciones.js?v=20260924-billing-rule1"></script>
 <script src="assets/js/modules/matriz-cobro-v1.js?v=20260930-price-filter2"></script>
-<script src="assets/js/modules/configuracion-impresion-v3.js?v=20261003-custom-domain-qr1"></script>
+<script src="assets/js/modules/configuracion-impresion-v3.js?v=20261003-custom-domain-qr2"></script>
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
