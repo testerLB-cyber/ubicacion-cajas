@@ -11,28 +11,31 @@ if(!sb && window.supabase && typeof window.supabase.createClient==='function' &&
 window.CC_ACCESS=null;
 window.CC_AUTH_READY=false;
 
-/* Evita que módulos secundarios saturen Supabase antes de validar acceso. */
-(function installRpcGate(){
-  if(!sb||typeof sb.rpc!=='function'||sb.__ccAuthRpcGate)return;
+/* Mantiene el flujo actual, pero evita duplicar consultas de solo lectura en paralelo. */
+(function installRpcDedup(){
+  if(!sb||typeof sb.rpc!=='function'||sb.__ccRpcDedup)return;
   const originalRpc=sb.rpc.bind(sb);
-  const authRpc=new Set(['cc_my_access','cc_admin_bootstrap_status']);
-  const waitAuth=()=>new Promise((resolve,reject)=>{
-    const started=Date.now();
-    const tick=()=>{
-      if(window.CC_AUTH_READY===true)return resolve();
-      if(Date.now()-started>15000)return reject(new Error('Acceso no validado todavía.'));
-      setTimeout(tick,100);
-    };
-    tick();
-  });
-  sb.rpc=async function(name,args,options){
-    if(authRpc.has(String(name||''))||window.CC_AUTH_READY===true){
-      return originalRpc(name,args,options);
-    }
-    await waitAuth();
-    return originalRpc(name,args,options);
+  const inflight=new Map();
+  const readOnly=new Set([
+    'cc_my_access','cc_admin_bootstrap_status','hs_list','cc_ant_list',
+    'cc_ant_mobile_pending_summary','hs_unit_catalog','cc_ant_casetas_list',
+    'cc_client_catalogs','cc_load_all','hs_mobile_evidence_units'
+  ]);
+  const stableStringify=v=>{
+    if(v===null||typeof v!=='object')return JSON.stringify(v);
+    if(Array.isArray(v))return '['+v.map(stableStringify).join(',')+']';
+    return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+stableStringify(v[k])).join(',')+'}';
   };
-  sb.__ccAuthRpcGate=true;
+  sb.rpc=function(name,args,options){
+    const n=String(name||'');
+    if(!readOnly.has(n))return originalRpc(name,args,options);
+    const key=n+'|'+stableStringify(args||{});
+    if(inflight.has(key))return inflight.get(key);
+    const p=Promise.resolve(originalRpc(name,args,options)).finally(()=>inflight.delete(key));
+    inflight.set(key,p);
+    return p;
+  };
+  sb.__ccRpcDedup=true;
 })();
 
 const PERM_SCHEMA=[
@@ -75,7 +78,6 @@ async function loadAccess(){
  if(data.activo!==true)throw new Error('Tu usuario está desactivado. Contacta al administrador.');
  window.CC_ACCESS=data;
  window.CC_AUTH_READY=true;
- try{document.dispatchEvent(new CustomEvent('cc:auth-ready',{detail:{access:data}}));}catch(_){}
  document.body.classList.remove('cc-auth-locked');
  document.getElementById('ccLoginGate')?.classList.add('cc-hidden');
  applyAccess();
