@@ -4,7 +4,7 @@
 if(window.__CC_PRINT_QR_STABLE_V7__)return;
 window.__CC_PRINT_QR_STABLE_V7__=true;
 
-const SCAN='https://ubicacion-cajas.pages.dev/unidad-ubicacion.html';
+const SCAN='https://trafico.logisticabalderrama.com/unidad-ubicacion.html';
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const sb=()=>window.gmSupabase;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
