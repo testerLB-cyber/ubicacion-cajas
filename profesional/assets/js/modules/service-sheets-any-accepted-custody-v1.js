@@ -86,7 +86,21 @@
       }else if(modo==='INDIVIDUAL'){
         const n=String(f.individual.value||'');if(!/^\d{5}$/.test(n))throw new Error('La hoja individual debe tener exactamente 5 dígitos.');item.individual=Number(n);
       }else{
-        const vals=[...f.__set];if(!vals.length)throw new Error('Agrega al menos una hoja.');item.folios=vals.map(Number);
+        const set=new Set([...(f.__set||[])].map(String));
+        const raw=String(f.varios?.value||'').trim();
+        if(raw){
+          const pending=raw.split(/[\s,;]+/).filter(Boolean);
+          for(const p of pending){
+            const n0=String(p).replace(/\D/g,'');
+            const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
+            if(!/^\d{5}$/.test(n))throw new Error('El folio '+p+' debe tener 5 dígitos, o 6 posiciones si incluye cero inicial.');
+            set.add(n);
+          }
+        }
+        const vals=[...set];
+        if(!vals.length)throw new Error('Agrega al menos una hoja.');
+        f.__set=new Set(vals);
+        item.folios=vals.map(Number);
       }
       return item;
     };
