@@ -200,18 +200,32 @@
     catch(err){alert(err?.message||err);btn.disabled=false;btn.textContent=old;}
   },true);
 
-  const observer=new MutationObserver(()=>decorateAll());
+  let listObserver=null,bootObserver=null,decorateTimer=null;
+  function observeCompList(){
+    const list=document.getElementById('hs104CompList');
+    if(!list)return false;
+    listObserver?.disconnect();
+    listObserver=new MutationObserver(mutations=>{
+      if(!mutations.some(m=>m.addedNodes?.length))return;
+      clearTimeout(decorateTimer);decorateTimer=setTimeout(decorateAll,60);
+    });
+    listObserver.observe(list,{childList:true,subtree:true});
+    decorateAll();
+    return true;
+  }
   function boot(){
-    const root=document.getElementById('controlCajasSection')||document.body;
-    observer.observe(root,{childList:true,subtree:true});
+    if(!observeCompList()){
+      bootObserver=new MutationObserver(()=>{if(observeCompList()){bootObserver.disconnect();bootObserver=null;}});
+      bootObserver.observe(document.body,{childList:true,subtree:true});
+    }
     const c=sb();
     if(c?.auth?.getSession){
       c.auth.getSession().then(({data})=>{if(data?.session?.user)loadData()}).catch(()=>{});
       c.auth.onAuthStateChange?.((event,session)=>{
-        if(session?.user && (event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='INITIAL_SESSION')) setTimeout(loadData,0);
+        if(session?.user && (event==='SIGNED_IN'||event==='INITIAL_SESSION')) setTimeout(loadData,0);
       });
     }
-    setInterval(()=>{if(document.getElementById('hs104CompList'))loadData()},45000);
+    document.addEventListener('hs104:data-refreshed',()=>{observeCompList();decorateAll();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
