@@ -21,6 +21,13 @@ function mode(m){
  }
  bar.querySelectorAll('[data-hsv]').forEach(b=>{const on=b.dataset.hsv===m;b.classList.toggle('cc-btn-primary',on);b.classList.toggle('cc-btn-light',!on)});
 }
-new MutationObserver(()=>{if(document.getElementById('hs104CompList')&&document.getElementById('hs104Hist'))setTimeout(install,30)}).observe(document.body,{childList:true,subtree:true});
-document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]'))setTimeout(install,100)},true);
+let installQueued=false;
+const root=document.getElementById('controlCajasSection')||document.body;
+new MutationObserver(mutations=>{
+  if(installQueued)return;
+  const needsInstall=!document.getElementById('hsCompStableBar')&&mutations.some(m=>m.addedNodes?.length);
+  if(!needsInstall)return;
+  installQueued=true;setTimeout(()=>{installQueued=false;install()},60);
+}).observe(root,{childList:true,subtree:true});
+document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"]')&&!document.getElementById('hsCompStableBar'))setTimeout(install,100)},true);
 })();
