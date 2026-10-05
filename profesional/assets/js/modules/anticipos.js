@@ -11,7 +11,22 @@ function modal(title,html,save){
  document.body.appendChild(ov);function close(){ov.remove()}ov.querySelector('#ccAntClose').onclick=close;ov.querySelector('#ccAntCancel').onclick=close;
  ov.querySelector('#ccAntForm').onsubmit=async function(ev){ev.preventDefault();var b=ev.currentTarget.querySelector('button[type=submit]');b.disabled=true;try{await save(new FormData(ev.currentTarget));close();await ccAntLoad(true)}catch(err){alert('No se pudo guardar.\n\n'+(err.message||err));b.disabled=false}};
 }
-window.ccAntLoad=async function(){try{var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');D=r.data;try{var tm=await sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre');D.tiposMovCaja=tm&&tm.data?tm.data:[]}catch(e){D.tiposMovCaja=[]}ccAntRender();return true}catch(err){var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}};
+let __ccAntLoadPromise=null,__ccAntLastLoad=0;
+window.ccAntLoad=async function(force=false){
+ if(__ccAntLoadPromise)return __ccAntLoadPromise;
+ if(!force&&Date.now()-__ccAntLastLoad<8000){ccAntRender();return true}
+ if(force)window.gmInvalidateRpcCache?.(['cc_ant_list']);
+ __ccAntLoadPromise=(async()=>{try{
+   var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');
+   D=r.data;
+   try{var tm=await sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre');D.tiposMovCaja=tm&&tm.data?tm.data:[]}catch(e){D.tiposMovCaja=[]}
+   __ccAntLastLoad=Date.now();ccAntRender();
+   try{document.dispatchEvent(new CustomEvent('ccAnt:data-refreshed',{detail:{at:__ccAntLastLoad}}))}catch(_){}
+   return true;
+ }catch(err){var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
+ finally{__ccAntLoadPromise=null}})();
+ return __ccAntLoadPromise;
+};
 function saldo(c){var x=Number(c.saldo_inicial||0);(D.movimientos||[]).filter(z=>z.cuenta_id===c.id&&z.estatus==='ACTIVO').forEach(z=>{var n=Number(z.monto||0);if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(z.tipo))x+=n;else if(['ANTICIPO','AJUSTE_SALIDA'].includes(z.tipo))x-=n});return x}
 function detAnt(id){return(D.detalles||[]).filter(x=>x.anticipoId===id&&x.estatus==='ACTIVO')}
 window.ccAntRender=function(){
