@@ -15,7 +15,7 @@
     safe('assets/js/modules/anticipos-comprobar-unificado-v4.js?v=correcta1','data-correct-ant-unificado');
     window.__HS_V104_AUTOCOMPLETE__=true;
     load('assets/js/modules/service-sheets-v104.js?v=20261005-varias-responsable-fix1','data-correct-hs-main')
-      .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260928-normal-autocomplete-v5','data-hs-any-accepted-custody'))
+      .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20261005-varios-fix2','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
       .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20261005-no-auto-refresh1','data-correct-hs-precap'))
       .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20261005-no-auto-refresh2','data-correct-hs-photo'))
