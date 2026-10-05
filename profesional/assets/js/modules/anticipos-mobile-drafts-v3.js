@@ -9,6 +9,7 @@
   const date=v=>v?new Date(v).toLocaleDateString('es-MX'):'—';
   let SUMMARY=[];
   let busy=false;
+  let lastRefresh=0;
 
   async function rpc(name,args={}){
     const client=sb();if(!client)throw new Error('Supabase no disponible');
@@ -17,10 +18,15 @@
     if(r.data?.ok===false) throw new Error(r.data.error||'Operación no disponible');
     return r.data;
   }
-  async function refreshSummary(){
+  function panelVisible(){
+    const p=document.getElementById('ccPanelAnticipos');
+    return !!(p&&p.classList.contains('active')&&document.visibilityState!=='hidden');
+  }
+  async function refreshSummary(force=false){
     if(!sb()||busy)return;
+    if(!force&&Date.now()-lastRefresh<15000)return;
     busy=true;
-    try{const d=await rpc('cc_ant_mobile_pending_summary');SUMMARY=d?.rows||[];paintRows();patchOpenModal();hideQr(document)}
+    try{const d=await rpc('cc_ant_mobile_pending_summary');SUMMARY=d?.rows||[];lastRefresh=Date.now();paintRows();patchOpenModal();hideQr(document)}
     catch(e){console.warn('ANT DRAFTS SUMMARY',e)}finally{busy=false}
   }
   function paintRows(){
@@ -86,8 +92,10 @@
   }
   document.addEventListener('click',e=>{
     const b=e.target.closest('button,a,[role="button"]');if(!b)return;
-    if(/comprobar|ver comprobantes/i.test(b.textContent||'')) setTimeout(()=>{refreshSummary();patchOpenModal(true);hideQr(document)},220);
+    if(/comprobar|ver comprobantes/i.test(b.textContent||'')) setTimeout(()=>{refreshSummary(true);patchOpenModal(true);hideQr(document)},220);
   },true);
-  setInterval(refreshSummary,2500);
-  setTimeout(refreshSummary,500);
+  document.addEventListener('ccAnt:data-refreshed',()=>refreshSummary(true));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&panelVisible())refreshSummary();});
+  setInterval(()=>{if(panelVisible())refreshSummary();},30000);
+  setTimeout(()=>refreshSummary(true),500);
 })();
