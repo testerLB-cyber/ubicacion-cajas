@@ -21,7 +21,7 @@ function val(m,s){return txt(m.querySelector(s)?.value)}
 function nullableNumber(v){const x=txt(v);return x===''?'':x;}
 
 async function enhance(m){
-  if(!m||m.dataset.fullEdit==='3')return;
+  if(!m||m.dataset.fullEdit==='3'||m.dataset.unifiedEdit==='1')return;
   m.dataset.fullEdit='3';
   unlock(m);
   const folio=folioFromModal(m);if(!folio)return;
