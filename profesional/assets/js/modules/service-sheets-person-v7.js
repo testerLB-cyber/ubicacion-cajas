@@ -5,16 +5,16 @@
   function safe(src,attr){return load(src,attr).catch(e=>console.warn('No se pudo cargar '+src,e));}
   document.addEventListener('DOMContentLoaded',()=>{
     safe('assets/js/security/mobile-app-users.js?v=20260929-superadmin-mobile2','data-correct-mobile-users');
-    safe('assets/js/modules/anticipos-mobile-pending-badge.js?v=correcta1','data-correct-ant-badge');
-    safe('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=correcta1','data-correct-ant-cierre');
+    safe('assets/js/modules/anticipos-mobile-pending-badge.js?v=20261005-egress1','data-correct-ant-badge');
+    safe('assets/js/modules/anticipos-comprobacion-cierre-v5.js?v=20261005-egress1','data-correct-ant-cierre');
     safe('assets/js/modules/anticipos-final-cleanup-v6.js?v=correcta1','data-correct-ant-clean');
-    safe('assets/js/modules/anticipos-comprobado-v7.js?v=correcta1','data-correct-ant-comprobado');
+    safe('assets/js/modules/anticipos-comprobado-v7.js?v=20261005-egress1','data-correct-ant-comprobado');
     safe('assets/js/modules/anticipos-mobile-precapture.js?v=correcta1','data-correct-ant-precap');
-    safe('assets/js/modules/anticipos-mobile-drafts-v3.js?v=correcta1','data-correct-ant-drafts');
+    safe('assets/js/modules/anticipos-mobile-drafts-v3.js?v=20261005-egress1','data-correct-ant-drafts');
     safe('assets/js/modules/anticipos-mobile-catalog-fix.js?v=correcta1','data-correct-ant-catfix');
     safe('assets/js/modules/anticipos-comprobar-unificado-v4.js?v=correcta1','data-correct-ant-unificado');
     window.__HS_V104_AUTOCOMPLETE__=true;
-    load('assets/js/modules/service-sheets-v104.js?v=20261002-history-beneficiarios1','data-correct-hs-main')
+    load('assets/js/modules/service-sheets-v104.js?v=20261005-egress1','data-correct-hs-main')
       .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260928-normal-autocomplete-v5','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
       .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260930-client-trailer-sync3','data-correct-hs-precap'))
