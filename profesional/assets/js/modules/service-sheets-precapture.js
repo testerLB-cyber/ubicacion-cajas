@@ -78,6 +78,8 @@
     return modal;
   }
 
+  const signedPhotoCache=new Map();
+  async function signedPhoto(path){const now=Date.now(),hit=signedPhotoCache.get(path);if(hit&&now-hit.at<720000)return hit.url;const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error)throw error;signedPhotoCache.set(path,{url:data.signedUrl,at:now});return data.signedUrl;}
   async function photo(path){
     const modal=ensurePhotoModal();
     const body=modal.querySelector('[data-hs-photo-body]');
@@ -85,9 +87,8 @@
     document.body.style.overflow='hidden';
     if(body)body.innerHTML='<div class="hs-photo-modal-loading"><i class="fa-solid fa-spinner fa-spin"></i> Cargando foto…</div>';
     try{
-      const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);
-      if(error)throw error;
-      if(body)body.innerHTML='<img src="'+esc(data.signedUrl)+'" alt="Evidencia de hoja de servicio">';
+      const url=await signedPhoto(path);
+      if(body)body.innerHTML='<img src="'+esc(url)+'" alt="Evidencia de hoja de servicio">';
     }catch(e){
       if(body)body.innerHTML='<div class="hs-photo-modal-loading">No se pudo cargar la foto: '+esc(e.message||String(e))+'</div>';
     }
