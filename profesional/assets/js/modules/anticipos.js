@@ -2,6 +2,7 @@
 var D={resumen:{saldoCaja:0,pendienteConfirmar:0,totalPorComprobar:0,operadoresConPendiente:0,vencidos7Dias:0},operadores:[],conceptos:[],cuentas:[],destinos:[],destinoConceptos:[],metodosDeposito:[],tiposUnidadAnticipos:[],unidadesCarro:[],anticipos:[],detalles:[],comprobaciones:[],movimientos:[],cierres:[],saldosOperador:[]};
 function sb(){return window.gmSupabase}
 function canAntView(){try{return window.CC_ACCESS?.rol==='ADMIN'||window.CC_ACCESS?.es_super_admin===true||(typeof window.ccPerm==='function'&&window.ccPerm('anticipos.ver'))}catch(_){return false}}
+function antPanelActive(){const p=document.getElementById('ccPanelAnticipos');return !!(p&&p.classList.contains('active')&&document.visibilityState!=='hidden')}
 function h(v){return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function m(v){return Number(v||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'})}
 function f(v){return v?new Date(v).toLocaleDateString('es-MX'):'—'}
@@ -14,7 +15,7 @@ function modal(title,html,save){
 }
 let __ccAntLoadPromise=null,__ccAntLastLoad=0;
 window.ccAntLoad=async function(force=false){
- if(!canAntView())return false;
+ if(!canAntView()||!antPanelActive())return false;
  if(__ccAntLoadPromise)return __ccAntLoadPromise;
  if(!force&&Date.now()-__ccAntLastLoad<8000){ccAntRender();return true}
  if(force)window.gmInvalidateRpcCache?.(['cc_ant_list']);
