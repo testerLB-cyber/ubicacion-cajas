@@ -1203,9 +1203,29 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261005-egress2"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261005-egress3"></script>
 <script src="assets/js/modules/casetas-erp.js?v=20260926-safe4"></script>
-<script src="assets/js/modules/anticipos-profesional-flow.js?v=selector-v6"></script>
+<script id="ccAnticiposLazyFlow">
+(function(){
+  let loading=false,loaded=false;
+  function canView(){try{return window.CC_ACCESS?.rol==='ADMIN'||window.CC_ACCESS?.es_super_admin===true||(typeof window.ccPerm==='function'&&window.ccPerm('anticipos.ver'))}catch(_){return false}}
+  function load(){
+    if(loaded||loading||!canView())return;
+    const p=document.getElementById('ccPanelAnticipos');
+    if(!p?.classList.contains('active'))return;
+    loading=true;
+    const s=document.createElement('script');
+    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261005-lazy-egress1';
+    s.onload=()=>{loaded=true;loading=false;setTimeout(()=>window.ccAntLoad?.(true),50)};
+    s.onerror=()=>{loading=false;console.warn('No se pudo cargar flujo profesional de Anticipos')};
+    document.body.appendChild(s);
+  }
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[onclick*="ccTab(\'anticipos\'"],[data-module="anticipos"],#ccTabAnticipos'))setTimeout(load,80);
+  },true);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(load,80)});
+})();
+</script>
 <script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261002-carta-porte-perm1"></script>
 
 <script id="cc-db-location-preservation-note" src="assets/js/core/location-preservation.js"></script>
