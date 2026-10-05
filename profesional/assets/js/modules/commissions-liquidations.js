@@ -189,13 +189,44 @@ async function viewLiquidation(id){
   const page=document.getElementById('ccLiquidationsPage'),el=page?.querySelector('#ccLiqHistDetail');if(!el)return;
   el.innerHTML='<div class="cc-note" style="margin-top:10px">Cargando detalle…</div>';
   try{
-    const d=await rpc('hs_liquidacion_detail',{p_liquidacion_id:id}),l=d.liquidacion||{},xs=d.detalles||[];
-    el.innerHTML='<div class="liq-detail"><div class="liq-group-head"><div><strong>Detalle · '+esc(l.numero||l.id)+'</strong><div class="hs104-note">'+esc(l.operador_nombre||'—')+' · '+esc(liqDate(l.fecha_desde))+' → '+esc(liqDate(l.fecha_hasta))+'</div></div><div class="liq-actions"><strong>'+money(l.total_comision||0)+'</strong><button class="cc-btn cc-btn-light" data-detail-pdf><i class="fa-solid fa-file-pdf"></i> PDF</button><button class="cc-btn cc-btn-light" data-detail-close>Cerrar detalle</button></div></div>'+
+    const [d,aud]=await Promise.all([
+      rpc('hs_liquidacion_detail',{p_liquidacion_id:id}),
+      rpc('hs_liquidacion_ediciones_list',{p_liquidacion_id:id}).catch(()=>({ediciones:[]}))
+    ]),l=d.liquidacion||{},xs=d.detalles||[],ed=aud.ediciones||[];
+    const editable=canLiquidationEdit()&&String(l.estatus||'').toUpperCase()!=='CANCELADA';
+    el.innerHTML='<div class="liq-detail"><div class="liq-group-head"><div><strong>Detalle · '+esc(l.numero||l.id)+'</strong><div class="hs104-note">'+esc(l.operador_nombre||'—')+' · '+esc(liqDate(l.fecha_desde))+' → '+esc(liqDate(l.fecha_hasta))+'</div></div><div class="liq-actions"><strong data-detail-total>'+money(l.total_comision||0)+'</strong>'+(editable?'<button class="cc-btn cc-btn-primary" data-detail-save disabled><i class="fa-solid fa-floppy-disk"></i> Guardar cambios</button>':'')+'<button class="cc-btn cc-btn-light" data-detail-pdf><i class="fa-solid fa-file-pdf"></i> PDF</button><button class="cc-btn cc-btn-light" data-detail-close>Cerrar detalle</button></div></div>'+
       '<div class="cc-com-scroll"><table class="cc-com-table" style="min-width:1050px"><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Remolque</th><th>Movimiento</th><th>Clasificación</th><th>Tarifa</th></tr></thead><tbody>'+
-      xs.map(x=>'<tr><td><strong>'+esc(x.folio||'—')+'</strong></td><td>'+esc(liqDate(x.fecha_servicio))+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.unidad_numero||'—')+'</td><td>'+esc(x.remolque_numero||'—')+'</td><td>'+esc(x.tipo_movimiento||'—')+'</td><td>'+esc(x.clasificacion||'—')+'</td><td><strong>'+money(x.importe||x.tarifa||0)+'</strong></td></tr>').join('')+
-      '</tbody></table></div><div class="hs104-note" style="padding:8px 10px">Las liquidaciones generadas son de solo lectura para preservar su integridad. Las correcciones de tarifa se realizan antes de generar.</div></div>';
+      xs.map(x=>'<tr data-detail-row="'+esc(x.id)+'"><td><strong>'+esc(x.folio||'—')+'</strong></td><td>'+esc(liqDate(x.fecha_servicio))+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.unidad_numero||'—')+'</td><td>'+esc(x.remolque_numero||'—')+'</td><td>'+esc(x.tipo_movimiento||'—')+'</td><td>'+esc(x.clasificacion||'—')+'</td><td>'+(editable?'<div style="display:flex;align-items:center;gap:4px"><span>$</span><input class="liq-tarifa" data-detail-tarifa type="number" min="0" step="0.01" value="'+Number(x.importe||x.tarifa||0).toFixed(2)+'" data-orig="'+Number(x.importe||x.tarifa||0).toFixed(2)+'"></div>':'<strong>'+money(x.importe||x.tarifa||0)+'</strong>')+'</td></tr>').join('')+
+      '</tbody></table></div>'+
+      (editable?'<div class="hs104-note" style="padding:8px 10px">Puedes corregir tarifas de esta liquidación. El total se recalcula al guardar y cada cambio queda registrado en auditoría.</div>':'<div class="hs104-note" style="padding:8px 10px">Esta liquidación no está disponible para edición.</div>')+
+      (ed.length?'<div style="padding:8px 10px;border-top:1px solid #e2e8f0"><strong>Historial de cambios</strong><div class="cc-com-scroll" style="margin-top:6px"><table class="cc-com-table" style="min-width:720px"><thead><tr><th>Fecha</th><th>Folio</th><th>Tarifa anterior</th><th>Tarifa nueva</th><th>Editó</th></tr></thead><tbody>'+ed.map(x=>'<tr><td>'+esc(liqDateTime(x.created_at))+'</td><td>'+esc(x.folio||'—')+'</td><td>'+money(x.tarifa_anterior||0)+'</td><td>'+money(x.tarifa_nueva||0)+'</td><td>'+esc(x.editado_por_nombre||'—')+'</td></tr>').join('')+'</tbody></table></div></div>':'')+
+      '</div>';
     el.querySelector('[data-detail-close]').onclick=()=>{el.innerHTML=''};
     el.querySelector('[data-detail-pdf]').onclick=()=>pdfLiquidation(id);
+    const save=el.querySelector('[data-detail-save]');
+    if(save){
+      const inputs=[...el.querySelectorAll('[data-detail-tarifa]')];
+      const refreshSave=()=>{const dirty=inputs.filter(x=>String(x.value).trim()!==String(x.dataset.orig).trim());save.disabled=!dirty.length;inputs.forEach(x=>x.classList.toggle('liq-dirty',String(x.value).trim()!==String(x.dataset.orig).trim()));};
+      inputs.forEach(x=>x.addEventListener('input',refreshSave));
+      save.onclick=async()=>{
+        const dirty=inputs.filter(x=>String(x.value).trim()!==String(x.dataset.orig).trim());
+        if(!dirty.length)return;
+        const items=[];
+        for(const inp of dirty){
+          const tarifa=Number(inp.value);
+          if(!Number.isFinite(tarifa)||tarifa<0)return alert('Hay una tarifa inválida.');
+          items.push({detalleId:inp.closest('[data-detail-row]').dataset.detailRow,tarifa});
+        }
+        if(!confirm('¿Guardar '+items.length+' cambio(s) en esta liquidación? El total será recalculado y quedará registro de auditoría.'))return;
+        const old=save.innerHTML;save.disabled=true;save.textContent='Guardando…';
+        try{
+          const r=await rpc('hs_liquidacion_edit_tarifas',{p_liquidacion_id:id,p_items:items});
+          alert('Liquidación actualizada.\nTarifas modificadas: '+Number(r.actualizadas||0)+'\nNuevo total: '+money(r.totalNuevo||0));
+          await history();await viewLiquidation(id);
+        }catch(e){alert(e.message||e);save.disabled=false;save.innerHTML=old}
+      };
+      refreshSave();
+    }
   }catch(e){el.innerHTML='<div class="cc-com-warn" style="margin-top:10px">'+esc(e.message||e)+'</div>'}
 }
 async function liqJsPDF(){
