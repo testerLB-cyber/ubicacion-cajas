@@ -556,8 +556,20 @@
       if(!/^\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
       item.individual=Number(raw);
     }else{
-      const nums=[...(form.__assignSet||[])];
+      const set=new Set([...(form.__assignSet||[])].map(String));
+      const raw=String(form.varios?.value||'').trim();
+      if(raw){
+        const parts=raw.split(/[\s,;]+/).filter(Boolean);
+        for(const p of parts){
+          const n0=String(p).replace(/\D/g,'');
+          const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
+          if(!/^\d{5}$/.test(n))throw new Error('El folio '+p+' debe tener 5 dígitos, o 6 posiciones si incluye cero inicial.');
+          set.add(n);
+        }
+      }
+      const nums=[...set];
       if(!nums.length)throw new Error('Agrega al menos una hoja.');
+      form.__assignSet=new Set(nums);
       item.folios=nums.map(Number);
     }
     return item;
