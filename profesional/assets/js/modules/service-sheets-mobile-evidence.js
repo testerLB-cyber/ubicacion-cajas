@@ -3,8 +3,15 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let busy=false,lastKey='',lastLoad=0;
   const signedCache=new Map();
+  window.__HS_PHOTO_BLOB_CACHE__=window.__HS_PHOTO_BLOB_CACHE__||new Map();
+  const blobCache=window.__HS_PHOTO_BLOB_CACHE__;
   async function signed(path){const now=Date.now(),hit=signedCache.get(path);if(hit&&now-hit.at<720000)return hit.url;const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error)throw error;signedCache.set(path,{url:data.signedUrl,at:now});return data.signedUrl;}
-  async function openPhoto(path){try{window.open(await signed(path),'_blank','noopener');}catch(e){alert(e.message||String(e));}}
+  async function localPhoto(path){
+    if(blobCache.has(path))return blobCache.get(path);
+    const r=await fetch(await signed(path),{cache:'force-cache'});if(!r.ok)throw new Error('No se pudo descargar la evidencia.');
+    const url=URL.createObjectURL(await r.blob());blobCache.set(path,url);return url;
+  }
+  async function openPhoto(path){try{window.open(await localPhoto(path),'_blank','noopener');}catch(e){alert(e.message||String(e));}}
   function visible(){const panel=document.getElementById('ccPanelHojasServicio');return !!(panel&&panel.classList.contains('active')&&document.visibilityState!=='hidden');}
   async function render(force=false){
     const panel=document.getElementById('ccPanelHojasServicio');
