@@ -248,7 +248,7 @@ async function pdfLiquidation(id){
   }catch(e){alert(e.message||e)}
 }
 window.ccOpenLiquidaciones=openLiquidations;
-function installLiquidButton(){const nav=document.getElementById('hs104Nav');if(!nav||nav.querySelector('[data-cc-liquidaciones]')||!canSheets())return;const b=document.createElement('button');b.type='button';b.className='cc-btn cc-btn-light';b.setAttribute('data-cc-liquidaciones','1');b.innerHTML='<i class="fa-solid fa-money-check-dollar mr-1"></i>Liquidaciones';b.onclick=openLiquidations;nav.appendChild(b);}
+function installLiquidButton(){const nav=document.getElementById('hs104Nav');if(!nav||nav.querySelector('[data-v="Liquidaciones"]')||nav.querySelector('[data-cc-liquidaciones]')||!canSheets())return;const b=document.createElement('button');b.type='button';b.className='cc-btn cc-btn-light';b.setAttribute('data-cc-liquidaciones','1');b.innerHTML='<i class="fa-solid fa-money-check-dollar mr-1"></i>Liquidaciones';b.onclick=openLiquidations;nav.appendChild(b);}
 function boot(){styles();installConfig();installLiquidButton();setTimeout(()=>{installConfig();installLiquidButton()},1200);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
