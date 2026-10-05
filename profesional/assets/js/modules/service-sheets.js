@@ -31,5 +31,5 @@
   load('assets/js/modules/service-sheets-proforma-texto-v1.js?v=20260930-1','proforma-texto-facturacion');
 
   /* Historial: edición completa de datos, remolque, aceptado por y evidencia. */
-  load('assets/js/modules/service-sheets-history-full-edit-v1.js?v=20260930-1','hojas-historial-edicion-completa');
+  load('assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261005-unified-edit1','hojas-historial-edicion-completa');
 })();
