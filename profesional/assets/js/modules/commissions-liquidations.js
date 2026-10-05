@@ -38,9 +38,10 @@ function liqStyles(){
   '#ccLiquidationsPage .liq-summary{display:grid;grid-template-columns:repeat(3,minmax(125px,1fr));gap:7px;margin:8px 0}'+
   '#ccLiquidationsPage .liq-kpi{padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#f8fafc}#ccLiquidationsPage .liq-kpi small{display:block;color:#64748b;font-size:9px}#ccLiquidationsPage .liq-kpi strong{font-size:15px}'+
   '#ccLiquidationsPage .liq-group{border:1px solid #e2e8f0;border-radius:10px;margin-top:8px;overflow:hidden}#ccLiquidationsPage .liq-group-head{padding:8px 10px;background:#f8fafc;display:flex;justify-content:space-between;gap:10px;align-items:center}'+
-  '#ccLiquidationsPage .cc-com-table th,#ccLiquidationsPage .cc-com-table td{padding:6px 7px;font-size:10px}#ccLiquidationsPage .cc-com-table th{white-space:nowrap}'+
-  '#ccLiquidationsPage .liq-tarifa{width:92px!important;min-height:28px!important;padding:4px 6px!important;font-size:10px!important}#ccLiquidationsPage .liq-dirty{background:#fff7ed!important;border-color:#fb923c!important}'+
-  '#ccLiquidationsPage .liq-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#ccLiquidationsPage .liq-actions .cc-btn{padding:6px 8px;font-size:10px}'+
+  '#ccLiquidationsPage .cc-com-table{line-height:1.15}#ccLiquidationsPage .cc-com-table th,#ccLiquidationsPage .cc-com-table td{padding:4px 6px;font-size:9.5px;vertical-align:middle}#ccLiquidationsPage .cc-com-table th{white-space:nowrap;padding-top:5px;padding-bottom:5px}'+
+  '#ccLiquidationsPage .cc-com-table tbody tr{height:30px}#ccLiquidationsPage .cc-com-table td strong{font-size:9.5px}#ccLiquidationsPage .cc-com-table .hs104-note{font-size:8.5px;line-height:1.15}'+
+  '#ccLiquidationsPage .liq-tarifa{width:82px!important;min-height:24px!important;height:24px!important;padding:2px 5px!important;font-size:9.5px!important}#ccLiquidationsPage .liq-dirty{background:#fff7ed!important;border-color:#fb923c!important}'+
+  '#ccLiquidationsPage .liq-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap}#ccLiquidationsPage .liq-actions .cc-btn,#ccLiquidationsPage .cc-com-table .cc-btn{padding:4px 6px;font-size:9px;min-height:24px}'+
   '#ccLiquidationsPage .liq-hist-filters{display:grid;grid-template-columns:1.3fr repeat(4,minmax(130px,.8fr));gap:7px;align-items:end}'+
   '#ccLiquidationsPage .liq-detail{margin-top:10px;border:1px solid #cbd5e1;border-radius:11px;overflow:hidden}'+
   '@media(max-width:800px){#ccLiquidationsPage .liq-summary{grid-template-columns:1fr 1fr}#ccLiquidationsPage .liq-hist-filters{grid-template-columns:1fr 1fr}}';
