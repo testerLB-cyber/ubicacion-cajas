@@ -133,9 +133,25 @@
     document.querySelectorAll('#hs104CompList [data-row]').forEach(patchRow);
   }
 
-  const obs=new MutationObserver(()=>patch());
-  function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
+  let listObs=null,bootObs=null,patchTimer=null;
+  function observeList(){
+    const list=document.getElementById('hs104CompList');
+    if(!list)return false;
+    listObs?.disconnect();
+    listObs=new MutationObserver(mutations=>{
+      if(!mutations.some(m=>m.addedNodes?.length))return;
+      clearTimeout(patchTimer);patchTimer=setTimeout(patch,60);
+    });
+    listObs.observe(list,{childList:true,subtree:true});
+    patch();
+    return true;
+  }
+  function start(){
+    if(observeList())return;
+    bootObs=new MutationObserver(()=>{if(observeList()){bootObs.disconnect();bootObs=null;}});
+    bootObs.observe(document.body,{childList:true,subtree:true});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio'))setTimeout(patch,180);},true);
-  setInterval(()=>{if(document.getElementById('hs104CompList'))patch();},1200);
+  document.addEventListener('hs104:data-refreshed',()=>observeList());
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio'))setTimeout(()=>observeList(),180);},true);
 })();
