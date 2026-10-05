@@ -28,9 +28,9 @@ async function uploadPhoto(c,file,status){
  if(c.foto_path||c.fotoPath){if(!confirm('Esta comprobación ya tiene una foto. ¿Deseas reemplazarla?'))return false}
  status.textContent='Preparando foto…';const blob=await compress(file);
  const ud=await sb().auth.getUser();if(ud.error||!ud.data?.user?.id)throw new Error('Sesión no disponible.');
- const path=ud.data.user.id+'/web-manual/'+c.folio_id+'/'+Date.now()+'.jpg';
+ const path=ud.data.user.id+'/web-manual/'+(c.folio_id||c.folioId)+'/'+Date.now()+'.jpg';
  status.textContent='Subiendo foto…';const up=await sb().storage.from('app-hojas-servicio').upload(path,blob,{contentType:'image/jpeg',upsert:false});if(up.error)throw up.error;
- const r=await sb().rpc('hs_set_manual_photo',{p_folio_id:c.folio_id,p_foto_path:path});if(r.error||!r.data?.ok)throw new Error(r.error?.message||r.data?.error||'No se pudo ligar la foto.');
+ const r=await sb().rpc('hs_set_manual_photo',{p_folio_id:(c.folio_id||c.folioId),p_foto_path:path});if(r.error||!r.data?.ok)throw new Error(r.error?.message||r.data?.error||'No se pudo ligar la foto.');
  c.foto_path=path;c.fotoPath=path;status.innerHTML='<strong style="color:#166534">✓ Evidencia actualizada.</strong>';return true;
 }
 
