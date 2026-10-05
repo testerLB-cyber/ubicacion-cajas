@@ -89,23 +89,27 @@
     // Se elimina el check duplicado para evitar dos controles haciendo lo mismo.
     document.getElementById('hsCompUxSwitch')?.remove();
 
-    applyMode();
+    const firstInstall=!pendingCard.dataset.hsCompUxReady||!histCard.dataset.hsCompUxReady;
+    pendingCard.dataset.hsCompUxReady='1';histCard.dataset.hsCompUxReady='1';
+    if(firstInstall)applyMode(false);
     ensurePendingSearch(pendingCard);
     ensureHistorySearch(histCard);
   }
 
-  function applyMode(){
+  function applyMode(refreshData=false){
     const list=document.getElementById('hs104CompList'),hist=document.getElementById('hs104Hist');
     const pendingCard=cardOf(list),histCard=cardOf(hist);
     if(pendingCard)pendingCard.style.display=showHistory?'none':'';
     if(histCard)histCard.style.display=showHistory?'':'none';
     const ch=document.getElementById('hsCompUxHistory');if(ch)ch.checked=showHistory;
-    if(showHistory)setTimeout(()=>patchHistory(true),40);else setTimeout(()=>patchPending(),40);
+    if(showHistory)setTimeout(()=>patchHistory(!!refreshData),40);else setTimeout(()=>patchPending(),40);
   }
 
   window.hsSetComprobacionHistory=function(v){
-    showHistory=!!v;
-    applyMode();
+    const next=!!v;
+    const changed=next!==showHistory;
+    showHistory=next;
+    applyMode(changed);
   };
 
   function ensurePendingSearch(card){
