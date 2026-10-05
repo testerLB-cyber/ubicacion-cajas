@@ -31,7 +31,7 @@
     const original=sb.rpc.bind(sb);
     const wrapped=function(name,args,options){
       const ttl=TTL[name]||0;
-      if(!ttl)return original(name,args,options);
+      if(!ttl){cache.clear();return original(name,args,options);}
       const k=key(name,args),now=Date.now(),hit=cache.get(k);
       if(hit&&now-hit.at<ttl)return Promise.resolve(cloneResponse(hit.response));
       if(inflight.has(k))return inflight.get(k);
