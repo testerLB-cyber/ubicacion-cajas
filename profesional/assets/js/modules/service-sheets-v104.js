@@ -556,7 +556,10 @@
       if(!/^\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
       item.individual=Number(raw);
     }else{
-      const set=new Set([...(form.__assignSet||[])].map(String));
+      // Fuente robusta: estado interno + chips visibles + texto aún no convertido.
+      // Así la selección no se pierde por eventos del formulario antes de enviar.
+      const chipValues=[...form.querySelectorAll('[data-assign-chip]')].map(b=>String(b.dataset.assignChip||'')).filter(Boolean);
+      const set=new Set([...(form.__assignSet||[]),...chipValues].map(String));
       const raw=String(form.varios?.value||'').trim();
       if(raw){
         const parts=raw.split(/[\s,;]+/).filter(Boolean);
@@ -622,7 +625,17 @@
     form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
     form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
     form.asignacionId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
-    form.responsableId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Captura las hojas para validar que pertenezcan a este responsable.';status.style.color='#64748b';});
+    form.responsableId?.addEventListener('change',()=>{
+      // Al ASIGNAR a responsable, cambiar el responsable no cambia la serie/año ni los folios:
+      // conservar VARIOS. En RETORNO sí depende del responsable y debe reiniciarse.
+      if(kind==='retorno'){
+        form.__assignSet.clear();renderChips();
+        status.textContent='Captura las hojas para validar que pertenezcan a este responsable.';
+      }else{
+        status.textContent=form.__assignSet.size?'✓ '+form.__assignSet.size+' hoja(s) conservadas. Listas para validar y asignar.':'Captura las hojas para validar disponibilidad.';
+      }
+      status.style.color=form.__assignSet.size&&kind!=='retorno'?'#15803d':'#64748b';
+    });
   }
 
   async function reissue(id){try{const r=await rpc('hs_reissue_assignment_link',{p_asignacion_id:id});if(r.aceptada)return alert('La asignación ya fue aceptada.');await sendAssignmentEmail(id,r.token)}catch(e){alert(e.message||e)}}
