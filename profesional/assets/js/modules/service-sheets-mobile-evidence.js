@@ -1,17 +1,21 @@
 (function(){
   const sb=()=>window.gmSupabase;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let busy=false,lastKey='';
-  async function signed(path){const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error)throw error;return data.signedUrl;}
+  let busy=false,lastKey='',lastLoad=0;
+  const signedCache=new Map();
+  async function signed(path){const now=Date.now(),hit=signedCache.get(path);if(hit&&now-hit.at<720000)return hit.url;const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);if(error)throw error;signedCache.set(path,{url:data.signedUrl,at:now});return data.signedUrl;}
   async function openPhoto(path){try{window.open(await signed(path),'_blank','noopener');}catch(e){alert(e.message||String(e));}}
-  async function render(){
+  function visible(){const panel=document.getElementById('ccPanelHojasServicio');return !!(panel&&panel.classList.contains('active')&&document.visibilityState!=='hidden');}
+  async function render(force=false){
     const panel=document.getElementById('ccPanelHojasServicio');
     if(!panel||!window.CC_AUTH_READY||busy||!sb())return;
+    if(!force&&Date.now()-lastLoad<15000)return;
     busy=true;
     try{
       const {data,error}=await sb().rpc('hs_mobile_evidence_list');
       if(error||!data?.ok)throw new Error(error?.message||data?.error||'No se pudieron cargar evidencias');
       const rows=data.evidencias||[];
+      lastLoad=Date.now();
       const key=JSON.stringify(rows.map(x=>[x.folioId,x.createdAt,x.dondeUtilizado]));
       if(key===lastKey&&document.getElementById('hsMobileEvidenceBox'))return;
       lastKey=key;
@@ -25,7 +29,9 @@
       box.querySelectorAll('[data-photo]').forEach(b=>b.onclick=()=>openPhoto(b.dataset.photo));
     }catch(e){console.warn('EVIDENCIAS MOVILES HS',e);}finally{busy=false;}
   }
-  const obs=new MutationObserver(()=>setTimeout(render,80));
-  document.addEventListener('DOMContentLoaded',()=>{obs.observe(document.body,{childList:true,subtree:true});setInterval(render,5000);setTimeout(render,1800);});
-  window.hsRefreshMobileEvidence=render;
+  document.addEventListener('hs104:data-refreshed',()=>render(true));
+  document.addEventListener('click',e=>{if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio'))setTimeout(()=>render(true),180);},true);
+  document.addEventListener('visibilitychange',()=>{if(visible())render(false);});
+  document.addEventListener('DOMContentLoaded',()=>{setInterval(()=>{if(visible())render(false);},30000);setTimeout(()=>render(true),1800);});
+  window.hsRefreshMobileEvidence=()=>render(true);
 })();
