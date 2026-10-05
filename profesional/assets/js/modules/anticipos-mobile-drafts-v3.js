@@ -4,6 +4,9 @@
   if(window.__ANT_MOBILE_DRAFTS_V3__) return;
   window.__ANT_MOBILE_DRAFTS_V3__=true;
   const sb=()=>window.gmSupabase;
+  const canView=()=>{try{return window.CC_ACCESS?.rol==='ADMIN'||window.CC_ACCESS?.es_super_admin===true||(typeof window.ccPerm==='function'&&window.ccPerm('anticipos.ver'))}catch(_){return false}};
+  window.__CC_ANT_PENDING_SHARED__=window.__CC_ANT_PENDING_SHARED__||{busy:null,last:0,rows:[]};
+  const shared=window.__CC_ANT_PENDING_SHARED__;
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=v=>Number(v||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});
   const date=v=>v?new Date(v).toLocaleDateString('es-MX'):'—';
@@ -23,11 +26,15 @@
     return !!(p&&p.classList.contains('active')&&document.visibilityState!=='hidden');
   }
   async function refreshSummary(force=false){
-    if(!sb()||busy)return;
-    if(!force&&Date.now()-lastRefresh<15000)return;
+    if(!sb()||busy||!canView())return;
+    const now=Date.now();
+    if(now-shared.last<15000){SUMMARY=shared.rows||[];lastRefresh=shared.last;paintRows();patchOpenModal();hideQr(document);return}
     busy=true;
-    try{const d=await rpc('cc_ant_mobile_pending_summary');SUMMARY=d?.rows||[];lastRefresh=Date.now();paintRows();patchOpenModal();hideQr(document)}
-    catch(e){console.warn('ANT DRAFTS SUMMARY',e)}finally{busy=false}
+    try{
+      if(shared.busy) await shared.busy;
+      else shared.busy=(async()=>{const d=await rpc('cc_ant_mobile_pending_summary');shared.rows=d?.rows||[];shared.last=Date.now();return shared.rows})();
+      SUMMARY=await shared.busy;lastRefresh=shared.last;paintRows();patchOpenModal();hideQr(document)
+    }catch(e){console.warn('ANT DRAFTS SUMMARY',e)}finally{shared.busy=null;busy=false}
   }
   function paintRows(){
     const body=document.getElementById('ccAntBody');if(!body)return;
