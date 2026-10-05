@@ -18,6 +18,7 @@
   let currentView='Control';
   let loadSeq=0;
   let loadPromise=null;
+  let lastLoadAt=0;
   window.hs104GetData=()=>D;
 
   async function rpc(name,args={}){
@@ -27,8 +28,10 @@
     if(r.data?.ok===false) throw new Error(r.data.error||'Operación no disponible.');
     return r.data;
   }
-  async function load(){
+  async function load(force=false){
     if(loadPromise)return loadPromise;
+    if(!force&&Date.now()-lastLoadAt<5000){renderAll();return D;}
+    if(force)window.gmInvalidateRpcCache?.(['hs_list','cc_hojas_beneficiarios_web','hs_assignment_selected_folios']);
     loadPromise=(async()=>{
     const seq=++loadSeq;
     const refreshBtn=document.getElementById('hs104Refresh');
@@ -47,6 +50,7 @@
       const sel=extras[1];
       D.assignmentSelections=sel.status==='fulfilled'?(sel.value||{}):{};
       if(sel.status==='rejected')console.warn('Detalle asignaciones',sel.reason);
+      lastLoadAt=Date.now();
       renderAll();
       try{document.dispatchEvent(new CustomEvent('hs104:data-refreshed',{detail:{view:currentView}}));}catch(_){}
       return D;
@@ -146,7 +150,7 @@
     root.appendChild(p);
     btn.style.display=perm('ver')?'':'none';
     btn.onclick=()=>{if(!perm('ver'))return alert('Sin permiso para Hojas de Servicio.');root.querySelectorAll('.cc-tab').forEach(x=>x.classList.remove('active'));root.querySelectorAll('.cc-panel').forEach(x=>x.classList.remove('active'));btn.classList.add('active');p.classList.add('active');load().catch(e=>alert(e.message||e));};
-    p.querySelector('#hs104Refresh').onclick=()=>load().catch(e=>alert(e.message||e));
+    p.querySelector('#hs104Refresh').onclick=()=>load(true).catch(e=>alert(e.message||e));
     window.ccHsOpen=()=>btn.click();
     return true;
   }
@@ -763,7 +767,7 @@
       });
     };
     const drawHist=()=>{const q=norm(v.querySelector('#hs104CompGlobal')?.value||''),rows=(D.comprobaciones||[]).filter(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())).filter(x=>{if(!q)return true;const hay=norm([x.folio,x.cliente,x.clienteNombre,personName(x),x.operador,x.beneficiario,x.beneficiarioNombre,x.unidad,x.unidadNumero,x.remolque,x.remolqueNumero,x.tipoViaje,x.servicio,x.clasificacion,x.observaciones].filter(Boolean).join(' '));return hay.includes(q)});v.querySelector('#hs104Hist').innerHTML=rows.length?rows.map(x=>{const cancelled=String(x.tipo||'').toUpperCase()==='CANCELADA';return '<tr data-hs-hist-row="1" data-hs-hist-folio="'+esc(x.folio)+'" data-hs-hist-tipo="'+esc(String(x.tipo||''))+'"'+(cancelled?' style="background:#fff7f7"':'')+'><td><strong>'+esc(x.folio)+'</strong>'+(cancelled?'<div style="margin-top:3px;font-size:10px;font-weight:800;color:#b91c1c">CANCELADA</div>':'')+'</td><td>'+(cancelled?'':esc(x.fechaUso||x.fecha||'—'))+'</td><td>'+(cancelled?'':esc(x.cliente||'—'))+'</td><td>'+(cancelled?'':esc(personName(x)||'—'))+'</td><td>'+(cancelled?'':esc(x.unidad||x.unidadNumero||'—'))+'</td><td>'+(cancelled?'':esc(x.remolque||x.remolqueNumero||'—'))+'</td><td>'+(cancelled?'':esc(x.tipoViaje||x.servicio||'—'))+'</td><td>'+(cancelled?'':esc(x.clasificacion||'—'))+'</td><td style="min-width:220px;white-space:normal">'+esc(x.observaciones||'')+'</td><td><strong>'+esc(x.aceptadoPor||'—')+'</strong></td><td><strong>'+esc(x.estatusFacturacion||'COMPROBADA')+'</strong></td><td>'+esc(x.facturaNumero||'—')+'</td><td class="hs-hist-actions-cell"><div class="hs-hist-actions"><button type="button" class="cc-btn cc-btn-light" data-edit-h><i class="fa-solid fa-pen"></i> Editar</button><button type="button" class="cc-btn cc-btn-light" data-pdf-h><i class="fa-solid fa-file-pdf"></i> PDF</button><span class="hs-hist-evidence-actions"><button type="button" class="cc-btn cc-btn-light" data-photo-h><i class="fa-solid fa-camera"></i> Foto</button><button type="button" class="cc-btn cc-btn-primary" data-qr-h><i class="fa-solid fa-qrcode"></i> QR</button></span></div></td></tr>';}).join(''):'<tr><td colspan="13" style="text-align:center;padding:20px">Sin comprobaciones.</td></tr>'};
-    type.onchange=fillPeople;person.onchange=drawCards;v.querySelector('#hs104CompGlobal').addEventListener('input',()=>{drawCards();drawHist();});v.querySelector('#hs104CompFilter').addEventListener('change',drawCards);v.querySelector('#hs104CompRefresh').onclick=()=>load().catch(e=>alert(e.message||e));personSearch.addEventListener('change',syncPersonFromSearch);personSearch.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPersonFromSearch();}});personSearch.addEventListener('input',()=>{const q=norm(personSearch.value);if(!q&&person.value){person.value='';person.dispatchEvent(new Event('change',{bubbles:true}));return;}const exact=[...person.options].filter(o=>o.value).find(o=>norm(o.textContent)===q);if(exact&&person.value!==exact.value){person.value=exact.value;person.dispatchEvent(new Event('change',{bubbles:true}));}});fillPeople();drawCards();
+    type.onchange=fillPeople;person.onchange=drawCards;v.querySelector('#hs104CompGlobal').addEventListener('input',()=>{drawCards();drawHist();});v.querySelector('#hs104CompFilter').addEventListener('change',drawCards);v.querySelector('#hs104CompRefresh').onclick=()=>load(true).catch(e=>alert(e.message||e));personSearch.addEventListener('change',syncPersonFromSearch);personSearch.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();syncPersonFromSearch();}});personSearch.addEventListener('input',()=>{const q=norm(personSearch.value);if(!q&&person.value){person.value='';person.dispatchEvent(new Event('change',{bubbles:true}));return;}const exact=[...person.options].filter(o=>o.value).find(o=>norm(o.textContent)===q);if(exact&&person.value!==exact.value){person.value=exact.value;person.dispatchEvent(new Event('change',{bubbles:true}));}});fillPeople();drawCards();
   }
   async function saveUsed(row){const val=s=>String(row.querySelector(s)?.value||'').trim(),folioId=row.dataset.row,fechaUso=val('[data-fecha]'),clienteId=val('[data-cliente]'),tipoViaje=val('[data-tipo]'),clasificacion=val('[data-clas]'),observaciones=val('[data-obs]');if(!fechaUso)return alert('Captura la fecha de uso.');if(!clienteId)return alert('Selecciona un cliente.');const clienteActivo=(D.clientes||[]).find(c=>String(c.id)===String(clienteId)&&String(c.estatus||'ACTIVO').toUpperCase()==='ACTIVO');if(!clienteActivo)return alert('Ese cliente está INACTIVO y no puede usarse para comprobar hojas. Selecciona un cliente activo.');if(!tipoViaje)return alert('Captura el Tipo de servicio.');if(!clasificacion)return alert('Captura la Clasificación.');const btn=row.querySelector('[data-save]');btn.disabled=true;try{await rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones}});await load()}catch(e){alert(e.message||e);btn.disabled=false}}
   async function returnBlank(row){const folioId=row.dataset.row,fecha=String(row.querySelector('[data-fecha]')?.value||today());if(!confirm('¿Confirmas que esta hoja regresó SIN USAR?\n\nVolverá al responsable y podrá asignarse nuevamente.'))return;const btn=row.querySelector('[data-return]');btn.disabled=true;try{await rpc('hs_return_blank',{p_item:{folioId,fecha,observaciones:'Regresada sin usar desde Control de Hojas v104'}});await load()}catch(e){alert(e.message||e);btn.disabled=false}}
