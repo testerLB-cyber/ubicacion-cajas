@@ -343,7 +343,7 @@
       const d=await data(false);
       const c=(d.comprobaciones||[]).find(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())&&String(x.folio||'').trim()===String(folio||'').trim());
       if(!c)throw new Error('No se encontró la comprobación.');
-      if(action==='edit')return openEdit(c,d);
+      if(action==='edit')return window.hsHistoryOpenEditUnified?window.hsHistoryOpenEditUnified(c,d):openEdit(c,d);
       if(action==='qr')return openHistoryQr(c);
       if(action==='pdf'){
         if(typeof window.hsHistoryExportPdf!=='function')throw new Error('El generador PDF todavía no está disponible.');
