@@ -168,7 +168,9 @@
       autoSyncSig=sig;
     }catch(e){console.warn('HS PRECAPTURA AUTO SYNC',e);}finally{autoSyncBusy=false;}
   }
-  setInterval(autoSync,2500);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(autoSync,80);});
-  window.hsPatchPrecapture=()=>patch(true);
+  // Sin polling automático: evita reconstrucciones de Pendientes/Historial.
+  // La precaptura se refresca al cargar datos reales, al entrar a Comprobación o manualmente.
+  document.addEventListener('hs104:data-refreshed',()=>{DATA=typeof window.hs104GetData==='function'?window.hs104GetData():DATA;setTimeout(()=>patch(false),80);});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(()=>patch(false),80);});
+  window.hsPatchPrecapture=()=>patch(false);
 })();
