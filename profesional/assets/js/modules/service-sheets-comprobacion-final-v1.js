@@ -93,14 +93,35 @@
     }
   },true);
 
-  const obs=new MutationObserver(()=>patch());
-  function start(){
-    obs.observe(document.body,{childList:true,subtree:true});
+  let listObserver=null;
+  let patchTimer=null;
+
+  function observeList(){
+    const list=document.getElementById('hs104CompList');
+    if(!list) return false;
+    if(listObserver) listObserver.disconnect();
+    listObserver=new MutationObserver(()=>{
+      clearTimeout(patchTimer);
+      patchTimer=setTimeout(patch,60);
+    });
+    listObserver.observe(list,{childList:true,subtree:true});
     patch();
+    return true;
+  }
+
+  function start(){
+    if(observeList()) return;
+    const bootObserver=new MutationObserver(()=>{
+      if(observeList()) bootObserver.disconnect();
+    });
+    bootObserver.observe(document.body,{childList:true,subtree:true});
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 
-  setInterval(patch,1200);
+  document.addEventListener('hs104:data-refreshed',()=>{
+    observeList();
+  });
+
   window.hsPatchComprobacionFinal=patch;
 })();
