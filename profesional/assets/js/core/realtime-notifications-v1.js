@@ -127,7 +127,12 @@
     ok.type='button';
     ok.className='cc-rt-btn cc-rt-btn-secondary';
     ok.textContent='Entendido';
-    ok.onclick=()=>closeCurrent(markable?n.id:null);
+    ok.onclick=(ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeCurrent(markable?n.id:null);
+      return false;
+    };
     actions.appendChild(ok);
 
     if(n.url){
