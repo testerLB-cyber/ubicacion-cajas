@@ -17,8 +17,8 @@
     load('assets/js/modules/service-sheets-v104.js?v=20261005-egress1','data-correct-hs-main')
       .then(()=>load('assets/js/modules/service-sheets-any-accepted-custody-v1.js?v=20260928-normal-autocomplete-v5','data-hs-any-accepted-custody'))
       .then(()=>load('assets/js/modules/service-sheets-v104-autocomplete.js?v=20260923-comp-v2','data-correct-hs-auto'))
-      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20260930-client-trailer-sync3','data-correct-hs-precap'))
-      .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20260930-photo250kb1','data-correct-hs-photo'))
+      .then(()=>load('assets/js/modules/service-sheets-precapture.js?v=20261005-photo-egress1','data-correct-hs-precap'))
+      .then(()=>load('assets/js/modules/service-sheets-manual-photo-pdf.js?v=20261005-photo-egress1','data-correct-hs-photo'))
       .then(()=>load('assets/js/modules/service-sheets-comprobacion-ux-v2.js?v=20260930-history-button-unified2','data-hs-comprobacion-ux-v2'))
       .then(()=>load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260930-tracto-caja-open4','data-hs-unit-trailer-v1'))
       .catch(e=>console.warn('Hojas versionescorrectas1',e));
