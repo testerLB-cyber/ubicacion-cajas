@@ -7,6 +7,22 @@ const money=v=>Number(v||0).toLocaleString('es-MX',{style:'currency',currency:'M
 const canEdit=()=>window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('configuracion.editar'));
 const canSheets=()=>window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('hojas_servicio.ver'));
 const canLiquidationEdit=()=>window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&(window.ccPerm('hojas_servicio.comprobar')||window.ccPerm('configuracion.editar')));
+async function openLiquidationPhoto(path,folio='Hoja'){
+  if(!path)return alert('Este viaje no tiene foto de evidencia.');
+  try{
+    const {data,error}=await sb().storage.from('app-hojas-servicio').createSignedUrl(path,900);
+    if(error)throw error;
+    document.getElementById('ccLiqPhotoModal')?.remove();
+    const ov=document.createElement('div');
+    ov.id='ccLiqPhotoModal';
+    ov.style='position:fixed;inset:0;background:rgba(15,23,42,.75);z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:14px';
+    ov.innerHTML='<div style="width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:14px"><div style="padding:12px 14px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;gap:10px;align-items:center"><strong>Evidencia · '+esc(folio)+'</strong><button type="button" data-x class="cc-btn cc-btn-light">Cerrar</button></div><div style="padding:12px;text-align:center"><img src="'+esc(data.signedUrl)+'" alt="Evidencia de '+esc(folio)+'" style="max-width:100%;max-height:72vh;object-fit:contain;border-radius:10px"></div></div>';
+    document.body.appendChild(ov);
+    const close=()=>ov.remove();
+    ov.querySelector('[data-x]').onclick=close;
+    ov.onclick=e=>{if(e.target===ov)close();};
+  }catch(e){alert('No se pudo abrir la foto.\n'+(e.message||e));}
+}
 let C={tiposUnidad:[],tiposMovimiento:[],clasificaciones:[],tarifas:[]};
 async function rpc(name,args={}){const c=sb();if(!c)throw Error('Supabase no está disponible.');const r=await c.rpc(name,args);if(r.error)throw r.error;if(r.data?.ok===false)throw Error(r.data.error||'Operación no disponible');return r.data;}
 function styles(){if(document.getElementById('ccCommissionStyles'))return;const s=document.createElement('style');s.id='ccCommissionStyles';s.textContent=`
@@ -137,12 +153,13 @@ async function calculate(){
       '<div class="liq-summary"><div class="liq-kpi"><small>Viajes incluidos</small><strong>'+hojas+'</strong></div><div class="liq-kpi"><small>Sin tarifa</small><strong>'+sin+'</strong></div><div class="liq-kpi"><small>Total comisión</small><strong>'+money(total)+'</strong></div></div>'+
       (!gs.length?'<div class="cc-note" style="padding:14px;text-align:center">No hay viajes pendientes de liquidar en este rango.</div>':
        gs.map(g=>'<div class="liq-group"><div class="liq-group-head"><div><strong>'+esc(g.nombre)+'</strong><div class="hs104-note">'+g.con+' incluidos'+(g.sin?' · '+g.sin+' sin tarifa':'')+'</div></div><div style="text-align:right"><strong>'+money(g.total)+'</strong><div><button class="cc-btn cc-btn-primary" data-gen="'+esc(g.id)+'" data-base-disabled="'+(g.con<=0?'1':'0')+'" '+(g.con<=0?'disabled':'')+'>Generar liquidación</button></div></div></div>'+
-       '<div class="cc-com-scroll"><table class="cc-com-table" style="min-width:900px"><thead><tr><th>Folio</th><th>Fecha</th><th>Unidad</th><th>Tipo</th><th>Movimiento</th><th>Clasificación</th><th>Tarifa</th></tr></thead><tbody>'+
-       g.rows.map(r=>'<tr data-liq-row="'+esc(r.comprobacion_id)+'"><td><strong>'+esc(r.folio||'—')+'</strong></td><td>'+esc(liqDate(r.fecha_servicio))+'</td><td>'+esc(r.unidad_numero||'—')+'</td><td>'+esc(r.tipo_unidad||'—')+'</td><td>'+esc(r.tipo_movimiento||'—')+'</td><td>'+esc(r.clasificacion||'—')+'</td><td><div style="display:flex;align-items:center;gap:4px"><span>$</span><input class="liq-tarifa" data-liq-tarifa type="number" min="0" step="0.01" value="'+(r.tarifa==null?'':Number(r.tarifa).toFixed(2))+'" data-orig="'+(r.tarifa==null?'':Number(r.tarifa).toFixed(2))+'" placeholder="Sin tarifa" '+(canLiquidationEdit()?'':'disabled')+'></div>'+(r.tarifa==null?'<span class="cc-com-warn" style="font-size:9px">Se ignora si queda vacío</span>':'')+'</td></tr>').join('')+
+       '<div class="cc-com-scroll"><table class="cc-com-table" style="min-width:980px"><thead><tr><th>Folio</th><th>Fecha</th><th>Unidad</th><th>Tipo</th><th>Movimiento</th><th>Clasificación</th><th>Foto</th><th>Tarifa</th></tr></thead><tbody>'+
+       g.rows.map(r=>'<tr data-liq-row="'+esc(r.comprobacion_id)+'"><td><strong>'+esc(r.folio||'—')+'</strong></td><td>'+esc(liqDate(r.fecha_servicio))+'</td><td>'+esc(r.unidad_numero||'—')+'</td><td>'+esc(r.tipo_unidad||'—')+'</td><td>'+esc(r.tipo_movimiento||'—')+'</td><td>'+esc(r.clasificacion||'—')+'</td><td>'+(r.foto_path?'<button type="button" class="cc-btn cc-btn-light" data-liq-photo="'+esc(r.foto_path)+'" data-liq-folio="'+esc(r.folio||'Hoja')+'"><i class="fa-solid fa-camera"></i> Ver foto</button>':'<span class="hs104-note">Sin foto</span>')+'</td><td><div style="display:flex;align-items:center;gap:4px"><span>$</span><input class="liq-tarifa" data-liq-tarifa type="number" min="0" step="0.01" value="'+(r.tarifa==null?'':Number(r.tarifa).toFixed(2))+'" data-orig="'+(r.tarifa==null?'':Number(r.tarifa).toFixed(2))+'" placeholder="Sin tarifa" '+(canLiquidationEdit()?'':'disabled')+'></div>'+(r.tarifa==null?'<span class="cc-com-warn" style="font-size:9px">Se ignora si queda vacío</span>':'')+'</td></tr>').join('')+
        '</tbody></table></div></div>').join(''));
     res.querySelector('#ccLiqSaveAll')?.addEventListener('click',saveLiquidationTariffs);
     res.querySelectorAll('[data-liq-tarifa]').forEach(inp=>inp.addEventListener('input',()=>{inp.classList.toggle('liq-dirty',String(inp.value).trim()!==String(inp.dataset.orig??'').trim());liqUpdateSaveState()}));
     res.querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>{if(liqDirtyRows(res).length)return alert('Guarda primero los cambios de tarifa.');generateLiquidation(b.dataset.gen,desde,hasta)});
+    res.querySelectorAll('[data-liq-photo]').forEach(b=>b.onclick=()=>openLiquidationPhoto(b.dataset.liqPhoto,b.dataset.liqFolio));
     liqUpdateSaveState();
   }catch(e){res.innerHTML='<div class="cc-com-warn">'+esc(e.message||e)+'</div>'}
 }
@@ -196,14 +213,15 @@ async function viewLiquidation(id){
     ]),l=d.liquidacion||{},xs=d.detalles||[],ed=aud.ediciones||[];
     const editable=canLiquidationEdit()&&String(l.estatus||'').toUpperCase()!=='CANCELADA';
     el.innerHTML='<div class="liq-detail"><div class="liq-group-head"><div><strong>Detalle · '+esc(l.numero||l.id)+'</strong><div class="hs104-note">'+esc(l.operador_nombre||'—')+' · '+esc(liqDate(l.fecha_desde))+' → '+esc(liqDate(l.fecha_hasta))+'</div></div><div class="liq-actions"><strong data-detail-total>'+money(l.total_comision||0)+'</strong>'+(editable?'<button class="cc-btn cc-btn-primary" data-detail-save disabled><i class="fa-solid fa-floppy-disk"></i> Guardar cambios</button>':'')+'<button class="cc-btn cc-btn-light" data-detail-pdf><i class="fa-solid fa-file-pdf"></i> PDF</button><button class="cc-btn cc-btn-light" data-detail-close>Cerrar detalle</button></div></div>'+
-      '<div class="cc-com-scroll"><table class="cc-com-table" style="min-width:1050px"><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Remolque</th><th>Movimiento</th><th>Clasificación</th><th>Tarifa</th></tr></thead><tbody>'+
-      xs.map(x=>'<tr data-detail-row="'+esc(x.id)+'"><td><strong>'+esc(x.folio||'—')+'</strong></td><td>'+esc(liqDate(x.fecha_servicio))+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.unidad_numero||'—')+'</td><td>'+esc(x.remolque_numero||'—')+'</td><td>'+esc(x.tipo_movimiento||'—')+'</td><td>'+esc(x.clasificacion||'—')+'</td><td>'+(editable?'<div style="display:flex;align-items:center;gap:4px"><span>$</span><input class="liq-tarifa" data-detail-tarifa type="number" min="0" step="0.01" value="'+Number(x.importe||x.tarifa||0).toFixed(2)+'" data-orig="'+Number(x.importe||x.tarifa||0).toFixed(2)+'"></div>':'<strong>'+money(x.importe||x.tarifa||0)+'</strong>')+'</td></tr>').join('')+
+      '<div class="cc-com-scroll"><table class="cc-com-table" style="min-width:1130px"><thead><tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Remolque</th><th>Movimiento</th><th>Clasificación</th><th>Foto</th><th>Tarifa</th></tr></thead><tbody>'+
+      xs.map(x=>'<tr data-detail-row="'+esc(x.id)+'"><td><strong>'+esc(x.folio||'—')+'</strong></td><td>'+esc(liqDate(x.fecha_servicio))+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.unidad_numero||'—')+'</td><td>'+esc(x.remolque_numero||'—')+'</td><td>'+esc(x.tipo_movimiento||'—')+'</td><td>'+esc(x.clasificacion||'—')+'</td><td>'+(x.foto_path?'<button type="button" class="cc-btn cc-btn-light" data-detail-photo="'+esc(x.foto_path)+'" data-detail-folio="'+esc(x.folio||'Hoja')+'"><i class="fa-solid fa-camera"></i> Ver foto</button>':'<span class="hs104-note">Sin foto</span>')+'</td><td>'+(editable?'<div style="display:flex;align-items:center;gap:4px"><span>$</span><input class="liq-tarifa" data-detail-tarifa type="number" min="0" step="0.01" value="'+Number(x.importe||x.tarifa||0).toFixed(2)+'" data-orig="'+Number(x.importe||x.tarifa||0).toFixed(2)+'"></div>':'<strong>'+money(x.importe||x.tarifa||0)+'</strong>')+'</td></tr>').join('')+
       '</tbody></table></div>'+
       (editable?'<div class="hs104-note" style="padding:8px 10px">Puedes corregir tarifas de esta liquidación. El total se recalcula al guardar y cada cambio queda registrado en auditoría.</div>':'<div class="hs104-note" style="padding:8px 10px">Esta liquidación no está disponible para edición.</div>')+
       (ed.length?'<div style="padding:8px 10px;border-top:1px solid #e2e8f0"><strong>Historial de cambios</strong><div class="cc-com-scroll" style="margin-top:6px"><table class="cc-com-table" style="min-width:720px"><thead><tr><th>Fecha</th><th>Folio</th><th>Tarifa anterior</th><th>Tarifa nueva</th><th>Editó</th></tr></thead><tbody>'+ed.map(x=>'<tr><td>'+esc(liqDateTime(x.created_at))+'</td><td>'+esc(x.folio||'—')+'</td><td>'+money(x.tarifa_anterior||0)+'</td><td>'+money(x.tarifa_nueva||0)+'</td><td>'+esc(x.editado_por_nombre||'—')+'</td></tr>').join('')+'</tbody></table></div></div>':'')+
       '</div>';
     el.querySelector('[data-detail-close]').onclick=()=>{el.innerHTML=''};
     el.querySelector('[data-detail-pdf]').onclick=()=>pdfLiquidation(id);
+    el.querySelectorAll('[data-detail-photo]').forEach(b=>b.onclick=()=>openLiquidationPhoto(b.dataset.detailPhoto,b.dataset.detailFolio));
     const save=el.querySelector('[data-detail-save]');
     if(save){
       const inputs=[...el.querySelectorAll('[data-detail-tarifa]')];
