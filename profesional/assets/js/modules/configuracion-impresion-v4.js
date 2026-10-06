@@ -31,8 +31,12 @@ function exportPDF(items){
   if(!JSPDF)return alert('No está disponible el generador de PDF.');
 
   const doc=new JSPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const mx=10,my=10,cw=(210-mx*2)/3,ch=(297-my*2)/3;
-  const qr=46,markSize=1.8,markInset=5;
+  // Layout A4: etiquetas y códigos QR centrados geométricamente.
+  const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight();
+  const gap=2,boxW=60,boxH=88;
+  const gridW=3*boxW+2*gap,gridH=3*boxH+2*gap;
+  const originX=(pageW-gridW)/2,originY=(pageH-gridH)/2;
+  const qr=42,markSize=1.6,markInset=5;
 
   const drawX=(cx,cy)=>{
     doc.setDrawColor(60,60,60);
@@ -45,8 +49,8 @@ function exportPDF(items){
     if(idx&&idx%9===0)doc.addPage('a4','portrait');
 
     const p=idx%9,row=Math.floor(p/3),col=p%3;
-    const cellX=mx+col*cw,cellY=my+row*ch;
-    const boxX=cellX+1,boxY=cellY+1,boxW=cw-2,boxH=ch-2;
+    const boxX=originX+col*(boxW+gap),boxY=originY+row*(boxH+gap);
+    const centerX=boxX+boxW/2;
 
     doc.setDrawColor(210,218,228);
     doc.setLineWidth(.2);
@@ -60,12 +64,10 @@ function exportPDF(items){
     doc.setFont('helvetica','bold');
     doc.setFontSize(13);
     doc.setTextColor(0);
-    doc.text(String(it.numero||'UNIDAD'),cellX+cw/2,cellY+8,{align:'center'});
+    doc.text(String(it.numero||'UNIDAD'),centerX,boxY+10,{align:'center'});
 
-    const topArea=cellY+16;
-    const bottomArea=cellY+ch-18;
-    const qrX=cellX+(cw-qr)/2;
-    const qrY=topArea+((bottomArea-topArea-qr)/2);
+    const qrX=centerX-qr/2;
+    const qrY=boxY+(boxH-qr)/2-1;
 
     doc.addImage(it.qr,'PNG',qrX,qrY,qr,qr,'','FAST');
 
@@ -73,10 +75,10 @@ function exportPDF(items){
     doc.setFontSize(7.5);
     doc.setTextColor(80);
     const d=[it.tipo,it.descripcion].filter(Boolean).join(' · ').slice(0,44);
-    if(d)doc.text(d,cellX+cw/2,qrY+qr+5,{align:'center',maxWidth:cw-10});
+    if(d)doc.text(d,centerX,boxY+boxH-15,{align:'center',maxWidth:boxW-12});
 
     doc.setFontSize(7);
-    doc.text('Escanea para actualizar ubicación',cellX+cw/2,qrY+qr+10,{align:'center',maxWidth:cw-10});
+    doc.text('Escanea para actualizar ubicación',centerX,boxY+boxH-9,{align:'center',maxWidth:boxW-12});
     doc.setTextColor(0);
   });
 
@@ -118,7 +120,7 @@ function ensureInventoryButton(){
 }
 function bind(){
   ensureInventoryButton();
-  document.addEventListener('click',e=>{const tab=e.target.closest?.('#controlCajasSection .cc-tab');if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'")))setTimeout(ensureInventoryButton,0);},true);
+  document.addEventListener('click',e=>{const tab=e.target.closest?.('#controlCajasSection .cc-tab');if(tab&&(tab.getAttribute('onclick')||'').includes("ccTab('inventario'"))setTimeout(ensureInventoryButton,0);},true);
   document.addEventListener('click',e=>{const b=e.target.closest?.('[data-config-placeholder="impresion"]');if(!b)return;e.preventDefault();e.stopPropagation();open();},true);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
