@@ -35,6 +35,7 @@ async function enhance(m){
 
   const fields=document.createElement('div');fields.style.display='contents';
   fields.innerHTML=`
+    ${String(folio).toUpperCase().startsWith("CFDI-")?`<div class="cc-field"><label>Número de factura CFDI</label><input data-full-factura maxlength="100" value="${esc(c.factura_numero||'')}"></div>`:""}
     <div class="cc-field"><label>Operador</label><input data-full-operador value="${esc(c.operador_nombre||c.operador||'')}"></div>
     <div class="cc-field"><label>Unidad</label><input data-full-unidad value="${esc(c.unidad_numero||c.unidad||'')}"></div>
     <div class="cc-field"><label>Tipo de unidad</label><input data-full-unidad-tipo value="${esc(c.unidad_tipo||c.unidadTipo||'')}"></div>
@@ -70,6 +71,7 @@ async function enhance(m){
         tipoViajeId:tipoId,
         clasificacionId:clasId,
         observaciones:val(m,'[data-obs]'),
+        ...(String(folio).toUpperCase().startsWith('CFDI-')?{facturaNumero:val(m,'[data-full-factura]')}:{}),
         operadorNombre:val(m,'[data-full-operador]'),
         unidadNumero:val(m,'[data-full-unidad]'),
         unidadTipo:val(m,'[data-full-unidad-tipo]'),
