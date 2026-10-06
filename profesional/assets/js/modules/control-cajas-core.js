@@ -1661,6 +1661,17 @@ window.ccLimpiarBusquedaMapa=function(){
 };
 
 let ccMapaUnidadesInstance=null;
+async function ccEnsureMapAuthSession(){
+  if(!gmSupabase)throw new Error('Supabase no está disponible.');
+  let {data,error}=await gmSupabase.auth.getSession();
+  if(error)throw error;
+  if(data?.session)return data.session;
+  await new Promise(r=>setTimeout(r,300));
+  ({data,error}=await gmSupabase.auth.getSession());
+  if(error)throw error;
+  if(data?.session)return data.session;
+  throw new Error('La sesión todavía no está lista. Cierra y vuelve a abrir el módulo Mapa.');
+}
 window.ccCargarMapaUnidades=async function(force=false){
   const el=document.getElementById('ccMapaUnidadesContainer');
   const resumen=document.getElementById('ccMapaUnidadesResumen');
@@ -1674,6 +1685,7 @@ window.ccCargarMapaUnidades=async function(force=false){
     showStatus?.('Cargando mapa de unidades...','info');
     el.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:800">Cargando mapa...</div>';
 
+    await ccEnsureMapAuthSession();
     const [{data,error}]=await Promise.all([
       gmSupabase.rpc('cc_ultima_ubicacion_todas'),
       ccEnsureGeoLibraries()
@@ -1782,6 +1794,7 @@ window.ccCargarMapaUnidades=async function(force=false){
 window.ccAbrirMapaUbicaciones=async function(){
   try{
     showStatus?.('Cargando mapa de últimas ubicaciones...','info');
+    await ccEnsureMapAuthSession();
     const [{data,error}]=await Promise.all([
       gmSupabase.rpc('cc_ultima_ubicacion_todas'),
       ccEnsureLeaflet()
