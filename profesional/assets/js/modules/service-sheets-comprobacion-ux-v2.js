@@ -159,7 +159,9 @@
     if(card.querySelector('#hsCompUxHistSearch'))return;
     const toolbar=card.querySelector('.cc-toolbar');if(!toolbar)return;
     const inp=document.createElement('input');inp.id='hsCompUxHistSearch';inp.className='hs-comp-search';inp.type='search';inp.placeholder='Buscar historial por hoja, persona o cliente...';
-    toolbar.appendChild(inp);inp.oninput=filterHistory;
+    toolbar.appendChild(inp);
+    let histSearchTimer=null;
+    inp.oninput=()=>{clearTimeout(histSearchTimer);histSearchTimer=setTimeout(()=>{if(typeof window.hs104FilterHistory==='function')window.hs104FilterHistory();else filterHistory();},220);};
   }
   function filterHistory(){
     const q=norm(document.getElementById('hsCompUxHistSearch')?.value||'');
@@ -286,11 +288,11 @@
     const body=document.getElementById('hs104Hist');if(!body||!sb())return;
     try{
       const d=await data(force);
-      const hist=(d.comprobaciones||[]).filter(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase()));
+      const hist=new Map((d.comprobaciones||[]).filter(x=>['UTILIZADA','CANCELADA'].includes(String(x.tipo||'').toUpperCase())).map(x=>[String(x.folio||'').trim(),x]));
 
       body.querySelectorAll('tr[data-hs-hist-row]').forEach(tr=>{
         const folio=String(tr.dataset.hsHistFolio||'').trim();
-        const c=hist.find(x=>String(x.folio||'').trim()===folio);
+        const c=hist.get(folio);
         if(!c)return;
 
         // Los botones del historial son estáticos desde service-sheets-v104.
@@ -374,10 +376,11 @@
     const relevant=mutations.some(m=>!m.target.closest?.('#hs104Hist'));
     if(!relevant)return;
     clearTimeout(patchTimer);
-    patchTimer=setTimeout(patch,80);
+    patchTimer=setTimeout(patch,200);
   });
   function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  document.addEventListener('hs104:history-rendered',()=>{if(showHistory)patchHistory(false);});
   document.addEventListener('click',e=>{
     const edit=e.target.closest?.('#hs104CompList [data-hs-edit]');
     if(edit){
