@@ -13,10 +13,10 @@
   }
 
   /* Control de Hojas principal v104: carga única y protegida contra duplicados. */
-  load('assets/js/modules/service-sheets-v104.js?v=20261005-varias-responsable-fix2','hojas-v104-principal');
+  load('assets/js/modules/service-sheets-v104.js?v=20261006-perf-page1','hojas-v104-principal');
 
   /* Hojas web: selección de unidad, detección de Tracto-Camión y remolque obligatorio. */
-  load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20260926-authunit2','hojas-unidad-remolque');
+  load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20261006-cfdi-invoice1','hojas-unidad-remolque');
 
   /* Catálogo maestro con edición protegida y revisión de impacto. */
   load('assets/js/modules/unit-types-catalog-fix-v1.js?v=20260913-integral2','tipos-unidad-seguros');
@@ -31,5 +31,5 @@
   load('assets/js/modules/service-sheets-proforma-texto-v1.js?v=20260930-1','proforma-texto-facturacion');
 
   /* Historial: edición completa de datos, remolque, aceptado por y evidencia. */
-  load('assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261005-unified-edit1','hojas-historial-edicion-completa');
+  load('assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261006-cfdi-invoice1','hojas-historial-edicion-completa');
 })();
