@@ -106,6 +106,12 @@
     const unitField=document.createElement('div');unitField.className='cc-field';
     unitField.innerHTML='<label>Unidad *</label><input data-hs-unidad list="hsUnitCatalogList" autocomplete="off" placeholder="Escribe número de unidad"><div data-hs-unidad-status class="hs104-note">Escribe para buscar y selecciona una unidad.</div>';
     grid.appendChild(unitField);
+    const isCFDI=String(row.dataset.hsFolio||'').toUpperCase().startsWith('CFDI-');
+    if(isCFDI){
+      const factura=document.createElement('div');factura.className='cc-field';
+      factura.innerHTML='<label>Número de factura CFDI *</label><input data-hs-factura type="text" maxlength="100" autocomplete="off" placeholder="Captura el número de factura" required><div class="hs104-note">Se registra al comprobar, sin marcar la hoja como facturada.</div>';
+      grid.appendChild(factura);
+    }
     const isBenef=norm(row.dataset.hsPersonType||'')==='BENEFICIARIO'||!!row.dataset.hsBeneficiary;
     if(isBenef){
       const op=document.createElement('div');op.className='cc-field';op.dataset.hsRealOperatorWrap='1';
@@ -168,6 +174,7 @@
     const val=s=>String(row.querySelector(s)?.value||'').trim();
     const folioId=String(row.dataset.row||''),fechaUso=val('[data-fecha]'),clienteId=val('[data-cliente]'),tipoViaje=val('[data-tipo]'),clasificacion=val('[data-clas]'),observaciones=val('[data-obs]');
     const unit=setUnitState(row,false),remolqueNumero=val('[data-hs-remolque]'),cantidadCobro=val('[data-cantidad-cobro]'),unidadCobro=val('[data-unidad-cobro]'),operadorRealId=val('[data-hs-real-operator]');
+    if(String(row.dataset.hsFolio||'').toUpperCase().startsWith('CFDI-')&&!val('[data-hs-factura]'))throw new Error('Captura el número de factura para esta hoja CFDI.');
     if(!fechaUso)throw new Error('Captura la fecha de uso.');
     if(!clienteId)throw new Error('Selecciona un cliente.');
     if(!tipoViaje)throw new Error('Captura el Tipo de servicio.');
@@ -175,7 +182,7 @@
     if(row.querySelector('[data-hs-real-operator]')&&!operadorRealId)throw new Error('Selecciona el operador que realizó el servicio.');
     if(!unit)throw new Error('Selecciona una unidad válida del catálogo.');
     if(unit.esTracto&&!remolqueNumero)throw new Error('Captura la caja/remolque para el TRACTO-CAMIÓN.');
-    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId}});
+    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId,facturaNumero:val('[data-hs-factura]')}});
     if(r.error)throw r.error;if(r.data?.ok===false)throw new Error(r.data.error||'No se pudo comprobar la hoja.');
     return r.data;
   }
