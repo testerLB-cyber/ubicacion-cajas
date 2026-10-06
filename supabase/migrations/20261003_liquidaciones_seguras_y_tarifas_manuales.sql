@@ -109,7 +109,6 @@ begin
         left join public.hs_liquidacion_detalles ld on ld.comprobacion_id=c.id
         left join public.hs_liquidaciones l on l.id=ld.liquidacion_id and l.estatus<>'CANCELADA'
        where coalesce(c.fecha_uso,c.fecha,c.created_at::date) between p_desde and p_hasta
-         and coalesce(c.tipo_persona,'OPERADOR')='OPERADOR'
          and c.operador_id is not null
          and (p_operador_id is null or p_operador_id='' or c.operador_id=p_operador_id)
          and l.id is null
