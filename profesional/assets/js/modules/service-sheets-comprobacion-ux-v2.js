@@ -167,6 +167,7 @@
     const q=norm(document.getElementById('hsCompUxHistSearch')?.value||'');
     document.querySelectorAll('#hs104Hist tr').forEach(tr=>{
       if(!tr.querySelector('td'))return;
+      if(tr.querySelector('[data-hs-hist-more]')){tr.style.display='';return;}
       tr.style.display=!q||norm(tr.textContent).includes(q)?'':'none';
     });
   }
