@@ -1309,7 +1309,30 @@ let currentData = [];
       }
     }
 
-    function exportReporteGerencialPDF() {
+    function gmLoadScriptOnce(src,test){
+      return new Promise((resolve,reject)=>{
+        try{ if(test()) return resolve(); }catch(_){}
+        const existing=[...document.scripts].find(s=>s.src===src);
+        if(existing){
+          const wait=()=>{try{if(test())return resolve()}catch(_){};setTimeout(wait,80)};
+          wait(); return;
+        }
+        const s=document.createElement('script');
+        s.src=src; s.async=true;
+        s.onload=()=>{try{test()?resolve():reject(new Error('La librería no quedó disponible: '+src))}catch(e){reject(e)}};
+        s.onerror=()=>reject(new Error('No se pudo cargar '+src));
+        document.head.appendChild(s);
+      });
+    }
+    async function gmEnsureDashboardPdf(){
+      await gmLoadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
+      await gmLoadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js',()=>{
+        try{const J=window.jspdf?.jsPDF;return !!J&&typeof J.API?.autoTable==='function'}catch(_){return false}
+      });
+      return window.jspdf.jsPDF;
+    }
+
+    async function exportReporteGerencialPDF() {
       if ((!currentData || currentData.length === 0) &&
           (!transitoListData || transitoListData.length === 0) &&
           (!pendingListData || pendingListData.length === 0) &&
@@ -1321,7 +1344,7 @@ let currentData = [];
       showStatus('Generando <strong>Reporte de Operaciones Ejecutivo</strong>...', 'info');
 
       try {
-        const { jsPDF } = window.jspdf;
+        const jsPDF = await gmEnsureDashboardPdf();
         const doc = new jsPDF('landscape', 'mm', 'a4');
         const W = 297, H = 210;
         const M = 12;
