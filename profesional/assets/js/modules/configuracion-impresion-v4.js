@@ -30,56 +30,55 @@ function exportPDF(items){
   const JSPDF=window.jspdf?.jsPDF;
   if(!JSPDF)return alert('No está disponible el generador de PDF.');
 
+  // Hoja A4 real, respetando un área segura para impresoras convencionales.
   const doc=new JSPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  // Layout A4: etiquetas y códigos QR centrados geométricamente.
   const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight();
-  const gap=2,boxW=60,boxH=88;
-  const gridW=3*boxW+2*gap,gridH=3*boxH+2*gap;
-  const originX=(pageW-gridW)/2,originY=(pageH-gridH)/2;
-  const qr=42,markSize=1.6,markInset=5;
+  const columns=3,rows=3,boxW=52,boxH=78,gapX=6,gapY=6;
+  const gridW=columns*boxW+(columns-1)*gapX;
+  const gridH=rows*boxH+(rows-1)*gapY;
+  const left=(pageW-gridW)/2,top=(pageH-gridH)/2;
+  const qrSize=39,markRadius=2.25;
 
-  const drawX=(cx,cy)=>{
-    doc.setDrawColor(60,60,60);
-    doc.setLineWidth(.35);
-    doc.line(cx-markSize,cy-markSize,cx+markSize,cy+markSize);
-    doc.line(cx-markSize,cy+markSize,cx+markSize,cy-markSize);
+  // Marcas X sobre las ESQUINAS exactas de cada cuadro de recorte.
+  const cutMark=(cx,cy)=>{
+    doc.setDrawColor(15,23,42);
+    doc.setLineWidth(.65);
+    doc.line(cx-markRadius,cy-markRadius,cx+markRadius,cy+markRadius);
+    doc.line(cx-markRadius,cy+markRadius,cx+markRadius,cy-markRadius);
   };
 
   items.forEach((it,idx)=>{
     if(idx&&idx%9===0)doc.addPage('a4','portrait');
+    const index=idx%9,row=Math.floor(index/columns),col=index%columns;
+    const x=left+col*(boxW+gapX),y=top+row*(boxH+gapY);
+    const cx=x+boxW/2;
+    const qrX=cx-qrSize/2,qrY=y+18;
 
-    const p=idx%9,row=Math.floor(p/3),col=p%3;
-    const boxX=originX+col*(boxW+gap),boxY=originY+row*(boxH+gap);
-    const centerX=boxX+boxW/2;
-
-    doc.setDrawColor(210,218,228);
-    doc.setLineWidth(.2);
-    doc.roundedRect(boxX,boxY,boxW,boxH,2,2,'S');
-
-    drawX(boxX+markInset,boxY+markInset);
-    drawX(boxX+boxW-markInset,boxY+markInset);
-    drawX(boxX+markInset,boxY+boxH-markInset);
-    drawX(boxX+boxW-markInset,boxY+boxH-markInset);
+    // Borde para cortar; no se expande a las zonas no imprimibles.
+    doc.setDrawColor(150,160,173);
+    doc.setLineWidth(.3);
+    doc.rect(x,y,boxW,boxH,'S');
 
     doc.setFont('helvetica','bold');
-    doc.setFontSize(13);
-    doc.setTextColor(0);
-    doc.text(String(it.numero||'UNIDAD'),centerX,boxY+10,{align:'center'});
+    doc.setFontSize(12);
+    doc.setTextColor(15,23,42);
+    doc.text(String(it.numero||'UNIDAD').slice(0,22),cx,y+10,{align:'center',maxWidth:boxW-9});
 
-    const qrX=centerX-qr/2;
-    const qrY=boxY+(boxH-qr)/2-1;
-
-    doc.addImage(it.qr,'PNG',qrX,qrY,qr,qr,'','FAST');
+    doc.addImage(it.qr,'PNG',qrX,qrY,qrSize,qrSize,undefined,'FAST');
 
     doc.setFont('helvetica','normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(80);
-    const d=[it.tipo,it.descripcion].filter(Boolean).join(' · ').slice(0,44);
-    if(d)doc.text(d,centerX,boxY+boxH-15,{align:'center',maxWidth:boxW-12});
+    doc.setFontSize(7.2);
+    doc.setTextColor(65,75,88);
+    const detail=[it.tipo,it.descripcion].filter(Boolean).join(' · ').slice(0,43);
+    if(detail)doc.text(detail,cx,y+63,{align:'center',maxWidth:boxW-8});
+    doc.setFontSize(6.7);
+    doc.text('Escanea para actualizar ubicación',cx,y+70,{align:'center',maxWidth:boxW-8});
 
-    doc.setFontSize(7);
-    doc.text('Escanea para actualizar ubicación',centerX,boxY+boxH-9,{align:'center',maxWidth:boxW-12});
-    doc.setTextColor(0);
+    // Dibujar al final para que las cuatro X sean visibles sobre el borde.
+    cutMark(x,y);
+    cutMark(x+boxW,y);
+    cutMark(x,y+boxH);
+    cutMark(x+boxW,y+boxH);
   });
 
   doc.save('QR_Unidades_9_por_pagina.pdf');
