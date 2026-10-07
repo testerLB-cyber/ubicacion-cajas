@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-20",
+  "version": "PRO-20261007-21",
   "mandatory": false,
-  "message": "SOS ahora usa Realtime y Web Push sin consultas periódicas."
+  "message": "Nuevo Centro de Asignaciones con modal, agenda, prioridades y comentarios."
 }
