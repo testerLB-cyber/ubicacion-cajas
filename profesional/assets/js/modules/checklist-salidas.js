@@ -1,7 +1,7 @@
 (()=>{
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let DATA=[];
-function client(){return window.supabaseClient||window.ccSupabase||window.sb||null}
+function client(){return window.gmSupabase||window.supabaseClient||window.ccSupabase||window.sb||null}
 function localDate(d=new Date()){const x=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);return x}
 function fmtFuel(v){if(v===null||v===undefined||v==='')return 'N/A · No marca';v=Math.max(0,Math.min(100,Number(v)||0));const n=Math.round(v*16/100);if(n<=0)return 'E · 0%';if(n>=16)return 'F · 100%';const g=(a,b)=>b?g(b,a%b):a,d=g(n,16),pct=Math.round(n/16*100);return (n/d)+'/'+(16/d)+' · '+pct+'%'}
 function failures(items){return Object.entries(items||{}).filter(([,v])=>(typeof v==='object'?v?.estado:v)==='falla')}
