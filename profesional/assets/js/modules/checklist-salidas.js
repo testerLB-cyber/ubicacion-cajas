@@ -3,7 +3,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let DATA=[];
 function client(){return window.supabaseClient||window.ccSupabase||window.sb||null}
 function localDate(d=new Date()){const x=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);return x}
-function fmtFuel(v){v=Math.max(0,Math.min(100,Number(v)||0));const n=Math.round(v*16/100);if(n<=0)return 'E · 0%';if(n>=16)return 'F · 100%';const g=(a,b)=>b?g(b,a%b):a,d=g(n,16),pct=Math.round(n/16*100);return (n/d)+'/'+(16/d)+' · '+pct+'%'}
+function fmtFuel(v){if(v===null||v===undefined||v==='')return 'N/A · No marca';v=Math.max(0,Math.min(100,Number(v)||0));const n=Math.round(v*16/100);if(n<=0)return 'E · 0%';if(n>=16)return 'F · 100%';const g=(a,b)=>b?g(b,a%b):a,d=g(n,16),pct=Math.round(n/16*100);return (n/d)+'/'+(16/d)+' · '+pct+'%'}
 function failures(items){return Object.entries(items||{}).filter(([,v])=>(typeof v==='object'?v?.estado:v)==='falla')}
 function shell(){let p=document.getElementById('ccChecklistSalidasPanel');if(p)return p;p=document.createElement('div');p.id='ccChecklistSalidasPanel';p.innerHTML=`<style>
 #ccChecklistSalidasPanel{background:#f3f6fa;font-family:Arial,sans-serif;color:#172033;border-radius:16px}
