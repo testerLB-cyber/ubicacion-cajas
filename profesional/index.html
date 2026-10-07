@@ -213,7 +213,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <button class="cc-tab active" onclick="ccTab('dashboard',this)"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</button>
 <button class="cc-tab" onclick="ccTab('inventario',this)"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventario de Unidades</button>
-<button class="cc-tab" onclick="ccTab('renta',this)"><i class="fa-solid fa-calendar-check mr-1"></i>Control de renta</button><button class="cc-tab" onclick="ccTab('historial',this)"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial / Reporte de renta</button><button class="cc-tab" onclick="ccTab('proforma',this)"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Proforma</button><button class="cc-tab" onclick="ccTab('mantenimiento',this)"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mantenimiento</button><button class="cc-tab" onclick="ccTab('mapa',this)"><i class="fa-solid fa-map-location-dot mr-1"></i>Mapa de cajas</button><button class="cc-tab" onclick="ccTab('anticipos',this)"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Control de Anticipos</button><button class="cc-tab" id="ccTabCartaPorte" onclick="ccOpenCartaPorte()"><i class="fa-solid fa-file-invoice mr-1"></i>Carta Porte</button><button class="cc-tab" onclick="ccTab('configuracion',this)"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
+<button class="cc-tab" onclick="ccTab('renta',this)"><i class="fa-solid fa-calendar-check mr-1"></i>Control de renta</button><button class="cc-tab" onclick="ccTab('historial',this)"><i class="fa-solid fa-clock-rotate-left mr-1"></i>Historial / Reporte de renta</button><button class="cc-tab" onclick="ccTab('proforma',this)"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Proforma</button><button class="cc-tab" onclick="ccTab('mantenimiento',this)"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mantenimiento</button><button class="cc-tab" id="ccTabChecklistSalidas" onclick="ccOpenChecklistSalidas()"><i class="fa-solid fa-clipboard-check mr-1"></i>Checklist Salidas</button><button class="cc-tab" onclick="ccTab('mapa',this)"><i class="fa-solid fa-map-location-dot mr-1"></i>Mapa de cajas</button><button class="cc-tab" onclick="ccTab('anticipos',this)"><i class="fa-solid fa-money-bill-transfer mr-1"></i>Control de Anticipos</button><button class="cc-tab" id="ccTabCartaPorte" onclick="ccOpenCartaPorte()"><i class="fa-solid fa-file-invoice mr-1"></i>Carta Porte</button><button class="cc-tab" onclick="ccTab('configuracion',this)"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
 </div>
 <div class="cc-panel" id="ccPanelAnticipos">
 <div class="cc-toolbar"><div><strong>Control de Anticipos</strong><div class="cc-note">Anticipos a operadores, comprobaciones y balance de caja.</div></div><div class="cc-actions"><button id="ccAntNuevoBtn" class="cc-btn cc-btn-primary" onclick="ccAntNuevoAnticipo()">Nuevo anticipo</button></div></div>
@@ -1196,7 +1196,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script src="assets/js/modules/inventario.js"></script>
 <script src="assets/js/modules/rentas.js"></script>
 <script src="assets/js/modules/mantenimiento-dot.js"></script>
-<script src="assets/js/modules/maintenance-reports-center.js?v=20261007-unified1"></script>
+<script src="assets/js/modules/maintenance-reports-center.js?v=20261007-unified1"></script>\n<script src="assets/js/modules/checklist-salidas.js?v=20261007-01"></script>
 
 <script src="assets/js/modules/mapa.js"></script>
 <script src="assets/js/modules/configuracion.js?v=20261003-qr-domain-final2"></script>
@@ -1273,7 +1273,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 </script>
 
 <script id="cc-profesional-updater">
-(()=>{const CURRENT='PRO-20261007-04';let latest=CURRENT;
+(()=>{const CURRENT='PRO-20261007-05';let latest=CURRENT;
 async function check(){try{const v=await fetch('./version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json());latest=String(v.version||CURRENT);if(latest!==CURRENT){let b=document.getElementById('ccUpdateProfesional');if(!b){b=document.createElement('button');b.id='ccUpdateProfesional';b.type='button';b.textContent='Actualizar Tráfico · '+latest;b.style.cssText='position:fixed;right:18px;bottom:76px;z-index:99999;padding:12px 16px;border:0;border-radius:12px;background:#07111f;color:#fff;font-weight:800;box-shadow:0 8px 28px #0003';b.onclick=async()=>{try{const reg=await navigator.serviceWorker?.getRegistration('./');await reg?.update();reg?.waiting?.postMessage({type:'SKIP_WAITING'});}catch(_){} location.reload()};document.body.appendChild(b)}}}catch(_){}}
 if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});setInterval(()=>reg.update().catch(()=>{}),300000)}).catch(()=>{});navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload())}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check,{once:true});else check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});window.ccCheckProfesionalUpdate=check;
