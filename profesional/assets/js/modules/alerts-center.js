@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   const boot=()=>{
     if(window.CC_AUTH_READY&&window.gmSupabase){
       ccLoadGlobalAlerts(true);
-      if(!ccAlertsTimer)ccAlertsTimer=setInterval(()=>ccLoadGlobalAlerts(true),10000);
     }else setTimeout(boot,700);
   };
   setTimeout(boot,900);
