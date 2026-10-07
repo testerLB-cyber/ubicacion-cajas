@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-19",
+  "version": "PRO-20261007-20",
   "mandatory": false,
-  "message": "Mejora de alertas en tiempo real y refresco rápido."
+  "message": "SOS ahora usa Realtime y Web Push sin consultas periódicas."
 }
