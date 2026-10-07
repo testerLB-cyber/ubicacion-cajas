@@ -1733,7 +1733,7 @@ let currentData = [];
       }
     }
 
-    function exportReporteGerencialSemanalPDF() {
+    async function exportReporteGerencialSemanalPDF() {
       if(!gmCanExportDashboard()){alert('No tienes permiso para descargar reportes del Dashboard.');return;}
       if (!currentData || currentData.length === 0) {
         showStatus('No existen datos cargados para generar el Reporte Gerencial Semanal.', 'error');
@@ -1743,8 +1743,8 @@ let currentData = [];
       showStatus('Generando <strong>Reporte Gerencial Semanal (PDF)</strong>...', 'info');
 
       try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('landscape');
+        const jsPDF = await gmEnsureDashboardPdf();
+        const doc = new jsPDF('landscape', 'mm', 'a4');
         const dateStr = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
         const desdeVal = document.getElementById('fechaDesde').value;
         const hastaVal = document.getElementById('fechaHasta').value;
