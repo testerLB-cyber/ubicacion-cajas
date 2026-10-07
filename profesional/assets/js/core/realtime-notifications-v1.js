@@ -5,7 +5,6 @@
   let currentUserId=null;
   let started=false;
   let loadingPending=false;
-  let fallbackTimer=null;
   const shown=new Set();
 
   function sb(){ return window.gmSupabase; }
@@ -52,12 +51,42 @@
         try{
           const p=await Notification.requestPermission();
           refreshPermissionButton();
-          if(p==='granted') showModal({title:'Notificaciones activadas',body:'Este navegador ya puede mostrar avisos de Tráfico App.'},false);
+          if(p==='granted'){
+            await ensureWebPushSubscription();
+            showModal({title:'Notificaciones activadas',body:'Este navegador ya puede recibir avisos de Tráfico App, incluyendo alertas SOS.'},false);
+          }
         }catch(e){ console.warn('NOTIFICACIONES PERMISO',e); }
       };
       document.body.appendChild(btn);
     }
     refreshPermissionButton();
+  }
+
+  function b64u(s){
+    const p='='.repeat((4-s.length%4)%4);
+    const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));
+    return Uint8Array.from([...b].map(x=>x.charCodeAt(0)));
+  }
+
+  async function ensureWebPushSubscription(){
+    if(!sb()||!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)||Notification.permission!=='granted') return false;
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});
+      const cfg=await sb().functions.invoke('operator-web-push',{body:{action:'config'}});
+      if(cfg.error||!cfg.data?.publicKey) throw cfg.error||new Error('No se pudo obtener la configuración Push.');
+      let sub=await reg.pushManager.getSubscription();
+      if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(cfg.data.publicKey)});
+      const j=sub.toJSON();
+      const u=(await sb().auth.getUser()).data.user;
+      if(!u) return false;
+      const row={user_id:u.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth_key:j.keys.auth,user_agent:navigator.userAgent,updated_at:new Date().toISOString()};
+      const up=await sb().from('cc_push_subscriptions').upsert(row,{onConflict:'endpoint'});
+      if(up.error) throw up.error;
+      return true;
+    }catch(e){
+      console.warn('REGISTRO WEB PUSH',e);
+      return false;
+    }
   }
 
   function refreshPermissionButton(){
@@ -247,7 +276,7 @@
     started=true;
     ensureUi();
     syncSession();
-    if(!fallbackTimer) fallbackTimer=setInterval(()=>{ if(currentUserId&&!document.hidden) loadPending(currentUserId); },5000);
+    if('Notification' in window&&Notification.permission==='granted') ensureWebPushSubscription();
     window.addEventListener('focus',()=>{ if(currentUserId) loadPending(currentUserId); });
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&currentUserId) loadPending(currentUserId); });
     sb().auth.onAuthStateChange((_event,session)=>{
