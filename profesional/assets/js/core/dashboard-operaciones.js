@@ -1309,20 +1309,45 @@ let currentData = [];
       }
     }
 
+    // Evitar esperas infinitas si una librería PDF externa falla al cargar.
     function gmLoadScriptOnce(src,test){
       return new Promise((resolve,reject)=>{
-        try{ if(test()) return resolve(); }catch(_){}
-        const existing=[...document.scripts].find(s=>s.src===src);
-        if(existing){
-          const wait=()=>{try{if(test())return resolve()}catch(_){};setTimeout(wait,80)};
-          wait(); return;
+        const valid=()=>{try{return !!test()}catch(_){return false}};
+        if(valid())return resolve();
+        let finished=false;
+        let timer=null;
+        const finish=(err)=>{
+          if(finished)return;
+          finished=true;
+          clearTimeout(timer);
+          if(err)reject(err);else resolve();
+        };
+        const check=()=>{if(valid()){finish();return true;}return false;};
+        let el=[...document.scripts].find(x=>x.src===src);
+        // Una etiqueta externa ya existente puede estar fallida o descargándose.
+        if(el && el.dataset.gmPdfLoadFailed==='1'){el.remove();el=null;}
+        if(!el){
+          el=document.createElement('script');
+          el.src=src;
+          el.async=true;
+          document.head.appendChild(el);
         }
-        const s=document.createElement('script');
-        s.src=src; s.async=true;
-        s.onload=()=>{try{test()?resolve():reject(new Error('La librería no quedó disponible: '+src))}catch(e){reject(e)}};
-        s.onerror=()=>reject(new Error('No se pudo cargar '+src));
-        document.head.appendChild(s);
+        el.addEventListener('load',()=>{if(!check())finish(new Error('No se inicializó el motor de PDF.'))},{once:true});
+        el.addEventListener('error',()=>{el.dataset.gmPdfLoadFailed='1';finish(new Error('Error al descargar librería de PDF.'))},{once:true});
+        const started=Date.now();
+        const poll=()=>{
+          if(finished||check())return;
+          if(Date.now()-started>12000){el.dataset.gmPdfLoadFailed='1';finish(new Error('Tiempo de carga agotado del generador PDF.'));return;}
+          timer=setTimeout(poll,120);
+        };
+        timer=setTimeout(poll,120);
       });
+    }
+
+    function gmCanExportDashboard(){
+      return window.CC_AUTH_READY===true &&
+        typeof window.ccPerm==='function' &&
+        window.ccPerm('dashboard.ver')===true;
     }
     async function gmEnsureDashboardPdf(){
       await gmLoadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
@@ -1333,6 +1358,7 @@ let currentData = [];
     }
 
     async function exportReporteGerencialPDF() {
+      if(!gmCanExportDashboard()){alert('No tienes permiso para descargar reportes del Dashboard.');return;}
       if ((!currentData || currentData.length === 0) &&
           (!transitoListData || transitoListData.length === 0) &&
           (!pendingListData || pendingListData.length === 0) &&
@@ -1708,6 +1734,7 @@ let currentData = [];
     }
 
     function exportReporteGerencialSemanalPDF() {
+      if(!gmCanExportDashboard()){alert('No tienes permiso para descargar reportes del Dashboard.');return;}
       if (!currentData || currentData.length === 0) {
         showStatus('No existen datos cargados para generar el Reporte Gerencial Semanal.', 'error');
         return;
