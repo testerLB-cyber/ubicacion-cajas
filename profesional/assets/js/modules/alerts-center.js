@@ -116,10 +116,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   const boot=()=>{
     if(window.CC_AUTH_READY&&window.gmSupabase){
       ccLoadGlobalAlerts(true);
-      if(!ccAlertsTimer)ccAlertsTimer=setInterval(()=>ccLoadGlobalAlerts(true),120000);
+      if(!ccAlertsTimer)ccAlertsTimer=setInterval(()=>ccLoadGlobalAlerts(true),10000);
     }else setTimeout(boot,700);
   };
   setTimeout(boot,900);
+  window.addEventListener('focus',()=>ccLoadGlobalAlerts(true));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')ccLoadGlobalAlerts(true);});
+  window.addEventListener('cc-notifications-ready',()=>ccLoadGlobalAlerts(true));
 });
 })();
 
