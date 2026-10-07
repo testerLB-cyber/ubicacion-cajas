@@ -5,6 +5,7 @@
   let currentUserId=null;
   let started=false;
   let loadingPending=false;
+  let fallbackTimer=null;
   const shown=new Set();
 
   function sb(){ return window.gmSupabase; }
@@ -246,6 +247,9 @@
     started=true;
     ensureUi();
     syncSession();
+    if(!fallbackTimer) fallbackTimer=setInterval(()=>{ if(currentUserId&&!document.hidden) loadPending(currentUserId); },5000);
+    window.addEventListener('focus',()=>{ if(currentUserId) loadPending(currentUserId); });
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&currentUserId) loadPending(currentUserId); });
     sb().auth.onAuthStateChange((_event,session)=>{
       const userId=session&&session.user&&session.user.id;
       setTimeout(()=>{
