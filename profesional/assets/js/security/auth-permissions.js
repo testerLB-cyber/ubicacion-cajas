@@ -25,6 +25,7 @@ const PERM_SCHEMA=[
  ['hojas_servicio','Control de Hojas de Servicio',[['ver','Ver módulo'],['generar','Generar folios'],['asignar_responsable','Asignar a responsable'],['asignar_operador','Asignar a operadores'],['comprobar','Comprobar uso / devolución'],['catalogos','Catálogos']]],
  ['carta_porte','Carta Porte',[['ver','Ver módulo'],['generar','Generar Carta Porte'],['catalogos','Catálogos Carta Porte']]],
  ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
+ ['sos','SOS · Emergencias',[['ver','Recibir notificación SOS']]],
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
 ];
 function getPath(obj,path){return String(path).split('.').reduce((a,k)=>a&&a[k],obj);}
