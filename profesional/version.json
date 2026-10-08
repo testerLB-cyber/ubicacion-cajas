@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-53",
+  "version": "PRO-20261008-54",
   "mandatory": false,
-  "message": "Mapa de unidades de Pantalla Aeropuerto ahora abre en vista grande, incluye fullscreen e iconos de tractocamión por número económico.",
+  "message": "Mapa de unidades conserva centro y zoom durante refrescos automáticos de 60 segundos.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
