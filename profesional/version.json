@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-42",
+  "version": "PRO-20261007-43",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto actualizada con diseño claro, moderno y alineado a la identidad visual de la app."
+  "message": "Pantalla Aeropuerto más compacta, con Estatus/Cliente en segunda columna y Remolque como columna independiente."
 }
