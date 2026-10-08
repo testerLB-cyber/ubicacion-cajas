@@ -10,12 +10,12 @@ const tz='America/Hermosillo';
 function css(){
   if($('airportCss'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="airportCss">
-  .air{--bg:#f5f7fa;--panel:#ffffff;--card:#ffffff;--line:#dfe7ef;--text:#1f2937;--muted:#64748b;--accent:#0f766e;--accent2:#2563eb;background:linear-gradient(180deg,#f8fafc,#f1f5f9);border-radius:18px;padding:14px;color:var(--text)}
+  .air{--bg:#f5f7fa;--panel:#ffffff;--card:#ffffff;--line:#dfe7ef;--text:#1f2937;--muted:#64748b;--accent:#2563eb;--accent2:#1d4ed8;background:linear-gradient(180deg,#f8fafc,#f1f5f9);border-radius:18px;padding:14px;color:var(--text)}
   .airTop{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:4px 2px 12px}
-  .airTitleWrap{display:flex;align-items:center;gap:10px}.airBeacon{width:38px;height:38px;border-radius:12px;background:#e6f4f1;color:#0f766e;border:1px solid #cbe8e1;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .airTop h2{margin:0;font-size:23px;color:#1e293b;letter-spacing:-.02em}.airViewSwitch{display:flex;gap:5px;padding:4px;background:#eef2f7;border:1px solid #dbe3ea;border-radius:10px}.airViewBtn{border:0;background:transparent;color:#64748b;border-radius:7px;padding:7px 10px;font-size:8px;font-weight:950;cursor:pointer}.airViewBtn.on{background:#fff;color:#0f766e;box-shadow:0 2px 7px rgba(15,23,42,.08)}.airTop p{margin:4px 0 0;font-size:10px;color:#64748b}.airUpdated{font-size:9px;color:#64748b;text-align:right;line-height:1.5}
+  .airTitleWrap{display:flex;align-items:center;gap:10px}.airBeacon{width:38px;height:38px;border-radius:12px;background:#eff6ff;color:#2563eb;border:1px solid #dbeafe;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .airTop h2{margin:0;font-size:23px;color:#1e293b;letter-spacing:-.02em}.airViewSwitch{display:flex;gap:5px;padding:4px;background:#eef2f7;border:1px solid #dbe3ea;border-radius:10px}.airViewBtn{border:0;background:transparent;color:#64748b;border-radius:7px;padding:7px 10px;font-size:8px;font-weight:950;cursor:pointer}.airViewBtn.on{background:#fff;color:#2563eb;box-shadow:0 2px 7px rgba(15,23,42,.08)}.airTop p{margin:4px 0 0;font-size:10px;color:#64748b}.airUpdated{font-size:9px;color:#64748b;text-align:right;line-height:1.5}
   .airFilters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 3px 12px rgba(15,23,42,.04)}
-  .airFilters label{font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em}.airSelect{min-width:240px;border:1px solid #d7e0e8;border-radius:9px;padding:8px 10px;background:#f8fafc;color:#1e293b;font-size:11px;outline:none}.airSelect:focus{border-color:#94a3b8;background:#fff}.airCheck{display:flex;gap:7px;align-items:center;font-size:10px;font-weight:800;color:#334155;text-transform:none!important;cursor:pointer}.airCheck input{accent-color:#0f766e}.airCount{margin-left:auto;font-size:9px;font-weight:900;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 10px;border-radius:999px}
+  .airFilters label{font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em}.airSelect{min-width:240px;border:1px solid #d7e0e8;border-radius:9px;padding:8px 10px;background:#f8fafc;color:#1e293b;font-size:11px;outline:none}.airSelect:focus{border-color:#94a3b8;background:#fff}.airCheck{display:flex;gap:7px;align-items:center;font-size:10px;font-weight:800;color:#334155;text-transform:none!important;cursor:pointer}.airCheck input{accent-color:#2563eb}.airCount{margin-left:auto;font-size:9px;font-weight:900;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 10px;border-radius:999px}
   .airLegend{display:grid;grid-template-columns:95px 105px 150px 150px 135px 110px minmax(155px,1fr) minmax(155px,1fr) 115px;gap:8px;padding:0 12px 7px;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
   .airList{display:flex;flex-direction:column;gap:8px;max-height:74vh;overflow:auto;padding:2px 3px 4px}
   .airTrip{position:relative;display:grid;grid-template-columns:95px 105px 150px 150px 135px 110px minmax(155px,1fr) minmax(155px,1fr) 115px;gap:8px;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;box-shadow:0 4px 14px rgba(15,23,42,.05);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
@@ -28,11 +28,11 @@ function css(){
   .airStatusWrap{display:flex;flex-direction:column;justify-content:center;align-items:flex-start}.airStatus{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}.airStatus:before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}.airStatus.green{background:#ecfdf5;color:#047857;border:1px solid #d1fae5}.airStatus.yellow{background:#fffbeb;color:#b45309;border:1px solid #fef3c7}.airStatus.red{background:#fef2f2;color:#b91c1c;border:1px solid #fee2e2}.airStatus.gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0}.airStatusSub{font-size:8px;color:#94a3b8;margin-top:5px}
   .airTime{display:flex;flex-direction:column;justify-content:center}.airTimeMain{font-size:10px;font-weight:900;color:#1e293b}.airTimeSub{font-size:8px;color:#94a3b8;margin-top:4px}.airTripNo{font-size:10px;font-weight:950;color:#2563eb;margin-bottom:4px}
   .airMapRow{margin:-3px 8px 2px;border:1px solid #dfe7ef;border-top:0;border-radius:0 0 14px 14px;background:#f8fafc;overflow:hidden}.airMiniMapWrap{display:flex;gap:12px;align-items:stretch;padding:12px}.airMiniMap{width:100%;height:200px;border:0;border-radius:10px;background:#e2e8f0}.airMapMeta{width:230px;min-width:230px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px}.airMapMeta b{display:block;font-size:15px;margin-bottom:7px;color:#0f172a}.airMapMeta span{display:block;font-size:9px;color:#64748b;line-height:1.5}.airMapClose{margin-top:10px;border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:8px;padding:6px 9px;font-size:8px;font-weight:900;cursor:pointer}
-  .airV2Kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.airV2Kpi{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px}.airV2Kpi b{display:block;font-size:18px;color:#0f172a}.airV2Kpi span{font-size:7px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}.airV2Route{grid-column:1/-1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px}.airV2Progress{display:flex;align-items:center;gap:5px;margin-top:5px}.airV2Node{width:7px;height:7px;border-radius:50%;background:#cbd5e1}.airV2Node.done{background:#0f766e}.airV2Line{height:2px;flex:1;background:#dbe3ea}.airV2Ticker{margin-top:10px;padding:8px 12px;border-radius:10px;background:#0f172a;color:#e2e8f0;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.air.v2 .airTrip{grid-template-columns:100px 120px minmax(170px,1.1fr) minmax(145px,.8fr) 80px minmax(180px,1.1fr) 100px}.air.v2 .airTrip{border-radius:10px;box-shadow:none}.air.v2 .airUnit{font-size:14px}.air.v2 .airList{gap:6px}
-  .airRentToggle{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:#f8fafc;color:#334155;border:1px solid #d7e0e8;border-radius:10px;padding:7px 11px;font-size:9px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.04)}.airRentToggle:hover{background:#f0fdfa;border-color:#99d8c9;color:#0f766e}.airRentToggle.on{background:#e7f5f1;border-color:#99d8c9;color:#0f766e}.airRentToggle i{font-size:10px}.airSplit{display:block}.airOperations{min-width:0}.airRentPanel{display:none;min-width:0;background:white;border:1px solid #dce7ed;border-radius:16px;padding:14px;box-shadow:0 8px 22px #0f172a0a}.air.rentOpen .airSplit{display:grid;grid-template-columns:minmax(0,3fr) minmax(320px,2fr);gap:12px}.air.rentOpen .airRentPanel{display:block}.air.rentOpen .airLegend{display:none}.air.rentOpen .airTrip{grid-template-columns:repeat(2,minmax(0,1fr))!important}.air.rentOpen .airTrip>*{min-width:0}.airRentStats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}.airRentStats span{background:#f3f8fa;border:1px solid #e0eaf0;border-radius:10px;padding:10px 5px;font-size:9px;color:#64748b;text-align:center}.airRentStats b{display:block;font-size:20px;color:#0f766e}.airRentMap{background:#f1f5f9;border-radius:12px;overflow:hidden}.airRentMap iframe{width:100%;height:250px;border:0}.airRentMap small{display:block;padding:8px;font-size:9px;color:#64748b}.airRentItems{max-height:340px;overflow:auto;margin-top:10px}.airRentItem{padding:10px;border-bottom:1px solid #edf2f7;display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:10px}.airRentItem strong{color:#0f172a}.airRentItem span{color:#64748b;flex:1}.airRentItem a{color:#0f766e;font-weight:800}.airRentEmpty{padding:24px 12px;color:#64748b;text-align:center;font-size:11px}@media(max-width:1050px){.air.rentOpen .airSplit{grid-template-columns:1fr}.air.rentOpen .airTrip{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+  .airV2Kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.airV2Kpi{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 12px}.airV2Kpi b{display:block;font-size:18px;color:#0f172a}.airV2Kpi span{font-size:7px;font-weight:900;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em}.airV2Route{grid-column:1/-1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px}.airV2Progress{display:flex;align-items:center;gap:5px;margin-top:5px}.airV2Node{width:7px;height:7px;border-radius:50%;background:#cbd5e1}.airV2Node.done{background:#2563eb}.airV2Line{height:2px;flex:1;background:#dbe3ea}.airV2Ticker{margin-top:10px;padding:8px 12px;border-radius:10px;background:#0f172a;color:#e2e8f0;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.air.v2 .airTrip{grid-template-columns:100px 120px minmax(170px,1.1fr) minmax(145px,.8fr) 80px minmax(180px,1.1fr) 100px}.air.v2 .airTrip{border-radius:10px;box-shadow:none}.air.v2 .airUnit{font-size:14px}.air.v2 .airList{gap:6px}
+  .airRentToggle{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:#f8fafc;color:#334155;border:1px solid #d7e0e8;border-radius:10px;padding:7px 11px;font-size:9px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.04)}.airRentToggle:hover{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}.airRentToggle.on{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}.airRentToggle i{font-size:10px}.airSplit{display:block}.airOperations{min-width:0}.airRentPanel{display:none;min-width:0;background:white;border:1px solid #dce7ed;border-radius:16px;padding:14px;box-shadow:0 8px 22px #0f172a0a}.air.rentOpen .airSplit{display:grid;grid-template-columns:minmax(0,3fr) minmax(320px,2fr);gap:12px}.air.rentOpen .airRentPanel{display:block}.air.rentOpen .airLegend{display:none}.air.rentOpen .airTrip{grid-template-columns:repeat(2,minmax(0,1fr))!important}.air.rentOpen .airTrip>*{min-width:0}.airRentStats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}.airRentStats span{background:#f3f8fa;border:1px solid #e0eaf0;border-radius:10px;padding:10px 5px;font-size:9px;color:#64748b;text-align:center}.airRentStats b{display:block;font-size:20px;color:#2563eb}.airRentMap{background:#f1f5f9;border-radius:12px;overflow:hidden}.airRentMap iframe{width:100%;height:250px;border:0}.airRentMap small{display:block;padding:8px;font-size:9px;color:#64748b}.airRentItems{max-height:340px;overflow:auto;margin-top:10px}.airRentItem{padding:10px;border-bottom:1px solid #edf2f7;display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:10px}.airRentItem strong{color:#0f172a}.airRentItem span{color:#64748b;flex:1}.airRentItem a{color:#2563eb;font-weight:800}.airRentEmpty{padding:24px 12px;color:#64748b;text-align:center;font-size:11px}@media(max-width:1050px){.air.rentOpen .airSplit{grid-template-columns:1fr}.air.rentOpen .airTrip{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
   .airEmpty{padding:45px;text-align:center;color:#64748b;border:1px dashed #cbd5e1;border-radius:14px;background:#fff}.airFoot{padding:9px 5px 0;font-size:8px;color:#94a3b8}
   .airModal{position:fixed;inset:0;z-index:140000;background:rgba(15,23,42,.42);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}.airModal.on{display:flex}.airModalCard{width:min(760px,96vw);max-height:82vh;background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.2)}.airModalHead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#f8fafc;color:#0f172a;border-bottom:1px solid #e2e8f0}.airModalHead h3{margin:0;font-size:16px}.airModalClose{border:1px solid #dbe3ea;background:#fff;color:#334155;border-radius:8px;padding:6px 10px;font-weight:900;cursor:pointer}
-  .airGeoList{padding:16px 20px;overflow:auto;max-height:68vh}.airGeoTimeline{position:relative;padding-left:26px}.airGeoTimeline:before{content:'';position:absolute;left:9px;top:5px;bottom:5px;width:2px;background:#dbe3ea}.airGeoItem{position:relative;padding:0 0 18px 10px}.airGeoDot{position:absolute;left:-21px;top:3px;width:11px;height:11px;border-radius:50%;background:#0f766e;border:2px solid #fff;box-shadow:0 0 0 3px #ccfbf1}.airGeoEvent{font-size:10px;font-weight:950;color:#0f172a}.airGeoName{font-size:11px;font-weight:800;color:#334155;margin-top:2px}.airGeoTime{font-size:8px;color:#94a3b8;margin-top:3px}
+  .airGeoList{padding:16px 20px;overflow:auto;max-height:68vh}.airGeoTimeline{position:relative;padding-left:26px}.airGeoTimeline:before{content:'';position:absolute;left:9px;top:5px;bottom:5px;width:2px;background:#dbe3ea}.airGeoItem{position:relative;padding:0 0 18px 10px}.airGeoDot{position:absolute;left:-21px;top:3px;width:11px;height:11px;border-radius:50%;background:#2563eb;border:2px solid #fff;box-shadow:0 0 0 3px #ccfbf1}.airGeoEvent{font-size:10px;font-weight:950;color:#0f172a}.airGeoName{font-size:11px;font-weight:800;color:#334155;margin-top:2px}.airGeoTime{font-size:8px;color:#94a3b8;margin-top:3px}
   @media(max-width:1250px){.airLegend,.airTrip{grid-template-columns:100px 115px minmax(175px,1.2fr) minmax(145px,.9fr) 85px minmax(160px,1fr)}.airLegend>div:nth-child(7),.airTrip>div:nth-child(7){display:none}}
   @media(max-width:900px){.air{padding:10px}.airLegend{display:none}.airTrip{grid-template-columns:1fr 1fr;gap:12px}.airTrip>div{display:block!important}.airRouteBox{grid-column:1/-1}.airTop{align-items:flex-start}.airUpdated{white-space:normal}.airMiniMapWrap{flex-direction:column}.airMapMeta{width:auto;min-width:0}}
 
@@ -49,7 +49,7 @@ function css(){
   .airClientName{font-size:12px;font-weight:950;color:#0f5f5a;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.airTrailer{font-size:17px;font-weight:950;color:#12324a;letter-spacing:-.02em}.airOrigin,.airDestination{font-size:12px;font-weight:900;color:#1e293b;line-height:1.18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .airLocationMain{font-size:9px;font-weight:700;color:#64748b;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .airCoords{font-size:7px;color:#a0aec0;margin-top:2px}
-  .airRouteArrow{background:#ecfdf5;border-color:#d1fae5;color:#0f766e}
+  .airRouteArrow{background:#ecfdf5;border-color:#d1fae5;color:#2563eb}
   .airUnit{color:#12324a;font-size:17px}
   .airMapRow:empty{display:none}
   #ccPantallaAeropuertoMount:fullscreen{padding:8px;background:#eef3f7;overflow:hidden}
@@ -75,7 +75,7 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .airMotionText b{font-size:8.5px}
   #ccPantallaAeropuertoMount:fullscreen .airMotionText span{font-size:6.5px;margin-top:1px}
   #ccPantallaAeropuertoMount:fullscreen .airStatus{padding:3px 6px;font-size:6.5px}
-  #ccPantallaAeropuertoMount:fullscreen .airStatusSub{font-size:9.5px;margin-top:2px;font-weight:950;color:#0b6b63}
+  #ccPantallaAeropuertoMount:fullscreen .airStatusSub{font-size:9.5px;margin-top:2px;font-weight:950;color:#1d4ed8}
   #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:8px;font-weight:750;line-height:1.05}
   #ccPantallaAeropuertoMount:fullscreen .airCoords{display:none}
   #ccPantallaAeropuertoMount:fullscreen .airActions{margin-top:2px;gap:3px}
@@ -113,7 +113,7 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .airMotionText b{font-size:10px}
   #ccPantallaAeropuertoMount:fullscreen .airMotionText span{font-size:7px}
   #ccPantallaAeropuertoMount:fullscreen .airStatus{font-size:7.5px;padding:4px 7px}
-  #ccPantallaAeropuertoMount:fullscreen .airClientName{font-size:11.5px;font-weight:950;color:#0b6b63}
+  #ccPantallaAeropuertoMount:fullscreen .airClientName{font-size:11.5px;font-weight:950;color:#1d4ed8}
   #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:7.8px;font-weight:700;color:#64748b}
   #ccPantallaAeropuertoMount:fullscreen .airActions{margin-top:3px}
   #ccPantallaAeropuertoMount:fullscreen .airBtn{font-size:6.5px;padding:3px 5px}
@@ -132,15 +132,15 @@ function css(){
   .air{background:#f3f7fa;border:1px solid #e2e8f0;box-shadow:0 10px 28px rgba(15,23,42,.05)}
   .airTop{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 3px 12px rgba(15,23,42,.04)}
   .airFilters{margin-bottom:8px;padding:8px 10px}
-  .airLegend{grid-template-columns:86px 92px 140px 125px 125px 105px minmax(135px,1fr) minmax(135px,1fr) 108px;gap:6px;background:#eaf3f2;border-color:#d5e6e3;color:#526b69}
+  .airLegend{grid-template-columns:86px 92px 140px 125px 125px 105px minmax(135px,1fr) minmax(135px,1fr) 108px;gap:6px;background:#edf5fd;border-color:#dbe8f5;color:#4b6380}
   .airTrip{grid-template-columns:86px 92px 140px 125px 125px 105px minmax(135px,1fr) minmax(135px,1fr) 108px;gap:6px;min-height:62px;padding:7px 9px;border-radius:10px;border-color:#dfe8ef;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.035)}
   .airTrip:nth-of-type(4n+1){background:#fcfefe}
-  .airTrip:hover{border-color:#b9d5d0;box-shadow:0 5px 14px rgba(15,118,110,.08)}
-  .airTrip:before{background:#7fb9b1}
+  .airTrip:hover{border-color:#bfd7f2;box-shadow:0 5px 14px rgba(37,99,235,.08)}
+  .airTrip:before{background:#7fb3e8}
   .airCompass{width:36px;height:36px;min-width:36px;background:#eef6ff;border-color:#d9e9fb;color:#1d6fb8}
   .airMotionText b{font-size:10px}.airMotionText span{font-size:7px}
   .airStatus{font-size:7.5px;padding:5px 7px}
-  .airClientName{font-size:12.5px;color:#0d625c;align-self:center}
+  .airClientName{font-size:12.5px;color:#1d4ed8;align-self:center}
   .airLocationMain{font-size:8.5px;color:#66788a}
   .airUnit,.airTrailer{font-size:16px}
   .airOperator{font-size:8.5px}
@@ -150,8 +150,8 @@ function css(){
   .airPager{margin-top:7px;padding:7px 10px;background:#fdfefe}
   .airSplit{min-width:0}
   .airRentPanel{background:#fff;border:1px solid #dce7ed;border-radius:13px;padding:0;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,.05)}
-  .airRentHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(90deg,#edf7f4,#f8fbfd);border-bottom:1px solid #dce9e6}
-  .airRentTitle{font-size:14px;font-weight:950;color:#164e49}.airRentSub{font-size:9px;color:#64748b;margin-top:3px}
+  .airRentHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(90deg,#edf5fd,#f8fbfd);border-bottom:1px solid #dbe8f5}
+  .airRentTitle{font-size:14px;font-weight:950;color:#1e3a8a}.airRentSub{font-size:9px;color:#64748b;margin-top:3px}
   .airRentStats{padding:10px 12px 0;margin-bottom:8px}.airRentStats span{background:#f7fafb;padding:8px 5px}.airRentStats b{font-size:18px}
   .airRentMap{margin:0 12px;background:#f5f8fa;border:1px solid #e4ebf0}.airRentMap iframe{height:220px}
   .airRentItems{margin:8px 12px 12px;max-height:330px;border:1px solid #e7edf2;border-radius:10px;background:#fff}
@@ -178,6 +178,33 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airRentPanel{display:flex;flex-direction:column;min-height:0}
   #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airRentItems{flex:1;min-height:0;max-height:none;overflow:auto}
   @media(max-width:1250px){.airLegend,.airTrip{grid-template-columns:80px 90px 120px 110px 115px 95px minmax(125px,1fr) minmax(125px,1fr) 100px}.airLegend>div,.airTrip>div{display:block!important}}
+
+  /* Afinado distribución v49 */
+  .airLegend,.airTrip{
+    grid-template-columns:104px 112px 150px 118px 136px 124px 140px 140px 110px;
+    column-gap:8px
+  }
+  .airMotion{padding-right:7px;border-right:1px solid #e3edf7}
+  .airStatusWrap{padding-left:4px;justify-content:center}
+  .airClientName{color:#1d4ed8}
+  .airRouteCell{min-width:0;background:#f5f9fe;border:1px solid #e1ecf8;padding:6px 8px}
+  .airOriginCell{border-radius:9px 3px 3px 9px}
+  .airDestinationCell{border-radius:3px 9px 9px 3px;position:relative;border-left-color:#cfe0f3}
+  .airDestinationCell:before{content:'→';position:absolute;left:-13px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e8f2fd;border:1px solid #c9def5;color:#2563eb;font-size:10px;font-weight:950}
+  .airOrigin,.airDestination{margin-top:2px}
+  .airTrailerPlate{margin-top:3px;display:inline-flex;align-items:center;padding:2px 5px;border-radius:999px;background:#eef5fc;border:1px solid #d9e8f7;color:#506987;font-size:7px;font-weight:900}
+  .airStatus.green{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe}
+  .airBtn.geo{background:#eff6ff;color:#1d4ed8;border-color:#dbeafe}
+  .airTrip:before{background:#60a5fa}
+  .airTrip.moved:before{background:#2563eb}
+  @keyframes airGlow{0%{background:#eff6ff}100%{background:#fff}}
+  .airRentStats b,.airRentItem a{color:#2563eb}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{
+    grid-template-columns:100px 108px 145px 112px 130px 120px 138px 138px 106px;
+    column-gap:7px
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airRouteCell{padding:5px 7px}
   </style>`);
 }
 
@@ -252,9 +279,9 @@ function render(){
     <div class="airClientName">${esc(x.cliente||'—')}</div>
     <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div><div class="airActions"><button class="airBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button>':''}</div></div>
     <div class="airVehicle"><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airOperator">${esc(x.operador||'Sin operador')}</div><div class="airTags"><span class="airTag">${esc(x.placa||'Sin placa')}</span></div></div>
-    <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+'</div>':''}</div>
-    <div><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div>
-    <div><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div>
+    <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.placasRemolque?'<div class="airTrailerPlate">'+esc(x.placasRemolque)+'</div>':''}${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+(x.placasRemolque2?' · '+esc(x.placasRemolque2):'')+'</div>':''}</div>
+    <div class="airRouteCell airOriginCell"><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div>
+    <div class="airRouteCell airDestinationCell"><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div>
     <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div><div class="airTimeMain">${esc(fmt(x.salida))}</div><div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
   </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`}).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   if(VIEW==='v2'&&arr.length){const ticker=$('airV2Ticker');if(ticker){ticker.style.display='block';ticker.textContent='CONTROL EN VIVO  ·  '+arr.slice(0,8).map(x=>(x.unidad||'Unidad')+' · '+(x.estatusViaje||'Sin estatus')+' · '+(x.ubicacion||x.ubicacionErp||'Sin ubicación')).join('     •     ')}}else if($('airV2Ticker'))$('airV2Ticker').style.display='none';
