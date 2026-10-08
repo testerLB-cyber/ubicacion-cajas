@@ -41,6 +41,60 @@ function css(){
   .airTrip{min-height:60px}.airStatusSub{font-size:9px;color:#64748b}.airLocationMain{font-size:11px}.airOperator{font-size:10px}.airPointText{font-size:11px}.airTripNo{font-size:11px}.airMotionText b{font-size:11px}
   #ccPantallaAeropuertoMount:fullscreen{background:#eef2f7;padding:14px;overflow:auto}#ccPantallaAeropuertoMount:fullscreen .air{min-height:calc(100vh - 28px);border-radius:0}#ccPantallaAeropuertoMount:fullscreen .airTop h2{font-size:28px}#ccPantallaAeropuertoMount:fullscreen .airTrip{min-height:64px}#ccPantallaAeropuertoMount:fullscreen .airList{max-height:none}
   @media(min-width:1400px){.air{padding:16px}.airTrip{padding:9px 11px}.airUnit{font-size:17px}.airLocationMain,.airPointText{font-size:11px}.airStatus{font-size:8px}.airLegend{font-size:8px}}
+
+  /* Ajuste visual TV v46 */
+  .airLegend{background:#eef6f5;border:1px solid #dcebe8;border-radius:9px;padding:6px 10px;margin-bottom:6px;color:#64748b}
+  .airTrip{background:linear-gradient(90deg,#ffffff 0%,#fbfdff 100%);border-color:#dde7ef}
+  .airTrip:before{background:#93c5fd}
+  .airStatusSub{font-size:10px;font-weight:950;color:#0f766e;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .airLocationMain{font-size:9px;font-weight:750;color:#475569;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .airCoords{font-size:7px;color:#a0aec0;margin-top:2px}
+  .airRouteArrow{background:#ecfdf5;border-color:#d1fae5;color:#0f766e}
+  .airUnit{color:#12324a}
+  .airMapRow:empty{display:none}
+  #ccPantallaAeropuertoMount:fullscreen{padding:8px;background:#eef3f7;overflow:hidden}
+  #ccPantallaAeropuertoMount:fullscreen .air{height:calc(100vh - 16px);min-height:0;display:flex;flex-direction:column;padding:9px 11px;border-radius:12px;overflow:hidden}
+  #ccPantallaAeropuertoMount:fullscreen .airTop{padding:0 0 6px;min-height:38px}
+  #ccPantallaAeropuertoMount:fullscreen .airTop h2{font-size:22px}
+  #ccPantallaAeropuertoMount:fullscreen .airTop p{font-size:8px;margin-top:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airBeacon{width:32px;height:32px;font-size:14px;border-radius:10px}
+  #ccPantallaAeropuertoMount:fullscreen .airUpdated{font-size:7px;line-height:1.25}
+  #ccPantallaAeropuertoMount:fullscreen .airFullBtn{padding:6px 9px;font-size:8px}
+  #ccPantallaAeropuertoMount:fullscreen .airFilters{padding:5px 8px;margin-bottom:5px;min-height:34px;border-radius:9px;box-shadow:none}
+  #ccPantallaAeropuertoMount:fullscreen .airSelect{padding:5px 8px;font-size:9px;min-width:200px}
+  #ccPantallaAeropuertoMount:fullscreen .airCheck{font-size:8px}
+  #ccPantallaAeropuertoMount:fullscreen .airCount,#ccPantallaAeropuertoMount:fullscreen .airRentToggle{padding:5px 8px;font-size:8px}
+  #ccPantallaAeropuertoMount:fullscreen .airSplit{flex:1;min-height:0;display:block}
+  #ccPantallaAeropuertoMount:fullscreen .airOperations{height:100%;display:flex;flex-direction:column;min-height:0}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend{flex:0 0 auto;padding:4px 10px;margin:0 0 4px;font-size:6.5px;border-radius:7px}
+  #ccPantallaAeropuertoMount:fullscreen .airList{flex:1;min-height:0;max-height:none;overflow:hidden;gap:3px;padding:0 2px;display:flex;flex-direction:column}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{flex:1 1 0;min-height:0;max-height:none;padding:3px 8px;gap:6px;border-radius:8px;box-shadow:0 1px 4px rgba(15,23,42,.05);align-items:center}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip:before{top:6px;bottom:6px;width:3px}
+  #ccPantallaAeropuertoMount:fullscreen .airCompass{width:28px;height:28px;min-width:28px;border-radius:8px;font-size:15px}
+  #ccPantallaAeropuertoMount:fullscreen .airMotion{gap:6px}
+  #ccPantallaAeropuertoMount:fullscreen .airMotionText b{font-size:8.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airMotionText span{font-size:6.5px;margin-top:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airStatus{padding:3px 6px;font-size:6.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airStatusSub{font-size:9.5px;margin-top:2px;font-weight:950;color:#0b6b63}
+  #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:8px;font-weight:750;line-height:1.05}
+  #ccPantallaAeropuertoMount:fullscreen .airCoords{display:none}
+  #ccPantallaAeropuertoMount:fullscreen .airActions{margin-top:2px;gap:3px}
+  #ccPantallaAeropuertoMount:fullscreen .airBtn{padding:2px 5px;font-size:6px;border-radius:6px}
+  #ccPantallaAeropuertoMount:fullscreen .airUnit{font-size:13px}
+  #ccPantallaAeropuertoMount:fullscreen .airOperator{font-size:7.5px;margin-top:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airTags{margin-top:2px}
+  #ccPantallaAeropuertoMount:fullscreen .airTag{font-size:6px;padding:2px 4px}
+  #ccPantallaAeropuertoMount:fullscreen .airPointLabel{font-size:6px}
+  #ccPantallaAeropuertoMount:fullscreen .airPointText{font-size:8px;margin-top:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airRouteArrow{height:18px;font-size:10px}
+  #ccPantallaAeropuertoMount:fullscreen .airTripNo{font-size:8.5px;margin-bottom:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airTimeMain{font-size:7.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTimeSub{font-size:6.5px;margin-top:1px}
+  #ccPantallaAeropuertoMount:fullscreen .airPager{flex:0 0 auto;margin-top:4px;padding:4px 8px;border-radius:8px}
+  #ccPantallaAeropuertoMount:fullscreen .airPagerInfo,#ccPantallaAeropuertoMount:fullscreen .airPageNo{font-size:8px}
+  #ccPantallaAeropuertoMount:fullscreen .airPageBtn{padding:4px 7px;font-size:7px}
+  #ccPantallaAeropuertoMount:fullscreen .airFoot{display:none}
+  #ccPantallaAeropuertoMount:fullscreen .airV2Ticker{display:none!important}
   </style>`);
 }
 
