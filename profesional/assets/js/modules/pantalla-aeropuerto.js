@@ -119,21 +119,29 @@ function render(){
     <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div><div class="airTimeMain">${esc(fmt(x.salida))}</div><div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
   </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`}).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   if(VIEW==='v2'&&arr.length){const ticker=$('airV2Ticker');if(ticker){ticker.style.display='block';ticker.textContent='CONTROL EN VIVO  ·  '+arr.slice(0,8).map(x=>(x.unidad||'Unidad')+' · '+(x.estatusViaje||'Sin estatus')+' · '+(x.ubicacion||x.ubicacionErp||'Sin ubicación')).join('     •     ')}}else if($('airV2Ticker'))$('airV2Ticker').style.display='none';
+  const pager=$('airPager');
+  if(pager){
+    const total=all.length,from=total?start+1:0,to=Math.min(start+PAGE_SIZE,total);
+    pager.innerHTML='<div class="airPagerInfo">Mostrando '+from+'–'+to+' de '+total+' servicios</div><div class="airPagerBtns"><button class="airPageBtn" id="airPrevPage" '+(PAGE<=1?'disabled':'')+'><i class="fa-solid fa-chevron-left"></i> Anterior</button><span class="airPageNo">Página '+PAGE+' de '+pages+'</span><button class="airPageBtn" id="airNextPage" '+(PAGE>=pages?'disabled':'')+'>Siguiente <i class="fa-solid fa-chevron-right"></i></button></div>';
+    $('airPrevPage')?.addEventListener('click',()=>setPage(PAGE-1));
+    $('airNextPage')?.addEventListener('click',()=>setPage(PAGE+1));
+  }
   document.querySelectorAll('[data-geo]').forEach(b=>b.onclick=()=>showGeos(Number(b.dataset.geo)));
   document.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>toggleMap(Number(b.dataset.map)));
 }
 async function load(){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');LAST=Array.isArray(data.vehicles)?data.vehicles:[];updateClientFilter();render();const pos={};LAST.forEach(x=>{const lat=Number(x.latitud),lng=Number(x.longitud);if(Number.isFinite(lat)&&Number.isFinite(lng))pos[String(x.unidad||'')]={lat,lng,ts:Date.now()}});savePrev(pos);const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+'\nSiguiente lectura en 60 s';schedule()}catch(e){LAST=[];updateClientFilter();render();$('airUpdated').textContent='Error API: '+e.message+'\nReintento en 60 s';schedule()}}
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
-  <div class="airTop"><div class="airTitleWrap"><div class="airBeacon">↗</div><div><h2>Pantalla Aeropuerto</h2><p>Centro de control de viajes · datos en vivo de Software GM</p></div></div><div id="airUpdated" class="airUpdated">Sin actualizar</div></div>
+  <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
   <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
   <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus / Cliente</div><div>Ubicación actual</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta</div><div>Viaje / ETA</div></div>
-  <div id="airList" class="airList"></div>
+  <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
   <div id="airV2Ticker" class="airV2Ticker" style="display:none"></div></div><aside id="airRentPanel" class="airRentPanel" aria-label="Cajas en renta"></aside></div>
   <div class="airFoot">Refresco cada 60 segundos · se pausa cuando esta pantalla no está visible · mapa y recorrido se cargan solo al abrirlos.</div>
   <div id="airGeoModal" class="airModal"><div class="airModalCard"><div class="airModalHead"><h3 id="airGeoTitle">Geocercas</h3><button id="airGeoClose" class="airModalClose">Cerrar</button></div><div id="airGeoList" class="airGeoList"></div></div></div>
-</div>`; VIEW='actual';RENT_OPEN=false;$('airRentToggle').onclick=toggleRentals;$('airClient').onchange=()=>{render();if(RENT_OPEN)loadRentals()};$('airOnlyTrips').onchange=render;$('airGeoClose').onclick=()=>$('airGeoModal').classList.remove('on');$('airGeoModal').onclick=e=>{if(e.target===$('airGeoModal'))$('airGeoModal').classList.remove('on')};load()}
+</div>`; VIEW='actual';RENT_OPEN=false;PAGE=1;$('airRentToggle').onclick=toggleRentals;$('airFullBtn').onclick=toggleFullscreen;syncFullscreenButton();$('airClient').onchange=()=>{PAGE=1;render();if(RENT_OPEN)loadRentals()};$('airOnlyTrips').onchange=()=>{PAGE=1;render()};$('airGeoClose').onclick=()=>$('airGeoModal').classList.remove('on');$('airGeoModal').onclick=e=>{if(e.target===$('airGeoModal'))$('airGeoModal').classList.remove('on')};load()}
 window.ccOpenPantallaAeropuerto=btn=>{document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));$('ccPanelPantallaAeropuerto')?.classList.add('active');btn?.classList.add('active');clearTimeout(TIMER);shell()};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(TIMER)}else if($('ccPanelPantallaAeropuerto')?.classList.contains('active'))load()});
+document.addEventListener('fullscreenchange',syncFullscreenButton);
 })();
