@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-59",
+  "version": "PRO-20261008-60",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto con marcadores vectoriales profesionales, Regresar en Cajas de renta y estado Sin servicio activo cuando no hay operador.",
+  "message": "Marcadores de Pantalla Aeropuerto regresan a un estilo sobrio; remolque solo aparece cuando está asignado y muestra su número.",
   "updated_at": "2026-10-08T12:21:00-07:00"
 }
