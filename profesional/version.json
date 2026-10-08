@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-57",
+  "version": "PRO-20261008-58",
   "mandatory": false,
-  "message": "Mapa de unidades agrega globos operativos en vista de Todos los clientes con operador, cliente y destino.",
+  "message": "Mapa Aeropuerto con globo operativo compacto siempre visible y marcador visual tipo tractocamión-remolque integrado.",
   "updated_at": "2026-10-08T11:21:00-07:00"
 }
