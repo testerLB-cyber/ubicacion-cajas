@@ -1,38 +1,132 @@
 (()=>{'use strict';
-let TIMER=null,LAST=[],FILTER='TODOS';
+let TIMER=null,LAST=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const sb=()=>window.gmSupabase||null;
 const tz='America/Hermosillo';
-const fmtTime=v=>v?new Date(v).toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit'}):'—';
-const age=v=>{if(!v)return'Sin señal';const d=Math.max(0,Date.now()-new Date(v).getTime()),s=Math.floor(d/1000);if(s<60)return'hace '+s+' s';const m=Math.floor(s/60);if(m<60)return'hace '+m+' min';return'hace '+Math.floor(m/60)+' h'};
-function css(){if($('airportCss'))return;document.head.insertAdjacentHTML('beforeend',`<style id="airportCss">
-.air{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0}.airTop{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.airTitle h2{margin:0;font-size:22px;color:var(--ink)}.airTitle p{margin:3px 0 0;font-size:11px;color:var(--muted)}.airActions{display:flex;gap:7px;flex-wrap:wrap}.airKpis{display:grid;grid-template-columns:repeat(5,minmax(100px,1fr));gap:7px;margin-bottom:10px}.airKpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 10px}.airKpi b{display:block;font-size:21px;color:var(--ink);line-height:1}.airKpi span{display:block;margin-top:5px;font-size:8px;font-weight:950;text-transform:uppercase;color:var(--muted)}.airToolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:9px}.airSearch{flex:1;min-width:220px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 10px}.airFilter{border:0;border-radius:9px;padding:8px 10px;background:#e2e8f0;color:#334155;font-weight:900;cursor:pointer}.airFilter.on{background:#0f172a;color:#fff}.airBoard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.airHead,.airRow{display:grid;grid-template-columns:120px 150px minmax(150px,1fr) minmax(170px,1.2fr) minmax(160px,1.1fr) 110px;gap:8px;align-items:center}.airHead{background:#f8fafc;border-bottom:1px solid var(--line);padding:9px 11px;font-size:8px;font-weight:950;color:#64748b;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;z-index:2}.airList{max-height:65vh;overflow:auto}.airRow{padding:10px 11px;border-bottom:1px solid #edf2f7}.airRow:last-child{border-bottom:0}.airUnit{font-size:16px;font-weight:950;color:#0f172a}.airSub{font-size:9px;color:#64748b;margin-top:2px}.airMain{font-size:11px;font-weight:850;color:#0f172a}.airState{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:8px;font-weight:950}.st-move{background:#dcfce7;color:#166534}.st-stop{background:#fef3c7;color:#92400e}.st-prog{background:#dbeafe;color:#1d4ed8}.st-late{background:#ffedd5;color:#c2410c}.st-nogps{background:#f1f5f9;color:#475569}.airGps{font-size:10px;color:#334155}.airGps strong{display:block;color:#0f172a}.airEmpty{padding:36px;text-align:center;color:#64748b}.airFoot{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 11px;background:#f8fafc;border-top:1px solid var(--line);font-size:9px;color:#64748b}.airFS{position:fixed;inset:0;z-index:130000;background:#f8fafc;display:none;flex-direction:column}.airFS.on{display:flex}.airFSBar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0f172a;color:#fff}.airFSBar h2{margin:0;font-size:22px}.airFSBody{flex:1;overflow:auto;padding:12px}.airFS .airList{max-height:none}.airFS .airBoard{height:100%}
-@media(max-width:1000px){.airKpis{grid-template-columns:repeat(3,1fr)}.airHead,.airRow{grid-template-columns:100px 130px 1fr 1fr}.airHead>div:nth-child(5),.airHead>div:nth-child(6),.airRow>div:nth-child(5),.airRow>div:nth-child(6){display:none}}@media(max-width:650px){.airKpis{grid-template-columns:1fr 1fr}.airHead,.airRow{grid-template-columns:90px 1fr}.airHead>div:nth-child(n+3),.airRow>div:nth-child(n+3){display:none}}
-</style>`)}
-function stateClass(s){return s==='EN MOVIMIENTO'?'st-move':s==='DETENIDO'?'st-stop':s==='PROGRAMADO'?'st-prog':s==='GPS ATRASADO'?'st-late':'st-nogps'}
-function filtered(){const q=($('airSearch')?.value||'').trim().toLowerCase();return LAST.filter(x=>(FILTER==='TODOS'||x.estado===FILTER)&&(!q||[x.unidad,x.operador,x.cliente,x.servicio,x.clasificacion,x.ubicacion].some(v=>String(v||'').toLowerCase().includes(q))))}
-function render(target='airList'){const arr=filtered(),box=$(target);if(!box)return;box.innerHTML=arr.length?arr.map(x=>`<div class="airRow">
-<div><span class="airState ${stateClass(x.estado)}">${esc(x.estado)}</span><div class="airSub">${age(x.gpsAt)}</div></div>
-<div><div class="airUnit">${esc(x.unidad)}</div><div class="airSub">${esc(x.clasificacion||x.servicio||'')}</div></div>
-<div><div class="airMain">${esc(x.operador||'—')}</div><div class="airSub">GPS GM</div></div>
-<div><div class="airMain">${esc(x.cliente||'—')}</div><div class="airSub">${esc(x.estatusGps||'')}</div></div>
-<div class="airGps"><strong>${esc(x.ubicacion||'Sin ubicación GPS')}</strong><span>${x.velocidadKmh!=null?Math.round(x.velocidadKmh)+' km/h · ':''}${age(x.gpsAt)}</span></div>
-<div><div class="airMain">${x.gpsAt?fmtTime(x.gpsAt):'—'}</div><div class="airSub">${esc(x.gpsSource||'')}</div></div>
-</div>`).join(''):'<div class="airEmpty">No hay unidades GPS que coincidan con el filtro.</div>'}
-function stats(){const c=s=>LAST.filter(x=>x.estado===s).length;$('airTotal').textContent=LAST.length;$('airMove').textContent=c('EN MOVIMIENTO');$('airStop').textContent=c('DETENIDO');$('airLate').textContent=c('GPS ATRASADO');$('airNoGps').textContent=c('SIN GPS')}
-async function load(silent=false){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;try{if(!silent&&$('airUpdated'))$('airUpdated').textContent='Actualizando GPS…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');LAST=(data.vehicles||[]).map(x=>{const t=x.gpsAt?new Date(x.gpsAt).getTime():0,ageMs=t?Date.now()-t:null,estado=x.estatusGps||((x.velocidadKmh||0)>5?'EN MOVIMIENTO':ageMs==null?'SIN GPS':ageMs>120000?'GPS ATRASADO':'DETENIDO');return{...x,estado,servicio:null,clasificacion:null,prioridad:null,servicioAt:null,servicioHasta:null}});stats();render();if($('airFS')?.classList.contains('on'))render('airFSList');const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='GPS actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+LAST.length+' unidades';schedule(45)}catch(e){if($('airUpdated'))$('airUpdated').textContent='GPS no disponible: '+e.message;LAST=[];stats();render();schedule(60)}}
-function schedule(sec){clearTimeout(TIMER);TIMER=setTimeout(()=>load(true),Math.max(30,sec)*1000)}
-function openFS(){$('airFS').classList.add('on');render('airFSList')}
-function closeFS(){$('airFS').classList.remove('on')}
-function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
-<div class="airTop"><div class="airTitle"><h2>Pantalla Aeropuerto</h2><p>Flota GPS de Software GM · actualización ligera sin recargar la página.</p></div><div class="airActions"><button id="airRefresh" class="cc-btn cc-btn-light">↻ Actualizar</button><button id="airFullscreen" class="cc-btn cc-btn-primary">⛶ Pantalla completa</button></div></div>
-<div class="airKpis"><div class="airKpi"><b id="airTotal">0</b><span>En pantalla</span></div><div class="airKpi"><b id="airMove">0</b><span>En movimiento</span></div><div class="airKpi"><b id="airStop">0</b><span>Detenidos</span></div><div class="airKpi"><b id="airLate">0</b><span>GPS atrasado</span></div><div class="airKpi"><b id="airNoGps">0</b><span>Sin GPS</span></div></div>
-<div class="airToolbar"><input id="airSearch" class="airSearch" placeholder="Buscar unidad, operador, cliente o ubicación…"><button class="airFilter on" data-f="TODOS">Todos</button><button class="airFilter" data-f="EN MOVIMIENTO">En movimiento</button><button class="airFilter" data-f="DETENIDO">Detenidos</button><button class="airFilter" data-f="SIN GPS">Sin GPS</button></div>
-<div class="airBoard"><div class="airHead"><div>Estado</div><div>Unidad</div><div>Operador</div><div>Cliente</div><div>Ubicación</div><div>GPS</div></div><div id="airList" class="airList"></div><div class="airFoot"><span id="airUpdated">Sin actualizar</span><span>Refresco inteligente: 45 s · se pausa fuera de esta pantalla</span></div></div>
-<div id="airFS" class="airFS"><div class="airFSBar"><div><h2>PANTALLA AEROPUERTO</h2><div class="airSub" style="color:#cbd5e1">Operaciones en curso</div></div><button id="airFSClose" class="cc-btn cc-btn-light">✕ Cerrar</button></div><div class="airFSBody"><div class="airBoard"><div class="airHead"><div>Estado</div><div>Unidad</div><div>Operador</div><div>Cliente</div><div>Ubicación</div><div>GPS</div></div><div id="airFSList" class="airList"></div></div></div></div>
-</div>`;
-$('airRefresh').onclick=()=>load();$('airFullscreen').onclick=openFS;$('airFSClose').onclick=closeFS;$('airSearch').oninput=()=>{render();if($('airFS').classList.contains('on'))render('airFSList')};document.querySelectorAll('.airFilter').forEach(b=>b.onclick=()=>{FILTER=b.dataset.f;document.querySelectorAll('.airFilter').forEach(x=>x.classList.toggle('on',x===b));render();if($('airFS').classList.contains('on'))render('airFSList')});load()}
-window.ccOpenPantallaAeropuerto=btn=>{document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));$('ccPanelPantallaAeropuerto')?.classList.add('active');btn?.classList.add('active');clearTimeout(TIMER);shell()};
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('ccPanelPantallaAeropuerto')?.classList.contains('active'))load(true)});
+
+function css(){
+  if($('airportCss'))return;
+  document.head.insertAdjacentHTML('beforeend',`<style id="airportCss">
+  .airSimple{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0}
+  .airSimpleTop{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
+  .airSimpleTop h2{margin:0;font-size:22px;color:var(--ink)}
+  .airSimpleTop p{margin:3px 0 0;font-size:10px;color:var(--muted)}
+  .airUpdated{font-size:9px;color:var(--muted);white-space:nowrap}
+  .airUnits{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:10px}
+  .airUnitCard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .airUnitHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:11px 13px;background:#f8fafc;border-bottom:1px solid var(--line)}
+  .airUnitName{font-size:19px;font-weight:950;color:var(--ink)}
+  .airUnitMeta{font-size:9px;color:var(--muted);margin-top:2px}
+  .airFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+  .airField{padding:8px 11px;border-bottom:1px solid #eef2f7;min-width:0}
+  .airField:nth-child(odd){border-right:1px solid #eef2f7}
+  .airField label{display:block;font-size:7px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}
+  .airField div{font-size:10px;font-weight:750;color:#1e293b;word-break:break-word}
+  .airField.full{grid-column:1/-1;border-right:0}
+  .airGeo{padding:8px 11px}
+  .airGeoItem{font-size:9px;color:#334155;padding:5px 0;border-bottom:1px dashed #e2e8f0}
+  .airGeoItem:last-child{border-bottom:0}
+  .airEmpty{padding:36px;text-align:center;color:#64748b;background:#fff;border:1px solid var(--line);border-radius:14px}
+  @media(max-width:700px){.airUnits{grid-template-columns:1fr}.airFields{grid-template-columns:1fr}.airField,.airField:nth-child(odd){border-right:0}.airField.full{grid-column:auto}}
+  </style>`);
+}
+function val(v){
+  if(v===null||v===undefined||v==='')return '—';
+  return esc(v);
+}
+function geos(arr){
+  if(!Array.isArray(arr)||!arr.length)return '—';
+  return arr.map(g=>`<div class="airGeoItem"><b>${val(g.Geocerca||g.geocerca)}</b> · ${val(g.Evento||g.evento)} · ${val(g["Fecha Hora"]||g.fechaHora||g.fecha)}</div>`).join('');
+}
+function card(x){
+  const fields=[
+    ['Placa',x.placa],
+    ['Tipo unidad',x.tipoUnidad],
+    ['Descripción',x.descripcion],
+    ['Código',x.codigo],
+    ['Estatus',x.estatusGps],
+    ['Evento GPS',x.evento],
+    ['Ubicación GPS',x.ubicacion],
+    ['Ubicación ERP',x.ubicacionErp],
+    ['Latitud',x.latitud],
+    ['Longitud',x.longitud],
+    ['Velocidad',x.velocidadKmh!=null?x.velocidadKmh+' km/h':null],
+    ['Odómetro',x.odometro],
+    ['Voltaje',x.voltaje],
+    ['Fecha / hora GPS',x.gpsAt],
+    ['fhEstatus',x.fhEstatus],
+    ['Número viaje',x.numeroViaje],
+    ['Identificador viaje',x.identificadorViaje],
+    ['Cliente',x.cliente],
+    ['Estatus viaje',x.estatusViaje],
+    ['Cargado / vacío',x.trayectoCargadoVacio],
+    ['Operador',x.operador],
+    ['Origen',x.origen],
+    ['Destino',x.destino],
+    ['Dirección cliente',x.direccionCliente],
+    ['Peso',x.peso!=null?x.peso+(x.unidadPeso?' '+x.unidadPeso:''):null],
+    ['Salida',x.salida],
+    ['Fecha estimada llegada',x.eta],
+    ['Remolque',x.remolque],
+    ['Placas remolque',x.placasRemolque],
+    ['Remolque 2',x.remolque2],
+    ['Placas remolque 2',x.placasRemolque2],
+    ['Descripción de la ruta',x.descripcionRuta],
+    ['Google Maps',x.mapsUrl]
+  ];
+  return `<div class="airUnitCard">
+    <div class="airUnitHead">
+      <div><div class="airUnitName">${val(x.unidad)}</div><div class="airUnitMeta">Datos directos de Software GM</div></div>
+    </div>
+    <div class="airFields">
+      ${fields.map(([k,v])=>`<div class="airField"><label>${esc(k)}</label><div>${val(v)}</div></div>`).join('')}
+      <div class="airField full"><label>Geocercas</label><div class="airGeo">${geos(x.geocercas)}</div></div>
+    </div>
+  </div>`;
+}
+function render(){
+  const box=$('airUnits'); if(!box)return;
+  box.innerHTML=LAST.length?LAST.map(card).join(''):'<div class="airEmpty">La API no devolvió unidades.</div>';
+}
+async function load(){
+  if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;
+  try{
+    $('airUpdated').textContent='Consultando API…';
+    const r=await sb().functions.invoke('gm-flota');
+    if(r.error)throw r.error;
+    const data=r.data||{};
+    if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');
+    LAST=Array.isArray(data.vehicles)?data.vehicles:[];
+    render();
+    const d=data.generatedAt?new Date(data.generatedAt):new Date();
+    $('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+LAST.length+' unidades de API';
+    schedule(45);
+  }catch(e){
+    LAST=[];render();
+    $('airUpdated').textContent='Error API: '+e.message;
+    schedule(60);
+  }
+}
+function schedule(sec){clearTimeout(TIMER);TIMER=setTimeout(load,Math.max(30,sec)*1000)}
+function shell(){
+  css();
+  $('ccPantallaAeropuertoMount').innerHTML=`<div class="airSimple">
+    <div class="airSimpleTop">
+      <div><h2>Pantalla Aeropuerto</h2><p>Información directa de la API de Software GM.</p></div>
+      <div id="airUpdated" class="airUpdated">Sin actualizar</div>
+    </div>
+    <div id="airUnits" class="airUnits"></div>
+  </div>`;
+  load();
+}
+window.ccOpenPantallaAeropuerto=btn=>{
+  document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});
+  document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));
+  $('ccPanelPantallaAeropuerto')?.classList.add('active');
+  btn?.classList.add('active');
+  clearTimeout(TIMER);
+  shell();
+};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('ccPanelPantallaAeropuerto')?.classList.contains('active'))load()});
 })();
