@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-56",
+  "version": "PRO-20261008-57",
   "mandatory": false,
-  "message": "Cajas de renta ahora abre en vista completa y el mapa de unidades usa colores por cliente con marcadores tracto-remolque.",
+  "message": "Mapa de unidades agrega globos operativos en vista de Todos los clientes con operador, cliente y destino.",
   "updated_at": "2026-10-08T11:21:00-07:00"
 }
