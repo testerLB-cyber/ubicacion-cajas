@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-23",
+  "version": "PRO-20261007-24",
   "mandatory": false,
-  "message": "Nueva versión de producción: Centro de Despacho PRO actualizado."
+  "message": "Centro de Despacho: edición de asignaciones, vista compacta, sin cajas y KPIs clickeables."
 }
