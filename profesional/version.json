@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-49",
+  "version": "PRO-20261008-50",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto ajustada con mejor distribución, ruta Origen-Destino compacta, placa de remolque y paleta azul.",
+  "message": "Pantalla Aeropuerto redistribuida con ruta unificada Origen-Destino, mejor aprovechamiento del ancho y menos espacios en blanco.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
