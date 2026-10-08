@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-58",
+  "version": "PRO-20261008-59",
   "mandatory": false,
-  "message": "Mapa Aeropuerto con globo operativo compacto siempre visible y marcador visual tipo tractocamión-remolque integrado.",
-  "updated_at": "2026-10-08T11:21:00-07:00"
+  "message": "Pantalla Aeropuerto con marcadores vectoriales profesionales, Regresar en Cajas de renta y estado Sin servicio activo cuando no hay operador.",
+  "updated_at": "2026-10-08T12:21:00-07:00"
 }
