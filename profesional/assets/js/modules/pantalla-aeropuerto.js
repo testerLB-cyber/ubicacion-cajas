@@ -430,18 +430,33 @@ async function ensureAirportLeaflet(){
 function airportMapRows(){
   return filtered().filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
 }
-async function renderAirportMap(){
+async function renderAirportMap(opts={}){
   if(!AIR_MAP_OPEN)return;
   const el=$('airFleetMapCanvas'),meta=$('airFleetMapMeta');if(!el)return;
   try{
     await ensureAirportLeaflet();
     const rows=airportMapRows();
     if(meta)meta.textContent=rows.length+' unidades con ubicación · mismo filtro de la tabla';
-    if(AIR_MAP_INSTANCE){try{AIR_MAP_INSTANCE.remove()}catch(_){} AIR_MAP_INSTANCE=null}
-    el.innerHTML='';
-    AIR_MAP_INSTANCE=L.map(el,{preferCanvas:true,zoomControl:true}).setView([29.0729,-110.9559],6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(AIR_MAP_INSTANCE);
-    AIR_MAP_LAYER=L.layerGroup().addTo(AIR_MAP_INSTANCE);
+
+    const isNew=!AIR_MAP_INSTANCE;
+    let savedCenter=null,savedZoom=null;
+    if(AIR_MAP_INSTANCE){
+      try{
+        savedCenter=AIR_MAP_INSTANCE.getCenter();
+        savedZoom=AIR_MAP_INSTANCE.getZoom();
+      }catch(_){}
+    }else{
+      el.innerHTML='';
+      AIR_MAP_INSTANCE=L.map(el,{preferCanvas:true,zoomControl:true}).setView([29.0729,-110.9559],6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(AIR_MAP_INSTANCE);
+    }
+
+    if(AIR_MAP_LAYER){
+      try{AIR_MAP_LAYER.clearLayers()}catch(_){}
+    }else{
+      AIR_MAP_LAYER=L.layerGroup().addTo(AIR_MAP_INSTANCE);
+    }
+
     const bounds=[];
     rows.forEach(x=>{
       const lat=Number(x.latitud),lng=Number(x.longitud),hasTrip=!!String(x.numeroViaje||'').trim();
@@ -450,7 +465,14 @@ async function renderAirportMap(){
       mk.bindPopup('<b>'+esc(x.unidad||'—')+'</b><br>'+esc(x.cliente||'Sin cliente')+'<br>'+esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')+(hasTrip?'<br>Viaje: '+esc(x.numeroViaje):'<br>Sin número de viaje'));
       bounds.push([lat,lng]);
     });
-    if(bounds.length)AIR_MAP_INSTANCE.fitBounds(bounds,{padding:[35,35],maxZoom:15});
+
+    const shouldFit=isNew||opts.refit===true;
+    if(shouldFit&&bounds.length){
+      AIR_MAP_INSTANCE.fitBounds(bounds,{padding:[35,35],maxZoom:15});
+    }else if(savedCenter&&Number.isFinite(savedZoom)){
+      AIR_MAP_INSTANCE.setView(savedCenter,savedZoom,{animate:false});
+    }
+
     setTimeout(()=>AIR_MAP_INSTANCE?.invalidateSize(),80);
   }catch(e){
     el.innerHTML='<div class="airRentEmpty">No fue posible cargar el mapa: '+esc(e.message||e)+'</div>';
@@ -475,7 +497,7 @@ function toggleAirportMap(){
   const panel=$('airFleetMapPanel'),btn=$('airMapToggle');
   panel?.classList.toggle('on',AIR_MAP_OPEN);btn?.classList.toggle('on',AIR_MAP_OPEN);
   if(btn)btn.innerHTML=AIR_MAP_OPEN?'<i class="fa-solid fa-map"></i> Ocultar mapa':'<i class="fa-solid fa-map-location-dot"></i> Mapa de unidades';
-  if(AIR_MAP_OPEN)renderAirportMap();
+  if(AIR_MAP_OPEN)renderAirportMap({refit:true});
   else if(AIR_MAP_INSTANCE){try{AIR_MAP_INSTANCE.remove()}catch(_){} AIR_MAP_INSTANCE=null}
 }
 async function loadRentals(){
@@ -543,7 +565,7 @@ function render(){
     $('airNextPage')?.addEventListener('click',()=>setPage(PAGE+1));
   }
   document.querySelectorAll('[data-geo]').forEach(b=>b.onclick=()=>showGeos(Number(b.dataset.geo)));
-  if(AIR_MAP_OPEN)renderAirportMap();
+  if(AIR_MAP_OPEN)renderAirportMap({refit:false});
 }
 async function load(){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');LAST=Array.isArray(data.vehicles)?data.vehicles:[];updateClientFilter();render();const pos={};LAST.forEach(x=>{const lat=Number(x.latitud),lng=Number(x.longitud);if(Number.isFinite(lat)&&Number.isFinite(lng))pos[String(x.unidad||'')]={lat,lng,ts:Date.now()}});savePrev(pos);const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+'\nSiguiente lectura en 60 s';schedule()}catch(e){LAST=[];updateClientFilter();render();$('airUpdated').textContent='Error API: '+e.message+'\nReintento en 60 s';schedule()}}
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
