@@ -262,6 +262,63 @@ function css(){
   }
   .air.rentOpen .airTrip>div:nth-child(7),
   .air.rentOpen .airTrip>div:nth-child(8){display:none}
+
+  /* Legibilidad TV y estatus v51 */
+  .airLegend,.airTrip{
+    grid-template-columns:106px 120px minmax(180px,1.05fr) 150px 158px 138px minmax(340px,1.9fr) 134px;
+    column-gap:10px
+  }
+  .airList{gap:6px}
+  .airTrip{
+    min-height:68px;
+    padding:8px 10px;
+    border:1px solid #d7e5f5;
+    box-shadow:0 1px 4px rgba(37,99,235,.04)
+  }
+  .airTrip:nth-child(4n+3){background:#f7fbff}
+  .airTrip:hover{border-color:#bcd4f3;box-shadow:0 3px 10px rgba(37,99,235,.08)}
+  .airStatus{font-size:8px;padding:5px 8px;border-width:1px}
+  .airStatus.green{background:#dcfce7;color:#166534;border-color:#86efac}
+  .airStatus.yellow{background:#ffedd5;color:#c2410c;border-color:#fdba74}
+  .airStatus.red{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+  .airStatus.gray{background:#e2e8f0;color:#475569;border-color:#cbd5e1}
+  .airStatus.blue{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+  .airLocation{max-width:none}
+  .airLocationMain{
+    font-size:9.5px;
+    line-height:1.2;
+    font-weight:750;
+    color:#475569;
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden
+  }
+  .airActions{margin-top:4px}
+  .airClientName{font-size:12.5px;line-height:1.15}
+  .airUnit,.airTrailer{font-size:16.5px}
+  .airRouteUnified{padding:7px 10px}
+  .airRouteUnified .airOrigin,.airRouteUnified .airDestination{font-size:11.5px}
+  .airTripNo{font-size:11px}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{
+    grid-template-columns:102px 116px minmax(170px,1.05fr) 145px 150px 132px minmax(325px,1.9fr) 128px;
+    column-gap:9px
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airList{gap:5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{padding:6px 9px}
+  #ccPantallaAeropuertoMount:fullscreen .airStatus{font-size:7.5px;padding:4px 7px}
+  #ccPantallaAeropuertoMount:fullscreen .airLocationMain{
+    font-size:9px;
+    line-height:1.15;
+    -webkit-line-clamp:2
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airClientName{font-size:12px}
+  #ccPantallaAeropuertoMount:fullscreen .airUnit,
+  #ccPantallaAeropuertoMount:fullscreen .airTrailer{font-size:15.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airOrigin,
+  #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airDestination{font-size:11px}
   </style>`);
 }
 
@@ -273,7 +330,7 @@ function readPrev(){try{return JSON.parse(localStorage.getItem(POS_KEY)||'{}')||
 function savePrev(map){try{localStorage.setItem(POS_KEY,JSON.stringify(map))}catch{}}
 function movementInfo(x,prev){const lat=Number(x.latitud),lng=Number(x.longitud),cur=Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng}:null,old=prev?.[String(x.unidad||'')],d=cur&&old?distanceM({lat:Number(old.lat),lng:Number(old.lng)},cur):null,deg=cur&&old&&d!=null&&d>=25?bearing({lat:Number(old.lat),lng:Number(old.lng)},cur):null,evt=String(x.evento||'').trim(),driving=/conduc|driv/i.test(evt)||Number(x.velocidadKmh)>5,moving=d!=null&&d>=25;return{state:driving?'Conduciendo':(evt||(!moving?'Detenido':'En movimiento')),dir:dirFromDeg(deg),moved:moving}}
 function fmt(v){if(!v)return'—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('es-MX',{timeZone:tz,day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
-function statusClass(s){const v=String(s||'').toUpperCase();if(/TRANS|RUTA|ACTIVO|EN CURSO/.test(v))return'green';if(/SITIO|ORIGEN|ESPER|DEMOR/.test(v))return'yellow';if(/FUERA|CANCEL|ERROR|BLOQ/.test(v))return'red';return'gray'}
+function statusClass(s){const v=String(s||'').toUpperCase();if(/TRANS|RUTA|ACTIVO|EN CURSO/.test(v))return'green';if(/ADUANA|CUSTOM/.test(v))return'blue';if(/SITIO|ORIGEN|ESPER/.test(v))return'yellow';if(/DEMOR|FUERA|CANCEL|ERROR|BLOQ/.test(v))return'red';if(/FINAL|CERRAD|TERMIN/.test(v))return'gray';return'gray'}
 function selectedClient(){return $('airClient')?.value||''}
 function onlyTrips(){return $('airOnlyTrips')?.checked!==false}
 function filtered(){const c=selectedClient();return LAST.filter(x=>(!c||String(x.cliente||'')===c)&&(!onlyTrips()||String(x.numeroViaje||'').trim()))}
