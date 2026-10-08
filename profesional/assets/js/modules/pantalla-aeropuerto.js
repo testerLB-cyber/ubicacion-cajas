@@ -90,11 +90,24 @@ async function loadRentals(){
 }
 function toggleRentals(){RENT_OPEN=!RENT_OPEN;const root=document.querySelector('#ccPantallaAeropuertoMount .air');root?.classList.toggle('rentOpen',RENT_OPEN);const b=$('airRentToggle');if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML=RENT_OPEN?'<i class="fa-solid fa-box-open"></i> Ocultar cajas':'<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals()}
 
+function totalPages(){return Math.max(1,Math.ceil(filtered().length/PAGE_SIZE))}
+function setPage(p){PAGE=Math.min(Math.max(1,p),totalPages());render()}
+async function toggleFullscreen(){
+  const target=$('ccPantallaAeropuertoMount');
+  try{
+    if(!document.fullscreenElement) await target?.requestFullscreen?.();
+    else await document.exitFullscreen?.();
+  }catch(e){console.warn('FULLSCREEN',e)}
+}
+function syncFullscreenButton(){
+  const b=$('airFullBtn');if(!b)return;
+  b.innerHTML=document.fullscreenElement?'<i class="fa-solid fa-compress"></i> Salir de pantalla completa':'<i class="fa-solid fa-expand"></i> Pantalla completa';
+}
 function render(){
   const box=$('airList');if(!box)return;
   const root=document.querySelector('#ccPantallaAeropuertoMount .air');root?.classList.toggle('v2',VIEW==='v2');
   $('airActualBtn')?.classList.toggle('on',VIEW==='actual');$('airV2Btn')?.classList.toggle('on',VIEW==='v2');
-  const prev=readPrev(),arr=filtered();$('airVisibleCount').textContent=arr.length+' de '+LAST.length+' unidades';
+  const prev=readPrev(),all=filtered(),pages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));if(PAGE>pages)PAGE=pages;const start=(PAGE-1)*PAGE_SIZE,arr=all.slice(start,start+PAGE_SIZE);$('airVisibleCount').textContent=all.length+' servicios';
   if($('airV2Kpis')){const active=arr.filter(x=>/TRANS|RUTA|ACTIVO|CURSO/i.test(String(x.estatusViaje||''))).length,delay=arr.filter(x=>/DEMOR|ESPER/i.test(String(x.estatusViaje||''))).length,withGps=arr.filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))).length;$('airV2Kpis').style.display=VIEW==='v2'?'grid':'none';$('airV2Kpis').innerHTML='<div class="airV2Kpi"><b>'+arr.length+'</b><span>Operaciones visibles</span></div><div class="airV2Kpi"><b>'+active+'</b><span>En ruta / activas</span></div><div class="airV2Kpi"><b>'+withGps+'</b><span>Con GPS</span></div><div class="airV2Kpi"><b>'+delay+'</b><span>Alertas / demora</span></div>'}
   box.innerHTML=arr.length?arr.map(x=>{const idx=LAST.indexOf(x),mi=movementInfo(x,prev),d=mi.dir,geoCount=Array.isArray(x.geocercas)?x.geocercas.length:0;return `<div class="airTrip ${mi.moved?'moved':''}">
     <div class="airMotion"><div class="airCompass">${esc(d.arrow)}</div><div class="airMotionText"><b>${esc(mi.state)}</b><span>${esc(d.label)} · ${esc(fmt(x.gpsAt))}</span></div></div>
