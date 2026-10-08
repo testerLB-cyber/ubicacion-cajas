@@ -834,10 +834,10 @@ async function ensureAirportLeaflet(){
   });
 }
 function airportMapRows(){
-  const all=!selectedClient()&&$('airMapShowAll')?.checked;
+  const all=!selectedClient()&&$('airMapShowAll')?.checked&&(window.ccPerm?.('pantalla_aeropuerto.ver_todas_unidades')===true);
   return (all?LAST:filtered()).filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
 }
-function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)return;const allowed=!selectedClient();wrap.style.display=allowed?'inline-flex':'none';if(!allowed&&$('airMapShowAll'))$('airMapShowAll').checked=false}
+function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)return;const allowed=!selectedClient()&&window.ccPerm?.('pantalla_aeropuerto.ver_todas_unidades')===true;wrap.style.display=allowed?'inline-flex':'none';if(!allowed&&$('airMapShowAll'))$('airMapShowAll').checked=false}
 function airportBaseLayer(mode){
   const satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   const streetUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
