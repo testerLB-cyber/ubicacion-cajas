@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-51",
+  "version": "PRO-20261008-52",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto con mejor legibilidad, filas diferenciadas, ubicación más visible y estatus con colores fijos.",
+  "message": "Pantalla Aeropuerto reordena Ubicación, compacta Cliente y agrega mapa general filtrado de unidades en tiempo real.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
