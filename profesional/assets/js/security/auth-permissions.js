@@ -23,6 +23,9 @@ const PERM_SCHEMA=[
  ['mapa','Mapa de cajas',[['ver','Ver'],['geocercas','Crear / editar geocercas']]],
  ['configuracion','Configuración',[['ver','Ver'],['editar','Modificar']]],
  ['hojas_servicio','Control de Hojas de Servicio',[['ver','Ver módulo'],['generar','Generar folios'],['asignar_responsable','Asignar a responsable'],['asignar_operador','Asignar a operadores'],['comprobar','Comprobar uso / devolución'],['catalogos','Catálogos']]],
+ ['pantalla_aeropuerto','Pantalla Aeropuerto',[['ver','Ver pantalla y mapas'],['ver_todas_unidades','Mostrar todas las unidades en mapa']]],
+ ['asignaciones','Asignaciones',[['ver','Ver módulo']]],
+ ['checklist_salidas','Checklist Salidas',[['ver','Ver módulo']]],
  ['carta_porte','Carta Porte',[['ver','Ver módulo'],['generar','Generar Carta Porte'],['catalogos','Catálogos Carta Porte']]],
  ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
  ['sos','SOS · Emergencias',[['ver','Recibir notificación SOS']]],
@@ -78,6 +81,7 @@ window.ccLogout=async function(){
  await bootstrapStatus();
 };
 function tabVisible(tab,visible){
+ if(tab==='pantalla_aeropuerto'||tab==='asignaciones'||tab==='checklist_salidas'){const id={pantalla_aeropuerto:'ccTabPantallaAeropuerto',asignaciones:'ccTabAsignaciones',checklist_salidas:'ccTabChecklistSalidas'}[tab];const b=document.getElementById(id);if(b)b.style.display=visible?'':'none';return;}
  if(tab==='carta_porte'){const cp=document.getElementById('ccTabCartaPorte');if(cp)cp.style.display=visible?'':'none';return;}
  const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));
  if(b)b.style.display=visible?'':'none';
@@ -99,19 +103,25 @@ const CC_MODULE_PERMISSIONS={
  mantenimiento:'mantenimiento.ver',
  mapa:'mapa.ver',
  carta_porte:'carta_porte.ver',
+ pantalla_aeropuerto:'pantalla_aeropuerto.ver',
+ asignaciones:'asignaciones.ver',
+ checklist_salidas:'checklist_salidas.ver',
  configuracion:'configuracion.ver'
 };
 function ccModuleAllowed(tab){const p=CC_MODULE_PERMISSIONS[tab];return !!p&&ccPerm(p);}
 function ccHasAnyOperationalModule(){return Object.keys(CC_MODULE_PERMISSIONS).some(tab=>ccModuleAllowed(tab));}
 window.ccOpenCartaPorte=function(){if(!ccPerm('carta_porte.ver')){alert('Tu usuario no tiene permiso para Carta Porte.');return;}window.location.href='carta-porte-demo.html?v=20261002-CARTA-PORTE-PERM1';};
+function protectExtraModules(){
+ [['ccOpenPantallaAeropuerto','pantalla_aeropuerto.ver'],['ccOpenAssignments','asignaciones.ver'],['ccOpenChecklistSalidas','checklist_salidas.ver']].forEach(([name,perm])=>protect(name,perm));
+}
 function protectTabs(){
  const original=window.ccTab;if(typeof original==='function'&&!original.__ccProtected){
   const w=function(tab,btn){if(!ccModuleAllowed(tab)){alert('Tu usuario no tiene permiso para este módulo.');return;}return original(tab,btn);};w.__ccProtected=true;window.ccTab=w;
  }
 }
 function firstControlTab(){
- const order=['anticipos','dashboard','inventario','renta','historial','proforma','mantenimiento','mapa','carta_porte','configuracion'];
- for(const tab of order){if(ccModuleAllowed(tab)){if(tab==='carta_porte'){window.ccOpenCartaPorte();break;}const b=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
+ const order=['anticipos','dashboard','inventario','renta','historial','proforma','mantenimiento','mapa','pantalla_aeropuerto','asignaciones','checklist_salidas','carta_porte','configuracion'];
+ for(const tab of order){if(ccModuleAllowed(tab)){if(tab==='carta_porte'){window.ccOpenCartaPorte();break;}const special={pantalla_aeropuerto:'ccTabPantallaAeropuerto',asignaciones:'ccTabAsignaciones',checklist_salidas:'ccTabChecklistSalidas'};const b=special[tab]?document.getElementById(special[tab]):[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(x=>(x.getAttribute('onclick')||'').includes("ccTab('"+tab+"'"));if(b){document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(({pantalla_aeropuerto:'ccPanelPantallaAeropuerto',asignaciones:'ccPanelAsignaciones',checklist_salidas:'ccPanelChecklistSalidas'}[tab])||'ccPanel'+tab.charAt(0).toUpperCase()+tab.slice(1))?.classList.add('active');break;}}}
 }
 function applyAccess(){
  const a=window.CC_ACCESS||{};
@@ -131,6 +141,7 @@ function applyAccess(){
  Object.keys(CC_MODULE_PERMISSIONS).forEach(tab=>tabVisible(tab,ccModuleAllowed(tab)));
 
  protectTabs();
+ protectExtraModules();
  [
   ['ccNuevaCaja','inventario.crear'],['ccAbrirImportarUnidades','inventario.crear'],['ccEditarUnidadDirecto','inventario.editar'],
   ['ccPonerMantenimiento','inventario.mantenimiento'],['ccLiberarMantenimiento','inventario.mantenimiento'],
