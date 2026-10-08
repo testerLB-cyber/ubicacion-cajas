@@ -127,6 +127,57 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .airTimeMain{font-size:8.5px}
   #ccPantallaAeropuertoMount:fullscreen .airTimeSub{font-size:7px}
   #ccPantallaAeropuertoMount:fullscreen .airPager{padding:5px 8px;margin-top:5px}
+
+  /* Rediseño integral Pantalla Aeropuerto v48 */
+  .air{background:#f3f7fa;border:1px solid #e2e8f0;box-shadow:0 10px 28px rgba(15,23,42,.05)}
+  .airTop{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 3px 12px rgba(15,23,42,.04)}
+  .airFilters{margin-bottom:8px;padding:8px 10px}
+  .airLegend{grid-template-columns:86px 92px 140px 125px 125px 105px minmax(135px,1fr) minmax(135px,1fr) 108px;gap:6px;background:#eaf3f2;border-color:#d5e6e3;color:#526b69}
+  .airTrip{grid-template-columns:86px 92px 140px 125px 125px 105px minmax(135px,1fr) minmax(135px,1fr) 108px;gap:6px;min-height:62px;padding:7px 9px;border-radius:10px;border-color:#dfe8ef;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.035)}
+  .airTrip:nth-of-type(4n+1){background:#fcfefe}
+  .airTrip:hover{border-color:#b9d5d0;box-shadow:0 5px 14px rgba(15,118,110,.08)}
+  .airTrip:before{background:#7fb9b1}
+  .airCompass{width:36px;height:36px;min-width:36px;background:#eef6ff;border-color:#d9e9fb;color:#1d6fb8}
+  .airMotionText b{font-size:10px}.airMotionText span{font-size:7px}
+  .airStatus{font-size:7.5px;padding:5px 7px}
+  .airClientName{font-size:12.5px;color:#0d625c;align-self:center}
+  .airLocationMain{font-size:8.5px;color:#66788a}
+  .airUnit,.airTrailer{font-size:16px}
+  .airOperator{font-size:8.5px}
+  .airOrigin,.airDestination{font-size:11.5px}
+  .airTripNo{font-size:10.5px}
+  .airTimeMain{font-size:9px}
+  .airPager{margin-top:7px;padding:7px 10px;background:#fdfefe}
+  .airSplit{min-width:0}
+  .airRentPanel{background:#fff;border:1px solid #dce7ed;border-radius:13px;padding:0;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,.05)}
+  .airRentHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(90deg,#edf7f4,#f8fbfd);border-bottom:1px solid #dce9e6}
+  .airRentTitle{font-size:14px;font-weight:950;color:#164e49}.airRentSub{font-size:9px;color:#64748b;margin-top:3px}
+  .airRentStats{padding:10px 12px 0;margin-bottom:8px}.airRentStats span{background:#f7fafb;padding:8px 5px}.airRentStats b{font-size:18px}
+  .airRentMap{margin:0 12px;background:#f5f8fa;border:1px solid #e4ebf0}.airRentMap iframe{height:220px}
+  .airRentItems{margin:8px 12px 12px;max-height:330px;border:1px solid #e7edf2;border-radius:10px;background:#fff}
+  .airRentItem{padding:9px 10px}.airRentItem strong{font-size:12px;color:#12324a}.airRentItem span{font-size:8.5px}.airRentItem a{font-size:8.5px}
+  .air.rentOpen .airSplit{grid-template-columns:minmax(0,1.65fr) minmax(350px,.95fr);gap:10px}
+  .air.rentOpen .airOperations{background:#f8fbfc;border:1px solid #e1eaf0;border-radius:13px;padding:8px}
+  .air.rentOpen .airList{gap:6px}
+  .air.rentOpen .airTrip{grid-template-columns:82px 90px minmax(130px,1fr) 110px 112px 92px;gap:5px}
+  .air.rentOpen .airTrip>div:nth-child(7),.air.rentOpen .airTrip>div:nth-child(8),.air.rentOpen .airTrip>div:nth-child(9){display:none}
+  .air.rentOpen .airClientName{font-size:11px}
+  .air.rentOpen .airLocationMain{font-size:8px}
+  .air.rentOpen .airUnit,.air.rentOpen .airTrailer{font-size:14px}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{grid-template-columns:86px 92px 140px 120px 124px 102px minmax(135px,1fr) minmax(135px,1fr) 105px}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{padding:5px 8px}
+  #ccPantallaAeropuertoMount:fullscreen .airClientName{font-size:12px}
+  #ccPantallaAeropuertoMount:fullscreen .airUnit,
+  #ccPantallaAeropuertoMount:fullscreen .airTrailer{font-size:15px}
+  #ccPantallaAeropuertoMount:fullscreen .airOrigin,
+  #ccPantallaAeropuertoMount:fullscreen .airDestination{font-size:11px}
+  #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:7.8px}
+  #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airSplit{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr);gap:8px}
+  #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airOperations{height:100%;padding:6px}
+  #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airRentPanel{display:flex;flex-direction:column;min-height:0}
+  #ccPantallaAeropuertoMount:fullscreen .air.rentOpen .airRentItems{flex:1;min-height:0;max-height:none;overflow:auto}
+  @media(max-width:1250px){.airLegend,.airTrip{grid-template-columns:80px 90px 120px 110px 115px 95px minmax(125px,1fr) minmax(125px,1fr) 100px}.airLegend>div,.airTrip>div{display:block!important}}
   </style>`);
 }
 
@@ -153,8 +204,8 @@ async function loadRentals(){
  if(!RENT_OPEN||RENT_LOADING)return;
  const client=selectedClient(),panel=$('airRentPanel');
  if(!panel)return;
- if(!client){panel.innerHTML='<div class="airRentEmpty">Selecciona un cliente para visualizar sus cajas en renta.</div>';return}
- RENT_LOADING=true;panel.innerHTML='<div class="airRentEmpty">Consultando cajas de renta y últimos escaneos…</div>';
+ if(!client){panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">Vista dividida por cliente</div></div></div><div class="airRentEmpty">Selecciona un cliente para visualizar sus cajas en renta y su última ubicación.</div>';return}
+ RENT_LOADING=true;panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">'+esc(client)+'</div></div></div><div class="airRentEmpty">Consultando rentas y últimos escaneos…</div>';
  try{
   const db=sb();if(!db)throw Error('Sin conexión con Supabase');
   const {data,error}=await db.rpc('cc_airport_rental_boxes',{p_cliente_nombre:client});
@@ -165,7 +216,7 @@ async function loadRentals(){
   const units=Array.isArray(data.cajas)?data.cajas:[];
   if(!units.length){panel.innerHTML='<div class="airRentEmpty">Este cliente no tiene cajas con renta activa.</div>';return}
   const located=units.filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
-  panel.innerHTML='<div class="airRentStats"><span><b>'+units.length+'</b>Cajas en renta</span><span><b>'+located.length+'</b>Ubicadas por QR</span><span><b>'+(units.length-located.length)+'</b>Sin ubicación</span></div><div class="airRentMap" id="airRentMap"></div><div class="airRentItems">'+units.map(x=>'<div class="airRentItem"><strong>'+esc(x.numero||'—')+'</strong><span>'+(x.fechaHora?'Último escaneo: '+esc(fmt(x.fechaHora)):'Sin escaneo registrado')+'</span>'+(Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))?'<a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(x.latitud)+'&mlon='+encodeURIComponent(x.longitud)+'#map=15/'+encodeURIComponent(x.latitud)+'/'+encodeURIComponent(x.longitud)+'">Ver ubicación ↗</a>':'')+'</div>').join('')+'</div>';
+  panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">'+esc(client)+' · última ubicación por escaneo QR</div></div><span class="airCount">'+units.length+' activas</span></div><div class="airRentStats"><span><b>'+units.length+'</b>Cajas en renta</span><span><b>'+located.length+'</b>Ubicadas por QR</span><span><b>'+(units.length-located.length)+'</b>Sin ubicación</span></div><div class="airRentMap" id="airRentMap"></div><div class="airRentItems">'+units.map(x=>'<div class="airRentItem"><strong>'+esc(x.numero||'—')+'</strong><span>'+(x.fechaHora?'Último escaneo: '+esc(fmt(x.fechaHora)):'Sin escaneo registrado')+'</span>'+(Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))?'<a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(x.latitud)+'&mlon='+encodeURIComponent(x.longitud)+'#map=15/'+encodeURIComponent(x.latitud)+'/'+encodeURIComponent(x.longitud)+'">Ver ubicación ↗</a>':'')+'</div>').join('')+'</div>';
   const map=$('airRentMap');
   if(located.length){
     const la=located.reduce((a,x)=>a+Number(x.latitud),0)/located.length;
@@ -174,7 +225,7 @@ async function loadRentals(){
   }else map.innerHTML='<div class="airRentEmpty">No hay ubicaciones QR registradas para estas cajas.</div>';
  }catch(e){panel.innerHTML='<div class="airRentEmpty">No fue posible consultar las rentas: '+esc(e.message||e)+'</div>'}finally{RENT_LOADING=false}
 }
-function toggleRentals(){RENT_OPEN=!RENT_OPEN;const root=document.querySelector('#ccPantallaAeropuertoMount .air');root?.classList.toggle('rentOpen',RENT_OPEN);const b=$('airRentToggle');if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML=RENT_OPEN?'<i class="fa-solid fa-box-open"></i> Ocultar cajas':'<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals()}
+function toggleRentals(){RENT_OPEN=!RENT_OPEN;const root=document.querySelector('#ccPantallaAeropuertoMount .air');root?.classList.toggle('rentOpen',RENT_OPEN);const b=$('airRentToggle');if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML=RENT_OPEN?'<i class="fa-solid fa-table-columns"></i> Cerrar vista dividida':'<i class="fa-solid fa-table-columns"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals()}
 
 function totalPages(){return Math.max(1,Math.ceil(filtered().length/PAGE_SIZE))}
 function setPage(p){PAGE=Math.min(Math.max(1,p),totalPages());render()}
