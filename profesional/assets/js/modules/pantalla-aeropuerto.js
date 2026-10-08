@@ -423,6 +423,71 @@ function css(){
   .airVehicleMarker .trailerIcon{font-size:10px}
   .airFleetMapLegend .legendLock{margin-left:auto;color:#526987;font-weight:800}
   @media(max-width:900px){.airFleetMapHead{align-items:flex-start}.airFleetMapControls{justify-content:flex-end}}
+
+  /* Cajas de renta full-view + clientes por color v56 */
+  .airRentPanel{
+    display:none;
+    position:fixed;
+    inset:10px;
+    z-index:149500;
+    min-width:0;
+    background:#f6f9fc;
+    border:1px solid #cfddeb;
+    border-radius:16px;
+    padding:0;
+    overflow:hidden;
+    box-shadow:0 24px 80px rgba(15,23,42,.26)
+  }
+  .airRentPanel.on{display:flex;flex-direction:column}
+  .airRentFullHead{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;background:linear-gradient(90deg,#edf5fd,#ffffff);border-bottom:1px solid #dbe8f5
+  }
+  .airRentFullHead strong{display:block;font-size:16px;color:#17375e}
+  .airRentFullHead span{display:block;font-size:9px;color:#64748b;margin-top:2px}
+  .airRentFullActions{display:flex;gap:7px;align-items:center}
+  .airRentFullBtn{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbdcf0;background:#fff;color:#334155;border-radius:9px;padding:7px 10px;font-size:9px;font-weight:900;cursor:pointer}
+  .airRentFullBtn:hover{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+  .airRentBody{flex:1;min-height:0;overflow:auto;padding:14px}
+  .airRentStats{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+  .airRentStats span{background:#fff;border:1px solid #dbe8f5;padding:12px 8px}
+  .airRentStats b{font-size:22px}
+  .airRentContentGrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:12px;align-items:start}
+  .airRentMap{background:#fff;border:1px solid #dbe8f5;border-radius:13px;overflow:hidden;box-shadow:0 3px 10px rgba(15,23,42,.04)}
+  .airRentMap iframe{height:430px}
+  .airRentItems{max-height:none;margin-top:0;display:grid;gap:8px}
+  .airRentItem{
+    padding:11px 12px;border:1px solid #dbe8f5;border-radius:11px;background:#fff;
+    display:grid;grid-template-columns:minmax(90px,.8fr) minmax(170px,1.5fr) minmax(120px,1fr) auto;
+    gap:8px;align-items:center;font-size:10px
+  }
+  .airRentItem strong{font-size:14px;color:#17375e}
+  .airRentItemMeta{font-size:9px;color:#64748b;line-height:1.4}
+  .airRentPlate{display:inline-flex;padding:3px 6px;border-radius:999px;background:#eef4fb;border:1px solid #d6e4f3;color:#526987;font-size:8px;font-weight:900}
+  .airRentPanel:fullscreen{inset:0;border:0;border-radius:0;width:100vw;height:100vh}
+  .air.rentOpen .airSplit{display:block!important}
+  .air.rentOpen .airOperations{display:block!important}
+  .air.rentOpen .airLegend{display:grid!important}
+  .air.rentOpen .airTrip{grid-template-columns:106px 120px 178px minmax(145px,.82fr) 158px 138px minmax(330px,1.85fr) 134px!important}
+  .air.rentOpen .airTrip>div{display:block!important}
+  .airClientLegend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 12px;background:#fff;border-top:1px solid #dbe8f5}
+  .airClientLegendItem{display:inline-flex;align-items:center;gap:5px;font-size:8px;font-weight:800;color:#526987}
+  .airClientLegendDot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px rgba(15,23,42,.08)}
+  .airVehicleMarker{
+    border-color:var(--client-color,#2563eb)!important;
+    background:rgba(255,255,255,.96);
+    padding:4px 7px;
+  }
+  .airVehicleMarker .tractor{color:var(--client-color,#2563eb)!important}
+  .airVehicleMarker .truckIcon{font-size:13px}
+  .airVehicleMarker .trailerPart{color:var(--client-color,#2563eb);border-left-color:color-mix(in srgb,var(--client-color,#2563eb) 35%,#cbd5e1)}
+  .airVehicleMarker .trailerIcon{font-size:11px}
+  .airVehicleMarker .tripBadge{width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 1px #fff}
+  .airVehicleMarker .noTripBadge{width:6px;height:6px;border-radius:50%;background:#94a3b8;box-shadow:0 0 0 1px #fff}
+  @media(max-width:1050px){
+    .airRentContentGrid{grid-template-columns:1fr}
+    .airRentItem{grid-template-columns:1fr 1fr}
+  }
   </style>`);
 }
 
@@ -495,12 +560,28 @@ function toggleAirportMapLock(){
   syncAirportMapControls();
   if(!AIR_MAP_LOCKED&&AIR_MAP_OPEN)renderAirportMap({refit:true});
 }
-function airportMarkerHtml(x){
+const AIR_CLIENT_COLORS=['#2563eb','#dc2626','#7c3aed','#ea580c','#0891b2','#16a34a','#c026d3','#0f766e','#ca8a04','#475569'];
+function airportClientColorMap(rows){
+  const clients=[...new Set(rows.map(x=>String(x.cliente||'Sin cliente').trim()||'Sin cliente'))].sort((a,b)=>a.localeCompare(b,'es'));
+  const map=new Map();
+  if(clients.length<=1){if(clients[0])map.set(clients[0],'#2563eb');return map}
+  clients.forEach((c,i)=>map.set(c,AIR_CLIENT_COLORS[i%AIR_CLIENT_COLORS.length]));
+  return map;
+}
+function renderAirportClientLegend(rows,colorMap){
+  const el=$('airClientLegend');if(!el)return;
+  const clients=[...colorMap.keys()];
+  if(!clients.length){el.innerHTML='';el.style.display='none';return}
+  el.style.display='flex';
+  el.innerHTML=clients.map(c=>'<span class="airClientLegendItem"><span class="airClientLegendDot" style="background:'+esc(colorMap.get(c))+'"></span>'+esc(c)+'</span>').join('');
+}
+function airportMarkerHtml(x,clientColor){
   const hasTrip=!!String(x.numeroViaje||'').trim();
   const trailer=String(x.remolque||'').trim();
   const tractor='<span class="tractor"><i class="fa-solid fa-truck-front truckIcon"></i><span>'+esc(x.unidad||'—')+'</span></span>';
   const trailerHtml=trailer?'<span class="trailerPart"><i class="fa-solid fa-trailer trailerIcon"></i><span>'+esc(trailer)+'</span></span>':'';
-  return '<div class="airVehicleMarker '+(hasTrip?'trip':'noTrip')+'">'+tractor+trailerHtml+'</div>';
+  const tripDot='<span class="'+(hasTrip?'tripBadge':'noTripBadge')+'"></span>';
+  return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+tripDot+tractor+trailerHtml+'</div>';
 }
 function airportPopupHtml(x){
   const hasTrip=!!String(x.numeroViaje||'').trim();
@@ -517,7 +598,9 @@ async function renderAirportMap(opts={}){
   try{
     await ensureAirportLeaflet();
     const rows=airportMapRows();
-    if(meta)meta.textContent=rows.length+' unidades con ubicación · mismo filtro de la tabla';
+    const clientColors=airportClientColorMap(rows);
+    renderAirportClientLegend(rows,clientColors);
+    if(meta)meta.textContent=rows.length+' unidades con ubicación · '+clientColors.size+' cliente'+(clientColors.size===1?'':'s');
 
     const isNew=!AIR_MAP_INSTANCE;
     let savedCenter=null,savedZoom=null;
@@ -540,7 +623,7 @@ async function renderAirportMap(opts={}){
       const hasTrip=!!String(x.numeroViaje||'').trim();
       const icon=L.divIcon({
         className:'',
-        html:airportMarkerHtml(x),
+        html:airportMarkerHtml(x,clientColors.get(String(x.cliente||'Sin cliente').trim()||'Sin cliente')),
         iconSize:null,
         iconAnchor:[28,15]
       });
@@ -602,8 +685,8 @@ async function loadRentals(){
  if(!RENT_OPEN||RENT_LOADING)return;
  const client=selectedClient(),panel=$('airRentPanel');
  if(!panel)return;
- if(!client){panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">Vista dividida por cliente</div></div></div><div class="airRentEmpty">Selecciona un cliente para visualizar sus cajas en renta y su última ubicación.</div>';return}
- RENT_LOADING=true;panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">'+esc(client)+'</div></div></div><div class="airRentEmpty">Consultando rentas y últimos escaneos…</div>';
+ if(!client){panel.innerHTML='<div class="airRentFullHead"><div><strong>Cajas de renta</strong><span>Vista completa por cliente</span></div><div class="airRentFullActions"><button class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div class="airRentBody"><div class="airRentEmpty">Selecciona un cliente en Pantalla Aeropuerto para visualizar sus cajas en renta.</div></div>';$('airRentClose')?.addEventListener('click',()=>{if(RENT_OPEN)toggleRentals()});return}
+ RENT_LOADING=true;panel.innerHTML='<div class="airRentFullHead"><div><strong>Cajas de renta</strong><span>'+esc(client)+' · rentas activas y última ubicación QR</span></div><div class="airRentFullActions"><button class="airRentFullBtn" id="airRentFullscreen"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div class="airRentBody"><div class="airRentEmpty">Consultando rentas y últimos escaneos…</div></div>';$('airRentClose')?.addEventListener('click',()=>{if(RENT_OPEN)toggleRentals()});$('airRentFullscreen')?.addEventListener('click',async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else await panel.requestFullscreen?.()}catch(_){}});
  try{
   const db=sb();if(!db)throw Error('Sin conexión con Supabase');
   const {data,error}=await db.rpc('cc_airport_rental_boxes',{p_cliente_nombre:client});
@@ -614,7 +697,7 @@ async function loadRentals(){
   const units=Array.isArray(data.cajas)?data.cajas:[];
   if(!units.length){panel.innerHTML='<div class="airRentEmpty">Este cliente no tiene cajas con renta activa.</div>';return}
   const located=units.filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
-  panel.innerHTML='<div class="airRentHead"><div><div class="airRentTitle">Cajas de renta</div><div class="airRentSub">'+esc(client)+' · última ubicación por escaneo QR</div></div><span class="airCount">'+units.length+' activas</span></div><div class="airRentStats"><span><b>'+units.length+'</b>Cajas en renta</span><span><b>'+located.length+'</b>Ubicadas por QR</span><span><b>'+(units.length-located.length)+'</b>Sin ubicación</span></div><div class="airRentMap" id="airRentMap"></div><div class="airRentItems">'+units.map(x=>'<div class="airRentItem"><strong>'+esc(x.numero||'—')+'</strong><span>'+(x.fechaHora?'Último escaneo: '+esc(fmt(x.fechaHora)):'Sin escaneo registrado')+'</span>'+(Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))?'<a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(x.latitud)+'&mlon='+encodeURIComponent(x.longitud)+'#map=15/'+encodeURIComponent(x.latitud)+'/'+encodeURIComponent(x.longitud)+'">Ver ubicación ↗</a>':'')+'</div>').join('')+'</div>';
+  panel.innerHTML='<div class="airRentFullHead"><div><strong>Cajas de renta · '+esc(client)+'</strong><span>Rentas activas y última ubicación registrada por QR</span></div><div class="airRentFullActions"><button class="airRentFullBtn" id="airRentFullscreen"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div class="airRentBody"><div class="airRentStats"><span><b>'+units.length+'</b>Cajas activas</span><span><b>'+located.length+'</b>Con ubicación QR</span><span><b>'+(units.length-located.length)+'</b>Sin ubicación</span><span><b>'+Math.round((located.length/Math.max(1,units.length))*100)+'%</b>Cobertura de ubicación</span></div><div class="airRentContentGrid"><div class="airRentMap" id="airRentMap"></div><div class="airRentItems">'+units.map(x=>'<div class="airRentItem"><strong>'+esc(x.numero||'—')+'</strong><div class="airRentItemMeta">'+esc(x.descripcion||'Caja')+'<br>'+(x.fechaHora?'Último escaneo: '+esc(fmt(x.fechaHora)):'Sin escaneo registrado')+'</div><div><span class="airRentPlate">MX '+esc(x.placasMx||'—')+'</span> <span class="airRentPlate">USA '+esc(x.placasUsa||'—')+'</span></div>'+(Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))?'<a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(x.latitud)+'&mlon='+encodeURIComponent(x.longitud)+'#map=15/'+encodeURIComponent(x.latitud)+'/'+encodeURIComponent(x.longitud)+'">Ver ubicación ↗</a>':'<span class="airRentItemMeta">Sin ubicación</span>')+'</div>').join('')+'</div></div></div>';$('airRentClose')?.addEventListener('click',()=>{if(RENT_OPEN)toggleRentals()});$('airRentFullscreen')?.addEventListener('click',async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else await panel.requestFullscreen?.()}catch(_){}});
   const map=$('airRentMap');
   if(located.length){
     const la=located.reduce((a,x)=>a+Number(x.latitud),0)/located.length;
@@ -623,7 +706,7 @@ async function loadRentals(){
   }else map.innerHTML='<div class="airRentEmpty">No hay ubicaciones QR registradas para estas cajas.</div>';
  }catch(e){panel.innerHTML='<div class="airRentEmpty">No fue posible consultar las rentas: '+esc(e.message||e)+'</div>'}finally{RENT_LOADING=false}
 }
-function toggleRentals(){RENT_OPEN=!RENT_OPEN;const root=document.querySelector('#ccPantallaAeropuertoMount .air');root?.classList.toggle('rentOpen',RENT_OPEN);const b=$('airRentToggle');if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML=RENT_OPEN?'<i class="fa-solid fa-table-columns"></i> Cerrar vista dividida':'<i class="fa-solid fa-table-columns"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals()}
+function toggleRentals(){RENT_OPEN=!RENT_OPEN;const panel=$('airRentPanel'),b=$('airRentToggle');panel?.classList.toggle('on',RENT_OPEN);if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML='<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals();else if(document.fullscreenElement===panel)document.exitFullscreen?.()}
 
 function totalPages(){return Math.max(1,Math.ceil(filtered().length/PAGE_SIZE))}
 function setPage(p){PAGE=Math.min(Math.max(1,p),totalPages());render()}
@@ -669,7 +752,7 @@ async function load(){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.class
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
-  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button><button id="airMapToggle" class="airMapToggle" type="button"><i class="fa-solid fa-map-location-dot"></i> Mapa de unidades</button></div><div id="airFleetMapPanel" class="airFleetMapPanel"><div class="airFleetMapHead"><div class="airFleetMapHeadLeft"><strong>Mapa de unidades en operación</strong><span id="airFleetMapMeta">0 unidades</span></div><div class="airFleetMapControls"><span class="airMapSegment"><button id="airMapSatellite" class="airMapSegBtn on" type="button"><i class="fa-solid fa-satellite"></i> Satélite</button><button id="airMapStreet" class="airMapSegBtn" type="button"><i class="fa-solid fa-map"></i> Mapa</button></span><button id="airMapLock" class="airMapLockBtn on" type="button"><i class="fa-solid fa-lock"></i> Vista fija</button><button id="airFleetMapFullscreen" class="airFleetMapAction" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button id="airFleetMapClose" class="airFleetMapAction" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div id="airFleetMapCanvas" class="airFleetMapCanvas"></div><div class="airFleetMapLegend"><span>Verde: con viaje</span><span>Gris: sin viaje</span><span>Se actualizan posiciones cada 60 s</span><span class="legendLock"><i class="fa-solid fa-lock"></i> La vista no se mueve con el refresh</span></div></div>
+  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button><button id="airMapToggle" class="airMapToggle" type="button"><i class="fa-solid fa-map-location-dot"></i> Mapa de unidades</button></div><div id="airFleetMapPanel" class="airFleetMapPanel"><div class="airFleetMapHead"><div class="airFleetMapHeadLeft"><strong>Mapa de unidades en operación</strong><span id="airFleetMapMeta">0 unidades</span></div><div class="airFleetMapControls"><span class="airMapSegment"><button id="airMapSatellite" class="airMapSegBtn on" type="button"><i class="fa-solid fa-satellite"></i> Satélite</button><button id="airMapStreet" class="airMapSegBtn" type="button"><i class="fa-solid fa-map"></i> Mapa</button></span><button id="airMapLock" class="airMapLockBtn on" type="button"><i class="fa-solid fa-lock"></i> Vista fija</button><button id="airFleetMapFullscreen" class="airFleetMapAction" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button id="airFleetMapClose" class="airFleetMapAction" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div id="airFleetMapCanvas" class="airFleetMapCanvas"></div><div id="airClientLegend" class="airClientLegend"></div><div class="airFleetMapLegend"><span>Punto verde: con viaje</span><span>Punto gris: sin viaje</span><span>Color del vehículo: cliente</span><span>Se actualizan posiciones cada 60 s</span><span class="legendLock"><i class="fa-solid fa-lock"></i> La vista no se mueve con el refresh</span></div></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
   <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Ubicación actual</div><div>Cliente</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta · Origen → Destino</div><div>Viaje / ETA</div></div>
   <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
