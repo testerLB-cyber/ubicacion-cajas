@@ -1,6 +1,6 @@
 {
-  "version": "2026.10.07-airport-v17-option2",
+  "version": "PRO-20261008-44",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto más compacta, con Estatus/Cliente en segunda columna y Remolque como columna independiente.",
-  "updated_at": "2026-10-07T20:00:00-07:00"
+  "message": "Pantalla Aeropuerto corrige Cajas de Renta con acceso seguro, botón mejor integrado y consulta por cliente.",
+  "updated_at": "2026-10-08T09:18:00-07:00"
 }
