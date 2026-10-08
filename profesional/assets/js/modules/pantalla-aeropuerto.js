@@ -8,91 +8,48 @@ const tz='America/Hermosillo';
 function css(){
   if($('airportCss'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="airportCss">
-  .airSimple{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0}
-  .airSimpleTop{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
-  .airSimpleTop h2{margin:0;font-size:22px;color:var(--ink)}
-  .airSimpleTop p{margin:3px 0 0;font-size:10px;color:var(--muted)}
-  .airUpdated{font-size:9px;color:var(--muted);white-space:nowrap}
-  .airUnits{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:10px}
-  .airUnitCard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .airUnitHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:11px 13px;background:#f8fafc;border-bottom:1px solid var(--line)}
-  .airUnitName{font-size:19px;font-weight:950;color:var(--ink)}
-  .airUnitMeta{font-size:9px;color:var(--muted);margin-top:2px}
-  .airFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
-  .airField{padding:8px 11px;border-bottom:1px solid #eef2f7;min-width:0}
-  .airField:nth-child(odd){border-right:1px solid #eef2f7}
-  .airField label{display:block;font-size:7px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}
-  .airField div{font-size:10px;font-weight:750;color:#1e293b;word-break:break-word}
-  .airField.full{grid-column:1/-1;border-right:0}
-  .airGeo{padding:8px 11px}
-  .airGeoItem{font-size:9px;color:#334155;padding:5px 0;border-bottom:1px dashed #e2e8f0}
-  .airGeoItem:last-child{border-bottom:0}
-  .airEmpty{padding:36px;text-align:center;color:#64748b;background:#fff;border:1px solid var(--line);border-radius:14px}
-  @media(max-width:700px){.airUnits{grid-template-columns:1fr}.airFields{grid-template-columns:1fr}.airField,.airField:nth-child(odd){border-right:0}.airField.full{grid-column:auto}}
+  .air{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0}.airTop{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}.airTop h2{margin:0;font-size:22px;color:var(--ink)}.airTop p{margin:3px 0 0;font-size:10px;color:var(--muted)}.airUpdated{font-size:9px;color:var(--muted);white-space:nowrap}
+  .airBoard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.airHead,.airRow{display:grid;grid-template-columns:72px 105px minmax(150px,1fr) minmax(150px,1fr) minmax(210px,1.5fr) 78px 120px 150px 150px 108px;gap:8px;align-items:center}.airHead{padding:9px 10px;background:#0f172a;color:#fff;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;z-index:2}.airList{max-height:72vh;overflow:auto}.airRow{padding:8px 10px;border-bottom:1px solid #edf2f7;min-height:48px}.airRow:last-child{border-bottom:0}.airRow:hover{background:#f8fafc}.airUnit{font-size:14px;font-weight:950;color:#0f172a}.airMain{font-size:10px;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.airSub{font-size:8px;color:#64748b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.airDir{display:flex;align-items:center;gap:6px}.airArrow{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e2e8f0;font-size:17px;font-weight:950;color:#0f172a}.airFoot{padding:7px 10px;background:#f8fafc;border-top:1px solid var(--line);font-size:9px;color:#64748b}.airEmpty{padding:36px;text-align:center;color:#64748b}
+  @media(max-width:1200px){.airHead,.airRow{grid-template-columns:65px 90px minmax(130px,1fr) minmax(130px,1fr) minmax(180px,1.4fr) 70px 110px 120px}.airHead>div:nth-child(9),.airHead>div:nth-child(10),.airRow>div:nth-child(9),.airRow>div:nth-child(10){display:none}}
+  @media(max-width:800px){.airHead,.airRow{grid-template-columns:60px 85px 1fr 1.2fr}.airHead>div:nth-child(n+5),.airRow>div:nth-child(n+5){display:none}}
   </style>`);
 }
-function val(v){
-  if(v===null||v===undefined||v==='')return '—';
-  return esc(v);
+function dir(v){
+  if(v===null||v===undefined||v==='')return {arrow:'↑',label:'—'};
+  const num=Number(v);
+  if(Number.isFinite(num)){
+    const deg=((num%360)+360)%360;
+    const arrows=['↑','↗','→','↘','↓','↙','←','↖'];
+    const names=['N','NE','E','SE','S','SO','O','NO'];
+    const i=Math.round(deg/45)%8;
+    return {arrow:arrows[i],label:names[i]+' '+Math.round(deg)+'°'};
+  }
+  const s=String(v).trim();
+  return {arrow:'↑',label:s};
 }
-function geos(arr){
-  if(!Array.isArray(arr)||!arr.length)return '—';
-  return arr.map(g=>`<div class="airGeoItem"><b>${val(g.Geocerca||g.geocerca)}</b> · ${val(g.Evento||g.evento)} · ${val(g["Fecha Hora"]||g.fechaHora||g.fecha)}</div>`).join('');
-}
-function card(x){
-  const fields=[
-    ['Placa',x.placa],
-    ['Tipo unidad',x.tipoUnidad],
-    ['Descripción',x.descripcion],
-    ['Código',x.codigo],
-    ['Estatus',x.estatusGps],
-    ['Evento GPS',x.evento],
-    ['Ubicación GPS',x.ubicacion],
-    ['Ubicación ERP',x.ubicacionErp],
-    ['Latitud',x.latitud],
-    ['Longitud',x.longitud],
-    ['Velocidad',x.velocidadKmh!=null?x.velocidadKmh+' km/h':null],
-    ['Odómetro',x.odometro],
-    ['Voltaje',x.voltaje],
-    ['Fecha / hora GPS',x.gpsAt],
-    ['fhEstatus',x.fhEstatus],
-    ['Número viaje',x.numeroViaje],
-    ['Identificador viaje',x.identificadorViaje],
-    ['Cliente',x.cliente],
-    ['Estatus viaje',x.estatusViaje],
-    ['Cargado / vacío',x.trayectoCargadoVacio],
-    ['Operador',x.operador],
-    ['Origen',x.origen],
-    ['Destino',x.destino],
-    ['Dirección cliente',x.direccionCliente],
-    ['Peso',x.peso!=null?x.peso+(x.unidadPeso?' '+x.unidadPeso:''):null],
-    ['Salida',x.salida],
-    ['Fecha estimada llegada',x.eta],
-    ['Remolque',x.remolque],
-    ['Placas remolque',x.placasRemolque],
-    ['Remolque 2',x.remolque2],
-    ['Placas remolque 2',x.placasRemolque2],
-    ['Descripción de la ruta',x.descripcionRuta],
-    ['Google Maps',x.mapsUrl]
-  ];
-  return `<div class="airUnitCard">
-    <div class="airUnitHead">
-      <div><div class="airUnitName">${val(x.unidad)}</div><div class="airUnitMeta">Datos directos de Software GM</div></div>
-    </div>
-    <div class="airFields">
-      ${fields.map(([k,v])=>`<div class="airField"><label>${esc(k)}</label><div>${val(v)}</div></div>`).join('')}
-      <div class="airField full"><label>Geocercas</label><div class="airGeo">${geos(x.geocercas)}</div></div>
-    </div>
-  </div>`;
-}
+function fmtTime(v){if(!v)return'—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})}
 function render(){
-  const box=$('airUnits'); if(!box)return;
-  box.innerHTML=LAST.length?LAST.map(card).join(''):'<div class="airEmpty">La API no devolvió unidades.</div>';
+  const box=$('airList');if(!box)return;
+  box.innerHTML=LAST.length?LAST.map(x=>{
+    const d=dir(x.orientacionGps);
+    return `<div class="airRow">
+      <div class="airDir"><div class="airArrow">${esc(d.arrow)}</div><div><div class="airMain">${esc(d.label)}</div><div class="airSub">Rumbo GPS</div></div></div>
+      <div><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airSub">${esc(x.placa||x.tipoUnidad||'')}</div></div>
+      <div><div class="airMain">${esc(x.operador||'—')}</div><div class="airSub">${esc(x.evento||'')}</div></div>
+      <div><div class="airMain">${esc(x.cliente||'—')}</div><div class="airSub">${esc(x.estatusViaje||'')}</div></div>
+      <div><div class="airMain">${esc(x.ubicacion||x.ubicacionErp||'—')}</div><div class="airSub">${x.latitud!=null&&x.longitud!=null?esc(x.latitud+', '+x.longitud):''}</div></div>
+      <div><div class="airMain">${x.velocidadKmh!=null?esc(Math.round(x.velocidadKmh)+' km/h'):'—'}</div><div class="airSub">${x.odometro!=null?esc(x.odometro+' km'):''}</div></div>
+      <div><div class="airMain">${esc(x.numeroViaje||'—')}</div><div class="airSub">${esc(x.trayectoCargadoVacio||'')}</div></div>
+      <div><div class="airMain">${esc(x.origen||'—')}</div><div class="airSub">Origen</div></div>
+      <div><div class="airMain">${esc(x.destino||'—')}</div><div class="airSub">Destino</div></div>
+      <div><div class="airMain">${esc(fmtTime(x.gpsAt))}</div><div class="airSub">${esc(x.remolque||'')}</div></div>
+    </div>`;
+  }).join(''):'<div class="airEmpty">La API no devolvió unidades.</div>';
 }
 async function load(){
   if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;
   try{
-    $('airUpdated').textContent='Consultando API…';
+    $('airUpdated').textContent='Actualizando…';
     const r=await sb().functions.invoke('gm-flota');
     if(r.error)throw r.error;
     const data=r.data||{};
@@ -100,33 +57,31 @@ async function load(){
     LAST=Array.isArray(data.vehicles)?data.vehicles:[];
     render();
     const d=data.generatedAt?new Date(data.generatedAt):new Date();
-    $('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+LAST.length+' unidades de API';
-    schedule(45);
+    $('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · '+LAST.length+' unidades · siguiente actualización en 60 s';
+    schedule();
   }catch(e){
     LAST=[];render();
-    $('airUpdated').textContent='Error API: '+e.message;
-    schedule(60);
+    $('airUpdated').textContent='Error API: '+e.message+' · reintento en 60 s';
+    schedule();
   }
 }
-function schedule(sec){clearTimeout(TIMER);TIMER=setTimeout(load,Math.max(30,sec)*1000)}
+function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){
   css();
-  $('ccPantallaAeropuertoMount').innerHTML=`<div class="airSimple">
-    <div class="airSimpleTop">
-      <div><h2>Pantalla Aeropuerto</h2><p>Información directa de la API de Software GM.</p></div>
-      <div id="airUpdated" class="airUpdated">Sin actualizar</div>
+  $('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
+    <div class="airTop"><div><h2>Pantalla Aeropuerto</h2><p>Flota directa de Software GM · actualización automática cada 60 segundos.</p></div><div id="airUpdated" class="airUpdated">Sin actualizar</div></div>
+    <div class="airBoard">
+      <div class="airHead"><div>Rumbo</div><div>Unidad</div><div>Operador</div><div>Cliente</div><div>Ubicación GPS</div><div>Velocidad</div><div>Viaje</div><div>Origen</div><div>Destino</div><div>GPS</div></div>
+      <div id="airList" class="airList"></div>
+      <div class="airFoot">Solo unidades devueltas por la API de Software GM. El refresco se pausa cuando esta pantalla no está visible.</div>
     </div>
-    <div id="airUnits" class="airUnits"></div>
   </div>`;
   load();
 }
 window.ccOpenPantallaAeropuerto=btn=>{
   document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});
   document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));
-  $('ccPanelPantallaAeropuerto')?.classList.add('active');
-  btn?.classList.add('active');
-  clearTimeout(TIMER);
-  shell();
+  $('ccPanelPantallaAeropuerto')?.classList.add('active');btn?.classList.add('active');clearTimeout(TIMER);shell();
 };
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('ccPanelPantallaAeropuerto')?.classList.contains('active'))load()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(TIMER)}else if($('ccPanelPantallaAeropuerto')?.classList.contains('active'))load()});
 })();
