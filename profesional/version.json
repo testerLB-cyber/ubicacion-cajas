@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-61",
+  "version": "PRO-20261008-62",
   "mandatory": false,
-  "message": "Mapa de Pantalla Aeropuerto agrega listado lateral de unidades, búsqueda y panel de detalle operativo seleccionable.",
+  "message": "Listado lateral del mapa muestra el remolque junto a la unidad cuando existe.",
   "updated_at": "2026-10-08T12:21:00-07:00"
 }
