@@ -319,6 +319,32 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .airTrailer{font-size:15.5px}
   #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airOrigin,
   #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airDestination{font-size:11px}
+
+  /* Mapa general + nueva distribución v52 */
+  .airLegend,.airTrip{
+    grid-template-columns:106px 120px 178px minmax(145px,.82fr) 158px 138px minmax(330px,1.85fr) 134px;
+    column-gap:10px
+  }
+  .airLocation{max-width:none}
+  .airLocationMain{font-size:10px;line-height:1.22;font-weight:800;color:#41566f}
+  .airClientName{font-size:11.5px;line-height:1.15}
+  .airMapToggle{display:inline-flex;align-items:center;gap:7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:10px;padding:7px 11px;font-size:9px;font-weight:900;cursor:pointer}
+  .airMapToggle:hover,.airMapToggle.on{background:#dbeafe;border-color:#93c5fd}
+  .airFleetMapPanel{display:none;margin:0 0 9px;background:#fff;border:1px solid #d7e5f5;border-radius:13px;overflow:hidden;box-shadow:0 4px 14px rgba(37,99,235,.06)}
+  .airFleetMapPanel.on{display:block}
+  .airFleetMapHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:#edf5fd;border-bottom:1px solid #dbe8f5}
+  .airFleetMapHead strong{font-size:11px;color:#17375e}.airFleetMapHead span{font-size:8px;color:#64748b}
+  .airFleetMapCanvas{height:360px;width:100%;background:#eaf1f8}
+  .airFleetMapLegend{display:flex;gap:12px;align-items:center;padding:7px 12px;font-size:8px;color:#64748b;background:#fafcff;border-top:1px solid #e5edf6}
+  .airUnitMarker{background:#2563eb;color:#fff;border:2px solid #fff;border-radius:8px;padding:3px 6px;font-size:10px;font-weight:950;box-shadow:0 2px 8px rgba(15,23,42,.28);white-space:nowrap}
+  .airUnitMarker.trip{background:#166534}.airUnitMarker.noTrip{background:#64748b}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{
+    grid-template-columns:102px 116px 172px minmax(138px,.82fr) 150px 132px minmax(315px,1.85fr) 128px;
+    column-gap:9px
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:9.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airFleetMapCanvas{height:300px}
   </style>`);
 }
 
@@ -339,8 +365,57 @@ function showGeos(index){const x=LAST[index];if(!x)return;$('airGeoTitle').textC
 function mapEmbedUrl(lat,lng){const la=Number(lat),lo=Number(lng);if(!Number.isFinite(la)||!Number.isFinite(lo))return'';const dLat=.012,dLng=.018;return'https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent((lo-dLng)+','+(la-dLat)+','+(lo+dLng)+','+(la+dLat))+'&layer=mapnik&marker='+encodeURIComponent(la+','+lo)}
 function toggleMap(index){const row=$('airMap_'+index),x=LAST[index];if(!row||!x)return;if(row.dataset.open==='1'){row.innerHTML='';row.dataset.open='0';return}const src=mapEmbedUrl(x.latitud,x.longitud);row.dataset.open='1';row.innerHTML=src?`<div class="airMiniMapWrap"><div style="flex:1"><iframe class="airMiniMap" loading="lazy" src="${esc(src)}"></iframe></div><div class="airMapMeta"><b>${esc(x.unidad||'Unidad')}</b><span>${esc(x.ubicacion||x.ubicacionErp||'Ubicación GPS')}</span><span>${esc(x.latitud+', '+x.longitud)}</span><span>Actualización GPS: ${esc(fmt(x.gpsAt))}</span><button class="airMapClose" data-map-close="${index}">Cerrar mapa</button></div></div>`:'<div class="airEmpty">Esta unidad no trae coordenadas válidas.</div>';row.querySelector('[data-map-close]')?.addEventListener('click',()=>toggleMap(index))}
 
-let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false;
+let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false, AIR_MAP_OPEN=false, AIR_MAP_INSTANCE=null, AIR_MAP_LAYER=null;
 const normClient=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+async function ensureAirportLeaflet(){
+  if(window.ccEnsureLeaflet){await window.ccEnsureLeaflet();return}
+  if(window.L)return;
+  await new Promise((resolve,reject)=>{
+    if(!document.querySelector('link[data-air-leaflet]')){
+      const l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';l.dataset.airLeaflet='1';document.head.appendChild(l);
+    }
+    const existing=[...document.scripts].find(s=>s.src.includes('leaflet@1.9.4'));
+    if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});return}
+    const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.async=true;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+  });
+}
+function airportMapRows(){
+  return filtered().filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
+}
+async function renderAirportMap(){
+  if(!AIR_MAP_OPEN)return;
+  const el=$('airFleetMapCanvas'),meta=$('airFleetMapMeta');if(!el)return;
+  try{
+    await ensureAirportLeaflet();
+    const rows=airportMapRows();
+    if(meta)meta.textContent=rows.length+' unidades con ubicación · mismo filtro de la tabla';
+    if(AIR_MAP_INSTANCE){try{AIR_MAP_INSTANCE.remove()}catch(_){} AIR_MAP_INSTANCE=null}
+    el.innerHTML='';
+    AIR_MAP_INSTANCE=L.map(el,{preferCanvas:true,zoomControl:true}).setView([29.0729,-110.9559],6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(AIR_MAP_INSTANCE);
+    AIR_MAP_LAYER=L.layerGroup().addTo(AIR_MAP_INSTANCE);
+    const bounds=[];
+    rows.forEach(x=>{
+      const lat=Number(x.latitud),lng=Number(x.longitud),hasTrip=!!String(x.numeroViaje||'').trim();
+      const icon=L.divIcon({className:'',html:'<div class="airUnitMarker '+(hasTrip?'trip':'noTrip')+'">'+esc(x.unidad||'—')+'</div>',iconSize:null,iconAnchor:[20,12]});
+      const mk=L.marker([lat,lng],{icon}).addTo(AIR_MAP_LAYER);
+      mk.bindPopup('<b>'+esc(x.unidad||'—')+'</b><br>'+esc(x.cliente||'Sin cliente')+'<br>'+esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')+(hasTrip?'<br>Viaje: '+esc(x.numeroViaje):'<br>Sin número de viaje'));
+      bounds.push([lat,lng]);
+    });
+    if(bounds.length)AIR_MAP_INSTANCE.fitBounds(bounds,{padding:[35,35],maxZoom:15});
+    setTimeout(()=>AIR_MAP_INSTANCE?.invalidateSize(),80);
+  }catch(e){
+    el.innerHTML='<div class="airRentEmpty">No fue posible cargar el mapa: '+esc(e.message||e)+'</div>';
+  }
+}
+function toggleAirportMap(){
+  AIR_MAP_OPEN=!AIR_MAP_OPEN;
+  const panel=$('airFleetMapPanel'),btn=$('airMapToggle');
+  panel?.classList.toggle('on',AIR_MAP_OPEN);btn?.classList.toggle('on',AIR_MAP_OPEN);
+  if(btn)btn.innerHTML=AIR_MAP_OPEN?'<i class="fa-solid fa-map"></i> Ocultar mapa':'<i class="fa-solid fa-map-location-dot"></i> Mapa de unidades';
+  if(AIR_MAP_OPEN)renderAirportMap();
+  else if(AIR_MAP_INSTANCE){try{AIR_MAP_INSTANCE.remove()}catch(_){} AIR_MAP_INSTANCE=null}
+}
 async function loadRentals(){
  if(!RENT_OPEN||RENT_LOADING)return;
  const client=selectedClient(),panel=$('airRentPanel');
@@ -390,8 +465,8 @@ function render(){
   box.innerHTML=arr.length?arr.map(x=>{const idx=LAST.indexOf(x),mi=movementInfo(x,prev),d=mi.dir,geoCount=Array.isArray(x.geocercas)?x.geocercas.length:0;return `<div class="airTrip ${mi.moved?'moved':''}">
     <div class="airMotion"><div class="airCompass">${esc(d.arrow)}</div><div class="airMotionText"><b>${esc(mi.state)}</b><span>${esc(d.label)} · ${esc(fmt(x.gpsAt))}</span></div></div>
     <div class="airStatusWrap"><span class="airStatus ${statusClass(x.estatusViaje)}">${esc(x.estatusViaje||'Sin estatus')}</span></div>
+    <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div>${geoCount?'<div class="airActions"><button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button></div>':''}</div>
     <div class="airClientName">${esc(x.cliente||'—')}</div>
-    <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div><div class="airActions"><button class="airBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button>':''}</div></div>
     <div class="airVehicle"><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airOperator">${esc(x.operador||'Sin operador')}</div><div class="airTags"><span class="airTag">${esc(x.placa||'Sin placa')}</span></div></div>
     <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.placasRemolque?'<div class="airTrailerPlate">'+esc(x.placasRemolque)+'</div>':''}${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+(x.placasRemolque2?' · '+esc(x.placasRemolque2):'')+'</div>':''}</div>
     <div class="airRouteUnified"><div class="airPoint"><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div><div class="airRouteConnector">→</div><div class="airPoint"><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div></div>
@@ -406,20 +481,20 @@ function render(){
     $('airNextPage')?.addEventListener('click',()=>setPage(PAGE+1));
   }
   document.querySelectorAll('[data-geo]').forEach(b=>b.onclick=()=>showGeos(Number(b.dataset.geo)));
-  document.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>toggleMap(Number(b.dataset.map)));
+  if(AIR_MAP_OPEN)renderAirportMap();
 }
 async function load(){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');LAST=Array.isArray(data.vehicles)?data.vehicles:[];updateClientFilter();render();const pos={};LAST.forEach(x=>{const lat=Number(x.latitud),lng=Number(x.longitud);if(Number.isFinite(lat)&&Number.isFinite(lng))pos[String(x.unidad||'')]={lat,lng,ts:Date.now()}});savePrev(pos);const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+'\nSiguiente lectura en 60 s';schedule()}catch(e){LAST=[];updateClientFilter();render();$('airUpdated').textContent='Error API: '+e.message+'\nReintento en 60 s';schedule()}}
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
-  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button></div>
+  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button><button id="airMapToggle" class="airMapToggle" type="button"><i class="fa-solid fa-map-location-dot"></i> Mapa de unidades</button></div><div id="airFleetMapPanel" class="airFleetMapPanel"><div class="airFleetMapHead"><strong>Mapa de unidades en operación</strong><span id="airFleetMapMeta">0 unidades</span></div><div id="airFleetMapCanvas" class="airFleetMapCanvas"></div><div class="airFleetMapLegend"><span>Verde: con número de viaje</span><span>Gris: sin número de viaje</span><span>Se actualiza cada 60 segundos con Software GM</span></div></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
-  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Cliente</div><div>Ubicación</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta · Origen → Destino</div><div>Viaje / ETA</div></div>
+  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Ubicación actual</div><div>Cliente</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta · Origen → Destino</div><div>Viaje / ETA</div></div>
   <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
   <div id="airV2Ticker" class="airV2Ticker" style="display:none"></div></div><aside id="airRentPanel" class="airRentPanel" aria-label="Cajas en renta"></aside></div>
   <div class="airFoot">Refresco cada 60 segundos · se pausa cuando esta pantalla no está visible · mapa y recorrido se cargan solo al abrirlos.</div>
   <div id="airGeoModal" class="airModal"><div class="airModalCard"><div class="airModalHead"><h3 id="airGeoTitle">Geocercas</h3><button id="airGeoClose" class="airModalClose">Cerrar</button></div><div id="airGeoList" class="airGeoList"></div></div></div>
-</div>`; VIEW='actual';RENT_OPEN=false;PAGE=1;$('airRentToggle').onclick=toggleRentals;$('airFullBtn').onclick=toggleFullscreen;syncFullscreenButton();$('airClient').onchange=()=>{PAGE=1;render();if(RENT_OPEN)loadRentals()};$('airOnlyTrips').onchange=()=>{PAGE=1;render()};$('airGeoClose').onclick=()=>$('airGeoModal').classList.remove('on');$('airGeoModal').onclick=e=>{if(e.target===$('airGeoModal'))$('airGeoModal').classList.remove('on')};load()}
+</div>`; VIEW='actual';RENT_OPEN=false;AIR_MAP_OPEN=false;PAGE=1;$('airRentToggle').onclick=toggleRentals;$('airMapToggle').onclick=toggleAirportMap;$('airFullBtn').onclick=toggleFullscreen;syncFullscreenButton();$('airClient').onchange=()=>{PAGE=1;render();if(RENT_OPEN)loadRentals()};$('airOnlyTrips').onchange=()=>{PAGE=1;render()};$('airGeoClose').onclick=()=>$('airGeoModal').classList.remove('on');$('airGeoModal').onclick=e=>{if(e.target===$('airGeoModal'))$('airGeoModal').classList.remove('on')};load()}
 window.ccOpenPantallaAeropuerto=btn=>{document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));$('ccPanelPantallaAeropuerto')?.classList.add('active');btn?.classList.add('active');clearTimeout(TIMER);shell()};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(TIMER)}else if($('ccPanelPantallaAeropuerto')?.classList.contains('active'))load()});
 document.addEventListener('fullscreenchange',syncFullscreenButton);
