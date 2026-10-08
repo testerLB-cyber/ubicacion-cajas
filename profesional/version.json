@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-21",
+  "version": "PRO-20261007-22",
   "mandatory": false,
-  "message": "Nuevo Centro de Asignaciones con modal, agenda, prioridades y comentarios."
+  "message": "Centro de Despacho PRO: timeline por unidades, disponibilidad real, mantenimiento, alertas y vistas operativas."
 }
