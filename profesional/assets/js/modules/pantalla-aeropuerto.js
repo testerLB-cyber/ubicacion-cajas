@@ -1119,15 +1119,20 @@ async function loadRentals(){
 function toggleRentals(){if(RENT_MAP_INSTANCE){try{RENT_MAP_INSTANCE.remove()}catch(_){}RENT_MAP_INSTANCE=null}RENT_OPEN=!RENT_OPEN;const panel=$('airRentPanel'),b=$('airRentToggle');panel?.classList.toggle('on',RENT_OPEN);if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML='<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals();else if(document.fullscreenElement===panel)document.exitFullscreen?.()}
 
 function airIsSuperAdmin(){return window.CC_ACCESS?.superAdmin===true}
-function showAirportHistory(){
+async function showAirportHistory(){
  if(!airIsSuperAdmin())return;
  const modal=$('airHistoryModal'),body=$('airHistoryBody');if(!modal||!body)return;
- const trips=LAST.filter(x=>String(x.numeroViaje||'').trim());
- body.innerHTML='<p style="color:#64748b;font-size:12px">Viajes de la última consulta GM. El archivo histórico permanente todavía no está activado.</p>'+(trips.length?trips.map(x=>{
- const geos=(Array.isArray(x.geocercas)?x.geocercas:[]).slice().sort((a,b)=>new Date(a['Fecha Hora']||a.fechaHora||a.fecha||0)-new Date(b['Fecha Hora']||b.fechaHora||b.fecha||0));
- return '<details style="background:white;border:1px solid #dbe3ea;border-radius:12px;padding:12px;margin:8px 0"><summary style="cursor:pointer;font-weight:900">'+esc(x.unidad||'Unidad')+' · Viaje '+esc(x.numeroViaje)+' · '+esc(x.cliente||'Sin cliente')+'</summary><div style="padding:10px 0;font-size:12px;line-height:1.8"><b>Operador:</b> '+esc(x.operador||'—')+' · <b>Estado:</b> '+esc(x.estatusViaje||'—')+'<br><b>Ruta:</b> '+esc(x.origen||'—')+' → '+esc(x.destino||'—')+'<br><b>Salida:</b> '+esc(fmt(x.salida))+' · <b>ETA:</b> '+esc(fmt(x.eta))+' · <b>Remolque:</b> '+esc(x.remolque||'—')+'<h4>Geocercas ('+geos.length+')</h4>'+(geos.length?geos.map(g=>'<div style="border-left:3px solid #2563eb;padding:6px 10px;margin:5px 0;background:#f8fafc"><b>'+esc(g.Geocerca||g.geocerca||'Geocerca')+'</b> · '+esc(g.Evento||g.evento||'Evento')+'<br>'+esc(fmt(g['Fecha Hora']||g.fechaHora||g.fecha))+'</div>').join(''):'Sin eventos de geocercas reportados.')+'</div></details>';
- }).join(''):'<div class="airEmpty">No hay viajes en la última lectura.</div>');
- modal.style.display='flex';
+ modal.style.display='flex';body.innerHTML='<p style="padding:16px">Cargando historial guardado en Supabase…</p>';
+ try{
+  const {data,error}=await sb().rpc('gm_superadmin_history',{p_limit:100});
+  if(error)throw error;
+  const trips=Array.isArray(data)?data:[];
+  body.innerHTML='<p style="color:#64748b;font-size:12px">Historial permanente guardado automáticamente en Supabase. Se registran los eventos de geocercas cuando GM los devuelve.</p>'+(trips.length?trips.map(x=>{
+    const geos=Array.isArray(x.geocercas)?x.geocercas:[];
+    const changes=Array.isArray(x.cambios)?x.cambios:[];
+    return '<details style="background:white;border:1px solid #dbe3ea;border-radius:12px;padding:12px;margin:8px 0"><summary style="cursor:pointer;font-weight:900">'+esc(x.unidad||'Unidad')+' · Viaje '+esc(x.numero_viaje)+' · '+esc(x.cliente||'Sin cliente')+(x.ended_at?' · Finalizado':' · En seguimiento')+'</summary><div style="padding:10px 0;font-size:12px;line-height:1.8"><b>Operador:</b> '+esc(x.operador||'—')+' · <b>Estado:</b> '+esc(x.estatus||'—')+'<br><b>Ruta:</b> '+esc(x.origen||'—')+' → '+esc(x.destino||'—')+'<br><b>Salida:</b> '+esc(fmt(x.salida))+' · <b>ETA:</b> '+esc(fmt(x.eta))+' · <b>Remolque:</b> '+esc(x.remolque||'—')+'<br><b>Primera detección:</b> '+esc(fmt(x.first_seen))+' · <b>Última lectura:</b> '+esc(fmt(x.last_seen))+'<h4>Geocercas ('+geos.length+')</h4>'+(geos.length?geos.map(g=>'<div style="border-left:3px solid #2563eb;padding:6px 10px;margin:5px 0;background:#f8fafc"><b>'+esc(g.geocerca||'Geocerca')+'</b> · '+esc(g.evento||'Evento')+'<br>'+esc(g.fechaHora||'Sin hora')+'</div>').join(''):'Todavía no hay eventos de geocercas para este viaje.')+'<h4>Cambios de viaje ('+changes.length+')</h4>'+changes.map(ev=>'<div style="border-left:3px solid #64748b;padding:5px 10px;margin:4px 0"><b>'+esc(ev.evento||'Cambio')+'</b> · '+esc(fmt(ev.fechaHora))+'<br>'+esc(ev.anterior||'')+(ev.anterior?' → ':'')+esc(ev.nuevo||'')+'</div>').join('')+'</div></details>';
+  }).join(''):'No hay viajes históricos registrados.');
+ }catch(e){body.innerHTML='<p style="padding:16px;color:#b91c1c">No fue posible consultar el historial: '+esc(e.message||e)+'</p>'}
 }
 function totalPages(){return Math.max(1,Math.ceil(filtered().length/PAGE_SIZE))}
 function setPage(p){PAGE=Math.min(Math.max(1,p),totalPages());render({pageOnly:true})}
