@@ -1,6 +1,6 @@
 (()=>{'use strict';
 let TIMER=null,LAST=[],VIEW='actual',PAGE=1;
-const PAGE_SIZE=15;
+const PAGE_SIZE=10;
 const POS_KEY='gm_airport_prev_positions_v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -16,9 +16,9 @@ function css(){
   .airTop h2{margin:0;font-size:23px;color:#1e293b;letter-spacing:-.02em}.airViewSwitch{display:flex;gap:5px;padding:4px;background:#eef2f7;border:1px solid #dbe3ea;border-radius:10px}.airViewBtn{border:0;background:transparent;color:#64748b;border-radius:7px;padding:7px 10px;font-size:8px;font-weight:950;cursor:pointer}.airViewBtn.on{background:#fff;color:#0f766e;box-shadow:0 2px 7px rgba(15,23,42,.08)}.airTop p{margin:4px 0 0;font-size:10px;color:#64748b}.airUpdated{font-size:9px;color:#64748b;text-align:right;line-height:1.5}
   .airFilters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 3px 12px rgba(15,23,42,.04)}
   .airFilters label{font-size:8px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em}.airSelect{min-width:240px;border:1px solid #d7e0e8;border-radius:9px;padding:8px 10px;background:#f8fafc;color:#1e293b;font-size:11px;outline:none}.airSelect:focus{border-color:#94a3b8;background:#fff}.airCheck{display:flex;gap:7px;align-items:center;font-size:10px;font-weight:800;color:#334155;text-transform:none!important;cursor:pointer}.airCheck input{accent-color:#0f766e}.airCount{margin-left:auto;font-size:9px;font-weight:900;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;padding:6px 10px;border-radius:999px}
-  .airLegend{display:grid;grid-template-columns:105px 125px minmax(190px,1.25fr) minmax(150px,.9fr) 90px minmax(170px,1fr) 105px;gap:8px;padding:0 14px 7px;color:#94a3b8;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.11em}
+  .airLegend{display:grid;grid-template-columns:95px 105px 150px 150px 135px 110px minmax(155px,1fr) minmax(155px,1fr) 115px;gap:8px;padding:0 12px 7px;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
   .airList{display:flex;flex-direction:column;gap:8px;max-height:74vh;overflow:auto;padding:2px 3px 4px}
-  .airTrip{position:relative;display:grid;grid-template-columns:105px 125px minmax(190px,1.25fr) minmax(150px,.9fr) 90px minmax(170px,1fr) 105px;gap:8px;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;box-shadow:0 4px 14px rgba(15,23,42,.05);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+  .airTrip{position:relative;display:grid;grid-template-columns:95px 105px 150px 150px 135px 110px minmax(155px,1fr) minmax(155px,1fr) 115px;gap:8px;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;box-shadow:0 4px 14px rgba(15,23,42,.05);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
   .airTrip:before{content:'';position:absolute;left:0;top:11px;bottom:11px;width:3px;border-radius:0 8px 8px 0;background:#cbd5e1}.airTrip:hover{transform:translateY(-1px);border-color:#cbd5e1;box-shadow:0 7px 18px rgba(15,23,42,.08)}.airTrip.moved:before{background:#22c55e}.airTrip.moved{animation:airGlow 1.4s ease}
   @keyframes airGlow{0%{background:#f0fdf4}100%{background:#fff}}
   .airMotion{display:flex;align-items:center;gap:9px}.airCompass{width:38px;height:38px;min-width:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#eff6ff;border:1px solid #dbeafe;color:#2563eb;font-size:19px;font-weight:950}.airMotionText b{display:block;font-size:10px;color:#0f172a}.airMotionText span{display:block;margin-top:3px;font-size:8px;color:#94a3b8}
@@ -46,11 +46,11 @@ function css(){
   .airLegend{background:#eef6f5;border:1px solid #dcebe8;border-radius:9px;padding:6px 10px;margin-bottom:6px;color:#64748b}
   .airTrip{background:linear-gradient(90deg,#ffffff 0%,#fbfdff 100%);border-color:#dde7ef}
   .airTrip:before{background:#93c5fd}
-  .airStatusSub{font-size:10px;font-weight:950;color:#0f766e;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .airLocationMain{font-size:9px;font-weight:750;color:#475569;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .airClientName{font-size:12px;font-weight:950;color:#0f5f5a;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.airTrailer{font-size:17px;font-weight:950;color:#12324a;letter-spacing:-.02em}.airOrigin,.airDestination{font-size:12px;font-weight:900;color:#1e293b;line-height:1.18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .airLocationMain{font-size:9px;font-weight:700;color:#64748b;line-height:1.15;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .airCoords{font-size:7px;color:#a0aec0;margin-top:2px}
   .airRouteArrow{background:#ecfdf5;border-color:#d1fae5;color:#0f766e}
-  .airUnit{color:#12324a}
+  .airUnit{color:#12324a;font-size:17px}
   .airMapRow:empty{display:none}
   #ccPantallaAeropuertoMount:fullscreen{padding:8px;background:#eef3f7;overflow:hidden}
   #ccPantallaAeropuertoMount:fullscreen .air{height:calc(100vh - 16px);min-height:0;display:flex;flex-direction:column;padding:9px 11px;border-radius:12px;overflow:hidden}
@@ -95,6 +95,38 @@ function css(){
   #ccPantallaAeropuertoMount:fullscreen .airPageBtn{padding:4px 7px;font-size:7px}
   #ccPantallaAeropuertoMount:fullscreen .airFoot{display:none}
   #ccPantallaAeropuertoMount:fullscreen .airV2Ticker{display:none!important}
+
+  /* TV profesional v47 · 10 viajes */
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{
+    grid-template-columns:90px 95px 145px 125px 125px 105px minmax(145px,1fr) minmax(145px,1fr) 105px;
+    gap:6px
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airTop{min-height:46px;padding:0 0 7px}
+  #ccPantallaAeropuertoMount:fullscreen .airTop h2{font-size:25px}
+  #ccPantallaAeropuertoMount:fullscreen .airTop p{font-size:9px}
+  #ccPantallaAeropuertoMount:fullscreen .airFilters{min-height:38px;padding:6px 9px;margin-bottom:6px}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend{font-size:7.5px;padding:5px 9px;margin-bottom:5px}
+  #ccPantallaAeropuertoMount:fullscreen .airList{gap:5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{padding:6px 8px;border-radius:9px}
+  #ccPantallaAeropuertoMount:fullscreen .airCompass{width:34px;height:34px;min-width:34px;font-size:18px}
+  #ccPantallaAeropuertoMount:fullscreen .airMotionText b{font-size:10px}
+  #ccPantallaAeropuertoMount:fullscreen .airMotionText span{font-size:7px}
+  #ccPantallaAeropuertoMount:fullscreen .airStatus{font-size:7.5px;padding:4px 7px}
+  #ccPantallaAeropuertoMount:fullscreen .airClientName{font-size:11.5px;font-weight:950;color:#0b6b63}
+  #ccPantallaAeropuertoMount:fullscreen .airLocationMain{font-size:7.8px;font-weight:700;color:#64748b}
+  #ccPantallaAeropuertoMount:fullscreen .airActions{margin-top:3px}
+  #ccPantallaAeropuertoMount:fullscreen .airBtn{font-size:6.5px;padding:3px 5px}
+  #ccPantallaAeropuertoMount:fullscreen .airUnit{font-size:15.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airOperator{font-size:8.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTrailer{font-size:15.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airOrigin,
+  #ccPantallaAeropuertoMount:fullscreen .airDestination{font-size:10.5px;font-weight:900}
+  #ccPantallaAeropuertoMount:fullscreen .airPointLabel{font-size:6.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTripNo{font-size:10px}
+  #ccPantallaAeropuertoMount:fullscreen .airTimeMain{font-size:8.5px}
+  #ccPantallaAeropuertoMount:fullscreen .airTimeSub{font-size:7px}
+  #ccPantallaAeropuertoMount:fullscreen .airPager{padding:5px 8px;margin-top:5px}
   </style>`);
 }
 
@@ -165,11 +197,13 @@ function render(){
   if($('airV2Kpis')){const active=arr.filter(x=>/TRANS|RUTA|ACTIVO|CURSO/i.test(String(x.estatusViaje||''))).length,delay=arr.filter(x=>/DEMOR|ESPER/i.test(String(x.estatusViaje||''))).length,withGps=arr.filter(x=>Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))).length;$('airV2Kpis').style.display=VIEW==='v2'?'grid':'none';$('airV2Kpis').innerHTML='<div class="airV2Kpi"><b>'+arr.length+'</b><span>Operaciones visibles</span></div><div class="airV2Kpi"><b>'+active+'</b><span>En ruta / activas</span></div><div class="airV2Kpi"><b>'+withGps+'</b><span>Con GPS</span></div><div class="airV2Kpi"><b>'+delay+'</b><span>Alertas / demora</span></div>'}
   box.innerHTML=arr.length?arr.map(x=>{const idx=LAST.indexOf(x),mi=movementInfo(x,prev),d=mi.dir,geoCount=Array.isArray(x.geocercas)?x.geocercas.length:0;return `<div class="airTrip ${mi.moved?'moved':''}">
     <div class="airMotion"><div class="airCompass">${esc(d.arrow)}</div><div class="airMotionText"><b>${esc(mi.state)}</b><span>${esc(d.label)} · ${esc(fmt(x.gpsAt))}</span></div></div>
-    <div class="airStatusWrap"><span class="airStatus ${statusClass(x.estatusViaje)}">${esc(x.estatusViaje||'Sin estatus')}</span><div class="airStatusSub">${esc(x.cliente||'—')}</div></div>
-    <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div><div class="airCoords">${x.latitud!=null&&x.longitud!=null?esc(x.latitud+', '+x.longitud):'Sin coordenadas'}</div><div class="airActions"><button class="airBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button>':''}</div></div>
+    <div class="airStatusWrap"><span class="airStatus ${statusClass(x.estatusViaje)}">${esc(x.estatusViaje||'Sin estatus')}</span></div>
+    <div class="airClientName">${esc(x.cliente||'—')}</div>
+    <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div><div class="airActions"><button class="airBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button>':''}</div></div>
     <div class="airVehicle"><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airOperator">${esc(x.operador||'Sin operador')}</div><div class="airTags"><span class="airTag">${esc(x.placa||'Sin placa')}</span></div></div>
-    <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airMain">${esc(x.remolque||'—')}</div>${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+'</div>':''}</div>
-    <div class="airRouteBox"><div class="airPoint"><div class="airPointLabel">Origen</div><div class="airPointText">${esc(x.origen||'—')}</div></div><div class="airRouteArrow">→</div><div class="airPoint"><div class="airPointLabel">Destino</div><div class="airPointText">${esc(x.destino||'—')}</div></div></div>
+    <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+'</div>':''}</div>
+    <div><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div>
+    <div><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div>
     <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div><div class="airTimeMain">${esc(fmt(x.salida))}</div><div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
   </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`}).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   if(VIEW==='v2'&&arr.length){const ticker=$('airV2Ticker');if(ticker){ticker.style.display='block';ticker.textContent='CONTROL EN VIVO  ·  '+arr.slice(0,8).map(x=>(x.unidad||'Unidad')+' · '+(x.estatusViaje||'Sin estatus')+' · '+(x.ubicacion||x.ubicacionErp||'Sin ubicación')).join('     •     ')}}else if($('airV2Ticker'))$('airV2Ticker').style.display='none';
@@ -189,7 +223,7 @@ function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
   <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
-  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus / Cliente</div><div>Ubicación actual</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta</div><div>Viaje / ETA</div></div>
+  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Cliente</div><div>Ubicación</div><div>Unidad / Operador</div><div>Remolque</div><div>Origen</div><div>Destino</div><div>Viaje / ETA</div></div>
   <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
   <div id="airV2Ticker" class="airV2Ticker" style="display:none"></div></div><aside id="airRentPanel" class="airRentPanel" aria-label="Cajas en renta"></aside></div>
   <div class="airFoot">Refresco cada 60 segundos · se pausa cuando esta pantalla no está visible · mapa y recorrido se cargan solo al abrirlos.</div>
