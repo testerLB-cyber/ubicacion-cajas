@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-39",
+  "version": "PRO-20261007-40",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto actualizada con mini mapa, origen/destino separados y recorrido de geocercas."
+  "message": "Rediseño visual moderno de Pantalla Aeropuerto, sin cambios de almacenamiento ni consultas."
 }
