@@ -9,28 +9,31 @@ const tz='America/Hermosillo';
 function css(){
   if($('airportCss'))return;
   document.head.insertAdjacentHTML('beforeend',`<style id="airportCss">
-  .air{--ink:#0f172a;--muted:#64748b;--line:#d8dee8}
-  .airTop{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:8px}
-  .airTop h2{margin:0;font-size:22px;color:var(--ink)}.airTop p{margin:3px 0 0;font-size:10px;color:var(--muted)}
-  .airUpdated{font-size:9px;color:var(--muted);white-space:nowrap}
-  .airFilters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
-  .airFilters label{font-size:9px;font-weight:900;color:#475569;text-transform:uppercase}.airSelect{min-width:230px;border:1px solid #cbd5e1;border-radius:8px;padding:7px 9px;background:#fff;font-size:11px}
-  .airCheck{display:flex;gap:6px;align-items:center;font-size:10px;font-weight:800;color:#334155;text-transform:none!important;cursor:pointer}
-  .airCount{margin-left:auto;font-size:9px;color:#64748b}
-  .airBoard{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  .airHead,.airRow{display:grid;grid-template-columns:115px minmax(210px,1.45fr) minmax(170px,1.1fr) 95px 125px 100px minmax(155px,1fr) minmax(155px,1fr) minmax(155px,1fr) 135px;gap:0;align-items:stretch}
-  .airHead{background:#475569;color:#fff;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;z-index:2}
-  .airHead>div,.airRow>div{padding:7px 7px;border-right:1px solid #d9dee6}.airHead>div:last-child,.airRow>div:last-child{border-right:0}
-  .airList{max-height:74vh;overflow:auto}.airRow{border-bottom:1px solid #e5e7eb;min-height:58px}.airRow:last-child{border-bottom:0}.airRow:hover{background:#f8fafc}
-  .airGpsCell{text-align:center}.airArrow{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 3px;background:#fff7ed;border:2px solid #fb923c;font-size:18px;font-weight:950;color:#ea580c}
-  .airMain{font-size:10px;font-weight:800;color:#1e293b;line-height:1.2}.airSub{font-size:8px;color:#64748b;margin-top:2px;line-height:1.2}.airUnit{font-size:12px;font-weight:950;color:#0f172a}
-  .airStatus{display:inline-block;padding:3px 5px;border-radius:2px;font-size:8px;font-weight:950;text-transform:uppercase;margin:1px 0}.airStatus.green{background:#22c55e;color:#052e16}.airStatus.yellow{background:#facc15;color:#422006}.airStatus.red{background:#ef4444;color:#fff}.airStatus.gray{background:#e2e8f0;color:#334155}
-  .airGeoBtn,.airMapBtn{margin-top:4px;border:0;border-radius:7px;padding:4px 7px;font-size:8px;font-weight:900;cursor:pointer}.airGeoBtn{background:#e0f2fe;color:#075985}.airGeoBtn:hover{background:#bae6fd}.airMapBtn{background:#ecfdf5;color:#166534;margin-right:4px}.airMapBtn:hover{background:#d1fae5}.airMapRow{grid-column:1/-1!important;padding:0!important;border-right:0!important;background:#f8fafc}.airMiniMapWrap{display:flex;gap:10px;align-items:stretch;padding:10px}.airMiniMap{width:100%;height:180px;border:0;border-radius:10px;background:#e2e8f0}.airMapMeta{width:220px;min-width:220px;padding:10px;background:#fff;border:1px solid #e2e8f0;border-radius:10px}.airMapMeta b{display:block;font-size:13px;margin-bottom:6px;color:#0f172a}.airMapMeta span{display:block;font-size:9px;color:#64748b;line-height:1.45}.airMapClose{margin-top:8px;border:0;background:#0f172a;color:#fff;border-radius:7px;padding:5px 8px;font-size:8px;font-weight:900;cursor:pointer}
-  .airEmpty{padding:36px;text-align:center;color:#64748b}.airFoot{padding:7px 10px;background:#f8fafc;border-top:1px solid var(--line);font-size:9px;color:#64748b}
-  .airModal{position:fixed;inset:0;z-index:140000;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:20px}.airModal.on{display:flex}.airModalCard{width:min(780px,96vw);max-height:82vh;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-  .airModalHead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#0f172a;color:#fff}.airModalHead h3{margin:0;font-size:16px}.airModalClose{border:0;background:#fff;color:#0f172a;border-radius:7px;padding:6px 9px;font-weight:900;cursor:pointer}
-  .airGeoList{padding:12px 16px;overflow:auto;max-height:68vh}.airGeoTimeline{position:relative;padding-left:22px}.airGeoTimeline:before{content:'';position:absolute;left:8px;top:5px;bottom:5px;width:2px;background:#cbd5e1}.airGeoItem{position:relative;padding:0 0 14px 8px}.airGeoDot{position:absolute;left:-19px;top:3px;width:10px;height:10px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 0 0 2px #bae6fd}.airGeoEvent{font-size:10px;font-weight:950;color:#0f172a}.airGeoName{font-size:11px;font-weight:800;color:#334155;margin-top:2px}.airGeoTime{font-size:8px;color:#64748b;margin-top:2px}
-  @media(max-width:1200px){.airHead,.airRow{grid-template-columns:95px minmax(190px,1.5fr) minmax(150px,1fr) 90px 115px 95px minmax(145px,1fr) minmax(145px,1fr)}.airHead>div:nth-child(9),.airHead>div:nth-child(10),.airRow>div:nth-child(9),.airRow>div:nth-child(10){display:none}.airMiniMapWrap{flex-direction:column}.airMapMeta{width:auto;min-width:0}}
+  .air{--ink:#0f172a;--muted:#64748b;--line:#e6ebf2;--panel:#ffffff;--soft:#f6f8fb}
+  .airTop{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px;margin-bottom:10px;border-radius:16px;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;box-shadow:0 12px 30px rgba(15,23,42,.16)}
+  .airTop h2{margin:0;font-size:22px;letter-spacing:-.02em}.airTop p{margin:4px 0 0;font-size:10px;color:#cbd5e1}.airUpdated{font-size:9px;color:#cbd5e1;white-space:nowrap;text-align:right}
+  .airFilters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px;box-shadow:0 4px 16px rgba(15,23,42,.04)}
+  .airFilters label{font-size:8px;font-weight:950;color:#64748b;text-transform:uppercase;letter-spacing:.08em}.airSelect{min-width:240px;border:1px solid #dbe3ee;border-radius:10px;padding:8px 10px;background:#f8fafc;font-size:11px;color:#0f172a;outline:none}.airSelect:focus{border-color:#94a3b8;background:#fff}
+  .airCheck{display:flex;gap:7px;align-items:center;font-size:10px;font-weight:800;color:#334155;text-transform:none!important;cursor:pointer}.airCheck input{accent-color:#0f172a}.airCount{margin-left:auto;font-size:9px;font-weight:800;color:#64748b;background:#f8fafc;padding:6px 9px;border-radius:999px}
+  .airBoard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+  .airHead,.airRow{display:grid;grid-template-columns:122px minmax(210px,1.45fr) minmax(180px,1.15fr) 96px 132px 104px minmax(155px,1fr) minmax(150px,1fr) minmax(150px,1fr) 138px;gap:0;align-items:stretch}
+  .airHead{background:#f1f5f9;color:#475569;font-size:7px;font-weight:950;text-transform:uppercase;letter-spacing:.09em;position:sticky;top:0;z-index:2;border-bottom:1px solid #dbe3ee}
+  .airHead>div{padding:9px 9px}.airRow>div{padding:10px 9px;border-right:1px solid #eef2f7}.airRow>div:last-child,.airHead>div:last-child{border-right:0}
+  .airList{max-height:74vh;overflow:auto;background:#fbfcfe}.airRow{background:#fff;border-bottom:1px solid #edf1f5;min-height:68px;transition:background .2s ease,transform .2s ease,box-shadow .2s ease}.airRow:hover{background:#fbfdff;box-shadow:inset 3px 0 0 #94a3b8}.airRow.moved{animation:airPulse 1.6s ease}.airRow:last-child{border-bottom:0}
+  @keyframes airPulse{0%{background:#ecfdf5}100%{background:#fff}}
+  .airGpsCell{display:flex!important;align-items:center;gap:9px;text-align:left}.airArrow{width:36px;height:36px;min-width:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#fff7ed;border:1px solid #fed7aa;font-size:20px;font-weight:950;color:#ea580c;box-shadow:0 3px 10px rgba(234,88,12,.08)}
+  .airMain{font-size:10px;font-weight:800;color:#1e293b;line-height:1.25}.airSub{font-size:8px;color:#94a3b8;margin-top:3px;line-height:1.2}.airUnit{font-size:15px;font-weight:950;color:#0f172a;letter-spacing:-.01em}
+  .airLabel{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:3px 6px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:8px;font-weight:800}
+  .airStatus{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.03em}.airStatus.green{background:#dcfce7;color:#166534}.airStatus.yellow{background:#fef3c7;color:#92400e}.airStatus.red{background:#fee2e2;color:#991b1b}.airStatus.gray{background:#e2e8f0;color:#475569}
+  .airGeoBtn,.airMapBtn{margin-top:6px;border:0;border-radius:8px;padding:5px 8px;font-size:8px;font-weight:900;cursor:pointer;transition:transform .15s ease,background .15s ease}.airGeoBtn:hover,.airMapBtn:hover{transform:translateY(-1px)}.airGeoBtn{background:#eef2ff;color:#4338ca}.airGeoBtn:hover{background:#e0e7ff}.airMapBtn{background:#ecfdf5;color:#166534;margin-right:5px}.airMapBtn:hover{background:#d1fae5}
+  .airRoute{display:flex;align-items:center;gap:6px}.airRouteIcon{width:20px;height:20px;border-radius:7px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:10px}.airRouteText{min-width:0}.airRouteText .airMain{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .airTimeMain{font-size:10px;font-weight:900;color:#0f172a}.airTimeSub{font-size:8px;color:#94a3b8;margin-top:3px}
+  .airMapRow{grid-column:1/-1!important;padding:0!important;border-right:0!important;background:#f8fafc}.airMiniMapWrap{display:flex;gap:12px;align-items:stretch;padding:12px;border-top:1px solid #e2e8f0}.airMiniMap{width:100%;height:190px;border:0;border-radius:12px;background:#e2e8f0}.airMapMeta{width:230px;min-width:230px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}.airMapMeta b{display:block;font-size:14px;margin-bottom:6px;color:#0f172a}.airMapMeta span{display:block;font-size:9px;color:#64748b;line-height:1.5}.airMapClose{margin-top:10px;border:0;background:#0f172a;color:#fff;border-radius:8px;padding:6px 9px;font-size:8px;font-weight:900;cursor:pointer}
+  .airEmpty{padding:42px;text-align:center;color:#64748b}.airFoot{padding:8px 11px;background:#f8fafc;border-top:1px solid var(--line);font-size:8px;color:#94a3b8}
+  .airModal{position:fixed;inset:0;z-index:140000;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}.airModal.on{display:flex}.airModalCard{width:min(760px,96vw);max-height:82vh;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.28)}
+  .airModalHead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#0f172a;color:#fff}.airModalHead h3{margin:0;font-size:16px}.airModalClose{border:0;background:#fff;color:#0f172a;border-radius:8px;padding:6px 10px;font-weight:900;cursor:pointer}
+  .airGeoList{padding:14px 18px;overflow:auto;max-height:68vh}.airGeoTimeline{position:relative;padding-left:24px}.airGeoTimeline:before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:#dbe3ee}.airGeoItem{position:relative;padding:0 0 16px 10px}.airGeoDot{position:absolute;left:-21px;top:3px;width:11px;height:11px;border-radius:50%;background:#0ea5e9;border:2px solid #fff;box-shadow:0 0 0 3px #e0f2fe}.airGeoEvent{font-size:10px;font-weight:950;color:#0f172a}.airGeoName{font-size:11px;font-weight:800;color:#334155;margin-top:2px}.airGeoTime{font-size:8px;color:#94a3b8;margin-top:3px}
+  @media(max-width:1200px){.airHead,.airRow{grid-template-columns:105px minmax(190px,1.4fr) minmax(155px,1fr) 90px 120px 95px minmax(145px,1fr) minmax(145px,1fr)}.airHead>div:nth-child(9),.airHead>div:nth-child(10),.airRow>div:nth-child(9),.airRow>div:nth-child(10){display:none}.airMiniMapWrap{flex-direction:column}.airMapMeta{width:auto;min-width:0}}
   </style>`);
 }
 function toRad(d){return d*Math.PI/180}
@@ -57,7 +60,7 @@ function movementInfo(x,prev){
   const lat=Number(x.latitud),lng=Number(x.longitud),cur=Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng}:null,old=prev?.[String(x.unidad||'')];
   const d=cur&&old?distanceM({lat:Number(old.lat),lng:Number(old.lng)},cur):null,deg=cur&&old&&d!=null&&d>=25?bearing({lat:Number(old.lat),lng:Number(old.lng)},cur):null;
   const evt=String(x.evento||'').trim(),driving=/conduc|driv/i.test(evt)||Number(x.velocidadKmh)>5,moving=d!=null&&d>=25;
-  return {state:driving?'Conduciendo':(evt||(!moving?'Detenido':'En movimiento')),dir:dirFromDeg(deg)};
+  return {state:driving?'Conduciendo':(evt||(!moving?'Detenido':'En movimiento')),dir:dirFromDeg(deg),moved:moving};
 }
 function fmt(v){
   if(!v)return '—';
@@ -114,17 +117,17 @@ function render(){
   $('airVisibleCount').textContent=arr.length+' de '+LAST.length+' unidades';
   box.innerHTML=arr.length?arr.map(x=>{
     const idx=LAST.indexOf(x),mi=movementInfo(x,prev),d=mi.dir,geoCount=Array.isArray(x.geocercas)?x.geocercas.length:0;
-    return `<div class="airRow">
-      <div class="airGpsCell"><div class="airArrow">${esc(d.arrow)}</div><div class="airMain">${esc(mi.state)}</div><div class="airSub">${esc(d.label)} · ${esc(fmt(x.gpsAt))}</div></div>
-      <div><div class="airMain">${esc(x.ubicacion||x.ubicacionErp||'—')}</div><div class="airSub">${x.latitud!=null&&x.longitud!=null?esc(x.latitud+', '+x.longitud):''}</div><button class="airMapBtn" data-map="${idx}">Ver mapa</button>${geoCount?'<button class="airGeoBtn" data-geo="'+idx+'">Geocercas ('+geoCount+')</button>':''}</div>
-      <div><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airMain">${esc(x.operador||'—')}</div><div class="airSub">${esc(x.placa||'')}</div></div>
+    return `<div class="airRow ${mi.moved?'moved':''}">
+      <div class="airGpsCell"><div class="airArrow">${esc(d.arrow)}</div><div><div class="airMain">${esc(mi.state)}</div><div class="airSub">${esc(d.label)} · ${esc(fmt(x.gpsAt))}</div></div></div>
+      <div><div class="airMain">${esc(x.ubicacion||x.ubicacionErp||'—')}</div><div class="airSub">${x.latitud!=null&&x.longitud!=null?esc(x.latitud+', '+x.longitud):''}</div><button class="airMapBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airGeoBtn" data-geo="'+idx+'">Recorrido ('+geoCount+')</button>':''}</div>
+      <div><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airMain">${esc(x.operador||'—')}</div><span class="airLabel">${esc(x.placa||'Sin placa')}</span></div>
       <div><div class="airMain">${esc(x.remolque||'—')}</div><div class="airSub">${esc(x.remolque2||'')}</div></div>
       <div><span class="airStatus ${statusClass(x.estatusViaje)}">${esc(x.estatusViaje||'Sin estatus')}</span><div class="airSub">${esc(x.trayectoCargadoVacio||'')}</div></div>
       <div><div class="airMain">${esc(x.numeroViaje||'—')}</div><div class="airSub">${esc(x.identificadorViaje||'')}</div></div>
       <div><div class="airMain">${esc(x.cliente||'—')}</div></div>
-      <div><div class="airMain">${esc(x.origen||'—')}</div><div class="airSub">Origen</div></div>
-      <div><div class="airMain">${esc(x.destino||'—')}</div><div class="airSub">Destino</div></div>
-      <div><div class="airMain">${esc(fmt(x.salida))}</div><div class="airSub">${esc(fmt(x.eta))}</div></div>
+      <div><div class="airRoute"><span class="airRouteIcon">A</span><div class="airRouteText"><div class="airMain">${esc(x.origen||'—')}</div><div class="airSub">Origen</div></div></div></div>
+      <div><div class="airRoute"><span class="airRouteIcon">B</span><div class="airRouteText"><div class="airMain">${esc(x.destino||'—')}</div><div class="airSub">Destino</div></div></div></div>
+      <div><div class="airTimeMain">${esc(fmt(x.salida))}</div><div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
     </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`;
   }).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   document.querySelectorAll('[data-geo]').forEach(b=>b.onclick=()=>showGeos(Number(b.dataset.geo)));
