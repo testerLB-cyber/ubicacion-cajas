@@ -546,6 +546,129 @@ function css(){
   @media(max-width:900px){
     .airVehicleInfoBubble{width:165px;padding:6px 8px}
   }
+
+  /* Marcador camión realista + globo compacto v58 */
+  .airVehicleMarker{
+    display:inline-flex!important;
+    align-items:flex-end;
+    gap:0!important;
+    padding:3px 5px 4px!important;
+    border-radius:11px!important;
+    min-height:28px
+  }
+  .airVehicleMarker .tractor,
+  .airVehicleMarker .trailerPart{
+    position:relative;
+    display:inline-flex!important;
+    align-items:flex-end!important;
+    gap:3px!important;
+    border:0!important;
+    padding:0!important;
+    margin:0!important;
+  }
+  .airRig{
+    display:inline-flex;
+    align-items:flex-end;
+    gap:1px;
+    height:22px;
+  }
+  .airCab{
+    position:relative;
+    width:22px;
+    height:16px;
+    background:var(--client-color,#2563eb);
+    border-radius:5px 4px 3px 3px;
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);
+  }
+  .airCab:before{
+    content:'';
+    position:absolute;
+    right:2px;
+    top:2px;
+    width:7px;
+    height:6px;
+    background:rgba(255,255,255,.78);
+    border-radius:2px 2px 1px 1px;
+  }
+  .airCab:after{
+    content:'';
+    position:absolute;
+    left:4px;
+    bottom:-4px;
+    width:5px;
+    height:5px;
+    background:#111827;
+    border:1px solid #fff;
+    border-radius:50%;
+    box-shadow:10px 0 0 #111827,10px 0 0 1px #fff;
+  }
+  .airHitch{
+    width:4px;
+    height:3px;
+    margin-bottom:5px;
+    background:#475569;
+    border-radius:2px;
+  }
+  .airTrailerVisual{
+    position:relative;
+    min-width:30px;
+    height:14px;
+    padding:0 4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f8fafc;
+    border:2px solid var(--client-color,#2563eb);
+    border-radius:3px 4px 3px 3px;
+    color:#334155;
+    font-size:7px;
+    font-weight:950;
+    line-height:1;
+  }
+  .airTrailerVisual:after{
+    content:'';
+    position:absolute;
+    left:5px;
+    bottom:-5px;
+    width:5px;
+    height:5px;
+    background:#111827;
+    border:1px solid #fff;
+    border-radius:50%;
+    box-shadow:14px 0 0 #111827,14px 0 0 1px #fff;
+  }
+  .airRigUnit{
+    margin-left:4px;
+    font-size:8px;
+    font-weight:950;
+    color:#17375e;
+    align-self:center;
+  }
+  .airVehicleInfoBubble{
+    width:152px!important;
+    padding:5px 7px!important;
+    border-radius:8px!important;
+    bottom:calc(100% + 7px)!important;
+    box-shadow:0 4px 12px rgba(15,23,42,.18)!important;
+    font-size:7px!important;
+    line-height:1.18!important;
+  }
+  .airVehicleInfoBubble .airBubbleRow{
+    display:flex!important;
+    gap:4px!important;
+    align-items:center!important;
+  }
+  .airVehicleInfoBubble .airBubbleRow+.airBubbleRow{margin-top:2px!important}
+  .airVehicleInfoBubble .airBubbleLabel{
+    flex:0 0 39px;
+    font-size:6px!important;
+    letter-spacing:.03em!important;
+  }
+  .airVehicleInfoBubble .airBubbleValue{
+    font-size:7.5px!important;
+    line-height:1.15!important;
+  }
+  .airVehicleInfoBubble:after{border-width:5px!important}
   </style>`);
 }
 
@@ -636,18 +759,16 @@ function renderAirportClientLegend(rows,colorMap){
 function airportMarkerHtml(x,clientColor){
   const hasTrip=!!String(x.numeroViaje||'').trim();
   const trailer=String(x.remolque||'').trim();
-  const tractor='<span class="tractor"><i class="fa-solid fa-truck-front truckIcon"></i><span>'+esc(x.unidad||'—')+'</span></span>';
-  const trailerHtml=trailer?'<span class="trailerPart"><i class="fa-solid fa-trailer trailerIcon"></i><span>'+esc(trailer)+'</span></span>':'';
-  const tripDot='<span class="'+(hasTrip?'tripBadge':'noTripBadge')+'"></span>';
-  const showBubble=!selectedClient();
-  const bubble=showBubble
-    ?'<div class="airVehicleInfoBubble">'
+  const bubble='<div class="airVehicleInfoBubble">'
       +'<div class="airBubbleRow"><span class="airBubbleLabel">Operador</span><span class="airBubbleValue">'+esc(x.operador||'Sin operador')+'</span></div>'
       +'<div class="airBubbleRow"><span class="airBubbleLabel">Cliente</span><span class="airBubbleValue airBubbleClient">'+esc(x.cliente||'Sin cliente')+'</span></div>'
       +'<div class="airBubbleRow"><span class="airBubbleLabel">Destino</span><span class="airBubbleValue">'+esc(x.destino||'Sin destino')+'</span></div>'
-      +'</div>'
-    :'';
-  return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+bubble+tripDot+tractor+trailerHtml+'</div>';
+      +'</div>';
+  const rig='<span class="airRig"><span class="airCab"></span>'
+      +(trailer?'<span class="airHitch"></span><span class="airTrailerVisual">'+esc(trailer)+'</span>':'')
+      +'<span class="airRigUnit">'+esc(x.unidad||'—')+'</span></span>';
+  const tripDot='<span class="'+(hasTrip?'tripBadge':'noTripBadge')+'"></span>';
+  return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+bubble+tripDot+rig+'</div>';
 }
 function airportPopupHtml(x){
   const hasTrip=!!String(x.numeroViaje||'').trim();
@@ -818,7 +939,7 @@ async function load(){if(document.hidden||!$('ccPanelPantallaAeropuerto')?.class
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
-  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button><button id="airMapToggle" class="airMapToggle" type="button"><i class="fa-solid fa-map-location-dot"></i> Mapa de unidades</button></div><div id="airFleetMapPanel" class="airFleetMapPanel"><div class="airFleetMapHead"><div class="airFleetMapHeadLeft"><strong>Mapa de unidades en operación</strong><span id="airFleetMapMeta">0 unidades</span></div><div class="airFleetMapControls"><span class="airMapSegment"><button id="airMapSatellite" class="airMapSegBtn on" type="button"><i class="fa-solid fa-satellite"></i> Satélite</button><button id="airMapStreet" class="airMapSegBtn" type="button"><i class="fa-solid fa-map"></i> Mapa</button></span><button id="airMapLock" class="airMapLockBtn on" type="button"><i class="fa-solid fa-lock"></i> Vista fija</button><button id="airFleetMapFullscreen" class="airFleetMapAction" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button id="airFleetMapClose" class="airFleetMapAction" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div id="airFleetMapCanvas" class="airFleetMapCanvas"></div><div id="airClientLegend" class="airClientLegend"></div><div class="airFleetMapLegend"><span>Punto verde: con viaje</span><span>Punto gris: sin viaje</span><span>Color del vehículo: cliente</span><span>Globo en Todos los clientes: operador · cliente · destino</span><span>Se actualizan posiciones cada 60 s</span><span class="legendLock"><i class="fa-solid fa-lock"></i> La vista no se mueve con el refresh</span></div></div>
+  <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button><button id="airMapToggle" class="airMapToggle" type="button"><i class="fa-solid fa-map-location-dot"></i> Mapa de unidades</button></div><div id="airFleetMapPanel" class="airFleetMapPanel"><div class="airFleetMapHead"><div class="airFleetMapHeadLeft"><strong>Mapa de unidades en operación</strong><span id="airFleetMapMeta">0 unidades</span></div><div class="airFleetMapControls"><span class="airMapSegment"><button id="airMapSatellite" class="airMapSegBtn on" type="button"><i class="fa-solid fa-satellite"></i> Satélite</button><button id="airMapStreet" class="airMapSegBtn" type="button"><i class="fa-solid fa-map"></i> Mapa</button></span><button id="airMapLock" class="airMapLockBtn on" type="button"><i class="fa-solid fa-lock"></i> Vista fija</button><button id="airFleetMapFullscreen" class="airFleetMapAction" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button id="airFleetMapClose" class="airFleetMapAction" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div id="airFleetMapCanvas" class="airFleetMapCanvas"></div><div id="airClientLegend" class="airClientLegend"></div><div class="airFleetMapLegend"><span>Punto verde: con viaje</span><span>Punto gris: sin viaje</span><span>Color del vehículo: cliente</span><span>Globo operativo: operador · cliente · destino</span><span>Se actualizan posiciones cada 60 s</span><span class="legendLock"><i class="fa-solid fa-lock"></i> La vista no se mueve con el refresh</span></div></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
   <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Ubicación actual</div><div>Cliente</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta · Origen → Destino</div><div>Viaje / ETA</div></div>
   <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
