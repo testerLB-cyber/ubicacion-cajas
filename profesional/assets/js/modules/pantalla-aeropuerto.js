@@ -726,6 +726,39 @@ function css(){
   .airNoService{color:#b45309!important;font-weight:950!important}
   .airRentBack{background:#17375e!important;color:#fff!important;border-color:#17375e!important}
   .airRentBack:hover{background:#0f2941!important;color:#fff!important}
+
+  /* Marcador sobrio tipo primeros iconos v60 */
+  .airVehicleMarker{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    min-height:28px!important;
+    padding:4px 6px!important;
+    border-radius:9px!important;
+    background:rgba(255,255,255,.97)!important;
+    border:1.5px solid color-mix(in srgb,var(--client-color,#2563eb) 72%,#ffffff)!important;
+    box-shadow:0 3px 10px rgba(15,23,42,.22)!important;
+  }
+  .airRigSimple{display:inline-flex;align-items:center;gap:4px}
+  .airTractorIcon{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:25px;height:20px;border-radius:6px;
+    background:var(--client-color,#2563eb);
+    color:#fff;font-size:12px;
+  }
+  .airTrailerIconWrap{
+    display:inline-flex;align-items:center;gap:3px;
+    height:20px;padding:0 6px;
+    border:1.5px solid var(--client-color,#2563eb);
+    border-radius:5px;background:#fff;color:var(--client-color,#2563eb);
+    font-size:10px;font-weight:950
+  }
+  .airUnitNo{
+    font-size:8px;font-weight:950;color:#17375e;white-space:nowrap
+  }
+  .airTrailerNo{
+    font-size:7px;font-weight:950;color:#334155;white-space:nowrap
+  }
   </style>`);
 }
 
@@ -825,21 +858,12 @@ function airportMarkerHtml(x,clientColor){
       +'<div class="airBubbleRow"><span class="airBubbleLabel">Cliente</span><span class="airBubbleValue airBubbleClient">'+esc(x.cliente||'Sin cliente')+'</span></div>'
       +'<div class="airBubbleRow"><span class="airBubbleLabel">Destino</span><span class="airBubbleValue">'+esc(x.destino||'Sin destino')+'</span></div>'
       +'</div>';
-  const rigSvg='<svg class="airRigSvg" viewBox="0 0 92 32" aria-hidden="true">'
-      +'<rect class="trailerBody" x="38" y="6" width="45" height="16" rx="2"/>'
-      +'<line class="frameLine" x1="32" y1="20" x2="40" y2="20"/>'
-      +'<path class="cabBody" d="M6 9h16l7 7v7H5V11c0-1.1.9-2 1-2z"/>'
-      +'<path class="window" d="M18 11h4.5l4.5 5h-9z"/>'
-      +'<circle class="wheel" cx="12" cy="25" r="4"/>'
-      +'<circle class="wheel" cx="25" cy="25" r="4"/>'
-      +'<circle class="wheel" cx="51" cy="25" r="4"/>'
-      +'<circle class="wheel" cx="72" cy="25" r="4"/>'
-      +'</svg>';
-  const labels='<span class="airRigLabel"><span class="unitNo">'+esc(x.unidad||'—')+'</span>'
-      +(trailer?'<span class="trailerNo">'+esc(trailer)+'</span>':'')
-      +'</span>';
+  const tractor='<span class="airRigSimple"><span class="airTractorIcon"><i class="fa-solid fa-truck-front"></i></span><span class="airUnitNo">'+esc(x.unidad||'—')+'</span></span>';
+  const trailerHtml=trailer
+      ?'<span class="airTrailerIconWrap"><i class="fa-solid fa-trailer"></i><span class="airTrailerNo">'+esc(trailer)+'</span></span>'
+      :'';
   const tripDot='<span class="'+(hasTrip?'tripBadge':'noTripBadge')+'"></span>';
-  return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+bubble+tripDot+'<span class="airRig">'+rigSvg+labels+'</span></div>';
+  return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+bubble+tripDot+tractor+trailerHtml+'</div>';
 }
 function airportPopupHtml(x){
   const hasTrip=!!String(x.numeroViaje||'').trim();
