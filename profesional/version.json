@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-50",
+  "version": "PRO-20261008-51",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto redistribuida con ruta unificada Origen-Destino, mejor aprovechamiento del ancho y menos espacios en blanco.",
+  "message": "Pantalla Aeropuerto con mejor legibilidad, filas diferenciadas, ubicación más visible y estatus con colores fijos.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
