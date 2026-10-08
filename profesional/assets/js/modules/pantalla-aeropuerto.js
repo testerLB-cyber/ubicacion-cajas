@@ -923,7 +923,7 @@ function renderAirportSidebar(rows,colorMap){
   list.innerHTML=shown.length?shown.map(x=>{
     const key=airportMapKey(x),hasTrip=!!String(x.numeroViaje||'').trim(),color=colorMap.get(String(x.cliente||'Sin cliente').trim()||'Sin cliente')||'#2563eb';
     return '<button type="button" class="airFleetSideItem '+(AIR_MAP_SELECTED_KEY===key?'on':'')+'" data-air-unit-key="'+esc(key)+'" style="--client-color:'+esc(color)+'">'
-      +'<div class="airFleetSideTop"><span class="airFleetClientDot"></span><span class="airFleetUnitNo">'+esc(x.unidad||'—')+'</span><span class="airFleetTripFlag '+(hasTrip?'':'off')+'">'+(hasTrip?'VIAJE':'SIN VIAJE')+'</span></div>'
+      +'<div class="airFleetSideTop"><span class="airFleetClientDot"></span><span class="airFleetUnitNo">'+esc(x.unidad||'—')+(String(x.remolque||'').trim()?' <span style="font-weight:800;color:#64748b">· Rem. '+esc(x.remolque)+'</span>':'')+'</span><span class="airFleetTripFlag '+(hasTrip?'':'off')+'">'+(hasTrip?'VIAJE':'SIN VIAJE')+'</span></div>'
       +'<div class="airFleetSideMeta">'+esc(x.operador||'Sin servicio activo')+'</div>'
       +'<div class="airFleetSideMeta">'+esc(x.cliente||'Sin cliente')+' · '+esc(x.destino||'Sin destino')+'</div>'
       +'</button>';
