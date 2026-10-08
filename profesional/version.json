@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-31",
+  "version": "PRO-20261007-32",
   "mandatory": false,
-  "message": "Nueva versión de producción de Pantalla Aeropuerto GPS."
+  "message": "Corrección de conexión GPS de Pantalla Aeropuerto con Software GM."
 }
