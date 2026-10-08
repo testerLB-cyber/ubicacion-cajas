@@ -455,6 +455,11 @@ function css(){
   .airRentContentGrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr);gap:12px;align-items:start}
   .airRentMap{background:#fff;border:1px solid #dbe8f5;border-radius:13px;overflow:hidden;box-shadow:0 3px 10px rgba(15,23,42,.04)}
   .airRentMap iframe{height:430px}
+  .airRentTrailerMarker{background:transparent;border:0}
+  .airRentTrailerGlyph{display:flex;flex-direction:column;align-items:center;gap:1px;filter:drop-shadow(0 3px 3px rgba(15,23,42,.55));}
+  .airRentTrailerGlyph svg{width:66px;height:37px;background:#1d4ed8;border:2px solid #fff;border-radius:8px;padding:2px}
+  .airRentTrailerGlyph span{background:#0f172a;color:white;font-weight:900;font-size:10px;border:1px solid white;border-radius:5px;padding:2px 5px;white-space:nowrap}
+
   .airRentItems{max-height:none;margin-top:0;display:grid;gap:8px}
   .airRentItem{
     padding:11px 12px;border:1px solid #dbe8f5;border-radius:11px;background:#fff;
@@ -812,6 +817,7 @@ function showGeos(index){const x=LAST[index];if(!x)return;$('airGeoTitle').textC
 function mapEmbedUrl(lat,lng){const la=Number(lat),lo=Number(lng);if(!Number.isFinite(la)||!Number.isFinite(lo))return'';const dLat=.012,dLng=.018;return'https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent((lo-dLng)+','+(la-dLat)+','+(lo+dLng)+','+(la+dLat))+'&layer=mapnik&marker='+encodeURIComponent(la+','+lo)}
 function toggleMap(index){const row=$('airMap_'+index),x=LAST[index];if(!row||!x)return;if(row.dataset.open==='1'){row.innerHTML='';row.dataset.open='0';return}const src=mapEmbedUrl(x.latitud,x.longitud);row.dataset.open='1';row.innerHTML=src?`<div class="airMiniMapWrap"><div style="flex:1"><iframe class="airMiniMap" loading="lazy" src="${esc(src)}"></iframe></div><div class="airMapMeta"><b>${esc(x.unidad||'Unidad')}</b><span>${esc(x.ubicacion||x.ubicacionErp||'Ubicación GPS')}</span><span>${esc(x.latitud+', '+x.longitud)}</span><span>Actualización GPS: ${esc(fmt(x.gpsAt))}</span><button class="airMapClose" data-map-close="${index}">Cerrar mapa</button></div></div>`:'<div class="airEmpty">Esta unidad no trae coordenadas válidas.</div>';row.querySelector('[data-map-close]')?.addEventListener('click',()=>toggleMap(index))}
 
+let RENT_MAP_INSTANCE=null;
 let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false, AIR_MAP_OPEN=false, AIR_MAP_INSTANCE=null, AIR_MAP_LAYER=null, AIR_MAP_BASE=null, AIR_MAP_MODE='SATELITE', AIR_MAP_LOCKED=true, AIR_MAP_SELECTED_KEY=null, AIR_MAP_SEARCH='';
 const AIR_MAP_MARKERS=new Map();
 const normClient=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -1063,6 +1069,7 @@ function toggleAirportMap(){
 }
 async function loadRentals(){
  if(!RENT_OPEN||RENT_LOADING)return;
+ if(RENT_MAP_INSTANCE){try{RENT_MAP_INSTANCE.remove()}catch(_){}RENT_MAP_INSTANCE=null}
  const client=selectedClient(),panel=$('airRentPanel');
  if(!panel)return;
  if(!client){panel.innerHTML='<div class="airRentFullHead"><div><strong>Cajas de renta</strong><span>Vista completa por cliente</span></div><div class="airRentFullActions"><button class="airRentFullBtn airRentBack" id="airRentBack"><i class="fa-solid fa-arrow-left"></i> Regresar</button><button class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div class="airRentBody"><div class="airRentEmpty">Selecciona un cliente en Pantalla Aeropuerto para visualizar sus cajas en renta.</div></div>';$('airRentBack')?.addEventListener('click',async()=>{const p=$('airRentPanel');if(document.fullscreenElement===p){try{await document.exitFullscreen()}catch(_){}}if(RENT_OPEN)toggleRentals()});$('airRentClose')?.addEventListener('click',async()=>{const p=$('airRentPanel');if(document.fullscreenElement===p){try{await document.exitFullscreen()}catch(_){}}if(RENT_OPEN)toggleRentals()});return}
@@ -1082,11 +1089,32 @@ async function loadRentals(){
   if(located.length){
     const la=located.reduce((a,x)=>a+Number(x.latitud),0)/located.length;
     const lo=located.reduce((a,x)=>a+Number(x.longitud),0)/located.length;
-    map.innerHTML='<iframe title="Últimos escaneos de cajas" loading="lazy" referrerpolicy="no-referrer" src="'+esc(mapEmbedUrl(la,lo))+'"></iframe><small>Ubicación basada en el último escaneo QR de cada caja. No es GPS en vivo.</small>';
+    map.innerHTML='<div id="airRentLeaflet" style="height:430px;width:100%;position:relative" role="application" aria-label="Mapa satelital de cajas en renta"></div><small>Vista satelital · cada semirremolque muestra el último escaneo QR. No es GPS en vivo.</small>';
+    try{
+      await ensureAirportLeaflet();
+      if(!RENT_OPEN||!$('airRentLeaflet'))return;
+      if(RENT_MAP_INSTANCE){RENT_MAP_INSTANCE.remove();RENT_MAP_INSTANCE=null}
+      RENT_MAP_INSTANCE=L.map('airRentLeaflet',{zoomControl:true,scrollWheelZoom:false}).setView([la,lo],12);
+      airportBaseLayer('SATELITE').addTo(RENT_MAP_INSTANCE);
+      const bounds=[];
+      located.forEach(x=>{
+        const lat=Number(x.latitud),lng=Number(x.longitud);
+        if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+        bounds.push([lat,lng]);
+        const icon=L.divIcon({
+          className:'airRentTrailerMarker',
+          html:'<div class="airRentTrailerGlyph"><svg viewBox="0 0 64 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="7" width="49" height="17" rx="2" fill="#f8fafc" stroke="#183153" stroke-width="2.5"/><path d="M7 12H48M8 19H48" stroke="#94a3b8" stroke-width="1.5"/><rect x="11" y="24" width="5" height="4" fill="#334155"/><rect x="44" y="24" width="5" height="4" fill="#334155"/><circle cx="13" cy="29" r="4" fill="#172b4d" stroke="#e2e8f0" stroke-width="1.4"/><circle cx="46" cy="29" r="4" fill="#172b4d" stroke="#e2e8f0" stroke-width="1.4"/></svg><span>'+esc(x.numero||'Caja')+'</span></div>',
+          iconSize:[82,52],iconAnchor:[41,47],popupAnchor:[0,-43]
+        });
+        L.marker([lat,lng],{icon,title:String(x.numero||'Semirremolque')}).addTo(RENT_MAP_INSTANCE).bindPopup('<strong>Semirremolque '+esc(x.numero||'—')+'</strong><br>'+esc(x.descripcion||'Caja en renta')+'<br>Último escaneo QR: '+esc(x.fechaHora?fmt(x.fechaHora):'Sin fecha'));
+      });
+      if(bounds.length>1)RENT_MAP_INSTANCE.fitBounds(bounds,{padding:[45,45],maxZoom:16});
+      requestAnimationFrame(()=>RENT_MAP_INSTANCE?.invalidateSize());
+    }catch(e){map.innerHTML='<div class="airRentEmpty">No se pudo cargar el mapa satelital. '+esc(e.message||e)+'</div>'}
   }else map.innerHTML='<div class="airRentEmpty">No hay ubicaciones QR registradas para estas cajas.</div>';
  }catch(e){panel.innerHTML='<div class="airRentEmpty">No fue posible consultar las rentas: '+esc(e.message||e)+'</div>'}finally{RENT_LOADING=false}
 }
-function toggleRentals(){RENT_OPEN=!RENT_OPEN;const panel=$('airRentPanel'),b=$('airRentToggle');panel?.classList.toggle('on',RENT_OPEN);if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML='<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals();else if(document.fullscreenElement===panel)document.exitFullscreen?.()}
+function toggleRentals(){if(RENT_MAP_INSTANCE){try{RENT_MAP_INSTANCE.remove()}catch(_){}RENT_MAP_INSTANCE=null}RENT_OPEN=!RENT_OPEN;const panel=$('airRentPanel'),b=$('airRentToggle');panel?.classList.toggle('on',RENT_OPEN);if(b){b.classList.toggle('on',RENT_OPEN);b.innerHTML='<i class="fa-solid fa-boxes-stacked"></i> Cajas de renta';b.setAttribute('aria-expanded',String(RENT_OPEN))}if(RENT_OPEN)loadRentals();else if(document.fullscreenElement===panel)document.exitFullscreen?.()}
 
 function totalPages(){return Math.max(1,Math.ceil(filtered().length/PAGE_SIZE))}
 function setPage(p){PAGE=Math.min(Math.max(1,p),totalPages());render({pageOnly:true})}
