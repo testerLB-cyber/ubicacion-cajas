@@ -1,5 +1,6 @@
 (()=>{'use strict';
-let TIMER=null,LAST=[],VIEW='actual';
+let TIMER=null,LAST=[],VIEW='actual',PAGE=1;
+const PAGE_SIZE=15;
 const POS_KEY='gm_airport_prev_positions_v1';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -34,6 +35,12 @@ function css(){
   .airGeoList{padding:16px 20px;overflow:auto;max-height:68vh}.airGeoTimeline{position:relative;padding-left:26px}.airGeoTimeline:before{content:'';position:absolute;left:9px;top:5px;bottom:5px;width:2px;background:#dbe3ea}.airGeoItem{position:relative;padding:0 0 18px 10px}.airGeoDot{position:absolute;left:-21px;top:3px;width:11px;height:11px;border-radius:50%;background:#0f766e;border:2px solid #fff;box-shadow:0 0 0 3px #ccfbf1}.airGeoEvent{font-size:10px;font-weight:950;color:#0f172a}.airGeoName{font-size:11px;font-weight:800;color:#334155;margin-top:2px}.airGeoTime{font-size:8px;color:#94a3b8;margin-top:3px}
   @media(max-width:1250px){.airLegend,.airTrip{grid-template-columns:100px 115px minmax(175px,1.2fr) minmax(145px,.9fr) 85px minmax(160px,1fr)}.airLegend>div:nth-child(7),.airTrip>div:nth-child(7){display:none}}
   @media(max-width:900px){.air{padding:10px}.airLegend{display:none}.airTrip{grid-template-columns:1fr 1fr;gap:12px}.airTrip>div{display:block!important}.airRouteBox{grid-column:1/-1}.airTop{align-items:flex-start}.airUpdated{white-space:normal}.airMiniMapWrap{flex-direction:column}.airMapMeta{width:auto;min-width:0}}
+
+  .airTopActions{display:flex;align-items:center;gap:8px}.airFullBtn{display:inline-flex;align-items:center;gap:7px;border:1px solid #d7e0e8;background:#fff;color:#334155;border-radius:10px;padding:8px 11px;font-size:9px;font-weight:900;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.04)}.airFullBtn:hover{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+  .airPager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:9px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}.airPagerInfo{font-size:10px;font-weight:800;color:#64748b}.airPagerBtns{display:flex;align-items:center;gap:7px}.airPageBtn{border:1px solid #d7e0e8;background:#f8fafc;color:#334155;border-radius:9px;padding:6px 10px;font-size:9px;font-weight:900;cursor:pointer}.airPageBtn:disabled{opacity:.4;cursor:default}.airPageNo{min-width:92px;text-align:center;font-size:10px;font-weight:950;color:#0f172a}
+  .airTrip{min-height:60px}.airStatusSub{font-size:9px;color:#64748b}.airLocationMain{font-size:11px}.airOperator{font-size:10px}.airPointText{font-size:11px}.airTripNo{font-size:11px}.airMotionText b{font-size:11px}
+  #ccPantallaAeropuertoMount:fullscreen{background:#eef2f7;padding:14px;overflow:auto}#ccPantallaAeropuertoMount:fullscreen .air{min-height:calc(100vh - 28px);border-radius:0}#ccPantallaAeropuertoMount:fullscreen .airTop h2{font-size:28px}#ccPantallaAeropuertoMount:fullscreen .airTrip{min-height:64px}#ccPantallaAeropuertoMount:fullscreen .airList{max-height:none}
+  @media(min-width:1400px){.air{padding:16px}.airTrip{padding:9px 11px}.airUnit{font-size:17px}.airLocationMain,.airPointText{font-size:11px}.airStatus{font-size:8px}.airLegend{font-size:8px}}
   </style>`);
 }
 
