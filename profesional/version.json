@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-55",
+  "version": "PRO-20261008-56",
   "mandatory": false,
-  "message": "Mapa profesional en Pantalla Aeropuerto con vista satelital por defecto, switch Mapa/Satélite, vista fija y marcadores tracto-remolque.",
-  "updated_at": "2026-10-08T10:18:00-07:00"
+  "message": "Cajas de renta ahora abre en vista completa y el mapa de unidades usa colores por cliente con marcadores tracto-remolque.",
+  "updated_at": "2026-10-08T11:21:00-07:00"
 }
