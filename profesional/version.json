@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-54",
+  "version": "PRO-20261008-55",
   "mandatory": false,
-  "message": "Mapa de unidades conserva centro y zoom durante refrescos automáticos de 60 segundos.",
+  "message": "Mapa profesional en Pantalla Aeropuerto con vista satelital por defecto, switch Mapa/Satélite, vista fija y marcadores tracto-remolque.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
