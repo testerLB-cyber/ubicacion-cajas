@@ -205,6 +205,63 @@ function css(){
     column-gap:7px
   }
   #ccPantallaAeropuertoMount:fullscreen .airRouteCell{padding:5px 7px}
+
+  /* Redistribución final v50 */
+  .airLegend,.airTrip{
+    width:100%;
+    box-sizing:border-box;
+    grid-template-columns:104px 112px minmax(150px,.95fr) 128px 148px 132px minmax(300px,1.65fr) 128px;
+    column-gap:9px
+  }
+  .airMotion{padding-right:10px;border-right:1px solid #dfeaf6}
+  .airStatusWrap{padding-left:2px}
+  .airClientName{font-size:12px;font-weight:950;color:#1d4ed8}
+  .airLocation{max-width:128px}
+  .airLocationMain{font-size:8.5px}
+  .airUnit,.airTrailer{font-size:16px}
+  .airTrailerPlate{font-size:7.5px}
+  .airRouteUnified{
+    min-width:0;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);
+    align-items:center;
+    gap:7px;
+    padding:6px 9px;
+    border:1px solid #dbe8f5;
+    border-radius:9px;
+    background:linear-gradient(90deg,#f7fbff,#f1f7fd)
+  }
+  .airRouteUnified .airPoint{min-width:0}
+  .airRouteUnified .airPointLabel{font-size:6.5px;color:#7890aa}
+  .airRouteUnified .airOrigin,.airRouteUnified .airDestination{
+    font-size:11px;
+    font-weight:900;
+    color:#17375e;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-top:2px
+  }
+  .airRouteConnector{
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:#e7f1fc;border:1px solid #cbdff5;color:#2563eb;
+    font-weight:950;font-size:12px
+  }
+  .airTime{padding-left:3px}
+  #ccPantallaAeropuertoMount:fullscreen .airLegend,
+  #ccPantallaAeropuertoMount:fullscreen .airTrip{
+    grid-template-columns:100px 106px minmax(145px,.95fr) 120px 140px 126px minmax(290px,1.7fr) 120px;
+    column-gap:8px
+  }
+  #ccPantallaAeropuertoMount:fullscreen .airRouteUnified{padding:5px 8px}
+  #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airOrigin,
+  #ccPantallaAeropuertoMount:fullscreen .airRouteUnified .airDestination{font-size:10.5px}
+  .air.rentOpen .airTrip{
+    grid-template-columns:82px 90px minmax(130px,1fr) 108px 116px 100px!important
+  }
+  .air.rentOpen .airTrip>div:nth-child(7),
+  .air.rentOpen .airTrip>div:nth-child(8){display:none}
   </style>`);
 }
 
@@ -280,8 +337,7 @@ function render(){
     <div class="airLocation"><div class="airLocationMain">${esc(x.ubicacion||x.ubicacionErp||'Sin ubicación')}</div><div class="airActions"><button class="airBtn" data-map="${idx}">Mapa</button>${geoCount?'<button class="airBtn geo" data-geo="'+idx+'">Recorrido '+geoCount+'</button>':''}</div></div>
     <div class="airVehicle"><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airOperator">${esc(x.operador||'Sin operador')}</div><div class="airTags"><span class="airTag">${esc(x.placa||'Sin placa')}</span></div></div>
     <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.placasRemolque?'<div class="airTrailerPlate">'+esc(x.placasRemolque)+'</div>':''}${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+(x.placasRemolque2?' · '+esc(x.placasRemolque2):'')+'</div>':''}</div>
-    <div class="airRouteCell airOriginCell"><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div>
-    <div class="airRouteCell airDestinationCell"><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div>
+    <div class="airRouteUnified"><div class="airPoint"><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div><div class="airRouteConnector">→</div><div class="airPoint"><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div></div>
     <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div><div class="airTimeMain">${esc(fmt(x.salida))}</div><div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
   </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`}).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   if(VIEW==='v2'&&arr.length){const ticker=$('airV2Ticker');if(ticker){ticker.style.display='block';ticker.textContent='CONTROL EN VIVO  ·  '+arr.slice(0,8).map(x=>(x.unidad||'Unidad')+' · '+(x.estatusViaje||'Sin estatus')+' · '+(x.ubicacion||x.ubicacionErp||'Sin ubicación')).join('     •     ')}}else if($('airV2Ticker'))$('airV2Ticker').style.display='none';
@@ -301,7 +357,7 @@ function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
   <div class="airFilters"><label>Cliente</label><select id="airClient" class="airSelect"><option value="">Todos los clientes</option></select><label class="airCheck"><input id="airOnlyTrips" type="checkbox" checked> Solo unidades con número de viaje</label><span id="airVisibleCount" class="airCount">0 unidades</span><button id="airRentToggle" class="airRentToggle" type="button" aria-expanded="false"><i class="fa-solid fa-boxes-stacked"></i> Cajas de renta</button></div>
   <div id="airV2Kpis" class="airV2Kpis" style="display:none"></div>
-  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Cliente</div><div>Ubicación</div><div>Unidad / Operador</div><div>Remolque</div><div>Origen</div><div>Destino</div><div>Viaje / ETA</div></div>
+  <div class="airSplit"><div class="airOperations"><div class="airLegend"><div>Movimiento</div><div>Estatus</div><div>Cliente</div><div>Ubicación</div><div>Unidad / Operador</div><div>Remolque</div><div>Ruta · Origen → Destino</div><div>Viaje / ETA</div></div>
   <div id="airList" class="airList"></div><div id="airPager" class="airPager"></div>
   <div id="airV2Ticker" class="airV2Ticker" style="display:none"></div></div><aside id="airRentPanel" class="airRentPanel" aria-label="Cajas en renta"></aside></div>
   <div class="airFoot">Refresco cada 60 segundos · se pausa cuando esta pantalla no está visible · mapa y recorrido se cargan solo al abrirlos.</div>
