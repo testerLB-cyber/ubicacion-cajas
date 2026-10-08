@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-34",
+  "version": "PRO-20261007-35",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto en modo lista con rumbo GPS y actualización automática optimizada."
+  "message": "Pantalla Aeropuerto calcula rumbo por movimiento GPS y muestra evento cada minuto."
 }
