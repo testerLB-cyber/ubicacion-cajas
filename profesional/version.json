@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-60",
+  "version": "PRO-20261008-61",
   "mandatory": false,
-  "message": "Marcadores de Pantalla Aeropuerto regresan a un estilo sobrio; remolque solo aparece cuando está asignado y muestra su número.",
+  "message": "Mapa de Pantalla Aeropuerto agrega listado lateral de unidades, búsqueda y panel de detalle operativo seleccionable.",
   "updated_at": "2026-10-08T12:21:00-07:00"
 }
