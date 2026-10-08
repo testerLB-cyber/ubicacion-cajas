@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-37",
+  "version": "PRO-20261007-38",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto tipo tablero con EstatusViaje, filtros de cliente/viaje y geocercas."
+  "message": "Pantalla Aeropuerto modernizada con mini mapa bajo demanda, origen/destino separados y recorrido de geocercas."
 }
