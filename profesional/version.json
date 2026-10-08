@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-33",
+  "version": "PRO-20261007-34",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto ahora muestra únicamente la información directa de la API de Software GM."
+  "message": "Pantalla Aeropuerto en modo lista con rumbo GPS y actualización automática optimizada."
 }
