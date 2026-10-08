@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-29",
+  "version": "PRO-20261007-30",
   "mandatory": false,
-  "message": "Nueva Pantalla Aeropuerto V1 en Operaciones."
+  "message": "Pantalla Aeropuerto ahora usa directamente la API GPS de Software GM."
 }
