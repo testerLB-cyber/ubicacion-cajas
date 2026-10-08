@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-52",
+  "version": "PRO-20261008-53",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto reordena Ubicación, compacta Cliente y agrega mapa general filtrado de unidades en tiempo real.",
+  "message": "Mapa de unidades de Pantalla Aeropuerto ahora abre en vista grande, incluye fullscreen e iconos de tractocamión por número económico.",
   "updated_at": "2026-10-08T10:18:00-07:00"
 }
