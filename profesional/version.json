@@ -1,5 +1,5 @@
 {
-  "version": "PRO-20261007-32",
+  "version": "PRO-20261007-33",
   "mandatory": false,
-  "message": "Corrección de conexión GPS de Pantalla Aeropuerto con Software GM."
+  "message": "Pantalla Aeropuerto ahora muestra únicamente la información directa de la API de Software GM."
 }
