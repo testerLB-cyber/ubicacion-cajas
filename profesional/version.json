@@ -1,5 +1,6 @@
 {
-  "version": "PRO-20261007-43",
+  "version": "2026.10.07-airport-v17-option2",
   "mandatory": false,
-  "message": "Pantalla Aeropuerto más compacta, con Estatus/Cliente en segunda columna y Remolque como columna independiente."
+  "message": "Pantalla Aeropuerto más compacta, con Estatus/Cliente en segunda columna y Remolque como columna independiente.",
+  "updated_at": "2026-10-07T20:00:00-07:00"
 }
