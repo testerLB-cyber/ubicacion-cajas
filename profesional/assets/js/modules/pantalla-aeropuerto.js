@@ -464,9 +464,9 @@ function css(){
   @media(max-width:1050px){#airRentLeaflet{height:490px!important}}
   @media(max-width:600px){#airRentLeaflet{height:410px!important}}
   .airRentTrailerMarker{background:transparent;border:0}
-  .airRentTrailerGlyph{display:flex;flex-direction:column;align-items:center;gap:0;filter:drop-shadow(0 2px 2px rgba(15,23,42,.25))}
-  .airRentTrailerGlyph svg{width:39px;height:23px;display:block;overflow:visible;background:none;border:0;border-radius:0;padding:0}
-  .airRentTrailerGlyph span{background:#fff;color:#17375e;font-weight:850;font-size:9px;line-height:1.15;border:1px solid #cbd5e1;border-radius:4px;padding:2px 4px;white-space:nowrap;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+  .airRentTrailerGlyph{display:flex;flex-direction:column;align-items:center;gap:1px;filter:drop-shadow(0 1px 1px rgba(15,23,42,.24));pointer-events:auto}
+  .airRentTrailerGlyph svg{width:25px;height:13px;display:block;overflow:visible;background:transparent;border:0;padding:0}
+  .airRentTrailerGlyph span{font:700 8px/1.1 system-ui,sans-serif;letter-spacing:0;color:#17375e;background:rgba(255,255,255,.95);border:1px solid #d5dee8;border-radius:3px;padding:1px 2px;white-space:nowrap;box-shadow:none}
 
   .airRentItems{max-height:none;margin-top:0;display:grid;gap:8px}
   .airRentItem{
@@ -1221,8 +1221,8 @@ async function loadRentals(){
         bounds.push([lat,lng]);
         const icon=L.divIcon({
           className:'airRentTrailerMarker',
-          html:'<div class="airRentTrailerGlyph"><svg viewBox="0 0 64 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="6" width="54" height="19" rx="2" fill="#fff" stroke="#17375e" stroke-width="2"/><path d="M7 11H53M7 16H53M7 21H53" stroke="#9db0c4" stroke-width="1"/><rect x="8" y="25" width="9" height="3" rx="1" fill="#64748b"/><rect x="45" y="25" width="9" height="3" rx="1" fill="#64748b"/><circle cx="15" cy="30" r="3.5" fill="#334155"/><circle cx="48" cy="30" r="3.5" fill="#334155"/><path d="M57 12h4v8h-4" fill="none" stroke="#17375e" stroke-width="2"/></svg><span>'+esc(x.numero||'Caja')+'</span></div>',
-          iconSize:[56,39],iconAnchor:[28,36],popupAnchor:[0,-33]
+          html:'<div class="airRentTrailerGlyph"><svg viewBox="0 0 32 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="1.5" y="3" width="27" height="10" rx="1" fill="#f8fafc" stroke="#263c51" stroke-width="1.5"/><path d="M5 6h20" stroke="#94a3b8" stroke-width=".8"/><path d="M4 13v2h3m16-2v2h3" fill="none" stroke="#475569" stroke-width="1.5"/><circle cx="7" cy="16" r="1.7" fill="#263c51"/><circle cx="24" cy="16" r="1.7" fill="#263c51"/></svg><span>'+esc(x.numero||'Caja')+'</span></div>',
+          iconSize:[38,27],iconAnchor:[19,25],popupAnchor:[0,-23]
         });
         L.marker([lat,lng],{icon,title:String(x.numero||'Semirremolque')}).addTo(RENT_MAP_INSTANCE).bindPopup('<strong>Semirremolque '+esc(x.numero||'—')+'</strong><br>'+esc(x.descripcion||'Caja en renta')+'<br>Último escaneo QR: '+esc(x.fechaHora?fmt(x.fechaHora):'Sin fecha'));
       });
