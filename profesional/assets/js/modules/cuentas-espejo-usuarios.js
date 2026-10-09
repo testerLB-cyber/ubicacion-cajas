@@ -21,13 +21,28 @@ function render(){
  const groups=[...new Set(rows.map(x=>x.cliente_id))];
  list.innerHTML=groups.length?groups.map(cid=>{
  const client=clients.find(c=>c.id===cid),items=rows.filter(x=>x.cliente_id===cid);
- return '<section style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff"><header style="background:#f1f5f9;padding:12px 14px;font-weight:800;color:#1e293b">'+esc(client?.nombre||cid)+' <span style="font-size:12px;font-weight:500;color:#64748b">('+items.length+')</span></header>'+items.map(x=>'<div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap"><div><strong>'+esc(x.nombre)+'</strong><div style="font-size:12px;color:#64748b">'+esc(x.email)+'</div><div style="font-size:11px;color:#64748b">'+[x.ver_aeropuerto?'Aeropuerto':'',x.ver_cajas_renta?'Cajas de renta':'',x.ver_mapa_unidades?'Mapa de unidades':''].filter(Boolean).join(' · ')+' · Inicio: '+esc(({aeropuerto:'Aeropuerto',cajas_renta:'Cajas de renta',mapa_unidades:'Mapa de unidades'})[x.vista_default]||x.vista_default)+'</div></div><span style="font-size:11px;padding:6px 9px;background:#fff7ed;border-radius:99px;color:#9a3412">'+(x.auth_user_id?(x.activo?'Activo':'Suspendido'):'Invitación pendiente')+'</span><div style="display:flex;gap:6px"><button type="button" class="cc-btn cc-btn-light" data-es-edit="'+esc(x.id)+'">Editar</button><button type="button" class="cc-btn cc-btn-primary" data-es-resend="'+esc(x.id)+'">Reenviar invitación</button></div></div>').join('')+'</section>'
+ return '<section style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff"><header style="background:#f1f5f9;padding:12px 14px;font-weight:800;color:#1e293b">'+esc(client?.nombre||cid)+' <span style="font-size:12px;font-weight:500;color:#64748b">('+items.length+')</span></header>'+items.map(x=>'<div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap"><div><strong>'+esc(x.nombre)+'</strong><div style="font-size:12px;color:#64748b">'+esc(x.email)+'</div><div style="font-size:11px;color:#64748b">'+[x.ver_aeropuerto?'Aeropuerto':'',x.ver_cajas_renta?'Cajas de renta':'',x.ver_mapa_unidades?'Mapa de unidades':''].filter(Boolean).join(' · ')+' · Inicio: '+esc(({aeropuerto:'Aeropuerto',cajas_renta:'Cajas de renta',mapa_unidades:'Mapa de unidades'})[x.vista_default]||x.vista_default)+'</div></div><span style="font-size:11px;padding:6px 9px;background:#fff7ed;border-radius:99px;color:#9a3412">'+(x.auth_user_id?(x.activo?'Activo':'Suspendido'):'Invitación pendiente')+'</span><div style="display:flex;gap:6px"><button type="button" class="cc-btn cc-btn-light" data-es-edit="'+esc(x.id)+'">Editar</button><button type="button" class="cc-btn cc-btn-primary" data-es-resend="'+esc(x.id)+'">Reenviar invitación</button><button type="button" class="cc-btn cc-btn-danger" data-es-delete="'+esc(x.id)+'">Eliminar</button></div></div>').join('')+'</section>'
  }).join(''):'<div style="padding:24px;text-align:center;color:#64748b">No hay usuarios registrados para este cliente.</div>';
  list.querySelectorAll('[data-es-edit]').forEach(btn=>btn.onclick=()=>editAccount(btn.dataset.esEdit));
  list.querySelectorAll('[data-es-resend]').forEach(btn=>btn.onclick=()=>resendAccount(btn.dataset.esResend,btn));
+ list.querySelectorAll('[data-es-delete]').forEach(btn=>btn.onclick=()=>deleteAccount(btn.dataset.esDelete,btn));
 
 }
 
+async function deleteAccount(id,button){
+ const account=accounts.find(x=>x.id===id);if(!account)return;
+ if(account.auth_user_id){alert('Esta cuenta ya tiene acceso de autenticación asociado. No se eliminará desde aquí para evitar dejar credenciales activas. Primero debe desactivarse mediante la administración de accesos.');return}
+ const client=clients.find(x=>x.id===account.cliente_id);
+ if(!confirm('¿Eliminar la cuenta espejo pendiente de '+account.nombre+' ('+account.email+') del cliente '+(client?.nombre||'')+'?\\n\\nEsta acción no se puede deshacer. No elimina al cliente ni sus operaciones.'))return;
+ button.disabled=true;
+ try{
+  const {data,error}=await db().from('cc_cuentas_espejo_usuarios').delete().eq('id',id).is('auth_user_id',null).select('id');
+  if(error)throw error;
+  if(!data?.length)throw new Error('No se eliminó ningún registro. Verifica tus permisos o si la cuenta ya fue activada.');
+  if(editingId===id){editingId=null;form(false)}
+  await refresh();
+ }catch(e){alert('Error al eliminar la cuenta: '+e.message);button.disabled=false}
+}
 function editAccount(id){
  const x=accounts.find(a=>a.id===id);if(!x)return;
  editingId=id;form(true);
