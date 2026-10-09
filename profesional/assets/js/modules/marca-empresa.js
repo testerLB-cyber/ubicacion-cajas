@@ -14,6 +14,24 @@ $('brandClientFile').onchange=async e=>{try{clientLogo=await image(e.target.file
 $('brandClientClear').onclick=()=>{clientLogo='';$('brandClientPreview').style.display='none'};
 $('brandClientSave').onclick=async()=>{if(!picker.value)return alert('Selecciona un cliente.');const btn=$('brandClientSave');btn.disabled=true;try{await call({action:'save_client',cliente_id:picker.value,logo:clientLogo});$('brandClientMsg').textContent='Logo del cliente guardado.'}catch(e){$('brandClientMsg').textContent=e.message}finally{btn.disabled=false}};
 }
+const originalClientForm=window.ccNuevoCliente;
+if(typeof originalClientForm==='function'){
+ window.ccNuevoCliente=function(id){
+   originalClientForm.apply(this,arguments);
+   const form=document.querySelector('#ccFormModal #ccForm');if(!form)return;
+   const section=document.createElement('div');
+   section.style.cssText='margin-top:16px;padding:14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px';
+   section.innerHTML='<strong style="display:block;margin-bottom:9px">Logo del cliente para Cuenta Espejo</strong><p style="font-size:12px;color:#64748b">Guarda primero el cliente si es nuevo. Si ya existe, puedes subir o cambiar su logotipo aquí mismo.</p><input id="brandClientInlineFile" type="file" accept="image/png,image/jpeg,image/webp" '+(id?'':'disabled')+'><div id="brandClientInlineMsg" style="font-size:12px;color:#2563eb;margin-top:7px"></div>';
+   form.insertBefore(section,form.lastElementChild);
+   if(!id)return;
+   const input=section.querySelector('input');
+   input.onchange=async e=>{
+    const msg=section.querySelector('#brandClientInlineMsg');msg.textContent='Guardando logo…';
+    try{const logo=await image(e.target.files[0]);await call({action:'save_client',cliente_id:id,logo});msg.textContent='Logo guardado correctamente.'}
+    catch(err){msg.textContent='Error: '+err.message}
+   };
+ };
+}
 let initialized=false;const original=window.ccConfigSection;window.ccConfigSection=function(section,btn){const out=original?.apply(this,arguments);if(section==='empresa'&&!initialized){initialized=true;init().catch(console.error)}return out};
 document.addEventListener('DOMContentLoaded',()=>read());
 })();
