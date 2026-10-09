@@ -798,6 +798,18 @@ function css(){
   .airFleetDetailValue{margin-top:2px;font-size:8.5px;font-weight:850;color:#334155;line-height:1.25;word-break:break-word}
   .airFleetMapCanvas{height:auto!important;min-height:0!important}
   @media(max-width:900px){.airFleetMapWorkspace{grid-template-columns:230px minmax(0,1fr)}.airFleetDetailGrid{grid-template-columns:1fr}}
+  /* v50: compacto movimiento, prioridad a llegada y duración */
+  .airTrip,.airLegend{grid-template-columns:70px 112px 172px minmax(138px,.82fr) 150px 132px minmax(315px,1.85fr) minmax(172px,1fr)!important}
+  .airMotion{gap:4px!important;padding-right:3px!important;min-width:0}
+  .airCompass{width:25px!important;min-width:25px!important;height:29px!important;font-size:14px!important}
+  .airMotionText{min-width:0;overflow:hidden}.airMotionText b{font-size:8px!important}.airMotionText span{font-size:7px!important;overflow-wrap:anywhere}
+  .airTime{min-width:0;overflow:visible;padding:3px 5px!important}
+  .airTimeMain{font-size:12px!important;font-weight:900!important;white-space:normal!important;overflow:visible!important;line-height:1.4!important;color:#0f172a!important}
+  .airTimeSub{font-size:11px!important;font-weight:850!important;white-space:normal!important;overflow:visible!important;line-height:1.4!important;color:#2563eb!important;margin-top:5px!important}
+  .airTripNo{font-size:11px!important;overflow-wrap:anywhere}
+  #ccPantallaAeropuertoMount:fullscreen .airTrip,#ccPantallaAeropuertoMount:fullscreen .airLegend{grid-template-columns:68px 110px 172px minmax(138px,.82fr) 150px 132px minmax(315px,1.85fr) minmax(172px,1fr)!important}
+  .air.rentOpen .airTrip{grid-template-columns:65px 88px minmax(140px,1fr) 108px 116px minmax(175px,1fr)!important}
+  @media(max-width:900px){.airTrip{grid-template-columns:1fr 1fr!important}.airLegend{display:none!important}.airTrip>div{display:block!important}}
   </style>`);
 }
 
@@ -1205,7 +1217,7 @@ function render(opts={}){
     <div class="airVehicle"><div class="airUnit">${esc(x.unidad||'—')}</div><div class="airOperator">${esc(x.operador||'Sin operador')}</div><div class="airTags"><span class="airTag">${esc(x.placa||'Sin placa')}</span></div></div>
     <div class="airVehicle"><div class="airPointLabel">Remolque</div><div class="airTrailer">${esc(x.remolque||'—')}</div>${x.placasRemolque?'<div class="airTrailerPlate">'+esc(x.placasRemolque)+'</div>':''}${x.remolque2?'<div class="airSub">'+esc(x.remolque2)+(x.placasRemolque2?' · '+esc(x.placasRemolque2):'')+'</div>':''}</div>
     <div class="airRouteUnified"><div class="airPoint"><div class="airPointLabel">Origen</div><div class="airOrigin">${esc(x.origen||'—')}</div></div><div class="airRouteConnector">→</div><div class="airPoint"><div class="airPointLabel">Destino</div><div class="airDestination">${esc(x.destino||'—')}</div></div></div>
-    <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div>${String(x.numeroViaje||'').trim()?(()=>{const t=AIR_TRIP_CLOCKS.get(tripClockKey(x));return '<div class="airTimeMain">Llegada: '+esc(t?fmt(t.llegada):'Pendiente')+'</div><div class="airTimeSub">Tiempo en servicio: '+esc(t?airportElapsed(t.llegada,t.fin):'Pendiente')+'</div>'})():''}<div class="airTimeSub">ETA ${esc(fmt(x.eta))}</div></div>
+    <div class="airTime"><div class="airTripNo">${esc(x.numeroViaje||'—')}</div>${String(x.numeroViaje||'').trim()?(()=>{const t=AIR_TRIP_CLOCKS.get(tripClockKey(x));return '<div class="airTimeMain">Llegada: '+esc(t?fmt(t.llegada):'Pendiente')+'</div><div class="airTimeSub">Tiempo en servicio: '+esc(t?airportElapsed(t.llegada,t.fin):'Pendiente')+'</div>'})():''}</div>
   </div><div id="airMap_${idx}" class="airMapRow" data-open="0"></div>`}).join(''):'<div class="airEmpty">No hay unidades que coincidan con los filtros.</div>';
   if(VIEW==='v2'&&arr.length){const ticker=$('airV2Ticker');if(ticker){ticker.style.display='block';ticker.textContent='CONTROL EN VIVO  ·  '+arr.slice(0,8).map(x=>(x.unidad||'Unidad')+' · '+(x.estatusViaje||'Sin estatus')+' · '+(x.ubicacion||x.ubicacionErp||'Sin ubicación')).join('     •     ')}}else if($('airV2Ticker'))$('airV2Ticker').style.display='none';
   const pager=$('airPager');
