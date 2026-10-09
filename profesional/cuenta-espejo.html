@@ -1,69 +1,33 @@
-<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Cuenta Espejo · Tráfico App</title><style>
-:root{font-family:Inter,system-ui,Arial,sans-serif;color:#0f172a;background:#eef2f7}*{box-sizing:border-box}body{margin:0}header{background:#101e36;color:white;padding:20px max(24px,calc((100vw - 1150px)/2));display:flex;justify-content:space-between;align-items:center;gap:15px}header strong{font-size:21px}button{cursor:pointer;border:0;border-radius:9px;padding:11px 16px;font-weight:700}button:disabled{opacity:.55;cursor:wait}main{max-width:1150px;margin:36px auto;padding:0 20px}.card{background:#fff;border:1px solid #dce3ed;border-radius:16px;padding:24px;box-shadow:0 6px 32px #142a4810}label{font-size:13px;font-weight:700;display:block;margin:13px 0}input{width:100%;border:1px solid #cbd5e1;padding:11px;border-radius:8px;margin-top:6px;font:inherit}.primary{background:#1d4ed8;color:#fff}.secondary{background:#e2e8f0;color:#0f172a}.muted{color:#64748b}.notice{border-radius:9px;background:#eff6ff;padding:12px;color:#1e40af;font-size:13px;margin:15px 0}.error{background:#fff1f2;color:#9f1239}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:16px;margin-top:18px}.unit{background:white;border:1px solid #dce3ed;border-radius:13px;padding:18px}.unit strong{font-size:18px}.unit small{display:block;margin:8px 0;color:#64748b}.unit a{color:#1d4ed8;font-weight:700;text-decoration:none}#login{max-width:420px;margin:auto}#dashboard{display:none}#security{display:none;margin-top:20px;max-width:450px}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.pill{font-size:12px;background:#e0f2fe;color:#075985;border-radius:40px;padding:6px 10px}@media(max-width:600px){header{padding:18px 22px}main{margin:22px auto}.card{padding:18px}}
-</style><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoU+5ZOQV2J3o=" crossorigin=""><style>#mirrorMap{height:410px;width:100%;border:1px solid #dce3ed;border-radius:14px;margin:16px 0;display:none}</style></head><body>
-<header><div><strong>Tráfico App</strong><div style="font-size:12px;color:#b9c8db;margin-top:3px">Portal privado · Cuenta Espejo</div></div><button type="button" class="secondary" id="logout" style="display:none">Cerrar sesión</button></header>
-<main><section class="card" id="login"><h2>Acceso a Cuenta Espejo</h2><p class="muted">Consulta únicamente los movimientos y unidades que tu empresa tiene autorizados.</p><p class="notice">¿Es tu primer ingreso? <strong>No necesitas contraseña todavía.</strong> Abre el botón de activación del correo de invitación. Se abrirá el formulario para crear tu contraseña. Si el enlace venció, solicita «Reenviar invitación» al administrador.</p><label>Correo electrónico<input id="email" autocomplete="email" type="email"></label><label>Contraseña<input id="password" autocomplete="current-password" type="password"></label><button id="enter" class="primary" type="button">Ingresar</button><div id="loginMsg" class="notice">Para activar una cuenta nueva utiliza el enlace recibido por correo.</div></section>
-<section id="dashboard"><div id="activationBanner" class="card" style="display:none;margin-bottom:16px;border-color:#93c5fd;background:#eff6ff"><h2 style="margin:0 0 8px">Activar cuenta · Crear contraseña</h2><p>Accediste desde tu enlace de invitación. Para terminar, establece tu contraseña en el formulario siguiente.</p></div><div class="card"><div class="row"><div><h2 style="margin:0" id="company">Cuenta Espejo</h2><p class="muted" style="margin:8px 0" id="updated"></p></div><div class="row"><span id="count" class="pill">0 unidades</span><button class="secondary" id="refresh">Actualizar</button><button class="secondary" id="passwordToggle">Mi contraseña</button></div></div><div id="viewTabs" class="row" style="justify-content:flex-start;margin-top:18px;gap:8px"></div><div id="feedback" class="notice">Cargando unidades autorizadas…</div><div id="mirrorMap"></div><div id="units" class="grid"></div><div id="rentalList" class="grid" style="display:none"></div></div>
-<div class="card" id="security"><h3 id="passwordHeading">Activar cuenta · Crear contraseña</h3><p class="muted">Mínimo 10 caracteres. No compartas tu contraseña.</p><label>Nueva contraseña<input type="password" id="newPassword" autocomplete="new-password"></label><button class="primary" id="savePassword">Guardar contraseña</button><div id="passwordMsg" role="status"></div></div></section></main>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="assets/js/vendor/supabase-sdk.js"></script>
-<script src="assets/js/config/supabase-config.js"></script>
-<script>
-(async()=>{
- const $=id=>document.getElementById(id);
- const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
- const sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:true,detectSessionInUrl:true,autoRefreshToken:true}});
- let openedFromLink=false;
- const show=(id,msg,bad=false)=>{const el=$(id);el.textContent=msg;el.className='notice'+(bad?' error':'')};
- async function data(){
-  show('feedback','Consultando datos autorizados…');$('units').innerHTML='';
-  const {data,error}=await sb.functions.invoke('cc-mirror-airport',{body:{}});
-  if(error||!data?.ok){show('feedback','No fue posible cargar los datos: '+(data?.error||error?.message||'Sin autorización'),true);return}
-  $('company').textContent=data.cliente;
-  $('updated').textContent='Actualizado: '+(data.updatedAt?new Date(data.updatedAt).toLocaleString('es-MX'):'sin hora disponible');
-  const vs=Array.isArray(data.vehicles)?data.vehicles:[], rentals=Array.isArray(data.rentals)?data.rentals:[], permissions=data.permissions||{};
-  const tabs=$('viewTabs');tabs.innerHTML='';
-  const views=[['aeropuerto','Pantalla Aeropuerto'],['cajas_renta','Cajas de renta'],['mapa_unidades','Mapa de unidades']].filter(([key])=>permissions[key]);
-  let map=null;
-  const choose=key=>{
-    tabs.querySelectorAll('button').forEach(b=>{b.className=b.dataset.view===key?'primary':'secondary'});
-    $('units').style.display=key==='cajas_renta'||key==='mapa_unidades'?'none':'grid';
-    $('mirrorMap').style.display=key==='mapa_unidades'?'block':'none';
-    if(key==='mapa_unidades'&&window.L){if(map){map.remove();map=null}map=L.map('mirrorMap',{scrollWheelZoom:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);const bounds=[];vs.forEach(x=>{if(x.latitud===null||x.longitud===null)return;const lat=Number(x.latitud),lng=Number(x.longitud);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;L.marker([lat,lng]).addTo(map).bindPopup(esc(x.unidad));bounds.push([lat,lng])});if(bounds.length)map.fitBounds(bounds,{padding:[28,28],maxZoom:13});else map.setView([29.09,-110.96],6);setTimeout(()=>map?.invalidateSize(),100)}
-    $('rentalList').style.display=key==='cajas_renta'?'grid':'none';
-    $('count').textContent=key==='cajas_renta'?rentals.length+' cajas en renta':vs.length+' unidades';
-    show('feedback',key==='cajas_renta'?'Ubicaciones reportadas mediante el escaneo QR.':key==='mapa_unidades'?'Ubicaciones GPS de las unidades asignadas a tu cliente.':'Movimientos y unidades asignados a tu cliente.');
-  };
-  for(const [key,title] of views){const btn=document.createElement('button');btn.textContent=title;btn.className='secondary';btn.dataset.view=key;btn.onclick=()=>choose(key);tabs.appendChild(btn)}
-  $('rentalList').innerHTML=rentals.length?rentals.map(x=>'<article class="unit"><strong>'+esc(x.caja)+'</strong><small>'+esc(x.descripcion||'Caja en renta')+'</small><p>'+esc(x.placas||'')+'</p><small>Último escaneo: '+esc(x.ubicacionAt?new Date(x.ubicacionAt).toLocaleString('es-MX'):'Sin ubicación reportada')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver ubicación ↗</a>':'')+'</article>').join(''):'<p class="muted">No hay cajas de renta activas registradas para este cliente.</p>';
-  $('units').innerHTML=vs.map(x=>'<article class="unit"><div class="row"><strong>'+esc(x.unidad)+'</strong><span class="pill">'+(x.asignacion==='VIAJE'?'Viaje':'Asignada')+'</span></div><small>'+esc(x.numeroViaje?'Viaje '+x.numeroViaje:'Sin viaje activo')+'</small><p>'+esc(x.ubicacion||'Ubicación no disponible')+'</p><small>'+esc(x.gpsAt||'')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
-  choose(views.some(([k])=>k===data.defaultView)?data.defaultView:(views[0]?.[0]||'aeropuerto'));
- }
- async function boot(){
-  const {data:{session}}=await sb.auth.getSession();
-  $('login').style.display=session?'none':'block';$('dashboard').style.display=session?'block':'none';$('logout').style.display=session?'inline-block':'none';
-  if(!session)return;
-  if(openedFromLink){$('activationBanner').style.display='block';$('security').style.display='block';$('security').scrollIntoView({block:'start'});}
-  const {data:activation,error}=await sb.functions.invoke('cc-mirror-invite',{body:{action:'activate'}});
-  if(error||!activation?.ok){show('feedback','Cuenta pendiente o acceso denegado: '+(activation?.error||error?.message||'No autorizado'),true);return}
-  await data();
-  if(openedFromLink||location.hash.includes('access_token')){$('security').style.display='block'}
- }
- $('enter').onclick=async()=>{const b=$('enter');b.disabled=true;show('loginMsg','Verificando acceso…');try{const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await boot()}catch(e){show('loginMsg',e.message||String(e),true)}finally{b.disabled=false}};
- $('logout').onclick=async()=>{await sb.auth.signOut();$('security').style.display='none';await boot()};
- $('refresh').onclick=data;$('passwordToggle').onclick=()=>{$('security').style.display=$('security').style.display==='none'?'block':'none'};
- $('savePassword').onclick=async()=>{const p=$('newPassword').value;if(p.length<10){show('passwordMsg','Usa al menos 10 caracteres.',true);return}const {error}=await sb.auth.updateUser({password:p});if(error)show('passwordMsg',error.message,true);else{show('passwordMsg','Contraseña configurada correctamente. Ya puedes iniciar sesión con tu correo y esta contraseña.');$('newPassword').value='';$('activationBanner').style.display='none';$('passwordHeading').textContent='Cambiar contraseña';openedFromLink=false}};
- try{
-   const params=new URLSearchParams(location.search);
-   const token=params.get('token_hash'),kind=params.get('type');
-   if(token){
-     const {error}=await sb.auth.verifyOtp({token_hash:token,type:kind==='magiclink'?'magiclink':'invite'});
-     history.replaceState(null,'',location.pathname);
-     if(error)throw Error('No se pudo activar la cuenta: '+error.message+'. Solicita un enlace nuevo desde Reenviar invitación.');
-     openedFromLink=true;
-   }
-   await boot();
- }catch(e){show('loginMsg','Error de autenticación: '+(e.message||e),true);$('login').style.display='block';$('dashboard').style.display='none'}
-})();
-</script></body></html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Cuenta Espejo · Pantalla Aeropuerto</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><style>body{margin:0;background:#f1f5f9;font:14px Arial,sans-serif;color:#0f172a}#top{padding:13px 22px;background:#0f172a;color:white;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}#top strong{font-size:16px}button{cursor:pointer}#login{max-width:440px;margin:45px auto;padding:26px;background:white;border-radius:15px;box-shadow:0 10px 32px #0001}#login input{display:block;width:100%;box-sizing:border-box;padding:11px;margin:8px 0 16px;border:1px solid #cbd5e1;border-radius:9px}#login button,.topbtn{padding:10px 16px;border:0;border-radius:9px;background:#2563eb;color:white;font-weight:700}#status{padding:9px 20px;background:#dbeafe;display:none}#ccPanelPantallaAeropuerto{display:none;padding:12px}#ccPanelPantallaAeropuerto.active{display:block}#airManualPanel,#airMirrorModal,#airCreateAccounts,#airMirrorOpen,#airDemorasBtn,#airHistoryBtn{display:none!important}</style></head><body><div id="top"><div><strong>TRÁFICO APP · PANTALLA AEROPUERTO</strong><span style="margin-left:14px;font-size:12px;color:#bfdbfe">CUENTA ESPEJO · SOLO CONSULTA</span></div><button class="topbtn" id="logout">Cerrar sesión</button></div><div id="status"></div><section id="login"><h2>Cuenta Espejo</h2><p>Inicia sesión con la cuenta externa del cliente para ver la misma Pantalla Aeropuerto.</p><label>Correo<input id="email" type="email" autocomplete="email"></label><label>Contraseña<input id="pass" type="password" autocomplete="current-password"></label><button id="signIn">Ingresar</button><p id="loginError" style="color:#b91c1c"></p><p style="font-size:12px;color:#64748b">La contraseña se crea desde el enlace de activación recibido por correo.</p></section><section id="activate" hidden style="max-width:480px;margin:32px auto;background:white;border:2px solid #93c5fd;border-radius:16px;padding:24px"><h2>Activar cuenta · Crear contraseña</h2><p>Establece tu contraseña para consultar la Pantalla Aeropuerto autorizada para tu cliente.</p><label>Contraseña nueva<input id="newPass" type="password" autocomplete="new-password" minlength="10"></label><label>Confirmar contraseña<input id="confirmPass" type="password" autocomplete="new-password" minlength="10"></label><button class="topbtn" id="savePass" type="button">Activar y entrar</button><p id="activateMsg" style="color:#475569">Mínimo 10 caracteres.</p></section><main id="ccPanelPantallaAeropuerto"><div id="ccPantallaAeropuertoMount"></div></main><script src="assets/js/vendor/supabase-sdk.js"></script><script src="assets/js/config/supabase-config.js"></script><script>window.CC_MIRROR_EXTERNAL=true;window.gmSupabase=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:true,detectSessionInUrl:false,autoRefreshToken:true}});window.CC_ACCESS={superAdmin:false,rol:'ESPEJO'};</script><script src="assets/js/modules/pantalla-aeropuerto.js?v=20261009-espejo-real-v3"></script><script>(async()=>{
+const $=id=>document.getElementById(id),sb=window.gmSupabase;
+let started=false,invite=false;
+async function boot(){
+ const {data:{session}}=await sb.auth.getSession();
+ $('login').style.display=session?'none':'block';
+ $('logout').style.display=session?'inline-block':'none';
+ if(!session){$('activate').hidden=true;return}
+ const {data,error}=await sb.functions.invoke('cc-mirror-airport',{body:{}});
+ if(error||!data?.ok||!data.permissions?.aeropuerto){$('login').style.display='block';$('activate').hidden=true;$('loginError').textContent='Sin autorización para Pantalla Aeropuerto: '+(data?.error||error?.message||'');return}
+ $('activate').hidden=!invite;
+ if(invite){$('ccPanelPantallaAeropuerto').classList.remove('active');return}
+ if(!started){started=true;window.ccMirrorAirportStart?.()}
+ else $('ccPanelPantallaAeropuerto').classList.add('active');
+}
+$('signIn').onclick=async()=>{const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});if(error){$('loginError').textContent=error.message;return}invite=false;await boot()};
+$('savePass').onclick=async()=>{
+ const a=$('newPass').value,b=$('confirmPass').value;
+ if(a.length<10||a!==b){$('activateMsg').textContent=a.length<10?'La contraseña necesita al menos 10 caracteres.':'Las contraseñas no coinciden.';return}
+ $('savePass').disabled=true;
+ try{const {error}=await sb.auth.updateUser({password:a});if(error)throw error;
+ const {data,error:activateError}=await sb.functions.invoke('cc-mirror-invite',{body:{action:'activate'}});
+ if(activateError||!data?.ok)throw Error(data?.error||activateError?.message||'No se pudo activar');
+ invite=false;$('newPass').value='';$('confirmPass').value='';await boot();
+ }catch(e){$('activateMsg').textContent='Error al activar: '+(e.message||e)}
+ finally{$('savePass').disabled=false}
+};
+$('logout').onclick=async()=>{await sb.auth.signOut();location.replace(location.pathname)};
+try{const q=new URLSearchParams(location.search),token=q.get('token_hash'),type=q.get('type');
+ if(token){const {error}=await sb.auth.verifyOtp({token_hash:token,type:type==='invite'?'invite':'magiclink'});history.replaceState(null,'',location.pathname);if(error)throw Error('El enlace caducó o no es válido. Solicita Reenviar invitación. '+error.message);invite=true}
+ await boot();
+}catch(e){$('login').style.display='block';$('loginError').textContent=e.message||String(e)}
+})().catch(e=>{document.getElementById('loginError').textContent=e.message});</script></body></html>
