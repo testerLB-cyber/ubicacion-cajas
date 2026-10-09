@@ -948,7 +948,7 @@ function airportBaseLayer(mode){
     const url=satellite
       ?'https://api.maptiler.com/maps/satellite-v4/256/{z}/{x}/{y}.jpg?key='+encodeURIComponent(key)
       :'https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key='+encodeURIComponent(key);
-    return L.tileLayer(url,{
+    const layer=L.tileLayer(url,{
       maxZoom:19,maxNativeZoom:satellite?18:19,
       tileSize:256,
       zoomOffset:0,
@@ -956,6 +956,19 @@ function airportBaseLayer(mode){
       attribution:'&copy; MapTiler &copy; OpenStreetMap contributors',
       referrerPolicy:'strict-origin-when-cross-origin'
     });
+    layer.on('tileerror',()=>{
+      if(!satellite || layer._warned || !layer._map)return;
+      layer._warned=true;
+      const notice=L.control({position:'topright'});
+      notice.onAdd=()=>{
+        const el=L.DomUtil.create('div');
+        el.style.cssText='background:white;color:#9a3412;border:1px solid #fdba74;border-radius:8px;padding:12px;max-width:280px;font:bold 12px Arial';
+        el.textContent='MapTiler Satélite no respondió. Verifica dominio autorizado y clave API.';
+        return el;
+      };
+      notice.addTo(layer._map);
+    });
+    return layer;
   }
   return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,attribution:'&copy; OpenStreetMap contributors',
