@@ -827,13 +827,15 @@ function statusClass(s){const v=String(s||'').toUpperCase();if(/TRANS|RUTA|ACTIV
 function selectedClient(){return $('airClient')?.value||''}
 function onlyTrips(){return $('airOnlyTrips')?.checked!==false}
 
+function airClientKey(x){return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ')}
+function airCatalogName(x){const c=AIR_CLIENTS.find(a=>airClientKey(a.nombre)===airClientKey(x));return c?c.nombre:String(x||'').trim()}
 function airUnitKey(x){return String(x||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function airManualActive(a){const n=Date.now();return a.estado==='ACTIVA'&&Date.parse(a.inicio)<=n&&n<Date.parse(a.fin)}
 function airApplyManual(vehicles){
  const active=AIR_MANUAL.filter(airManualActive);
  return vehicles.map(v=>{
   const match=active.filter(a=>airUnitKey(a.unidad)===airUnitKey(v.unidad)).sort((a,b)=>Date.parse(b.inicio)-Date.parse(a.inicio))[0];
-  if(!match||String(v.numeroViaje||'').trim())return v;
+  if(!match||String(v.numeroViaje||'').trim())return {...v,cliente:airCatalogName(v.cliente)};
   return {...v,cliente:match.cliente_nombre,airManual:true,estatusViaje:'Asignación manual'};
  });
 }
@@ -844,7 +846,7 @@ async function airReadManual(){
 }
 async function airReadClients(){
  const {data,error}=await sb().from('cc_clientes').select('id,nombre,estatus').eq('estatus','ACTIVO').order('nombre').limit(300);
- if(error)throw error;AIR_CLIENTS=data||[];
+ if(error)throw error;AIR_CLIENTS=data||[];if(LAST.length){LAST=LAST.map(x=>({...x,cliente:airCatalogName(x.cliente)}));updateClientFilter();render()};
 }
 function airManageRender(){
  const panel=$('airManualPanel');if(!panel)return;
@@ -852,7 +854,7 @@ function airManageRender(){
  if(!airIsSuperAdmin())return;
  const unit=$('airManualUnit'),client=$('airManualClient');
  if(unit){const old=unit.value;const units=[...new Set(LAST.map(x=>String(x.unidad||'').trim()).filter(Boolean))].sort();unit.innerHTML='<option value="">Seleccionar unidad GPS</option>'+units.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(units.includes(old))unit.value=old}
- if(client&&AIR_CLIENTS.length){const old=client.value;client.innerHTML='<option value="">Seleccionar cliente</option>'+AIR_CLIENTS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');if(AIR_CLIENTS.some(x=>x.id===old))client.value=old}
+ if(client&&AIR_CLIENTS.length){const old=client.value;const gpsClients=new Set(LAST.filter(x=>String(x.numeroViaje||'').trim()).map(x=>airClientKey(x.cliente)).filter(Boolean));const pending=AIR_CLIENTS.filter(x=>!gpsClients.has(airClientKey(x.nombre))),present=AIR_CLIENTS.filter(x=>gpsClients.has(airClientKey(x.nombre)));const options=arr=>arr.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');client.innerHTML='<option value="">Seleccionar cliente</option>'+(pending.length?'<optgroup label="Pendientes · sin viaje GPS">'+options(pending)+'</optgroup>':'')+(present.length?'<optgroup label="Con viaje GPS · disponibles para otras unidades">'+options(present)+'</optgroup>':'');if(AIR_CLIENTS.some(x=>x.id===old))client.value=old}
  const body=$('airManualHistory');if(body)body.innerHTML=AIR_MANUAL.length?AIR_MANUAL.slice(0,50).map(a=>'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding:8px 0;font-size:11px"><b>'+esc(a.unidad)+'</b><span>'+esc(a.cliente_nombre)+'</span><span style="color:#64748b">'+esc(new Date(a.inicio).toLocaleString('es-MX',{timeZone:tz}))+' → '+esc(new Date(a.fin).toLocaleString('es-MX',{timeZone:tz}))+'</span><span>'+esc(a.estado==='FINALIZADA'?'Finalizada':Date.parse(a.fin)<=Date.now()?'Vencida':'Vigente')+'</span>'+(a.estado==='ACTIVA'?'<button type="button" class="airBtn" data-manual-end="'+esc(a.id)+'">Finalizar</button>':'')+'</div>').join(''):'<span style="font-size:11px;color:#64748b">Sin asignaciones registradas.</span>';
  body?.querySelectorAll('[data-manual-end]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Finalizar esta asignación manual?'))return;try{const {error}=await sb().from('gm_airport_manual_assignments').update({estado:'FINALIZADA',updated_at:new Date().toISOString()}).eq('id',b.dataset.manualEnd);if(error)throw error;await airReadManual();airManageRender();load()}catch(e){alert('No se pudo finalizar: '+e.message)}});
 }
@@ -870,7 +872,7 @@ async function airManualSave(){
 }
 
 function filtered(){const c=selectedClient();return LAST.filter(x=>(!c||String(x.cliente||'')===c)&&(!onlyTrips()||String(x.numeroViaje||'').trim()||x.airManual))}
-function updateClientFilter(){const sel=$('airClient');if(!sel)return;const current=sel.value,clients=[...new Set(LAST.map(x=>String(x.cliente||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));sel.innerHTML='<option value="">Todos los clientes</option>'+clients.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(clients.includes(current))sel.value=current}
+function updateClientFilter(){const sel=$('airClient');if(!sel)return;const current=sel.value,seen=new Map();LAST.forEach(x=>{const name=airCatalogName(x.cliente),key=airClientKey(name);if(key&&!seen.has(key))seen.set(key,name)});const clients=[...seen.values()].sort((a,b)=>a.localeCompare(b,'es'));sel.innerHTML='<option value="">Todos los clientes</option>'+clients.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(clients.includes(current))sel.value=current}
 function showGeos(index){const x=LAST[index];if(!x)return;$('airGeoTitle').textContent='Recorrido por geocercas · '+(x.unidad||'Unidad');const arr=(Array.isArray(x.geocercas)?x.geocercas:[]).slice().sort((a,b)=>(new Date(a["Fecha Hora"]||a.fechaHora||a.fecha||0).getTime()||0)-(new Date(b["Fecha Hora"]||b.fechaHora||b.fecha||0).getTime()||0));$('airGeoList').innerHTML=arr.length?'<div class="airGeoTimeline">'+arr.map(g=>`<div class="airGeoItem"><span class="airGeoDot"></span><div class="airGeoEvent">${esc(g.Evento||g.evento||'Evento')}</div><div class="airGeoName">${esc(g.Geocerca||g.geocerca||'—')}</div><div class="airGeoTime">${esc(fmt(g["Fecha Hora"]||g.fechaHora||g.fecha))}</div></div>`).join('')+'</div>':'<div class="airEmpty">La API no devolvió historial de geocercas para esta unidad.</div>';$('airGeoModal').classList.add('on')}
 function mapEmbedUrl(lat,lng){const la=Number(lat),lo=Number(lng);if(!Number.isFinite(la)||!Number.isFinite(lo))return'';const dLat=.012,dLng=.018;return'https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent((lo-dLng)+','+(la-dLat)+','+(lo+dLng)+','+(la+dLat))+'&layer=mapnik&marker='+encodeURIComponent(la+','+lo)}
 function toggleMap(index){const row=$('airMap_'+index),x=LAST[index];if(!row||!x)return;if(row.dataset.open==='1'){row.innerHTML='';row.dataset.open='0';return}const src=mapEmbedUrl(x.latitud,x.longitud);row.dataset.open='1';row.innerHTML=src?`<div class="airMiniMapWrap"><div style="flex:1"><iframe class="airMiniMap" loading="lazy" src="${esc(src)}"></iframe></div><div class="airMapMeta"><b>${esc(x.unidad||'Unidad')}</b><span>${esc(x.ubicacion||x.ubicacionErp||'Ubicación GPS')}</span><span>${esc(x.latitud+', '+x.longitud)}</span><span>Actualización GPS: ${esc(fmt(x.gpsAt))}</span><button class="airMapClose" data-map-close="${index}">Cerrar mapa</button></div></div>`:'<div class="airEmpty">Esta unidad no trae coordenadas válidas.</div>';row.querySelector('[data-map-close]')?.addEventListener('click',()=>toggleMap(index))}
