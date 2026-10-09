@@ -946,16 +946,17 @@ function airportBaseLayer(mode){
   if(key){
     const satellite=mode==='SATELITE';
     const url=satellite
-      ?'https://api.maptiler.com/tiles/satellite-v4/{z}/{x}/{y}.jpg?key='+encodeURIComponent(key)
+      ?'https://api.maptiler.com/maps/satellite-v4/{z}/{x}/{y}.png?key='+encodeURIComponent(key)
       :'https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key='+encodeURIComponent(key);
-    const layer=L.tileLayer(url,{
-      maxZoom:19,maxNativeZoom:18,
-      attribution:satellite?'&copy; MapTiler':'&copy; MapTiler &copy; OpenStreetMap contributors',
+    return L.tileLayer(url,{
+      maxZoom:19,maxNativeZoom:satellite?18:19,
+      tileSize:satellite?512:256,
+      zoomOffset:satellite?-1:0,
+      minZoom:1,
+      attribution:'&copy; MapTiler &copy; OpenStreetMap contributors',
       referrerPolicy:'strict-origin-when-cross-origin'
     });
-    return layer;
   }
-  // Sin clave, no usar Esri; fallback de calles para evitar blanco.
   return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,attribution:'&copy; OpenStreetMap contributors',
     referrerPolicy:'strict-origin-when-cross-origin'
