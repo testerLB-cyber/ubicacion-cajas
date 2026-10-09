@@ -947,10 +947,18 @@ function airportBaseLayer(mode){
   const labelsUrl='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
   const opts={maxZoom:19,maxNativeZoom:16,attribution:'Tiles &copy; Esri'};
   if(mode==='SATELITE')return L.tileLayer(satUrl,{maxZoom:19,attribution:'Tiles &copy; Esri'});
-  return L.layerGroup([
-    L.tileLayer(streetUrl,opts),
-    L.tileLayer(labelsUrl,{...opts,attribution:''})
-  ]);
+  // MapTiler usa cartografía OpenStreetMap y requiere clave restringida al dominio.
+  // Sin clave se conserva Esri para evitar dejar el mapa operativo en blanco.
+  const mapTilerKey=String(window.CC_MAPTILER_KEY||'').trim();
+  if(mapTilerKey){
+    const url='https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key='+encodeURIComponent(mapTilerKey);
+    const fallback=L.layerGroup([L.tileLayer(streetUrl,opts),L.tileLayer(labelsUrl,{...opts,attribution:''})]);
+    const modern=L.tileLayer(url,{maxZoom:19,maxNativeZoom:18,attribution:'&copy; MapTiler &copy; OpenStreetMap contributors'});
+    let failed=false;
+    modern.on('tileerror',()=>{if(failed)return;failed=true;try{const map=modern._map;if(map&&map.hasLayer(modern)){map.removeLayer(modern);fallback.addTo(map);fallback.bringToBack?.()}}catch(e){console.warn('MAPTILER_FALLBACK',e)}});
+    return modern;
+  }
+  return L.layerGroup([L.tileLayer(streetUrl,opts),L.tileLayer(labelsUrl,{...opts,attribution:''})]);
 }
 function syncAirportMapControls(){
   $('airMapSatellite')?.classList.toggle('on',AIR_MAP_MODE==='SATELITE');
