@@ -78,7 +78,7 @@
     $('esCCancel').onclick=()=>{box.style.display='none'};
     $('esCSave').onclick=async()=>{
      const nombre=$('esCN').value.trim(),email=$('esCE').value.trim().toLowerCase(),va=$('esCA').checked,vr=$('esCR').checked,vm=$('esCM').checked,def=$('esCD').value;
-     if(!nombre||!/^\\S+@\\S+\\.\\S+$/.test(email)||!(va||vr||vm)||!((def==='aeropuerto'&&va)||(def==='cajas_renta'&&vr)||(def==='mapa_unidades'&&vm))){$('esCMsg').textContent='Revisa correo, nombre, permisos y vista inicial.';return}
+     if(!nombre||!/^\S+@\S+\.\S+$/.test(email)||!(va||vr||vm)||!((def==='aeropuerto'&&va)||(def==='cajas_renta'&&vr)||(def==='mapa_unidades'&&vm))){$('esCMsg').textContent='Revisa correo, nombre, permisos y vista inicial.';return}
      $('esCSave').disabled=true;
      const {error}=await db().from('cc_cuentas_espejo_usuarios').insert({nombre,email,cliente_id:id,ver_aeropuerto:va,ver_cajas_renta:vr,ver_mapa_unidades:vm,vista_default:def,activo:false});
      if(error){$('esCSave').disabled=false;$('esCMsg').textContent='No se guardó: '+error.message;return}
@@ -92,8 +92,7 @@
  if(typeof oldNewCliente==='function')window.ccNuevoCliente=function(id){const value=oldNewCliente.apply(this,arguments);enhanceClientModal(id);return value};
  function showIfAdmin(){
   setup();const panel=document.getElementById('esUsuariosPanel');if(!panel)return;
-  if(!isAdmin()){panel.style.display='none';return}
-  if(panel.style.display==='none'){panel.style.display='block';refresh().catch(e=>{document.getElementById('esLista').innerHTML='<tr><td colspan="5">'+esc(e.message)+'</td></tr>'})}
+  panel.style.display='none';return;
  }
  document.addEventListener('DOMContentLoaded',()=>{setup();showIfAdmin();new MutationObserver(()=>showIfAdmin()).observe(document.body,{attributes:true,attributeFilter:['class']});});
  const old=window.ccApplyAccess;
