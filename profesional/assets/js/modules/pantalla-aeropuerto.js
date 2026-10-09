@@ -849,7 +849,7 @@ async function airReadManual(){
  AIR_MANUAL=Array.isArray(data)?data:[];
 }
 async function airReadClients(){
- const {data,error}=await sb().from('cc_clientes').select('id,nombre,estatus').order('nombre').limit(300);
+ const {data,error}=await sb().from('cc_clientes').select('id,nombre,estatus').eq('estatus','ACTIVO').order('nombre').limit(300);
  if(error)throw error;AIR_CLIENTS=Array.isArray(data)?data:[];updateClientFilter();airManageRender();if(LAST.length)render();
 }
 
