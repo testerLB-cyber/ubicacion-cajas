@@ -1171,41 +1171,7 @@ function toggleAirportMap(){
 }
 async function loadRentals(){
  if(!RENT_OPEN||RENT_LOADING)return;
- if(AIR_EXTERNAL){
-  const panel=$('airRentPanel');if(!panel)return;
-  const close=async()=>{if(document.fullscreenElement===panel){try{await document.exitFullscreen()}catch(_){}}if(RENT_OPEN)toggleRentals()};
-  const actions='<div class="airRentFullActions"><button type="button" class="airRentFullBtn airRentBack" id="airRentBack"><i class="fa-solid fa-arrow-left"></i> Regresar</button><button type="button" class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div>';
-  const header=(subtitle)=>'<div class="airRentFullHead"><div><strong>Cajas en renta · '+esc(selectedClient()||'Cliente')+'</strong><span>'+esc(subtitle)+'</span></div>'+actions+'</div>';
-  const bind=()=>{$('airRentBack')?.addEventListener('click',close);$('airRentClose')?.addEventListener('click',close)};
-  RENT_LOADING=true;panel.innerHTML=header('Última ubicación registrada mediante QR')+'<div class="airRentBody"><div class="airRentEmpty">Consultando cajas autorizadas…</div></div>';bind();
-  try{
-   const {data,error}=await sb().functions.invoke('cc-mirror-airport',{body:{}});
-   if(error)throw error;
-   if(!data?.ok)throw Error(data?.error||'Sin autorización');
-   if(!data.permissions?.cajas_renta){panel.innerHTML=header('Acceso restringido')+'<div class="airRentBody"><div class="airRentEmpty">Esta cuenta no tiene habilitado el permiso Cajas en renta. Solicita al administrador activarlo.</div></div>';bind();return}
-   const rentals=Array.isArray(data.rentals)?data.rentals:[];
-   const located=rentals.filter(x=>x.latitud!==null&&x.longitud!==null&&x.latitud!==''&&x.longitud!==''&&Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud)));
-   panel.innerHTML=header('Rentas activas y última ubicación QR · Solo consulta')+'<div class="airRentBody">'+
-    '<div class="airRentStats"><span><b>'+rentals.length+'</b>Cajas activas</span><span><b>'+located.length+'</b>Con ubicación QR</span><span><b>'+(rentals.length-located.length)+'</b>Sin ubicación</span></div>'+
-    (rentals.length?'<div class="airRentContentGrid"><div class="airRentMap" id="airRentMap"></div><div class="airRentItems">'+rentals.map(x=>'<div class="airRentItem"><strong>'+esc(x.caja||'—')+'</strong><div class="airRentItemMeta">'+esc(x.descripcion||'Caja')+'<br>'+(x.ubicacionAt?'Último escaneo: '+esc(fmt(x.ubicacionAt)):'Sin escaneo registrado')+'</div><div><span class="airRentPlate">'+esc(x.placas||'Sin placas')+'</span></div>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat='+encodeURIComponent(x.latitud)+'&mlon='+encodeURIComponent(x.longitud)+'#map=15/'+encodeURIComponent(x.latitud)+'/'+encodeURIComponent(x.longitud)+'">Ver ubicación ↗</a>':'<span class="airRentItemMeta">Sin ubicación</span>')+'</div>').join('')+'</div></div>':'<div class="airRentEmpty">Este cliente no tiene cajas con renta activa.</div>')+
-    '</div>';bind();
-   const map=$('airRentMap');if(map){
-    if(located.length){
-     map.innerHTML='<div id="airRentLeaflet" style="height:430px;width:100%;position:relative"></div><small>Ubicaciones por último escaneo QR · No representan GPS en vivo.</small>';
-     try{await ensureAirportLeaflet();if(!RENT_OPEN||!$('airRentLeaflet'))return;
-      if(RENT_MAP_INSTANCE){RENT_MAP_INSTANCE.remove();RENT_MAP_INSTANCE=null}
-      RENT_MAP_INSTANCE=L.map('airRentLeaflet',{zoomControl:true,scrollWheelZoom:false});
-      airportBaseLayer('SATELITE').addTo(RENT_MAP_INSTANCE);
-      const bounds=[];for(const x of located){const lat=Number(x.latitud),lng=Number(x.longitud);bounds.push([lat,lng]);L.marker([lat,lng],{title:String(x.caja||'Caja')}).addTo(RENT_MAP_INSTANCE).bindPopup('<b>'+esc(x.caja||'Caja')+'</b><br>Último escaneo: '+esc(x.ubicacionAt?fmt(x.ubicacionAt):'Sin fecha'))}
-      if(bounds.length>1)RENT_MAP_INSTANCE.fitBounds(bounds,{padding:[45,45],maxZoom:16});else RENT_MAP_INSTANCE.setView(bounds[0],13);
-      requestAnimationFrame(()=>RENT_MAP_INSTANCE?.invalidateSize());
-     }catch(e){map.innerHTML='<div class="airRentEmpty">Mapa no disponible: '+esc(e.message||e)+'</div>'}
-    }else map.innerHTML='<div class="airRentEmpty">Las cajas todavía no tienen ubicación QR registrada.</div>';
-   }
-  }catch(e){panel.innerHTML=header('No se pudieron cargar las cajas')+'<div class="airRentBody"><div class="airRentEmpty">'+esc(e.message||e)+'</div></div>';bind()}
-  finally{RENT_LOADING=false}
-  return;
- }
+
  if(RENT_MAP_INSTANCE){try{RENT_MAP_INSTANCE.remove()}catch(_){}RENT_MAP_INSTANCE=null}
  const client=selectedClient(),panel=$('airRentPanel');
  if(!panel)return;
@@ -1213,7 +1179,18 @@ async function loadRentals(){
  RENT_LOADING=true;panel.innerHTML='<div class="airRentFullHead"><div><strong>Cajas de renta</strong><span>'+esc(client)+' · rentas activas y última ubicación QR</span></div><div class="airRentFullActions"><button class="airRentFullBtn airRentBack" id="airRentBack"><i class="fa-solid fa-arrow-left"></i> Regresar</button><button class="airRentFullBtn" id="airRentFullscreen"><i class="fa-solid fa-expand"></i> Pantalla completa</button><button class="airRentFullBtn" id="airRentClose"><i class="fa-solid fa-xmark"></i> Cerrar</button></div></div><div class="airRentBody"><div class="airRentEmpty">Consultando rentas y últimos escaneos…</div></div>';$('airRentBack')?.addEventListener('click',async()=>{const p=$('airRentPanel');if(document.fullscreenElement===p){try{await document.exitFullscreen()}catch(_){}}if(RENT_OPEN)toggleRentals()});$('airRentClose')?.addEventListener('click',async()=>{const p=$('airRentPanel');if(document.fullscreenElement===p){try{await document.exitFullscreen()}catch(_){}}if(RENT_OPEN)toggleRentals()});$('airRentFullscreen')?.addEventListener('click',async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else await panel.requestFullscreen?.()}catch(_){}});
  try{
   const db=sb();if(!db)throw Error('Sin conexión con Supabase');
-  const {data,error}=await db.rpc('cc_airport_rental_boxes',{p_cliente_nombre:client});
+  let data,error;
+  if(AIR_EXTERNAL){
+   const r=await db.functions.invoke('cc-mirror-airport',{body:{}});
+   error=r.error;
+   if(!error&&r.data?.ok){
+    if(!r.data.permissions?.cajas_renta)throw Error('Esta cuenta no tiene habilitado el permiso Cajas en renta.');
+    data={ok:true,match:'EXACT',cajas:(Array.isArray(r.data.rentals)?r.data.rentals:[]).map(x=>({
+      numero:x.caja,descripcion:x.descripcion,fechaHora:x.ubicacionAt,placasMx:x.placas,placasUsa:'',
+      latitud:x.latitud,longitud:x.longitud
+    }))};
+   }else if(!error)throw Error(r.data?.error||'Cuenta no autorizada');
+  }else{const r=await db.rpc('cc_airport_rental_boxes',{p_cliente_nombre:client});data=r.data;error=r.error;}
   if(error)throw error;
   if(!data?.ok)throw Error(data?.error||'No fue posible consultar las cajas de renta');
   if(data.match==='NONE'){panel.innerHTML='<div class="airRentEmpty">No se encontró una equivalencia exacta del cliente en el catálogo.</div>';return}
