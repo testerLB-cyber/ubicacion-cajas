@@ -944,11 +944,13 @@ function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)retu
 function airportBaseLayer(mode){
   const satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   const streetUrl='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
-  return L.tileLayer(mode==='SATELITE'?satUrl:streetUrl,{
-    maxZoom:19,
-    maxNativeZoom:mode==='SATELITE'?19:16,
-    attribution:'Tiles &copy; Esri'
-  });
+  const labelsUrl='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
+  const opts={maxZoom:19,maxNativeZoom:16,attribution:'Tiles &copy; Esri'};
+  if(mode==='SATELITE')return L.tileLayer(satUrl,{maxZoom:19,attribution:'Tiles &copy; Esri'});
+  return L.layerGroup([
+    L.tileLayer(streetUrl,opts),
+    L.tileLayer(labelsUrl,{...opts,attribution:''})
+  ]);
 }
 function syncAirportMapControls(){
   $('airMapSatellite')?.classList.toggle('on',AIR_MAP_MODE==='SATELITE');
