@@ -1,47 +1,59 @@
-/* Tráfico App · Configuración de cuentas espejo externas. Altas en borrador hasta activar invitación segura. */
+/* Tráfico App · Administración de usuarios externos por cliente. Sin invitaciones hasta habilitar acceso seguro. */
 (function(){
- const root=()=>document.getElementById('ccConfigClientes');
- const db=()=>window.gmSupabase;
- const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','&quot;':'&quot;',"'":'&#39;'}[c]));
- const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='ADMIN';
- let clients=[],users=[];
- function enhanceClientModal(id){
-  const modal=document.getElementById('ccFormModal'),form=modal?.querySelector('#ccForm');if(!form)return;
-  document.getElementById('esUsuariosPanel')?.remove();
-  modal.style.setProperty('position','fixed','important');modal.style.setProperty('inset','0','important');modal.style.setProperty('z-index','2147483000','important');modal.style.setProperty('display','flex','important');modal.style.setProperty('align-items','center','important');modal.style.setProperty('justify-content','center','important');modal.style.setProperty('background','rgba(15,23,42,.72)','important');
-  const card=modal.firstElementChild;if(card){card.style.width='min(900px,97vw)';card.style.maxHeight='92dvh';card.style.overflowY='auto';card.style.borderRadius='20px';card.style.boxShadow='0 28px 90px rgba(15,23,42,.28)';}
-  const header=card?.firstElementChild;if(header){header.style.padding='20px 24px';header.style.background='linear-gradient(120deg,#0f172a,#1d4ed8)';header.style.alignItems='center'}
-  form.style.padding='22px 24px';
-  const section=document.createElement('section');section.style='margin-top:20px;border:1px solid #dbeafe;border-radius:14px;background:#f8fbff;overflow:hidden';
-  section.innerHTML='<div style="padding:15px 17px;background:#eff6ff;display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b style="font-size:14px;color:#1e3a8a">Usuarios de Cuenta Espejo</b><div style="font-size:12px;color:#64748b;margin-top:4px">Accesos externos exclusivos para este cliente</div></div><span style="font-size:11px;padding:5px 9px;background:white;border-radius:16px;color:#1d4ed8">Portal privado</span></div><div id="esClienteContenido" style="padding:16px"></div>';
-  const footer=form.lastElementChild;form.insertBefore(section,footer);
-  const content=section.querySelector('#esClienteContenido');
-  if(!id){content.innerHTML='<p style="margin:0;color:#475569;font-size:13px">Primero guarda el cliente. Después entra a Editar para agregar sus usuarios y permisos.</p>';return}
-  content.innerHTML='<p style="color:#64748b">Cargando usuarios…</p>';
-  const render=async()=>{
-   const {data,error}=await db().from('cc_cuentas_espejo_usuarios').select('*').eq('cliente_id',id).order('created_at',{ascending:false});
-   if(!document.contains(section))return;
-   if(error){content.textContent='No se pudieron consultar usuarios: '+error.message;return}
-   content.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><strong style="color:#334155">Usuarios registrados ('+(data||[]).length+')</strong><button type="button" id="esClienteNuevo" class="cc-btn cc-btn-primary">+ Agregar usuario</button></div><div id="esClienteForm" style="display:none;background:white;padding:15px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:14px"></div><div style="display:grid;gap:7px">'+((data||[]).map(u=>'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:9px"><div><b>'+esc(u.nombre)+'</b><div style="font-size:12px;color:#64748b">'+esc(u.email)+'</div><div style="font-size:11px;color:#64748b">'+[u.ver_aeropuerto?'Aeropuerto':'',u.ver_cajas_renta?'Cajas de renta':'',u.ver_mapa_unidades?'Mapa':''].filter(Boolean).join(' · ')+'</div></div><span style="font-size:11px;color:#64748b">'+(u.auth_user_id?(u.activo?'Activo':'Suspendido'):'Invitación pendiente')+'</span></div>').join('')||'<p style="font-size:12px;color:#64748b">Este cliente todavía no tiene usuarios.</p>')+'</div>';
-   content.querySelector('#esClienteNuevo').onclick=()=>{
-    const box=content.querySelector('#esClienteForm');box.style.display='block';
-    box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"><label>Nombre<input id="esCN" class="cc-input" required style="width:100%"></label><label>Correo<input id="esCE" class="cc-input" type="email" required style="width:100%"></label><label>Vista inicial<select id="esCD" class="cc-input" style="width:100%"><option value="aeropuerto">Pantalla Aeropuerto</option><option value="cajas_renta">Cajas de renta</option><option value="mapa_unidades">Mapa de unidades</option></select></label></div><div style="display:flex;flex-wrap:wrap;gap:15px;margin:14px 0;font-size:13px"><label><input id="esCA" type="checkbox" checked> Pantalla Aeropuerto</label><label><input id="esCR" type="checkbox"> Cajas de renta</label><label><input id="esCM" type="checkbox"> Mapa de unidades</label></div><div style="display:flex;gap:10px;align-items:center"><button id="esCSave" type="button" class="cc-btn cc-btn-primary">Guardar usuario</button><button id="esCCancel" type="button" class="cc-btn cc-btn-light">Cancelar</button></div><p id="esCMsg" style="font-size:12px;margin:7px 0 0;color:#64748b">No se enviará correo al guardar. La invitación segura no está habilitada.</p>';
-    const $=x=>box.querySelector('#'+x);
-    $('esCCancel').onclick=()=>{box.style.display='none'};
-    $('esCSave').onclick=async()=>{
-     const nombre=$('esCN').value.trim(),email=$('esCE').value.trim().toLowerCase(),va=$('esCA').checked,vr=$('esCR').checked,vm=$('esCM').checked,def=$('esCD').value;
-     if(!nombre||!/^\S+@\S+\.\S+$/.test(email)||!(va||vr||vm)||!((def==='aeropuerto'&&va)||(def==='cajas_renta'&&vr)||(def==='mapa_unidades'&&vm))){$('esCMsg').textContent='Revisa correo, nombre, permisos y vista inicial.';return}
-     $('esCSave').disabled=true;
-     const {error}=await db().from('cc_cuentas_espejo_usuarios').insert({nombre,email,cliente_id:id,ver_aeropuerto:va,ver_cajas_renta:vr,ver_mapa_unidades:vm,vista_default:def,activo:false});
-     if(error){$('esCSave').disabled=false;$('esCMsg').textContent='No se guardó: '+error.message;return}
-     await render();
-     alert('Configuración guardada. NO se envió correo: el envío de invitaciones aún no está habilitado y la cuenta permanece sin acceso.');
-    };
-   };
-  };
-  render().catch(e=>{content.textContent=e.message});
+const $=id=>document.getElementById(id), db=()=>window.gmSupabase;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const admin=()=>window.CC_ACCESS?.superAdmin===true;
+let clients=[],accounts=[],filter='';
+function close(){ $('esAccountsModal')?.remove() }
+async function refresh(){
+ const [c,u]=await Promise.all([db().from('cc_clientes').select('id,nombre,estatus').eq('estatus','ACTIVO').order('nombre'),db().from('cc_cuentas_espejo_usuarios').select('id,cliente_id,nombre,email,ver_aeropuerto,ver_cajas_renta,ver_mapa_unidades,vista_default,activo,auth_user_id,created_at').order('created_at',{ascending:false})]);
+ if(c.error||u.error)throw c.error||u.error;
+ clients=c.data||[];accounts=u.data||[];
+ const select=$('esAccountsClient');if(!select)return;
+ const previous=filter;select.innerHTML='<option value="">Todos los clientes activos</option>'+clients.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');
+ if(clients.some(c=>c.id===previous))select.value=previous;else filter='';
+ render();
+}
+function render(){
+ const list=$('esAccountsList'),counter=$('esAccountsCount');if(!list)return;
+ const rows=accounts.filter(x=>!filter||x.cliente_id===filter);
+ if(counter)counter.textContent=rows.length+' usuarios registrados';
+ const groups=[...new Set(rows.map(x=>x.cliente_id))];
+ list.innerHTML=groups.length?groups.map(cid=>{
+ const client=clients.find(c=>c.id===cid),items=rows.filter(x=>x.cliente_id===cid);
+ return '<section style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff"><header style="background:#f1f5f9;padding:12px 14px;font-weight:800;color:#1e293b">'+esc(client?.nombre||cid)+' <span style="font-size:12px;font-weight:500;color:#64748b">('+items.length+')</span></header>'+items.map(x=>'<div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap"><div><strong>'+esc(x.nombre)+'</strong><div style="font-size:12px;color:#64748b">'+esc(x.email)+'</div><div style="font-size:11px;color:#64748b">'+[x.ver_aeropuerto?'Aeropuerto':'',x.ver_cajas_renta?'Cajas de renta':'',x.ver_mapa_unidades?'Mapa de unidades':''].filter(Boolean).join(' · ')+' · Inicio: '+esc(({aeropuerto:'Aeropuerto',cajas_renta:'Cajas de renta',mapa_unidades:'Mapa de unidades'})[x.vista_default]||x.vista_default)+'</div></div><span style="font-size:11px;padding:6px 9px;background:#fff7ed;border-radius:99px;color:#9a3412">'+(x.auth_user_id?(x.activo?'Activo':'Suspendido'):'Invitación pendiente')+'</span></div>').join('')+'</section>'
+ }).join(''):'<div style="padding:24px;text-align:center;color:#64748b">No hay usuarios registrados para este cliente.</div>';
+}
+function form(show){
+ const panel=$('esAccountsForm');if(!panel)return;
+ panel.style.display=show?'block':'none';
+ if(show){
+  const select=$('esFormClient');select.innerHTML='<option value="">Selecciona el cliente</option>'+clients.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');select.value=filter||'';
+  $('esAccountMsg').textContent='';
  }
- const oldNewCliente=window.ccNuevoCliente;
- if(typeof oldNewCliente==='function')window.ccNuevoCliente=function(id){const value=oldNewCliente.apply(this,arguments);enhanceClientModal(id);return value};
- document.addEventListener('DOMContentLoaded',()=>{document.getElementById('esUsuariosPanel')?.remove()});
+}
+function open(){
+ if(!admin())return alert('Solo Super Admin puede administrar usuarios de Cuenta Espejo.');
+ close();
+ const d=document.createElement('div');d.id='esAccountsModal';d.style.cssText='position:fixed!important;inset:0!important;z-index:2147483400!important;background:rgba(15,23,42,.78)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;';
+ d.innerHTML=`<div role="dialog" aria-modal="true" aria-label="Crear cuentas espejo" style="background:#fff;width:min(1000px,98vw);max-height:92dvh;overflow:auto;border-radius:20px;box-shadow:0 24px 90px #02061760">
+ <header style="background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h2 style="font-size:20px;margin:0;color:white">Crear cuentas · Pantalla Aeropuerto</h2><p style="margin:5px 0 0;font-size:12px;opacity:.85">Usuarios externos organizados por cliente</p></div><button id="esAccountsClose" type="button" style="background:#ffffff20;border:1px solid #ffffff55;color:white;border-radius:9px;padding:9px 14px;cursor:pointer">Cerrar ×</button></header>
+ <div style="padding:22px"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap"><label style="font-size:12px;font-weight:700;color:#334155">Cliente<br><select id="esAccountsClient" style="margin-top:5px;min-width:270px;max-width:85vw;padding:10px;border:1px solid #cbd5e1;border-radius:9px"><option>Cargando...</option></select></label><button type="button" id="esAccountsNew" class="cc-btn cc-btn-primary">+ Crear usuario</button></div>
+ <div id="esAccountsForm" style="display:none;background:#f8fafc;border:1px solid #dbeafe;border-radius:13px;margin-top:18px;padding:17px"><h3 style="margin:0 0 15px;font-size:16px">Nuevo usuario del cliente</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:13px"><label>Nombre completo<input id="esFormName" type="text" maxlength="160" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Correo electrónico<input id="esFormEmail" type="email" maxlength="260" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Cliente<select id="esFormClient" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><label>Vista inicial<select id="esFormDefault" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"><option value="aeropuerto">Pantalla Aeropuerto</option><option value="cajas_renta">Cajas de renta</option><option value="mapa_unidades">Mapa de unidades</option></select></label></div><div style="display:flex;gap:18px;flex-wrap:wrap;margin:18px 0 10px"><label><input id="esFormAirport" type="checkbox" checked> Pantalla Aeropuerto</label><label><input id="esFormRent" type="checkbox"> Cajas de renta</label><label><input id="esFormMap" type="checkbox"> Mapa de unidades</label></div><p style="font-size:12px;color:#64748b">El usuario queda pendiente: no se enviará ningún correo ni se activará acceso externo hasta habilitar las invitaciones y el filtrado seguro por cliente.</p><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="esAccountsSave" type="button" class="cc-btn cc-btn-primary">Guardar configuración</button><button id="esAccountsCancel" type="button" class="cc-btn cc-btn-light">Cancelar</button><span id="esAccountMsg" role="status" style="font-size:12px;color:#b91c1c"></span></div></div>
+ <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px"><strong>Listado por cliente</strong><span id="esAccountsCount" style="font-size:12px;color:#64748b"></span></div><div id="esAccountsList"><p>Cargando listado...</p></div></div></div>`;
+ document.body.appendChild(d);
+ $('esAccountsClose').onclick=close;$('esAccountsNew').onclick=()=>form(true);$('esAccountsCancel').onclick=()=>form(false);
+ $('esAccountsClient').onchange=e=>{filter=e.target.value;render()};
+ $('esAccountsSave').onclick=async()=>{
+  const nombre=$('esFormName').value.trim(),email=$('esFormEmail').value.trim().toLowerCase(),cliente_id=$('esFormClient').value,va=$('esFormAirport').checked,vr=$('esFormRent').checked,vm=$('esFormMap').checked,defaultView=$('esFormDefault').value,msg=$('esAccountMsg');
+  if(nombre.length<2||!/^\S+@\S+\.\S+$/.test(email)||!clients.some(c=>c.id===cliente_id)||!(va||vr||vm)||!(defaultView==='aeropuerto'&&va||defaultView==='cajas_renta'&&vr||defaultView==='mapa_unidades'&&vm)){msg.textContent='Completa los campos y selecciona una vista predeterminada autorizada.';return}
+  const btn=$('esAccountsSave');btn.disabled=true;msg.textContent='Guardando...';
+  try{const {error}=await db().from('cc_cuentas_espejo_usuarios').insert({nombre,email,cliente_id,ver_aeropuerto:va,ver_cajas_renta:vr,ver_mapa_unidades:vm,vista_default:defaultView,activo:false});if(error)throw error;
+   filter=cliente_id;form(false);await refresh();$('esAccountsClient').value=filter;render();alert('Usuario registrado como pendiente de invitación. NO se envió correo y NO tiene acceso todavía.');
+  }catch(e){msg.textContent='Error al guardar: '+e.message}finally{btn.disabled=false}
+ };
+ refresh().catch(e=>{if($('esAccountsList'))$('esAccountsList').textContent='Error al cargar cuentas: '+e.message});
+}
+document.addEventListener('click',e=>{if(e.target.closest('#airCreateAccounts')){e.preventDefault();open()}});
+window.ccOpenMirrorAccounts=open;
 })();
