@@ -36,7 +36,7 @@
   for(const [key,title] of views){const btn=document.createElement('button');btn.textContent=title;btn.className='secondary';btn.dataset.view=key;btn.onclick=()=>choose(key);tabs.appendChild(btn)}
   $('rentalList').innerHTML=rentals.length?rentals.map(x=>'<article class="unit"><strong>'+esc(x.caja)+'</strong><small>'+esc(x.descripcion||'Caja en renta')+'</small><p>'+esc(x.placas||'')+'</p><small>Último escaneo: '+esc(x.ubicacionAt?new Date(x.ubicacionAt).toLocaleString('es-MX'):'Sin ubicación reportada')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver ubicación ↗</a>':'')+'</article>').join(''):'<p class="muted">No hay cajas de renta activas registradas para este cliente.</p>';
   $('units').innerHTML=vs.map(x=>'<article class="unit"><div class="row"><strong>'+esc(x.unidad)+'</strong><span class="pill">'+(x.asignacion==='VIAJE'?'Viaje':'Asignada')+'</span></div><small>'+esc(x.numeroViaje?'Viaje '+x.numeroViaje:'Sin viaje activo')+'</small><p>'+esc(x.ubicacion||'Ubicación no disponible')+'</p><small>'+esc(x.gpsAt||'')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
-  choose(views.some(([k])=>k===data.defaultView)?data.defaultView:(views[0]?.[0]||'aeropuerto'));el="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
+  choose(views.some(([k])=>k===data.defaultView)?data.defaultView:(views[0]?.[0]||'aeropuerto'));
  }
  async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -58,7 +58,7 @@
    if(token){
      const {error}=await sb.auth.verifyOtp({token_hash:token,type:kind==='magiclink'?'magiclink':'invite'});
      history.replaceState(null,'',location.pathname);
-     if(error)throw Error('El enlace de invitación es inválido o caducó: '+error.message);
+     if(error)throw Error('No se pudo activar la cuenta: '+error.message+'. Solicita un enlace nuevo desde Reenviar invitación.');
      openedFromLink=true;
    }
    await boot();
