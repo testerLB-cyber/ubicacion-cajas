@@ -828,16 +828,18 @@ function selectedClient(){return $('airClient')?.value||''}
 function onlyTrips(){return $('airOnlyTrips')?.checked!==false}
 
 function airClientKey(x){return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ')}
-function airCatalogName(x){const c=AIR_CLIENTS.find(a=>airClientKey(a.nombre)===airClientKey(x));return c?c.nombre:String(x||'').trim()}
+function airCatalogName(x){const c=AIR_CLIENTS.find(a=>airClientKey(a.nombre)===airClientKey(x));return c?c.nombre:null}
 function airUnitKey(x){return String(x||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function airManualActive(a){const n=Date.now();return a.estado==='ACTIVA'&&Date.parse(a.inicio)<=n&&n<Date.parse(a.fin)}
 function airApplyManual(vehicles){
  const active=AIR_MANUAL.filter(airManualActive);
  return vehicles.map(v=>{
   const match=active.filter(a=>airUnitKey(a.unidad)===airUnitKey(v.unidad)).sort((a,b)=>Date.parse(b.inicio)-Date.parse(a.inicio))[0];
-  if(!match||String(v.numeroViaje||'').trim())return {...v,cliente:airCatalogName(v.cliente)};
-  return {...v,cliente:match.cliente_nombre,airManual:true,estatusViaje:'Asignación manual'};
- });
+  const catalogName=airCatalogName(v.cliente);
+  if(String(v.numeroViaje||'').trim())return catalogName?{...v,cliente:catalogName}:null;
+  if(match){const assigned=AIR_CLIENTS.find(c=>c.id===match.cliente_id);return assigned?{...v,cliente:assigned.nombre,airManual:true,estatusViaje:'Asignación manual'}:null}
+  return catalogName?{...v,cliente:catalogName}:null;
+ }).filter(Boolean);
 }
 async function airReadManual(){
  const {data,error}=await sb().from('gm_airport_manual_assignments').select('id,unidad,cliente_id,cliente_nombre,inicio,fin,estado,created_at').order('created_at',{ascending:false}).limit(500);
@@ -846,7 +848,7 @@ async function airReadManual(){
 }
 async function airReadClients(){
  const {data,error}=await sb().from('cc_clientes').select('id,nombre,estatus').eq('estatus','ACTIVO').order('nombre').limit(300);
- if(error)throw error;AIR_CLIENTS=data||[];if(LAST.length){LAST=LAST.map(x=>({...x,cliente:airCatalogName(x.cliente)}));updateClientFilter();render()};
+ if(error)throw error;AIR_CLIENTS=data||[];if(LAST.length){LAST=LAST.map(x=>({...x,cliente:airCatalogName(x.cliente)})).filter(x=>x.cliente);updateClientFilter();render();airManageRender()};
 }
 function airManageRender(){
  const panel=$('airManualPanel');if(!panel)return;
@@ -872,7 +874,7 @@ async function airManualSave(){
 }
 
 function filtered(){const c=selectedClient();return LAST.filter(x=>(!c||String(x.cliente||'')===c)&&(!onlyTrips()||String(x.numeroViaje||'').trim()||x.airManual))}
-function updateClientFilter(){const sel=$('airClient');if(!sel)return;const current=sel.value,seen=new Map();LAST.forEach(x=>{const name=airCatalogName(x.cliente),key=airClientKey(name);if(key&&!seen.has(key))seen.set(key,name)});const clients=[...seen.values()].sort((a,b)=>a.localeCompare(b,'es'));sel.innerHTML='<option value="">Todos los clientes</option>'+clients.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(clients.includes(current))sel.value=current}
+function updateClientFilter(){const sel=$('airClient');if(!sel)return;const current=sel.value,clients=AIR_CLIENTS.map(x=>x.nombre);sel.innerHTML='<option value="">Todos los clientes del catálogo</option>'+clients.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');if(clients.includes(current))sel.value=current}
 function showGeos(index){const x=LAST[index];if(!x)return;$('airGeoTitle').textContent='Recorrido por geocercas · '+(x.unidad||'Unidad');const arr=(Array.isArray(x.geocercas)?x.geocercas:[]).slice().sort((a,b)=>(new Date(a["Fecha Hora"]||a.fechaHora||a.fecha||0).getTime()||0)-(new Date(b["Fecha Hora"]||b.fechaHora||b.fecha||0).getTime()||0));$('airGeoList').innerHTML=arr.length?'<div class="airGeoTimeline">'+arr.map(g=>`<div class="airGeoItem"><span class="airGeoDot"></span><div class="airGeoEvent">${esc(g.Evento||g.evento||'Evento')}</div><div class="airGeoName">${esc(g.Geocerca||g.geocerca||'—')}</div><div class="airGeoTime">${esc(fmt(g["Fecha Hora"]||g.fechaHora||g.fecha))}</div></div>`).join('')+'</div>':'<div class="airEmpty">La API no devolvió historial de geocercas para esta unidad.</div>';$('airGeoModal').classList.add('on')}
 function mapEmbedUrl(lat,lng){const la=Number(lat),lo=Number(lng);if(!Number.isFinite(la)||!Number.isFinite(lo))return'';const dLat=.012,dLng=.018;return'https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent((lo-dLng)+','+(la-dLat)+','+(lo+dLng)+','+(la+dLat))+'&layer=mapnik&marker='+encodeURIComponent(la+','+lo)}
 function toggleMap(index){const row=$('airMap_'+index),x=LAST[index];if(!row||!x)return;if(row.dataset.open==='1'){row.innerHTML='';row.dataset.open='0';return}const src=mapEmbedUrl(x.latitud,x.longitud);row.dataset.open='1';row.innerHTML=src?`<div class="airMiniMapWrap"><div style="flex:1"><iframe class="airMiniMap" loading="lazy" src="${esc(src)}"></iframe></div><div class="airMapMeta"><b>${esc(x.unidad||'Unidad')}</b><span>${esc(x.ubicacion||x.ubicacionErp||'Ubicación GPS')}</span><span>${esc(x.latitud+', '+x.longitud)}</span><span>Actualización GPS: ${esc(fmt(x.gpsAt))}</span><button class="airMapClose" data-map-close="${index}">Cerrar mapa</button></div></div>`:'<div class="airEmpty">Esta unidad no trae coordenadas válidas.</div>';row.querySelector('[data-map-close]')?.addEventListener('click',()=>toggleMap(index))}
@@ -1278,7 +1280,7 @@ function render(opts={}){
   if(AIR_MAP_OPEN&&!opts.pageOnly)renderAirportMap({refit:false,refresh:true});
   if(!opts.pageOnly)syncAutoPaging();
 }
-async function load(){if(LOADING||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;LOADING=true;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');await airReadManual();LAST=airApplyManual(Array.isArray(data.vehicles)?data.vehicles:[]);await loadTripClocks();airManageRender();updateClientFilter();render();const pos={};LAST.forEach(x=>{const lat=Number(x.latitud),lng=Number(x.longitud);if(Number.isFinite(lat)&&Number.isFinite(lng))pos[String(x.unidad||'')]={lat,lng,ts:Date.now()}});savePrev(pos);const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+'\nSiguiente lectura en 60 s';schedule()}catch(e){$('airUpdated').textContent='Error API: '+e.message+'\nConservando última lectura · reintento en 60 s';schedule()}finally{LOADING=false}}
+async function load(){if(LOADING||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;LOADING=true;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');await airReadManual();if(!AIR_CLIENTS.length)await airReadClients();LAST=airApplyManual(Array.isArray(data.vehicles)?data.vehicles:[]);await loadTripClocks();airManageRender();updateClientFilter();render();const pos={};LAST.forEach(x=>{const lat=Number(x.latitud),lng=Number(x.longitud);if(Number.isFinite(lat)&&Number.isFinite(lng))pos[String(x.unidad||'')]={lat,lng,ts:Date.now()}});savePrev(pos);const d=data.generatedAt?new Date(data.generatedAt):new Date();$('airUpdated').textContent='Actualizado '+d.toLocaleTimeString('es-MX',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit'})+'\nSiguiente lectura en 60 s';schedule()}catch(e){$('airUpdated').textContent='Error API: '+e.message+'\nConservando última lectura · reintento en 60 s';schedule()}finally{LOADING=false}}
 function schedule(){clearTimeout(TIMER);TIMER=setTimeout(load,60000)}
 function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air">
   <div class="airTop"><div class="airTitleWrap"><div class="airBeacon"><i class="fa-solid fa-tower-broadcast"></i></div><div><h2>Pantalla Aeropuerto</h2><p>Vista TV de operación · información actualizada cada minuto</p></div></div><div class="airTopActions"><label id="airAutoLabel" style="display:none;align-items:center;gap:5px;font-size:9px;font-weight:800;color:#475569">Páginas cada <select id="airAutoSeconds" aria-label="Segundos por página" style="border:1px solid #cbd5e1;border-radius:7px;padding:5px;background:white;color:#334155"><option value="3">3 s</option><option value="5">5 s</option><option value="6" selected>6 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select></label><button id="airDemorasBtn" type="button" class="airFullBtn" style="display:none"><i class="fa-solid fa-stopwatch"></i> Control de demoras</button><button id="airHistoryBtn" type="button" class="airFullBtn" style="display:none"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button><div id="airUpdated" class="airUpdated">Sin actualizar</div><button id="airFullBtn" class="airFullBtn" type="button"><i class="fa-solid fa-expand"></i> Pantalla completa</button></div></div>
