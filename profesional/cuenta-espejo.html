@@ -20,7 +20,9 @@
   show('feedback','Consultando datos autorizados…');$('units').innerHTML='';
   const {data,error}=await sb.functions.invoke('cc-mirror-airport',{body:{}});
   if(error||!data?.ok){show('feedback','No fue posible cargar los datos: '+(data?.error||error?.message||'Sin autorización'),true);return}
-  $('company').textContent=data.cliente;$('count').textCont  const vs=Array.isArray(data.vehicles)?data.vehicles:[], rentals=Array.isArray(data.rentals)?data.rentals:[], permissions=data.permissions||{};
+  $('company').textContent=data.cliente;
+  $('updated').textContent='Actualizado: '+(data.updatedAt?new Date(data.updatedAt).toLocaleString('es-MX'):'sin hora disponible');
+  const vs=Array.isArray(data.vehicles)?data.vehicles:[], rentals=Array.isArray(data.rentals)?data.rentals:[], permissions=data.permissions||{};
   const tabs=$('viewTabs');tabs.innerHTML='';
   const views=[['aeropuerto','Pantalla Aeropuerto'],['cajas_renta','Cajas de renta'],['mapa_unidades','Mapa de unidades']].filter(([key])=>permissions[key]);
   let map=null;
