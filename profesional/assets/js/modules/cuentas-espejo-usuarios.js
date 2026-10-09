@@ -72,13 +72,15 @@ function editAccount(id){
 }
 async function resendAccount(id,button){
  const x=accounts.find(a=>a.id===id);if(!x)return;
- button.disabled=true;
+ if(!confirm('¿Enviar una invitación segura de acceso a '+x.email+'?'))return;
+ button.disabled=true;const original=button.textContent;button.textContent='Enviando…';
  try{
-  // El portal externo aún no tiene aislamiento por cliente en gm-flota.
-  // No habilitar invitaciones hasta validar el endpoint de lectura autorizado.
-  throw new Error('ENVIO_NO_HABILITADO: El portal de consulta por cliente aún no está protegido en el servidor. No se envió correo a '+x.email+'.');
- }catch(e){alert('No se pudo reenviar la invitación. '+e.message)}
- finally{button.disabled=false}
+  const {data,error}=await db().functions.invoke('cc-mirror-invite',{body:{action:'invite',id}});
+  if(error)throw Error(data?.message||data?.error||error.message);
+  if(!data?.ok||!data?.emailSent)throw Error(data?.message||data?.error||'El correo no fue confirmado por SMTP.');
+  await refresh();alert('Invitación enviada mediante correo configurado a '+data.to+'. Identificador SMTP: '+(data.messageId||'confirmado')+'.');
+ }catch(e){alert('No se pudo enviar la invitación: '+(e.message||e))}
+ finally{button.disabled=false;button.textContent=original}
 }
 
 function form(show){
