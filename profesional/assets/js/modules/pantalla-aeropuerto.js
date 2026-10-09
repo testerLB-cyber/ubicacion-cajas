@@ -944,15 +944,18 @@ function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)retu
 function airportBaseLayer(mode){
   const key=String(window.CC_MAPTILER_KEY||'').trim();
   if(key){
-    const style=mode==='SATELITE'?'satellite':'streets-v2';
-    const extension=mode==='SATELITE'?'jpg':'png';
-    return L.tileLayer('https://api.maptiler.com/maps/'+style+'/{z}/{x}/{y}.'+extension+'?key='+encodeURIComponent(key),{
+    const satellite=mode==='SATELITE';
+    const url=satellite
+      ?'https://api.maptiler.com/tiles/satellite-v4/{z}/{x}/{y}.jpg?key='+encodeURIComponent(key)
+      :'https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key='+encodeURIComponent(key);
+    const layer=L.tileLayer(url,{
       maxZoom:19,maxNativeZoom:18,
-      attribution:mode==='SATELITE'?'&copy; MapTiler':'&copy; MapTiler &copy; OpenStreetMap contributors',
+      attribution:satellite?'&copy; MapTiler':'&copy; MapTiler &copy; OpenStreetMap contributors',
       referrerPolicy:'strict-origin-when-cross-origin'
     });
+    return layer;
   }
-  // Sin clave MapTiler no se afirma que haya satélite: mostrar calles OSM temporalmente.
+  // Sin clave, no usar Esri; fallback de calles para evitar blanco.
   return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19,attribution:'&copy; OpenStreetMap contributors',
     referrerPolicy:'strict-origin-when-cross-origin'
