@@ -943,9 +943,10 @@ function airportMapRows(){
 function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)return;const allowed=!selectedClient()&&window.ccPerm?.('pantalla_aeropuerto.ver_todas_unidades')===true;wrap.style.display=allowed?'inline-flex':'none';if(!allowed&&$('airMapShowAll'))$('airMapShowAll').checked=false}
 function airportBaseLayer(mode){
   const satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  const streetUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+  const streetUrl='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
   return L.tileLayer(mode==='SATELITE'?satUrl:streetUrl,{
     maxZoom:19,
+    maxNativeZoom:mode==='SATELITE'?19:16,
     attribution:'Tiles &copy; Esri'
   });
 }
