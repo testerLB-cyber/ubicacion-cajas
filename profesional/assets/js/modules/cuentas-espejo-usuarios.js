@@ -117,7 +117,7 @@ function open(){
     if(inviteError||!invite?.ok||!invite.emailSent)alert('Cuenta registrada en Supabase, pero el correo NO se pudo enviar: '+(invite?.message||invite?.error||inviteError?.message||'Error de SMTP')+'. Puedes reintentar desde el listado.');
     else alert('Cuenta creada y correo de activación enviado a '+invite.to+'. Confirmación SMTP: '+(invite.messageId||'aceptado')+'.');
    }
-  }catch(e){msg.textContent='Error al guardar: '+(String(e.message).includes('CORREO_RESERVADO_USUARIO_WEB_PROFESIONAL')?'Este correo pertenece a un usuario de la web profesional. Debes utilizar un correo distinto para Cuenta Espejo.':e.message)}finally{btn.disabled=false}
+  }catch(e){msg.textContent='Error al guardar: '+(String(e.message).includes('CORREO_RESERVADO_USUARIO_WEB_PROFESIONAL')?'El registro fue bloqueado por una posible coincidencia de correo o identidad de autenticación interna. No confirma que ese correo sea un usuario interno; es necesario revisar la vinculación existente antes de activarlo.':e.message)}finally{btn.disabled=false}
  };
  refresh().catch(e=>{if($('esAccountsList'))$('esAccountsList').textContent='Error al cargar cuentas: '+e.message});
 }
