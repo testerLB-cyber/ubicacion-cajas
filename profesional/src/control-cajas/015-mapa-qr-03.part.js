@@ -89,6 +89,7 @@ function ccGeocercaContiene(g,lat,lng){
   for(let i=1;i<rings.length;i++)if(ccGeoPointInRing(lat,lng,rings[i]))return false;
   return true;
 }
+window.ccGeoListForProfesional=()=>Array.isArray(configuracion.geocercas)?configuracion.geocercas:[];
 function ccGeocercaDePunto(lat,lng){return (configuracion.geocercas||[]).find(g=>g.activa!==false&&ccGeocercaContiene(g,lat,lng))||null;}
 function ccGeoColor(i){const c=['#2563eb','#16a34a','#9333ea','#ea580c','#0891b2','#db2777','#4f46e5','#65a30d'];return c[i%c.length];}
 function ccGeocercaToLayer(g,i=0){
