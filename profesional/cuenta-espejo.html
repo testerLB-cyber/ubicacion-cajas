@@ -6,6 +6,7 @@ async function boot(){
  $('login').style.display=session?'none':'block';
  $('logout').style.display=session?'inline-block':'none';
  if(!session){$('activate').hidden=true;return}
+ if(invite){$('activate').hidden=false;$('ccPanelPantallaAeropuerto').classList.remove('active');return}
  const {data,error}=await sb.functions.invoke('cc-mirror-airport',{body:{}});
  if(error||!data?.ok||!data.permissions?.aeropuerto){$('login').style.display='block';$('activate').hidden=true;$('loginError').textContent='Sin autorización para Pantalla Aeropuerto: '+(data?.error||error?.message||'');return}
  $('activate').hidden=!invite;
