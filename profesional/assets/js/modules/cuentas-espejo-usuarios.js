@@ -105,9 +105,11 @@ function open(){
  $('esAccountsSave').onclick=async()=>{
   const nombre=$('esFormName').value.trim(),email=$('esFormEmail').value.trim().toLowerCase(),cliente_id=$('esFormClient').value,va=$('esFormAirport').checked,vr=$('esFormRent').checked,vm=$('esFormMap').checked,defaultView=$('esFormDefault').value,msg=$('esAccountMsg');
   if(nombre.length<2||!/^\S+@\S+\.\S+$/.test(email)||!clients.some(c=>c.id===cliente_id)||!(va||vr||vm)||!(defaultView==='aeropuerto'&&va||defaultView==='cajas_renta'&&vr||defaultView==='mapa_unidades'&&vm)){msg.textContent='Completa los campos y selecciona una vista predeterminada autorizada.';return}
-  const btn=$('esAccountsSave');btn.disabled=true;msg.textContent='Guardando...';
-  try{const payload={nombre,email,cliente_id,ver_aeropuerto:va,ver_cajas_renta:vr,ver_mapa_unidades:vm,vista_default:defaultView};const query=editingId?db().from('cc_cuentas_espejo_usuarios').update(payload).eq('id',editingId):db().from('cc_cuentas_espejo_usuarios').insert({...payload,activo:false});const {error}=await query;if(error)throw error;
-   const wasEdit=!!editingId;editingId=null;filter=cliente_id;form(false);await refresh();$('esAccountsClient').value=filter;render();alert(wasEdit?'Cambios guardados. No se envió correo.':'Usuario registrado como pendiente de invitación. NO se envió correo y NO tiene acceso todavía.');
+  const existing=accounts.find(a=>a.email.toLowerCase()===email&&a.id!==editingId);
+  if(existing){filter=existing.cliente_id;render();msg.textContent='Este correo YA está registrado en Cuentas Espejo. Selecciónalo en el listado para editarlo. Registrar otra vez no activará su acceso.';return}
+  const btn=$('esAccountsSave');btn.disabled=true;msg.textContent='Registrando cuenta...';
+  try{const payload={nombre,email,cliente_id,ver_aeropuerto:va,ver_cajas_renta:vr,ver_mapa_unidades:vm,vista_default:defaultView};const query=editingId?db().from('cc_cuentas_espejo_usuarios').update(payload).eq('id',editingId):db().from('cc_cuentas_espejo_usuarios').insert({...payload,activo:false});const {data:saved,error}=await query.select('id,nombre,email,cliente_id');if(error)throw error;if(!saved?.length)throw Error('El servidor no confirmó el registro. No se ha guardado.');
+   const wasEdit=!!editingId;editingId=null;filter=cliente_id;form(false);await refresh();$('esAccountsClient').value=filter;render();alert(wasEdit?'Cambios del usuario guardados correctamente. El acceso continúa pendiente de activación.':'Cuenta espejo guardada y verificada en Supabase. Ya aparece en el listado del cliente. El acceso y el correo de invitación todavía no están habilitados.');
   }catch(e){msg.textContent='Error al guardar: '+e.message}finally{btn.disabled=false}
  };
  refresh().catch(e=>{if($('esAccountsList'))$('esAccountsList').textContent='Error al cargar cuentas: '+e.message});
