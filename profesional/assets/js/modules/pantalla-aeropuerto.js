@@ -1,7 +1,7 @@
 (()=>{'use strict';
 let TIMER=null,LAST=[],VIEW='actual',PAGE=1,AUTO_TIMER=null,AUTO_SECONDS=6,LOADING=false;
 const PAGE_SIZE=10;
-let AIR_MANUAL=[],AIR_CLIENTS=[];
+let AIR_MANUAL=[],AIR_CLIENTS=[],AIR_GPS_VEHICLES=[];
 
 const POS_KEY='gm_airport_prev_positions_v1';
 const $=id=>document.getElementById(id);
@@ -856,11 +856,11 @@ async function airReadClients(){
 function airMirrorList(){
  const cid=$('airManualClient')?.value,selected=AIR_CLIENTS.find(x=>x.id===cid),right=$('airMirrorExisting'),left=$('airMirrorAvailable');
  if(!right||!left)return;
- if(!selected){right.innerHTML='<p style="color:#64748b">Selecciona un cliente para ver sus unidades.</p>';left.innerHTML='<p style="color:#64748b">Selecciona un cliente.</p>';return}
+ if(!selected){right.innerHTML='<p style="color:#64748b">Selecciona un cliente para ver sus unidades.</p>';left.innerHTML='<p style="color:#64748b">Selecciona un cliente. La lista incluye todas las unidades GPS.</p>';return}
  const now=Date.now(),mine=AIR_MANUAL.filter(a=>a.cliente_id===cid&&airManualActive(a));
  const linked=LAST.filter(x=>airClientKey(x.cliente)===airClientKey(selected.nombre)&&(String(x.numeroViaje||'').trim()||x.airManual));
  const linkedKeys=new Set([...linked.map(x=>airUnitKey(x.unidad)),...mine.map(a=>airUnitKey(a.unidad))]);
- const units=[...new Map(LAST.filter(x=>x.unidad).map(x=>[airUnitKey(x.unidad),x])).values()].sort((a,b)=>String(a.unidad).localeCompare(String(b.unidad),'es'));
+ const units=[...new Map(AIR_GPS_VEHICLES.filter(x=>String(x.unidad||'').trim()).map(x=>[airUnitKey(x.unidad),x])).values()].sort((a,b)=>String(a.unidad).localeCompare(String(b.unidad),'es'));
  const available=units.filter(x=>!linkedKeys.has(airUnitKey(x.unidad)));
  right.innerHTML=linked.length?linked.map(x=>'<div style="padding:10px;border-bottom:1px solid #e2e8f0"><b>'+esc(x.unidad)+'</b><span style="float:right;color:#64748b">'+(x.airManual?'Cuenta espejo':'Viaje activo')+'</span></div>').join(''):'<p style="color:#64748b">Este cliente no tiene unidades activas.</p>';
  left.innerHTML=available.length?available.map(x=>'<label style="display:flex;align-items:center;gap:8px;padding:9px;border-bottom:1px solid #e2e8f0;cursor:pointer"><input type="radio" name="airMirrorUnit" value="'+esc(x.unidad)+'"><b>'+esc(x.unidad)+'</b><small style="color:#64748b">'+(String(x.numeroViaje||'').trim()?'Viaje de otro cliente':'Sin viaje')+'</small></label>').join(''):'<p style="color:#64748b">No hay más unidades disponibles.</p>';
@@ -871,7 +871,7 @@ function airManageRender(){
  panel.style.display=airIsSuperAdmin()?'block':'none';if(!airIsSuperAdmin())return;
  const client=$('airManualClient'),unit=$('airManualUnit');
  if(client&&AIR_CLIENTS.length){const old=client.value;client.innerHTML='<option value="">Seleccionar cliente del catálogo</option>'+AIR_CLIENTS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('');if(AIR_CLIENTS.some(x=>x.id===old))client.value=old}
- if(unit){const old=unit.value;const arr=[...new Set(LAST.map(x=>String(x.unidad||'').trim()).filter(Boolean))].sort();unit.innerHTML='<option value="">Seleccionar unidad</option>'+arr.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(arr.includes(old))unit.value=old}
+ if(unit){const old=unit.value;const arr=[...new Set(AIR_GPS_VEHICLES.map(x=>String(x.unidad||'').trim()).filter(Boolean))].sort();unit.innerHTML='<option value="">Seleccionar unidad</option>'+arr.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(arr.includes(old))unit.value=old}
  airMirrorList();
  const c=$('airManualClient')?.value,body=$('airManualHistory');
  if(body)body.innerHTML=AIR_MANUAL.filter(a=>!c||a.cliente_id===c).slice(0,50).map(a=>'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid #e2e8f0;padding:8px 0;font-size:11px"><b>'+esc(a.unidad)+'</b><span>'+esc(a.cliente_nombre)+'</span><span>'+esc(a.modo==='HASTA_VIAJE'?'Hasta detectar viaje':new Date(a.inicio).toLocaleString('es-MX',{timeZone:tz})+' → '+(a.fin?new Date(a.fin).toLocaleString('es-MX',{timeZone:tz}):'Sin fin'))+'</span><span>'+esc(a.estado)+'</span>'+(a.estado==='ACTIVA'?'<button class="airBtn" data-manual-end="'+esc(a.id)+'">Finalizar</button>':'')+'</div>').join('')||'<span style="font-size:11px;color:#64748b">Sin asignaciones.</span>';
@@ -1299,7 +1299,7 @@ function render(opts={}){
   if(AIR_MAP_OPEN&&!opts.pageOnly)renderAirportMap({refit:false,refresh:true});
   if(!opts.pageOnly)syncAutoPaging();
 }
-async function load(){if(LOADING||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;LOADING=true;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');await airReadManual();if(!AIR_CLIENTS.length)await airReadClients();const vehicles=Array.isArray(data.vehicles)?data.vehicles:[];
+async function load(){if(LOADING||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;LOADING=true;try{$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');await airReadManual();if(!AIR_CLIENTS.length)await airReadClients();const vehicles=Array.isArray(data.vehicles)?data.vehicles:[];AIR_GPS_VEHICLES=vehicles;
  if(airIsSuperAdmin()){
   const detected=AIR_MANUAL.filter(a=>a.estado==='ACTIVA'&&a.modo==='HASTA_VIAJE'&&Date.parse(a.inicio)<=Date.now()&&vehicles.some(v=>airUnitKey(v.unidad)===airUnitKey(a.unidad)&&String(v.numeroViaje||'').trim()&&airClientKey(v.cliente)===airClientKey(a.cliente_nombre)));
   if(detected.length){const {error}=await sb().from('gm_airport_manual_assignments').update({estado:'FINALIZADA',updated_at:new Date().toISOString()}).in('id',detected.map(a=>a.id));if(error)console.warn('AIR_MIRROR_COMPLETE',error);else await airReadManual()}
