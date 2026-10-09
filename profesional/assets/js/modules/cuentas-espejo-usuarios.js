@@ -60,7 +60,7 @@
   if(!isAdmin()){panel.style.display='none';return}
   if(panel.style.display==='none'){panel.style.display='block';refresh().catch(e=>{document.getElementById('esLista').innerHTML='<tr><td colspan="5">'+esc(e.message)+'</td></tr>'})}
  }
- document.addEventListener('DOMContentLoaded',()=>{setup();setTimeout(showIfAdmin,1200)});
+ document.addEventListener('DOMContentLoaded',()=>{setup();showIfAdmin();new MutationObserver(()=>showIfAdmin()).observe(document.body,{attributes:true,attributeFilter:['class']});});
  const old=window.ccApplyAccess;
  if(typeof old==='function')window.ccApplyAccess=function(...args){const ret=old.apply(this,args);showIfAdmin();return ret};
 })();
