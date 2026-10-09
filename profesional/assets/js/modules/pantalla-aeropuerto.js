@@ -465,8 +465,8 @@ function css(){
   @media(max-width:600px){#airRentLeaflet{height:410px!important}}
   .airRentTrailerMarker{background:transparent;border:0}
   .airRentTrailerGlyph{display:flex;flex-direction:column;align-items:center;gap:1px;filter:drop-shadow(0 1px 1px rgba(15,23,42,.24));pointer-events:auto}
-  .airRentTrailerGlyph svg{width:25px;height:13px;display:block;overflow:visible;background:transparent;border:0;padding:0}
-  .airRentTrailerGlyph span{font:700 8px/1.1 system-ui,sans-serif;letter-spacing:0;color:#17375e;background:rgba(255,255,255,.95);border:1px solid #d5dee8;border-radius:3px;padding:1px 2px;white-space:nowrap;box-shadow:none}
+  .airRentTrailerGlyph svg{width:50px;height:26px;display:block;overflow:visible;background:transparent;border:0;padding:0}
+  .airRentTrailerGlyph span{font:700 10px/1.1 system-ui,sans-serif;letter-spacing:0;color:#17375e;background:rgba(255,255,255,.95);border:1px solid #d5dee8;border-radius:3px;padding:1px 2px;white-space:nowrap;box-shadow:none}
 
   .airRentItems{max-height:none;margin-top:0;display:grid;gap:8px}
   .airRentItem{
@@ -1222,7 +1222,7 @@ async function loadRentals(){
         const icon=L.divIcon({
           className:'airRentTrailerMarker',
           html:'<div class="airRentTrailerGlyph"><svg viewBox="0 0 32 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="1.5" y="3" width="27" height="10" rx="1" fill="#f8fafc" stroke="#263c51" stroke-width="1.5"/><path d="M5 6h20" stroke="#94a3b8" stroke-width=".8"/><path d="M4 13v2h3m16-2v2h3" fill="none" stroke="#475569" stroke-width="1.5"/><circle cx="7" cy="16" r="1.7" fill="#263c51"/><circle cx="24" cy="16" r="1.7" fill="#263c51"/></svg><span>'+esc(x.numero||'Caja')+'</span></div>',
-          iconSize:[38,27],iconAnchor:[19,25],popupAnchor:[0,-23]
+          iconSize:[78,52],iconAnchor:[39,46],popupAnchor:[0,-38]
         });
         L.marker([lat,lng],{icon,title:String(x.numero||'Semirremolque')}).addTo(RENT_MAP_INSTANCE).bindPopup('<strong>Semirremolque '+esc(x.numero||'—')+'</strong><br>'+esc(x.descripcion||'Caja en renta')+'<br>Último escaneo QR: '+esc(x.fechaHora?fmt(x.fechaHora):'Sin fecha'));
       });
