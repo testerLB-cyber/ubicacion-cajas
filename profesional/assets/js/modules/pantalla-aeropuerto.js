@@ -862,7 +862,24 @@ function airMirrorList(){
  const linkedKeys=new Set([...linked.map(x=>airUnitKey(x.unidad)),...mine.map(a=>airUnitKey(a.unidad))]);
  const units=[...new Map(AIR_GPS_VEHICLES.filter(x=>String(x.unidad||'').trim()).map(x=>[airUnitKey(x.unidad),x])).values()].sort((a,b)=>String(a.unidad).localeCompare(String(b.unidad),'es'));
  const available=units.filter(x=>!linkedKeys.has(airUnitKey(x.unidad)));
- right.innerHTML=linked.length?linked.map(x=>'<div style="padding:10px;border-bottom:1px solid #e2e8f0"><b>'+esc(x.unidad)+'</b><span style="float:right;color:#64748b">'+(x.airManual?'Cuenta espejo':'Viaje activo')+'</span></div>').join(''):'<p style="color:#64748b">Este cliente no tiene unidades activas.</p>';
+ right.innerHTML=linked.length?linked.map(x=>{
+ const manual=mine.find(a=>airUnitKey(a.unidad)===airUnitKey(x.unidad));
+ const realTrip=!!String(x.numeroViaje||'').trim()&&!x.airManual;
+ return '<div style="padding:10px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:8px"><b>'+esc(x.unidad)+'</b><span style="display:flex;align-items:center;gap:8px"><small style="color:#64748b">'+(realTrip?'Viaje activo':'Cuenta espejo')+'</small>'+(manual&&!realTrip?'<button type="button" class="airBtn" data-mirror-remove="'+esc(manual.id)+'" style="color:#b91c1c;border-color:#fecaca">Quitar</button>':'')+'</span></div>';
+ }).join(''):'<p style="color:#64748b">Este cliente no tiene unidades activas.</p>';
+ right.querySelectorAll('[data-mirror-remove]').forEach(b=>b.onclick=async()=>{
+  const id=b.dataset.mirrorRemove,a=AIR_MANUAL.find(v=>v.id===id&&v.cliente_id===cid&&airManualActive(v));
+  if(!a||!confirm('¿Quitar la unidad '+a.unidad+' de la cuenta espejo de '+selected.nombre+'?'))return;
+  b.disabled=true;
+  try{
+   const {data,error}=await sb().from('gm_airport_manual_assignments').update({estado:'FINALIZADA',updated_at:new Date().toISOString()}).eq('id',id).eq('cliente_id',cid).eq('estado','ACTIVA').select('id');
+   if(error)throw error;if(!data?.length)throw Error('La asignación ya no está activa.');
+   await airReadManual();
+   const vehicle=AIR_GPS_VEHICLES.find(v=>airUnitKey(v.unidad)===airUnitKey(a.unidad));
+   if(vehicle){LAST=airApplyManual(AIR_GPS_VEHICLES);render();if(AIR_MAP_OPEN)renderAirportMap({refresh:true})}
+   airManageRender();
+  }catch(e){alert('No se pudo quitar la unidad: '+e.message);b.disabled=false}
+ });
  left.innerHTML=available.length?available.map(x=>'<label style="display:flex;align-items:center;gap:8px;padding:9px;border-bottom:1px solid #e2e8f0;cursor:pointer"><input type="radio" name="airMirrorUnit" value="'+esc(x.unidad)+'"><b>'+esc(x.unidad)+'</b><small style="color:#64748b">'+(String(x.numeroViaje||'').trim()?'Viaje de otro cliente':'Sin viaje')+'</small></label>').join(''):'<p style="color:#64748b">No hay más unidades disponibles.</p>';
  left.querySelectorAll('[name="airMirrorUnit"]').forEach(e=>e.onchange=()=>{$('airManualUnit').value=e.value});
 }
