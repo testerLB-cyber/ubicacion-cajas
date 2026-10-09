@@ -50,13 +50,13 @@ async function previewAccount(id,button){
 async function deleteAccount(id,button){
  const account=accounts.find(x=>x.id===id);if(!account)return;
  const client=clients.find(x=>x.id===account.cliente_id);
- if(!confirm('¿Eliminar definitivamente la Cuenta Espejo de '+account.nombre+' ('+account.email+') del cliente '+(client?.nombre||'')+'?\\n\\nSe revocará también su acceso de autenticación, si existe. No se elimina el cliente ni sus operaciones.'))return;
+ if(!confirm('¿Eliminar definitivamente la Cuenta Espejo de '+account.nombre+' ('+account.email+') del cliente '+(client?.nombre||'')+'?\\n\\nNo se eliminará ni modificará ningún usuario de la web profesional.'))return;
  button.disabled=true;
  try{
   const {data,error}=await db().functions.invoke('cc-mirror-invite',{body:{action:'delete',id}});
-  if(error||!data?.ok||!data.deleted)throw Error(data?.message||data?.error||error?.message||'El servidor no confirmó la eliminación.');
+  if(error||!data?.ok||!data.deleted){let detail=data;try{if(error?.context?.json)detail=await error.context.json()}catch(_){}throw Error(detail?.message||detail?.error||error?.message||'El servidor no confirmó la eliminación.');}
   if(editingId===id){editingId=null;form(false)}
-  await refresh();alert('Cuenta eliminada y acceso de autenticación revocado correctamente.');
+  await refresh();alert('Cuenta Espejo eliminada. Los usuarios de la web profesional no se modificaron.');
  }catch(e){alert('Error al eliminar: '+e.message);button.disabled=false}
 }
 
@@ -96,7 +96,7 @@ function open(){
  close();
  const d=document.createElement('div');d.id='esAccountsModal';d.style.cssText='position:fixed!important;inset:0!important;z-index:2147483400!important;background:rgba(15,23,42,.78)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;';
  d.innerHTML=`<div role="dialog" aria-modal="true" aria-label="Crear cuentas espejo" style="background:#fff;width:min(1000px,98vw);max-height:92dvh;overflow:auto;border-radius:20px;box-shadow:0 24px 90px #02061760">
- <header style="background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h2 style="font-size:20px;margin:0;color:white">Crear cuentas · Pantalla Aeropuerto</h2><p style="margin:5px 0 0;font-size:12px;opacity:.85">Usuarios externos organizados por cliente</p></div><button id="esAccountsClose" type="button" style="background:#ffffff20;border:1px solid #ffffff55;color:white;border-radius:9px;padding:9px 14px;cursor:pointer">Cerrar ×</button></header>
+ <header style="background:linear-gradient(110deg,#0f172a,#1d4ed8);color:white;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h2 style="font-size:20px;margin:0;color:white">Crear cuentas · Pantalla Aeropuerto</h2><p style="margin:5px 0 0;font-size:12px;opacity:.85">Usuarios externos organizados por cliente</p></div><button id="esAccountsClose" type="button" style="background:#ffffff20;border:1px solid #ffffff55;color:white;border-radius:9px;padding:9px 14px;cursor:pointer">Regresar ←</button></header>
  <div style="padding:22px"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap"><label style="font-size:12px;font-weight:700;color:#334155">Cliente<br><select id="esAccountsClient" style="margin-top:5px;min-width:270px;max-width:85vw;padding:10px;border:1px solid #cbd5e1;border-radius:9px"><option>Cargando...</option></select></label><button type="button" id="esAccountsNew" class="cc-btn cc-btn-primary">+ Crear usuario</button></div>
  <div id="esAccountsForm" style="display:none;background:#f8fafc;border:1px solid #dbeafe;border-radius:13px;margin-top:18px;padding:17px"><h3 style="margin:0 0 15px;font-size:16px">Nuevo usuario del cliente</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:13px"><label>Nombre completo<input id="esFormName" type="text" maxlength="160" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Correo electrónico<input id="esFormEmail" type="email" maxlength="260" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Cliente<select id="esFormClient" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"></select></label><label>Vista inicial<select id="esFormDefault" style="display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"><option value="aeropuerto">Pantalla Aeropuerto</option><option value="cajas_renta">Cajas de renta</option><option value="mapa_unidades">Mapa de unidades</option></select></label></div><div style="display:flex;gap:18px;flex-wrap:wrap;margin:18px 0 10px"><label><input id="esFormAirport" type="checkbox" checked> Pantalla Aeropuerto</label><label><input id="esFormRent" type="checkbox"> Cajas de renta</label><label><input id="esFormMap" type="checkbox"> Mapa de unidades</label></div><p style="font-size:12px;color:#64748b">Al crear el usuario, se enviará automáticamente una invitación segura desde el correo configurado. Su acceso quedará limitado a su cliente.</p><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button id="esAccountsSave" type="button" class="cc-btn cc-btn-primary">Guardar configuración</button><button id="esAccountsCancel" type="button" class="cc-btn cc-btn-light">Cancelar</button><span id="esAccountMsg" role="status" style="font-size:12px;color:#b91c1c"></span></div></div>
  <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px"><strong>Listado por cliente</strong><span id="esAccountsCount" style="font-size:12px;color:#64748b"></span></div><div id="esAccountsList"><p>Cargando listado...</p></div></div></div>`;
@@ -117,7 +117,7 @@ function open(){
     if(inviteError||!invite?.ok||!invite.emailSent)alert('Cuenta registrada en Supabase, pero el correo NO se pudo enviar: '+(invite?.message||invite?.error||inviteError?.message||'Error de SMTP')+'. Puedes reintentar desde el listado.');
     else alert('Cuenta creada y correo de activación enviado a '+invite.to+'. Confirmación SMTP: '+(invite.messageId||'aceptado')+'.');
    }
-  }catch(e){msg.textContent='Error al guardar: '+e.message}finally{btn.disabled=false}
+  }catch(e){msg.textContent='Error al guardar: '+(String(e.message).includes('CORREO_RESERVADO_USUARIO_WEB_PROFESIONAL')?'Este correo pertenece a un usuario de la web profesional. Debes utilizar un correo distinto para Cuenta Espejo.':e.message)}finally{btn.disabled=false}
  };
  refresh().catch(e=>{if($('esAccountsList'))$('esAccountsList').textContent='Error al cargar cuentas: '+e.message});
 }
