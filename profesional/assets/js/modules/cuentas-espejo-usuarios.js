@@ -49,18 +49,17 @@ async function previewAccount(id,button){
 }
 async function deleteAccount(id,button){
  const account=accounts.find(x=>x.id===id);if(!account)return;
- if(account.auth_user_id){alert('Esta cuenta ya tiene acceso de autenticación asociado. No se eliminará desde aquí para evitar dejar credenciales activas. Primero debe desactivarse mediante la administración de accesos.');return}
  const client=clients.find(x=>x.id===account.cliente_id);
- if(!confirm('¿Eliminar la cuenta espejo pendiente de '+account.nombre+' ('+account.email+') del cliente '+(client?.nombre||'')+'?\\n\\nEsta acción no se puede deshacer. No elimina al cliente ni sus operaciones.'))return;
+ if(!confirm('¿Eliminar definitivamente la Cuenta Espejo de '+account.nombre+' ('+account.email+') del cliente '+(client?.nombre||'')+'?\\n\\nSe revocará también su acceso de autenticación, si existe. No se elimina el cliente ni sus operaciones.'))return;
  button.disabled=true;
  try{
-  const {data,error}=await db().from('cc_cuentas_espejo_usuarios').delete().eq('id',id).is('auth_user_id',null).select('id');
-  if(error)throw error;
-  if(!data?.length)throw new Error('No se eliminó ningún registro. Verifica tus permisos o si la cuenta ya fue activada.');
+  const {data,error}=await db().functions.invoke('cc-mirror-invite',{body:{action:'delete',id}});
+  if(error||!data?.ok||!data.deleted)throw Error(data?.message||data?.error||error?.message||'El servidor no confirmó la eliminación.');
   if(editingId===id){editingId=null;form(false)}
-  await refresh();
- }catch(e){alert('Error al eliminar la cuenta: '+e.message);button.disabled=false}
+  await refresh();alert('Cuenta eliminada y acceso de autenticación revocado correctamente.');
+ }catch(e){alert('Error al eliminar: '+e.message);button.disabled=false}
 }
+
 function editAccount(id){
  const x=accounts.find(a=>a.id===id);if(!x)return;
  editingId=id;form(true);
