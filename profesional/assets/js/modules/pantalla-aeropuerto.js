@@ -921,7 +921,7 @@ function mapEmbedUrl(lat,lng){const la=Number(lat),lo=Number(lng);if(!Number.isF
 function toggleMap(index){const row=$('airMap_'+index),x=LAST[index];if(!row||!x)return;if(row.dataset.open==='1'){row.innerHTML='';row.dataset.open='0';return}const src=mapEmbedUrl(x.latitud,x.longitud);row.dataset.open='1';row.innerHTML=src?`<div class="airMiniMapWrap"><div style="flex:1"><iframe class="airMiniMap" loading="lazy" src="${esc(src)}"></iframe></div><div class="airMapMeta"><b>${esc(x.unidad||'Unidad')}</b><span>${esc(x.ubicacion||x.ubicacionErp||'Ubicación GPS')}</span><span>${esc(x.latitud+', '+x.longitud)}</span><span>Actualización GPS: ${esc(fmt(x.gpsAt))}</span><button class="airMapClose" data-map-close="${index}">Cerrar mapa</button></div></div>`:'<div class="airEmpty">Esta unidad no trae coordenadas válidas.</div>';row.querySelector('[data-map-close]')?.addEventListener('click',()=>toggleMap(index))}
 
 let RENT_MAP_INSTANCE=null;
-let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false, AIR_MAP_OPEN=false, AIR_MAP_INSTANCE=null, AIR_MAP_LAYER=null, AIR_MAP_BASE=null, AIR_MAP_MODE='MAPA', AIR_MAP_LOCKED=true, AIR_MAP_SELECTED_KEY=null, AIR_MAP_SEARCH='';
+let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false, AIR_MAP_OPEN=false, AIR_MAP_INSTANCE=null, AIR_MAP_LAYER=null, AIR_MAP_BASE=null, AIR_MAP_MODE=String(window.CC_MAPTILER_KEY||'').trim()?'SATELITE':'MAPA', AIR_MAP_LOCKED=true, AIR_MAP_SELECTED_KEY=null, AIR_MAP_SEARCH='';
 const AIR_MAP_MARKERS=new Map();
 const normClient=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 async function ensureAirportLeaflet(){
@@ -942,23 +942,26 @@ function airportMapRows(){
 }
 function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)return;const allowed=!selectedClient()&&window.ccPerm?.('pantalla_aeropuerto.ver_todas_unidades')===true;wrap.style.display=allowed?'inline-flex':'none';if(!allowed&&$('airMapShowAll'))$('airMapShowAll').checked=false}
 function airportBaseLayer(mode){
-  // Leaflet + OpenStreetMap. Teselas OSM únicamente como prueba de carga moderada;
-  // en producción intensiva configurar un proveedor OSM comercial autorizado.
   const key=String(window.CC_MAPTILER_KEY||'').trim();
   if(key){
-    return L.tileLayer('https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key='+encodeURIComponent(key),{
-      maxZoom:19,maxNativeZoom:18,attribution:'&copy; MapTiler &copy; OpenStreetMap contributors'
+    const style=mode==='SATELITE'?'satellite':'streets-v2';
+    const extension=mode==='SATELITE'?'jpg':'png';
+    return L.tileLayer('https://api.maptiler.com/maps/'+style+'/{z}/{x}/{y}.'+extension+'?key='+encodeURIComponent(key),{
+      maxZoom:19,maxNativeZoom:18,
+      attribution:mode==='SATELITE'?'&copy; MapTiler':'&copy; MapTiler &copy; OpenStreetMap contributors',
+      referrerPolicy:'strict-origin-when-cross-origin'
     });
   }
+  // Sin clave MapTiler no se afirma que haya satélite: mostrar calles OSM temporalmente.
   return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19,maxNativeZoom:19,attribution:'&copy; OpenStreetMap contributors',
+    maxZoom:19,attribution:'&copy; OpenStreetMap contributors',
     referrerPolicy:'strict-origin-when-cross-origin'
   });
 }
 function syncAirportMapControls(){
   $('airMapSatellite')?.classList.toggle('on',AIR_MAP_MODE==='SATELITE');
   $('airMapStreet')?.classList.toggle('on',AIR_MAP_MODE==='MAPA');
-  const satButton=$('airMapSatellite');if(satButton)satButton.style.display='none';
+  const satButton=$('airMapSatellite');if(satButton){satButton.style.display='';satButton.disabled=!String(window.CC_MAPTILER_KEY||'').trim();satButton.title=satButton.disabled?'Falta configurar API Key de MapTiler para activar satélite':'';}
   const lock=$('airMapLock');
   if(lock){
     lock.classList.toggle('on',AIR_MAP_LOCKED);
@@ -968,7 +971,7 @@ function syncAirportMapControls(){
   }
 }
 function switchAirportMapMode(mode){
-  AIR_MAP_MODE='MAPA';
+  AIR_MAP_MODE=mode==='SATELITE'&&String(window.CC_MAPTILER_KEY||'').trim()?'SATELITE':'MAPA';
   syncAirportMapControls();
   if(!AIR_MAP_INSTANCE||!window.L)return;
   try{
@@ -1220,7 +1223,7 @@ async function loadRentals(){
       if(!RENT_OPEN||!$('airRentLeaflet'))return;
       if(RENT_MAP_INSTANCE){RENT_MAP_INSTANCE.remove();RENT_MAP_INSTANCE=null}
       RENT_MAP_INSTANCE=L.map('airRentLeaflet',{zoomControl:true,scrollWheelZoom:false}).setView([la,lo],12);
-      airportBaseLayer('MAPA').addTo(RENT_MAP_INSTANCE);
+      airportBaseLayer(String(window.CC_MAPTILER_KEY||'').trim()?'SATELITE':'MAPA').addTo(RENT_MAP_INSTANCE);
       const bounds=[];
       located.forEach(x=>{
         const lat=Number(x.latitud),lng=Number(x.longitud);
