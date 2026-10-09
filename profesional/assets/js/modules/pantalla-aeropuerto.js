@@ -946,7 +946,7 @@ function airportBaseLayer(mode){
   if(key){
     const satellite=mode==='SATELITE';
     const url=satellite
-      ?'https://api.maptiler.com/tiles/satellite-v4/{z}/{x}/{y}?key='+encodeURIComponent(key)
+      ?'https://api.maptiler.com/maps/satellite-v4/256/{z}/{x}/{y}.jpg?key='+encodeURIComponent(key)
       :'https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key='+encodeURIComponent(key);
     return L.tileLayer(url,{
       maxZoom:19,maxNativeZoom:satellite?18:19,
