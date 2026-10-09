@@ -5,7 +5,7 @@
 </style></head><body>
 <header><div><strong>Tráfico App</strong><div style="font-size:12px;color:#b9c8db;margin-top:3px">Portal privado · Cuenta Espejo</div></div><button type="button" class="secondary" id="logout" style="display:none">Cerrar sesión</button></header>
 <main><section class="card" id="login"><h2>Acceso a Cuenta Espejo</h2><p class="muted">Consulta únicamente los movimientos y unidades que tu empresa tiene autorizados.</p><label>Correo electrónico<input id="email" autocomplete="email" type="email"></label><label>Contraseña<input id="password" autocomplete="current-password" type="password"></label><button id="enter" class="primary" type="button">Ingresar</button><div id="loginMsg" class="notice">Para activar una cuenta nueva utiliza el enlace recibido por correo.</div></section>
-<section id="dashboard"><div class="card"><div class="row"><div><h2 style="margin:0" id="company">Cuenta Espejo</h2><p class="muted" style="margin:8px 0" id="updated"></p></div><div class="row"><span id="count" class="pill">0 unidades</span><button class="secondary" id="refresh">Actualizar</button><button class="secondary" id="passwordToggle">Mi contraseña</button></div></div><div id="feedback" class="notice">Cargando unidades autorizadas…</div><div id="units" class="grid"></div></div>
+<section id="dashboard"><div class="card"><div class="row"><div><h2 style="margin:0" id="company">Cuenta Espejo</h2><p class="muted" style="margin:8px 0" id="updated"></p></div><div class="row"><span id="count" class="pill">0 unidades</span><button class="secondary" id="refresh">Actualizar</button><button class="secondary" id="passwordToggle">Mi contraseña</button></div></div><div id="viewTabs" class="row" style="justify-content:flex-start;margin-top:18px;gap:8px"></div><div id="feedback" class="notice">Cargando unidades autorizadas…</div><div id="units" class="grid"></div><div id="rentalList" class="grid" style="display:none"></div></div>
 <div class="card" id="security"><h3>Configurar contraseña</h3><p class="muted">Mínimo 10 caracteres. No compartas tu contraseña.</p><label>Nueva contraseña<input type="password" id="newPassword" autocomplete="new-password"></label><button class="primary" id="savePassword">Guardar contraseña</button><div id="passwordMsg" role="status"></div></div></section></main>
 <script src="assets/js/vendor/supabase-sdk.js"></script>
 <script src="assets/js/config/supabase-config.js"></script>
@@ -19,10 +19,20 @@
   show('feedback','Consultando datos autorizados…');$('units').innerHTML='';
   const {data,error}=await sb.functions.invoke('cc-mirror-airport',{body:{}});
   if(error||!data?.ok){show('feedback','No fue posible cargar los datos: '+(data?.error||error?.message||'Sin autorización'),true);return}
-  $('company').textContent=data.cliente;$('count').textContent=data.count+' unidades';$('updated').textContent='Actualizado: '+(data.updatedAt?new Date(data.updatedAt).toLocaleString('es-MX'):'sin hora disponible');
-  const vs=Array.isArray(data.vehicles)?data.vehicles:[];
-  show('feedback',vs.length?'Mostrando exclusivamente las unidades asignadas a tu cliente.':'No hay unidades asignadas a tu cliente.');
-  $('units').innerHTML=vs.map(x=>'<article class="unit"><div class="row"><strong>'+esc(x.unidad)+'</strong><span class="pill">'+(x.asignacion==='VIAJE'?'Viaje':'Asignada')+'</span></div><small>'+esc(x.numeroViaje?'Viaje '+x.numeroViaje:'Sin viaje activo')+'</small><p>'+esc(x.ubicacion||'Ubicación no disponible')+'</p><small>'+esc(x.gpsAt||'')+'</small>'+(Number.isFinite(Number(x.latitud))&&Number.isFinite(Number(x.longitud))?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
+  $('company').textContent=data.cliente;$('count').textCont  const vs=Array.isArray(data.vehicles)?data.vehicles:[], rentals=Array.isArray(data.rentals)?data.rentals:[], permissions=data.permissions||{};
+  const tabs=$('viewTabs');tabs.innerHTML='';
+  const views=[['aeropuerto','Pantalla Aeropuerto'],['cajas_renta','Cajas de renta'],['mapa_unidades','Mapa de unidades']].filter(([key])=>permissions[key]);
+  const choose=key=>{
+    tabs.querySelectorAll('button').forEach(b=>{b.className=b.dataset.view===key?'primary':'secondary'});
+    $('units').style.display=key==='cajas_renta'?'none':'grid';
+    $('rentalList').style.display=key==='cajas_renta'?'grid':'none';
+    $('count').textContent=key==='cajas_renta'?rentals.length+' cajas en renta':vs.length+' unidades';
+    show('feedback',key==='cajas_renta'?'Ubicaciones reportadas mediante el escaneo QR.':key==='mapa_unidades'?'Ubicaciones GPS de las unidades asignadas a tu cliente.':'Movimientos y unidades asignados a tu cliente.');
+  };
+  for(const [key,title] of views){const btn=document.createElement('button');btn.textContent=title;btn.className='secondary';btn.dataset.view=key;btn.onclick=()=>choose(key);tabs.appendChild(btn)}
+  $('rentalList').innerHTML=rentals.length?rentals.map(x=>'<article class="unit"><strong>'+esc(x.caja)+'</strong><small>'+esc(x.descripcion||'Caja en renta')+'</small><p>'+esc(x.placas||'')+'</p><small>Último escaneo: '+esc(x.ubicacionAt?new Date(x.ubicacionAt).toLocaleString('es-MX'):'Sin ubicación reportada')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver ubicación ↗</a>':'')+'</article>').join(''):'<p class="muted">No hay cajas de renta activas registradas para este cliente.</p>';
+  $('units').innerHTML=vs.map(x=>'<article class="unit"><div class="row"><strong>'+esc(x.unidad)+'</strong><span class="pill">'+(x.asignacion==='VIAJE'?'Viaje':'Asignada')+'</span></div><small>'+esc(x.numeroViaje?'Viaje '+x.numeroViaje:'Sin viaje activo')+'</small><p>'+esc(x.ubicacion||'Ubicación no disponible')+'</p><small>'+esc(x.gpsAt||'')+'</small>'+(x.latitud!==null&&x.longitud!==null?'<a target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
+  choose(views[0]?.[0]||'aeropuerto');el="noopener noreferrer" href="https://www.google.com/maps?q='+encodeURIComponent(x.latitud+','+x.longitud)+'">Ver en mapa ↗</a>':'')+'</article>').join('');
  }
  async function boot(){
   const {data:{session}}=await sb.auth.getSession();
