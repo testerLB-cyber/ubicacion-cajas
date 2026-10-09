@@ -75,7 +75,7 @@ async function resendAccount(id,button){
  button.disabled=true;const original=button.textContent;button.textContent='Enviando…';
  try{
   const {data,error}=await db().functions.invoke('cc-mirror-invite',{body:{action:'invite',id}});
-  if(error)throw Error(data?.message||data?.error||error.message);
+  if(error){let info=data;try{if(error.context?.json)info=await error.context.json()}catch(_){}throw Error(info?.message||info?.error||error.message)}
   if(!data?.ok||!data?.emailSent)throw Error(data?.message||data?.error||'El correo no fue confirmado por SMTP.');
   await refresh();alert('Invitación enviada mediante correo configurado a '+data.to+'. Identificador SMTP: '+(data.messageId||'confirmado')+'.');
  }catch(e){alert('No se pudo enviar la invitación: '+(e.message||e))}
