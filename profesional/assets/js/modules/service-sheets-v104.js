@@ -541,9 +541,10 @@
       }else if(mode==='VARIOS'){
         const chips=[...form.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
         const typed=String(form.querySelector('[name="varios"]')?.value||'').split(/[\s,;]+/).filter(Boolean);
-        const captured=[...chips,...(form.__assignSet||[]),...typed];
+        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/[0-9]{5,6}/g)||[];
+        const captured=[...chips,...chipText,...(form.__assignSet||[]),...typed].filter(x=>x!=null&&String(x).trim());
         item.folios=[...new Set(captured.map(parseNum))];
-        if(!item.folios.length)throw new Error('Agrega al menos una hoja.');
+        if(!item.folios.length)throw new Error('RETORNO_V8: no se leyeron las etiquetas del formulario.');
       }else throw new Error('Modo de retorno inválido.');
       item.serieId=String(fd.get('serieId')||'');
       item.anioId=String(fd.get('anioId')||'');
