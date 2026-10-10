@@ -8,11 +8,11 @@ async function tick(){
  if(heartbeatBusy||!sb()||!window.CC_AUTH_READY)return;
  heartbeatBusy=true;
  try{
-  const {data:{user}}=await sb().auth.getUser();
+  const {data:{session}}=await sb().auth.getSession();const user=session?.user;
   if(!user){lastUid='';return}
   lastUid=user.id;
   const state=await rpc('heartbeat',{p_client_key:key});
-  if(state?.revoked){await sb().auth.signOut();window.CC_AUTH_READY=false;window.CC_ACCESS=null;document.body.classList.add('cc-auth-locked');document.getElementById('ccLoginGate')?.classList.remove('cc-hidden');alert('Esta sesión fue cerrada por el administrador. Inicia sesión nuevamente.');location.reload();}
+  if(state?.revoked){sessionStorage.removeItem(keyName);await sb().auth.signOut();window.CC_AUTH_READY=false;window.CC_ACCESS=null;document.body.classList.add('cc-auth-locked');document.getElementById('ccLoginGate')?.classList.remove('cc-hidden');alert('Esta sesión fue cerrada por el administrador. Inicia sesión nuevamente.');location.reload();}
  }catch(e){console.warn('SESSION_HEARTBEAT',e.message||e)}finally{heartbeatBusy=false}
 }
 const styles=document.createElement('style');styles.textContent=`
