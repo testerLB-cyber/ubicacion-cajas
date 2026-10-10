@@ -53,5 +53,5 @@ window.ccSendWebNotifications=async()=>{
 };
 function buttons(){const a=document.getElementById('gmSideOperatorNotifications');if(!a)return;const session=document.getElementById('gmSideWebSessions'),notify=document.getElementById('gmSideWebNotifs');if(session)session.style.display=has('sesiones_web')?'':'none';if(notify)notify.style.display=has('notificaciones_usuarios')?'':'none'}
 setInterval(()=>{buttons();tick()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});setTimeout(()=>{buttons();tick()},2500);
-window.addEventListener('beforeunload',()=>{});window.ccWebSessionEndSelf=async()=>{try{await rpc('end_self',{p_client_key:key})}catch(_){}};
+window.addEventListener('beforeunload',()=>{});window.ccWebSessionEndSelf=async()=>{try{await rpc('end_self',{p_client_key:key})}catch(_){}finally{key=crypto.randomUUID();sessionStorage.setItem(keyName,key)}};
 })();
