@@ -526,9 +526,9 @@
       // No modifica los flujos de generar, asignar ni comprobar hojas.
       const mode=String(form.querySelector('[name="modo"]')?.value||'RANGO').toUpperCase();
       const parseNum=value=>{
-        let n=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\\d{4}-/i,'').replace(/\\D/g,'');
+        let n=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\d{4}-/i,'').replace(/\D/g,'');
         if(n.length===6&&n.startsWith('0'))n=n.slice(1);
-        if(!/^\\d{5}$/.test(n))throw new Error('Folio inválido: '+value);
+        if(!/^\d{5}$/.test(n))throw new Error('Folio inválido: '+value);
         return Number(n);
       };
       const item={modo:mode};
@@ -540,7 +540,7 @@
         item.individual=parseNum(form.querySelector('[name="individual"]')?.value);
       }else if(mode==='VARIOS'){
         const chips=[...form.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
-        const typed=String(form.querySelector('[name="varios"]')?.value||'').split(/[\\s,;]+/).filter(Boolean);
+        const typed=String(form.querySelector('[name="varios"]')?.value||'').split(/[\s,;]+/).filter(Boolean);
         const captured=[...chips,...(form.__assignSet||[]),...typed];
         item.folios=[...new Set(captured.map(parseNum))];
         if(!item.folios.length)throw new Error('Agrega al menos una hoja.');
