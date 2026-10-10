@@ -1617,11 +1617,22 @@ function ccGeoJSONFeaturesToGeocercas(obj){
   const addPoly=(coords,props={})=>{if(!Array.isArray(coords?.[0]))return;out.push({id:uid(),nombre:String(props.name||props.nombre||props.Name||'Geocerca importada').trim(),tipo:'polygon',coordenadas:coords.map(r=>r.map(p=>[Number(p[1]),Number(p[0])])),activa:true,color:ccGeoColor((configuracion.geocercas||[]).length+out.length),importadaEn:new Date().toISOString()});};
   feats.forEach(f=>{const g=f.geometry||{},p=f.properties||{};if(g.type==='Polygon')addPoly(g.coordinates,p);else if(g.type==='MultiPolygon')g.coordinates.forEach((poly,j)=>addPoly(poly,{...p,name:(p.name||p.nombre||'Geocerca')+(g.coordinates.length>1?' '+(j+1):'')}));});return out;
 }
+window.ccGeoListForProfesional=()=>Array.isArray(configuracion.geocercas)?configuracion.geocercas:[];
+window.ccAirportGeoCRUD=async function(action,payload){
+ if(window.CC_MIRROR_EXTERNAL)throw Error('Acceso no autorizado');
+ const arr=configuracion.geocercas||(configuracion.geocercas=[]);
+ const backup=JSON.stringify(arr);
+ if(action==='remove'){const n=arr.findIndex(g=>g.id===payload.id);if(n<0)throw Error('Geocerca no encontrada');arr.splice(n,1);}
+ else if(action==='save'){const n=arr.findIndex(g=>g.id===payload.id);if(n<0)arr.push({...payload,id:payload.id||uid()});else Object.assign(arr[n],payload);}
+ else throw Error('Acción inválida');
+ const result=await ccCloudSave('AEROPUERTO_GEOCERCAS');if(!result?.ok){configuracion.geocercas=JSON.parse(backup);throw Error(result?.error||'Error al guardar');}
+ ccRenderGeocercasMapa();return true;
+};
 window.ccImportarGeocercasArchivo=async function(file){
   if(!file)return;try{showStatus?.('Leyendo geocercas...','info');await ccEnsureGeoLibraries();const ext=(file.name.split('.').pop()||'').toLowerCase();let obj;
     if(ext==='geojson'||ext==='json'){obj=JSON.parse(await file.text());}
     else if(ext==='kml'){const xml=new DOMParser().parseFromString(await file.text(),'text/xml');obj=window.toGeoJSON.kml(xml);}
-    else if(ext==='kmz'){const zip=await JSZip.loadAsync(await file.arrayBuffer());let entry=zip.file(/\.kml$/i)[0];if(!entry)throw new Error('El KMZ no contiene un archivo KML');const xml=new DOMParser().parseFromString(await entry.async('text'),'text/xml');obj=window.toGeoJSON.kml(xml);}
+    else if(ext==='kmz'){const bytes=await file.arrayBuffer();const head=new TextDecoder().decode(bytes.slice(0,200)).trimStart();let kml;if(head.startsWith('<?xml')||head.startsWith('<kml'))kml=new TextDecoder().decode(bytes);else{const zip=await JSZip.loadAsync(bytes);const entry=zip.file(/\.kml$/i)[0];if(!entry)throw new Error('El KMZ no contiene un archivo KML');kml=await entry.async('text');}const xml=new DOMParser().parseFromString(kml,'text/xml');obj=window.toGeoJSON.kml(xml);}
     else throw new Error('Formato no compatible. Usa KML, KMZ, GeoJSON o JSON.');
     const nuevas=ccGeoJSONFeaturesToGeocercas(obj);if(!nuevas.length)throw new Error('No se encontraron polígonos válidos en el archivo.');
     if(!confirm(`Se encontraron ${nuevas.length} geocercas. ¿Importarlas a Supabase?`))return;const prev=[...(configuracion.geocercas||[])];configuracion.geocercas=[...prev,...nuevas];const r=await ccCloudSave('IMPORTAR_GEOCERCAS');if(!r?.ok){configuracion.geocercas=prev;throw new Error(r?.error||'Supabase rechazó la importación');}ccRenderGeocercasMapa();if(ccMapaUnidadesInstance&&nuevas.length){const layers=nuevas.map((g,i)=>ccGeocercaToLayer(g,i)).filter(Boolean);const group=L.featureGroup(layers);if(group.getBounds().isValid())ccMapaUnidadesInstance.fitBounds(group.getBounds(),{padding:[25,25]});}showStatus?.(`${nuevas.length} GEOCERCAS IMPORTADAS`,'success');
