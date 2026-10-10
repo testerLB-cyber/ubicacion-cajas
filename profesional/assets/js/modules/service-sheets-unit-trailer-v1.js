@@ -197,7 +197,7 @@
       if(direct.disabled)return;direct.disabled=true;const old=direct.innerHTML;direct.textContent='Comprobando...';
       try{await save(row);row.dataset.hsCheckCompleted='1';direct.textContent='Comprobado ✓';document.getElementById('hs104Refresh')?.click();}
       catch(err){alert(err?.message||err);}
-      finally{direct.disabled=false;if(row.isConnected&&row.dataset.hsCheckCompleted!=='1')direct.innerHTML=old;}
+      finally{if(row.dataset.hsCheckCompleted==='1'){direct.disabled=true;}else{direct.disabled=false;if(row.isConnected)direct.innerHTML=old;}}
       return;
     }
     const btn=e.target.closest?.('#hs104CompList [data-save]');if(!btn)return;
@@ -206,7 +206,7 @@
     if(btn.disabled)return;btn.disabled=true;const old=btn.textContent;btn.textContent='Comprobando...';
     try{await save(row);row.dataset.hsCheckCompleted='1';btn.textContent='Comprobado ✓';document.getElementById('hs104Refresh')?.click();}
     catch(err){alert(err?.message||err);}
-    finally{btn.disabled=false;if(row.isConnected&&row.dataset.hsCheckCompleted!=='1')btn.textContent=old;}
+    finally{if(row.dataset.hsCheckCompleted==='1'){btn.disabled=true;}else{btn.disabled=false;if(row.isConnected)btn.textContent=old;}}
   },true);
 
   let listObserver=null,bootObserver=null,decorateTimer=null;
