@@ -952,7 +952,7 @@ function airGeoPanel(){
   const list=panel.querySelector('#airGeoManageList');
   const draw=()=>{const q=(panel.querySelector('#airGeoSearch').value||'').toLocaleLowerCase();list.replaceChildren();areas.filter(g=>String(g.nombre||'').toLocaleLowerCase().includes(q)).slice(0,150).forEach(g=>{const d=document.createElement('div');d.style.cssText='padding:8px;border-bottom:1px solid #e2e8f0';d.textContent=g.nombre||'Geocerca';list.appendChild(d)});};
   panel.querySelector('#airGeoSearch').oninput=draw;draw();
-  panel.querySelector('#airGeoOpenAdmin').onclick=()=>{panel.remove();const tab=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(b=>(b.getAttribute('onclick')||'').includes("ccTab('mapa'"));if(tab&&typeof window.ccTab==='function')window.ccTab('mapa',tab);else alert('Abre Control de Cajas → Mapa de Cajas → Geocercas para crear o importar zonas.');};
+  panel.querySelector('#airGeoOpenAdmin').onclick=()=>{panel.remove();const tab=[...document.querySelectorAll('#controlCajasSection .cc-tab')].find(b=>(b.getAttribute('onclick')||'').includes("ccTab('mapa'"));if(typeof window.ccTab==='function'){window.ccTab('mapa',tab||document.createElement('button'));}else alert('La administración de geocercas no está disponible en este momento.');};
 }
 let RENT_OPEN=false, RENT_CACHE=null, RENT_LOADING=false, AIR_MAP_OPEN=false, AIR_MAP_INSTANCE=null, AIR_MAP_LAYER=null, AIR_MAP_BASE=null, AIR_MAP_MODE='MAPA', AIR_MAP_LOCKED=true, AIR_MAP_SELECTED_KEY=null, AIR_MAP_SEARCH='';
 const AIR_MAP_MARKERS=new Map();
