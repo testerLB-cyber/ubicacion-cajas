@@ -522,7 +522,29 @@
       '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
       '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn" style="background:#dc2626;color:#fff;border-color:#dc2626">Retornar hojas</button></div></form>';
     const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
-      const item=selectionItem(form);
+      // Este formulario devuelve exactamente la selección visible (no depende de form.varios).
+      // No modifica los flujos de generar, asignar ni comprobar hojas.
+      const mode=String(form.querySelector('[name="modo"]')?.value||'RANGO').toUpperCase();
+      const parseNum=value=>{
+        let n=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\\d{4}-/i,'').replace(/\\D/g,'');
+        if(n.length===6&&n.startsWith('0'))n=n.slice(1);
+        if(!/^\\d{5}$/.test(n))throw new Error('Folio inválido: '+value);
+        return Number(n);
+      };
+      const item={modo:mode};
+      if(mode==='RANGO'){
+        item.desde=parseNum(form.querySelector('[name="desde"]')?.value);
+        item.hasta=parseNum(form.querySelector('[name="hasta"]')?.value);
+        if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
+      }else if(mode==='INDIVIDUAL'){
+        item.individual=parseNum(form.querySelector('[name="individual"]')?.value);
+      }else if(mode==='VARIOS'){
+        const chips=[...form.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
+        const typed=String(form.querySelector('[name="varios"]')?.value||'').split(/[\\s,;]+/).filter(Boolean);
+        const captured=[...chips,...(form.__assignSet||[]),...typed];
+        item.folios=[...new Set(captured.map(parseNum))];
+        if(!item.folios.length)throw new Error('Agrega al menos una hoja.');
+      }else throw new Error('Modo de retorno inválido.');
       item.serieId=String(fd.get('serieId')||'');
       item.anioId=String(fd.get('anioId')||'');
       item.responsableId=String(fd.get('responsableId')||'');
