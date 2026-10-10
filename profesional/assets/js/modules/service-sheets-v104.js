@@ -606,7 +606,7 @@
       status.style.color='#15803d';
     };
     form.querySelector('[name="modo"]').onchange=()=>{
-      o.querySelectorAll('[data-assign-mode]').forEach(x=>x.style.display=x.dataset.assignMode===form.modo.value?'':'none');
+      o.querySelectorAll('[data-assign-mode]').forEach(x=>x.style.display=x.dataset.assignMode===form.querySelector('[name="modo"]').value?'':'none');
       form.__assignSet.clear();renderChips();
       ['desde','hasta','individual','varios'].forEach(n=>{if(form.querySelector('[name="'+n+'"]'))form.querySelector('[name="'+n+'"]').value='';});
       status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';
