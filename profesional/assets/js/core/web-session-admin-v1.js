@@ -39,6 +39,23 @@ window.ccManageWebSessions=async()=>{
  }
  await refresh();
 };
+window.ccSendOperatorNotifications=async()=>{
+ const body=modal('Notificaciones · Operadores');
+ body.innerHTML='<p>Envía avisos a uno, varios o todos los operadores de la aplicación móvil.</p><label style="display:block;margin:12px 0">Título<input id="ccOpNotifTitle" maxlength="120" class="cc-admin-input" placeholder="Aviso de operación"></label><label style="display:block;margin:12px 0">Prioridad / origen<select id="ccOpNotifSource" class="cc-admin-input"><option>OPERACION</option><option>TRAFICO</option><option>MANTENIMIENTO</option><option>ADMINISTRACION</option><option>URGENTE</option></select></label><label style="display:block;margin:12px 0">Mensaje<textarea id="ccOpNotifBody" maxlength="1200" rows="4" class="cc-admin-input" placeholder="Escribe el mensaje..."></textarea></label><div style="display:flex;gap:10px;align-items:center;justify-content:space-between"><label><input id="ccOpNotifAll" type="checkbox"> Seleccionar todos</label><span id="ccOpNotifCount">0 seleccionados</span></div><input id="ccOpNotifSearch" class="cc-admin-input" placeholder="Buscar operador..." style="margin-top:12px"><div id="ccOpNotifList" style="max-height:250px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;margin:12px 0">Cargando operadores…</div><button id="ccOpNotifSend" class="cc-admin-action" disabled>Enviar notificación</button><span id="ccOpNotifStatus" style="margin-left:12px"></span>';
+ const list=body.querySelector('#ccOpNotifList'),status=body.querySelector('#ccOpNotifStatus'),btn=body.querySelector('#ccOpNotifSend');
+ try{
+ const {data,error}=await sb().rpc('cc_operator_notification_directory');
+ if(error)throw error;if(!data?.ok)throw Error('No tienes permiso para enviar notificaciones');
+ const operators=data.operadores||[];
+ list.innerHTML='';
+ const count=()=>{body.querySelector('#ccOpNotifCount').textContent=list.querySelectorAll('input:checked').length+' seleccionados'};
+ operators.forEach(u=>{const label=document.createElement('label');label.className='cc-admin-user';label.dataset.search=((u.operador_nombre||'')+' '+(u.nombre||'')).toLowerCase();const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.className='ccOpRecipient';checkbox.value=u.user_id;checkbox.onchange=count;const name=document.createElement('span');name.textContent=(u.operador_nombre||u.nombre||'Operador')+(u.nombre&&u.operador_nombre?' · '+u.nombre:'');label.append(checkbox,name);list.append(label)});
+ body.querySelector('#ccOpNotifAll').onchange=e=>{list.querySelectorAll('input').forEach(c=>c.checked=e.target.checked);count()};
+ body.querySelector('#ccOpNotifSearch').oninput=e=>list.querySelectorAll('label').forEach(el=>el.style.display=el.dataset.search.includes(e.target.value.toLowerCase())?'':'none');
+ btn.disabled=false;
+ btn.onclick=async()=>{const ids=[...list.querySelectorAll('input:checked')].map(c=>c.value),title=body.querySelector('#ccOpNotifTitle').value.trim(),message=body.querySelector('#ccOpNotifBody').value.trim(),source=body.querySelector('#ccOpNotifSource').value;if(!ids.length||!title||!message)return alert('Selecciona destinatarios y captura título y mensaje');if(!confirm('¿Enviar aviso a '+ids.length+' operadores?'))return;btn.disabled=true;status.textContent='Enviando…';try{const {data:result,error:sendError}=await sb().rpc('cc_send_operator_notification',{p_user_ids:ids,p_title:title,p_body:message,p_url:'/operador-v2/',p_source:source});if(sendError)throw sendError;const push=await sb().functions.invoke('operator-web-push',{body:{action:'send',userIds:ids,title,message,url:'/operador-v2/'}});if(push.error){status.textContent='Aviso guardado ('+(result?.enviadas||0)+'), pero Push falló: '+push.error.message;return}status.textContent='Avisos: '+(result?.enviadas||0)+' · Push enviados: '+(push.data?.sent||0);body.querySelector('#ccOpNotifBody').value=''}catch(e){status.textContent='Error: '+e.message}finally{btn.disabled=false}};
+ }catch(e){list.textContent='No fue posible cargar operadores: '+e.message;status.textContent='Acceso restringido'}
+};
 window.ccSendWebNotifications=async()=>{
  if(!has('notificaciones_usuarios'))return alert('No tienes permiso para enviar notificaciones');
  const body=modal('Notificaciones · Usuarios Web');
