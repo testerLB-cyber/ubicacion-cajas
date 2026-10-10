@@ -524,7 +524,9 @@
     const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
       // Este formulario devuelve exactamente la selección visible (no depende de form.varios).
       // No modifica los flujos de generar, asignar ni comprobar hojas.
-      const mode=String(form.querySelector('[name="modo"]')?.value||'RANGO').toUpperCase();
+      const root=form.closest('.hs104-modal')||form;
+      const find=name=>root.querySelector('[name="'+name+'"]');
+      const mode=String(find('modo')?.value||'RANGO').toUpperCase();
       const parseNum=value=>{
         let n=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\d{4}-/i,'').replace(/\D/g,'');
         if(n.length===6&&n.startsWith('0'))n=n.slice(1);
@@ -533,22 +535,22 @@
       };
       const item={modo:mode};
       if(mode==='RANGO'){
-        item.desde=parseNum(form.querySelector('[name="desde"]')?.value);
-        item.hasta=parseNum(form.querySelector('[name="hasta"]')?.value);
+        item.desde=parseNum(find('desde')?.value);
+        item.hasta=parseNum(find('hasta')?.value);
         if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
       }else if(mode==='INDIVIDUAL'){
-        item.individual=parseNum(form.querySelector('[name="individual"]')?.value);
+        item.individual=parseNum(find('individual')?.value);
       }else if(mode==='VARIOS'){
-        const chips=[...form.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
-        const typed=String(form.querySelector('[name="varios"]')?.value||'').split(/[\s,;]+/).filter(Boolean);
-        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/[0-9]{5,6}/g)||[];
-        const captured=[...chips,...chipText,...(form.__assignSet||[]),...typed].filter(x=>x!=null&&String(x).trim());
+        const chips=[...root.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
+        const typed=String(find('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
+        const chipText=String(root.querySelector('[data-assign-chips]')?.textContent||'').match(/[0-9]{5,6}/g)||[];
+        const captured=[...chips,...chipText,...(form.__assignSet||[]),...(root.__assignSet||[]),...typed].filter(x=>x!=null&&String(x).trim());
         item.folios=[...new Set(captured.map(parseNum))];
         if(!item.folios.length)throw new Error('RETORNO_V8: no se leyeron las etiquetas del formulario.');
       }else throw new Error('Modo de retorno inválido.');
-      item.serieId=String(fd.get('serieId')||'');
-      item.anioId=String(fd.get('anioId')||'');
-      item.responsableId=String(fd.get('responsableId')||'');
+      item.serieId=String(find('serieId')?.value||fd.get('serieId')||'');
+      item.anioId=String(find('anioId')?.value||fd.get('anioId')||'');
+      item.responsableId=String(find('responsableId')?.value||fd.get('responsableId')||'');
       const check=await rpc('hs_validate_responsible_return_selection',{p_item:item});
       if(!check.available)throw new Error(conflictText(check.conflicts,'No se pueden retornar. Hojas con conflicto:'));
       if(!confirm('¿Confirmas retornar '+Number(check.total||0)+' hoja(s) de '+(check.responsable||'este responsable')+'?\n\nQuedarán en estatus NUEVO y sin responsable.'))return;
