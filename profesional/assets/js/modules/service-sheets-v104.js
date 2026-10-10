@@ -509,55 +509,92 @@
     if(!perm('asignar_responsable'))return alert('Sin permiso.');
     const rs=active(D.responsables),ss=active(D.series),ys=active(D.anios);
     if(!rs.length)return alert('Primero agrega un responsable en Catálogos.');
-    const body='<form><div class="hs104-grid">'+
-      '<div class="cc-field"><label>Serie *</label><select name="serieId" required>'+options(ss,x=>x.codigo)+'</select></div>'+
-      '<div class="cc-field"><label>Año *</label><select name="anioId" required>'+options(ys,x=>x.anio)+'</select></div>'+
-      '<div class="cc-field"><label>Responsable que retorna *</label><select name="responsableId" required>'+options(rs,x=>x.nombre+(x.numeroEmpleado?' · '+x.numeroEmpleado:'')+(x.correo?' · '+x.correo:''))+'</select></div>'+
-      '<div class="cc-field"><label>Forma de retorno *</label><select name="modo"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
+    // Ventana aislada: sin form/submit ni selectionItem/setupSelectionUI de los otros flujos.
+    const body='<div id="hsReturnV10" class="hs104-return-isolated">'+
+      '<div class="hs104-grid">'+
+      '<div class="cc-field"><label>Serie *</label><select data-ret="serie" class="cc-input">'+options(ss,x=>x.codigo)+'</select></div>'+
+      '<div class="cc-field"><label>Año *</label><select data-ret="anio" class="cc-input">'+options(ys,x=>x.anio)+'</select></div>'+
+      '<div class="cc-field"><label>Responsable que retorna *</label><select data-ret="responsable" class="cc-input">'+options(rs,x=>x.nombre)+'</select></div>'+
+      '<div class="cc-field"><label>Forma de retorno *</label><select data-ret="modo" class="cc-input"><option value="RANGO">Por rango</option><option value="INDIVIDUAL">Hoja individual</option><option value="VARIOS">Varias hojas</option></select></div>'+
       '</div>'+
-      '<div data-assign-mode="RANGO" class="hs104-grid" style="margin-top:10px"><div class="cc-field"><label>Desde *</label><input name="desde" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div><div class="cc-field"><label>Hasta *</label><input name="hasta" inputmode="numeric" maxlength="6" placeholder="Ej. 12780 ó 012780"><div class="hs104-note">Acepta 5 dígitos o 6 posiciones con cero inicial.</div></div></div>'+
-      '<div data-assign-mode="INDIVIDUAL" style="display:none;margin-top:10px"><div class="cc-field"><label>Folio *</label><input name="individual" inputmode="numeric" maxlength="6" placeholder="Ej. 12751 ó 012751"></div></div>'+
-      '<div data-assign-mode="VARIOS" style="display:none;margin-top:10px"><div class="cc-field"><label>Varias hojas *</label><input name="varios" inputmode="numeric" placeholder="Escribe 5 dígitos y presiona coma o Enter"><div class="hs104-note">Cada hoja se agrega como etiqueta y puedes quitarla con ×.</div></div><div data-assign-chips style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
-      '<div data-assign-status class="hs104-note" style="margin-top:10px">Captura las hojas para validar que todavía estén bajo custodia del responsable.</div>'+
-      '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
-      '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn" style="background:#dc2626;color:#fff;border-color:#dc2626">Retornar hojas</button></div></form>';
-    const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
-      // Este formulario devuelve exactamente la selección visible (no depende de form.varios).
-      // No modifica los flujos de generar, asignar ni comprobar hojas.
-      const root=form.closest('.hs104-modal')||form;
-      const find=name=>root.querySelector('[name="'+name+'"]');
-      const mode=String(find('modo')?.value||'RANGO').toUpperCase();
-      const parseNum=value=>{
-        let n=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\d{4}-/i,'').replace(/\D/g,'');
-        if(n.length===6&&n.startsWith('0'))n=n.slice(1);
-        if(!/^\d{5}$/.test(n))throw new Error('Folio inválido: '+value);
-        return Number(n);
-      };
-      const item={modo:mode};
-      if(mode==='RANGO'){
-        item.desde=parseNum(find('desde')?.value);
-        item.hasta=parseNum(find('hasta')?.value);
-        if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
-      }else if(mode==='INDIVIDUAL'){
-        item.individual=parseNum(find('individual')?.value);
-      }else if(mode==='VARIOS'){
-        const chips=[...root.querySelectorAll('[data-assign-chips] [data-assign-chip]')].map(el=>el.getAttribute('data-assign-chip'));
-        const typed=String(find('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
-        const chipText=String(root.querySelector('[data-assign-chips]')?.textContent||'').match(/[0-9]{5,6}/g)||[];
-        const captured=[...chips,...chipText,...(form.__assignSet||[]),...(root.__assignSet||[]),...typed].filter(x=>x!=null&&String(x).trim());
-        item.folios=[...new Set(captured.map(parseNum))];
-        if(!item.folios.length)throw new Error('RETORNO_V8: no se leyeron las etiquetas del formulario.');
-      }else throw new Error('Modo de retorno inválido.');
-      item.serieId=String(find('serieId')?.value||fd.get('serieId')||'');
-      item.anioId=String(find('anioId')?.value||fd.get('anioId')||'');
-      item.responsableId=String(find('responsableId')?.value||fd.get('responsableId')||'');
-      const check=await rpc('hs_validate_responsible_return_selection',{p_item:item});
-      if(!check.available)throw new Error(conflictText(check.conflicts,'No se pueden retornar. Hojas con conflicto:'));
-      if(!confirm('¿Confirmas retornar '+Number(check.total||0)+' hoja(s) de '+(check.responsable||'este responsable')+'?\n\nQuedarán en estatus NUEVO y sin responsable.'))return;
-      const r=await rpc('hs_return_responsible_selection',{p_item:item});
-      alert('Hojas retornadas: '+Number(r.retornadas||0)+'\nEstatus: NUEVO\nResponsable eliminado.');
-    }});
-    setupSelectionUI(o,'retorno');
+      '<div data-ret-panel="RANGO" class="hs104-grid" style="margin-top:12px"><div class="cc-field"><label>Desde</label><input data-ret="desde" class="cc-input" inputmode="numeric" maxlength="6" placeholder="01593"></div><div class="cc-field"><label>Hasta</label><input data-ret="hasta" class="cc-input" inputmode="numeric" maxlength="6" placeholder="01598"></div></div>'+
+      '<div data-ret-panel="INDIVIDUAL" style="display:none;margin-top:12px"><div class="cc-field"><label>Folio individual</label><input data-ret="individual" class="cc-input" inputmode="numeric" maxlength="6" placeholder="01593"></div></div>'+
+      '<div data-ret-panel="VARIOS" style="display:none;margin-top:12px"><div class="cc-field"><label>Varias hojas</label><div style="display:flex;gap:8px"><input data-ret="varios" class="cc-input" style="flex:1" placeholder="01593, 01594, 01598"><button type="button" data-ret-add class="cc-btn">Agregar</button></div><div class="hs104-note">Escribe uno o varios folios, separados por coma, espacio o Enter.</div></div><div data-ret-chips style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px"></div></div>'+
+      '<div data-ret-status class="hs104-note" style="margin-top:13px">Selecciona folios para retornar a NUEVO. Se validarán antes de guardar.</div>'+
+      '<div style="margin-top:10px;padding:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:11px">Solo podrán retornar hojas sin comprobación utilizada ni asignación activa.</div>'+
+      '<div class="hs104-actions" style="margin-top:14px"><button type="button" data-cancel class="cc-btn cc-btn-light">Cancelar</button><button type="button" data-ret-save class="cc-btn" style="background:#dc2626;color:#fff">Retornar hojas</button></div></div>';
+    const ov=modal('Retornar hojas del responsable',body);
+    const root=ov.querySelector('#hsReturnV10');
+    const el=name=>root.querySelector('[data-ret="'+name+'"]');
+    const selected=new Set();
+    const status=root.querySelector('[data-ret-status]');
+    const pills=root.querySelector('[data-ret-chips]');
+    const number=value=>{
+      let v=String(value??'').trim().replace(/^(M|CFDI|SPF|N)-\d{4}-/i,'').replace(/\D/g,'');
+      if(v.length===6&&v[0]==='0')v=v.slice(1);
+      if(!/^\d{5}$/.test(v))throw new Error('Folio inválido: '+value+'. Usa cinco dígitos.');
+      return Number(v);
+    };
+    const draw=()=>{
+      pills.replaceChildren();
+      [...selected].sort((a,b)=>a-b).forEach(n=>{
+        const chip=document.createElement('span');
+        chip.style.cssText='display:inline-flex;gap:7px;align-items:center;background:#e2e8f0;padding:7px 11px;border-radius:999px;font-weight:800';
+        chip.append(document.createTextNode(String(n).padStart(5,'0')));
+        const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.style.cssText='border:0;background:none;cursor:pointer;font-size:17px';
+        remove.onclick=()=>{selected.delete(n);draw()};
+        chip.append(remove);pills.append(chip);
+      });
+      status.textContent=selected.size+' hoja(s) capturadas para retornar.';
+      status.style.color=selected.size?'#15803d':'#64748b';
+    };
+    const add=()=>{
+      const value=el('varios').value.trim();if(!value)return;
+      const parts=value.split(/[\s,;]+/).filter(Boolean);
+      // Validar todo antes de mutar la selección.
+      const nums=parts.map(number);
+      nums.forEach(n=>selected.add(n));
+      el('varios').value='';draw();
+    };
+    const changeMode=()=>{
+      const mode=el('modo').value;
+      root.querySelectorAll('[data-ret-panel]').forEach(x=>x.style.display=x.dataset.retPanel===mode?'':'none');
+      selected.clear();draw();
+    };
+    el('modo').addEventListener('change',changeMode);
+    el('serie').addEventListener('change',()=>{selected.clear();draw()});
+    el('anio').addEventListener('change',()=>{selected.clear();draw()});
+    el('responsable').addEventListener('change',()=>{selected.clear();draw()});
+    root.querySelector('[data-ret-add]').onclick=()=>{try{add()}catch(e){alert(e.message)}};
+    el('varios').addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===','){event.preventDefault();try{add()}catch(e){alert(e.message)}}
+    });
+    root.querySelector('[data-ret-save]').onclick=async()=>{
+      const btn=root.querySelector('[data-ret-save]');
+      try{
+        const modo=el('modo').value;
+        const item={modo,serieId:el('serie').value,anioId:el('anio').value,responsableId:el('responsable').value};
+        if(modo==='RANGO'){
+          item.desde=number(el('desde').value);item.hasta=number(el('hasta').value);
+          if(item.hasta<item.desde)throw new Error('Hasta debe ser igual o mayor que Desde.');
+        }else if(modo==='INDIVIDUAL'){
+          item.individual=number(el('individual').value);
+        }else{
+          add();
+          item.folios=[...selected].sort((a,b)=>a-b);
+          if(!item.folios.length)throw new Error('Captura al menos una hoja.');
+        }
+        btn.disabled=true;status.textContent='Validando hojas antes del retorno…';
+        const check=await rpc('hs_validate_responsible_return_selection',{p_item:item});
+        if(!check.available)throw new Error(conflictText(check.conflicts,'No se pueden retornar:'));
+        if(!confirm('¿Retornar '+Number(check.total||0)+' hoja(s) de '+(check.responsable||'este responsable')+' a estatus NUEVO?')){status.textContent='Operación cancelada; sin cambios.';return}
+        const result=await rpc('hs_return_responsible_selection',{p_item:item});
+        alert('Hojas retornadas: '+Number(result.retornadas||0)+'\nEstatus: NUEVO');
+        ov.remove();await load();
+      }catch(err){status.textContent=err.message||String(err);status.style.color='#b91c1c';alert(err.message||String(err))}
+      finally{btn.disabled=false}
+    };
+    changeMode();
   }
 
   function conflictText(xs,prefix){
