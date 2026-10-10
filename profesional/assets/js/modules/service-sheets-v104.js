@@ -529,8 +529,8 @@
       if(mode==='VARIOS'){
         const chips=[...form.querySelectorAll('[data-assign-chip]')].map(el=>String(el.getAttribute('data-assign-chip')||'').trim());
         const fromState=[...(form.__assignSet||[])];
-        const raw=String(form.elements.namedItem('varios')?.value||'').split(/[\\s,;]+/).filter(Boolean);
-        const folios=[...new Set([...chips,...fromState,...raw].map(x=>String(x).replace(/\\D/g,'')).map(x=>x.length===6&&x[0]==='0'?x.slice(1):x).filter(x=>/^\\d{5}$/.test(x)))].map(Number);
+        const raw=String(form.elements.namedItem('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
+        const folios=[...new Set([...chips,...fromState,...raw].map(x=>String(x).replace(/\D/g,'')).map(x=>x.length===6&&x[0]==='0'?x.slice(1):x).filter(x=>/^\d{5}$/.test(x)))].map(Number);
         if(!folios.length)throw new Error('No se detectaron las hojas capturadas. Vuelve a agregarlas.');
         item.modo='VARIOS';item.folios=folios;
       }
