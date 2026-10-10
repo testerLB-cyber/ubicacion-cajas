@@ -522,7 +522,7 @@
       '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
       '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn" style="background:#dc2626;color:#fff;border-color:#dc2626">Retornar hojas</button></div></form>';
     const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
-      const item=selectionItem(form);
+      const item=String(form.elements.namedItem('modo')?.value||'RANGO').toUpperCase()==='VARIOS' ? {modo:'VARIOS'} : selectionItem(form);
       // VARIOS: recuperar siempre las etiquetas visibles, incluso si otro controlador
       // reinició el estado interno del formulario antes del clic en Retornar.
       const mode=String(form.elements.namedItem('modo')?.value||'RANGO').toUpperCase();
