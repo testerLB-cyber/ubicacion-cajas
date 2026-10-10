@@ -529,7 +529,7 @@
       if(mode==='VARIOS'){
         const chips=[...form.querySelectorAll('[data-assign-chip]')].map(el=>String(el.getAttribute('data-assign-chip')||'').trim());
         let saved=[];try{const parsed=JSON.parse(String(fd.get('foliosSeleccionados')||'[]'));if(Array.isArray(parsed))saved=parsed;}catch(_){}
-        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/\\d{5,6}/g)||[];
+        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/\d{5,6}/g)||[];
         const fromState=[...(form.__assignSet||[]),...saved,...chipText];
         const raw=String(form.elements.namedItem('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
         const folios=[...new Set([...chips,...fromState,...raw].map(x=>String(x).replace(/\D/g,'')).map(x=>x.length===6&&x[0]==='0'?x.slice(1):x).filter(x=>/^\d{5}$/.test(x)))].map(Number);
