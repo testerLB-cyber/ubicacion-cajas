@@ -27,6 +27,8 @@ const PERM_SCHEMA=[
  ['asignaciones','Asignaciones',[['ver','Ver módulo']]],
  ['checklist_salidas','Checklist Salidas',[['ver','Ver módulo']]],
  ['carta_porte','Carta Porte',[['ver','Ver módulo'],['generar','Generar Carta Porte'],['catalogos','Catálogos Carta Porte']]],
+ ['sesiones_web','Sesiones activas',[['administrar','Ver sesiones y cerrar accesos web']]],
+ ['notificaciones_usuarios','Notificaciones usuarios web',[['enviar','Enviar notificaciones a usuarios web']]],
  ['notificaciones','Notificaciones',[['ver','Ver centro de notificaciones'],['comprobacion_enlace','Comprobaciones por enlace'],['mantenimiento','Mantenimiento'],['dot','DOT'],['rentas','Rentas'],['ubicacion','Ubicación'],['disponibilidad','Disponibilidad operativa']]],
  ['sos','SOS · Emergencias',[['ver','Recibir notificación SOS']]],
  ['usuarios','Usuarios',[['ver','Ver'],['administrar','Administrar']]]
