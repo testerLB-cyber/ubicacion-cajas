@@ -74,6 +74,7 @@ async function login(email,password){
  }finally{setBusy(false);}
 }
 window.ccLogout=async function(){
+ try{await window.ccWebSessionEndSelf?.()}catch(_){}
  await sb.auth.signOut();
  window.CC_AUTH_READY=false;window.CC_ACCESS=null;
  document.body.classList.add('cc-auth-locked');
