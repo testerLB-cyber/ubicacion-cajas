@@ -1332,7 +1332,7 @@ function syncFullscreenButton(){
 }
 let AIR_TRIP_CLOCKS=new Map();
 function tripClockKey(x){return String(x.unidad||'')+'|'+String(x.identificadorViaje||x.numeroViaje||'')}
-function airportGmStart(row){const v=String(row?.salida||'');return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)?v+'Z':row?.first_seen}
+function airportGmStart(row){const v=String(row?.salida||'');return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)?v+'Z':null}
 function airportElapsed(first,end){
  if(!first)return 'Pendiente';
  const elapsed=Math.max(0,Math.floor((new Date(end||Date.now()).getTime()-new Date(first).getTime())/60000));
