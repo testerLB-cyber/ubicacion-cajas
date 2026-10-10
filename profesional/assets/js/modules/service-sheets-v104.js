@@ -528,7 +528,9 @@
       const mode=String(form.elements.namedItem('modo')?.value||'RANGO').toUpperCase();
       if(mode==='VARIOS'){
         const chips=[...form.querySelectorAll('[data-assign-chip]')].map(el=>String(el.getAttribute('data-assign-chip')||'').trim());
-        const fromState=[...(form.__assignSet||[])];
+        let saved=[];try{const parsed=JSON.parse(String(fd.get('foliosSeleccionados')||'[]'));if(Array.isArray(parsed))saved=parsed;}catch(_){}
+        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/\\d{5,6}/g)||[];
+        const fromState=[...(form.__assignSet||[]),...saved,...chipText];
         const raw=String(form.elements.namedItem('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
         const folios=[...new Set([...chips,...fromState,...raw].map(x=>String(x).replace(/\D/g,'')).map(x=>x.length===6&&x[0]==='0'?x.slice(1):x).filter(x=>/^\d{5}$/.test(x)))].map(Number);
         if(!folios.length)throw new Error('No se detectaron las hojas capturadas. Vuelve a agregarlas.');
@@ -594,7 +596,10 @@
   function setupSelectionUI(o,kind){
     const form=o.querySelector('form'),status=o.querySelector('[data-assign-status]'),chips=o.querySelector('[data-assign-chips]'),varios=form.elements.namedItem('varios');
     form.__assignSet=new Set();
+    let selectedField=form.querySelector('input[name="foliosSeleccionados"]');
+    if(!selectedField){selectedField=document.createElement('input');selectedField.type='hidden';selectedField.name='foliosSeleccionados';form.appendChild(selectedField);}
     const renderChips=()=>{
+      selectedField.value=JSON.stringify([...form.__assignSet]);
       if(!chips)return;
       chips.innerHTML=[...form.__assignSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(n)+'<button type="button" data-assign-chip="'+esc(n)+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
       chips.querySelectorAll('[data-assign-chip]').forEach(b=>b.onclick=()=>{form.__assignSet.delete(String(b.dataset.assignChip));renderChips();validate();});
