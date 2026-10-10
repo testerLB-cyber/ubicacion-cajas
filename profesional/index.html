@@ -132,6 +132,8 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div class="gm-side-section" id="ccAdminSideSection" style="display:none">Administración</div>
 <button id="gmSideUsers" style="display:none" onclick="ccOpenUserAdmin()"><i class="fa-solid fa-users-gear"></i><span>Usuarios y permisos</span></button>
 <button id="gmSideOperatorNotifications" onclick="location.href='notificaciones-operadores.html'"><i class="fa-solid fa-bell"></i><span>Notificaciones operadores</span></button>
+<button id="gmSideWebSessions" style="display:none" onclick="ccManageWebSessions()"><i class="fa-solid fa-users-viewfinder"></i><span>Sesiones activas</span></button>
+<button id="gmSideWebNotifs" style="display:none" onclick="ccSendWebNotifications()"><i class="fa-solid fa-envelope-open-text"></i><span>Notificaciones usuarios</span></button>
 <div id="ccSessionBox" style="display:none;margin:12px 8px 0;padding:10px;border-top:1px solid rgba(148,163,184,.18);font-size:10px;color:#cbd5e1">
   <div id="ccSessionName" style="font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis"></div>
   <div id="ccSessionRole" style="margin-top:2px;color:#93c5fd"></div>
@@ -1234,7 +1236,8 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(load,80)});
 })();
 </script>
-<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261008-new-modules-permissions1"></script>
+<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261010-web-sessions-notifications1"></script>
+<script src="assets/js/core/web-session-admin-v1.js?v=20261010-session-admin1"></script>
 <script src="assets/js/core/realtime-notifications-v1.js?v=20261007-sospush1"></script>
 <script src="assets/js/core/sos-critical-alerts.js?v=20261007-sospush1"></script>
 
