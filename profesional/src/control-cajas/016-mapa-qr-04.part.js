@@ -1,3 +1,18 @@
+window.ccAirportGeoCRUD=async function(action,payload){
+  if(!window.CC_ACCESS||window.CC_MIRROR_EXTERNAL)throw Error('Acceso no autorizado');
+  const arr=configuracion.geocercas||(configuracion.geocercas=[]);
+  const before=JSON.stringify(arr);
+  if(action==='remove'){const idx=arr.findIndex(g=>g.id===payload.id);if(idx<0)throw Error('Geocerca no encontrada');arr.splice(idx,1);}
+  else if(action==='save'){
+    if(!payload.nombre?.trim())throw Error('Escribe un nombre.');
+    const idx=arr.findIndex(g=>g.id===payload.id);
+    if(idx>=0)Object.assign(arr[idx],payload);
+    else arr.push({tipo:'polygon',activa:true,...payload,id:payload.id||uid()});
+  }else throw Error('Acción inválida');
+  const result=await ccCloudSave('AEROPUERTO_GEOCERCAS');
+  if(!result?.ok){configuracion.geocercas=JSON.parse(before);throw Error(result?.error||'No se pudo guardar');}
+  ccRenderGeocercasMapa();return true;
+};
 window.ccRenderGeocercasLista=function(){
   const el=document.getElementById('ccGeocercasLista'),count=document.getElementById('ccGeoCount');const arr=configuracion.geocercas||[];if(count)count.textContent=arr.length;if(!el)return;
   el.innerHTML=arr.length?arr.map((g,i)=>`<div class="cc-geo-item"><div class="cc-geo-item-top"><div style="display:flex;align-items:center;gap:7px;min-width:0"><span class="cc-geo-dot" style="background:${esc(g.color||ccGeoColor(i))}"></span><span class="cc-geo-name" title="${esc(g.nombre)}">${esc(g.nombre||'Geocerca')}</span></div><div class="cc-geo-mini-actions"><button title="Ver" onclick="ccEnfocarGeocerca('${g.id}')"><i class="fa-solid fa-crosshairs"></i></button><button title="Editar" onclick="ccEditarGeocerca('${g.id}')"><i class="fa-solid fa-pen"></i></button><button title="Eliminar" onclick="ccEliminarGeocerca('${g.id}')"><i class="fa-solid fa-trash"></i></button></div></div><div class="cc-geo-type">${esc(g.tipo||'polygon')} · ${g.activa===false?'oculta':'activa'}</div></div>`).join(''):'<div class="cc-geo-empty"><i class="fa-solid fa-draw-polygon" style="font-size:24px;margin-bottom:8px"></i><br>No hay geocercas.<br>Dibuja una o importa KML/KMZ/GeoJSON.</div>';
