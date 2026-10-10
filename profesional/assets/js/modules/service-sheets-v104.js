@@ -522,20 +522,7 @@
       '<div style="margin-top:10px;padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:10px;color:#991b1b;font-size:11px"><b>Al confirmar:</b> las hojas volverán a estatus NUEVO, sin responsable, y quedarán disponibles para una nueva asignación.</div>'+
       '<div class="hs104-actions" style="margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn" style="background:#dc2626;color:#fff;border-color:#dc2626">Retornar hojas</button></div></form>';
     const o=modal('Retornar hojas del responsable',body,{onSave:async(fd,form)=>{
-      const item=String(form.elements.namedItem('modo')?.value||'RANGO').toUpperCase()==='VARIOS' ? {modo:'VARIOS'} : selectionItem(form);
-      // VARIOS: recuperar siempre las etiquetas visibles, incluso si otro controlador
-      // reinició el estado interno del formulario antes del clic en Retornar.
-      const mode=String(form.elements.namedItem('modo')?.value||'RANGO').toUpperCase();
-      if(mode==='VARIOS'){
-        const chips=[...form.querySelectorAll('[data-assign-chip]')].map(el=>String(el.getAttribute('data-assign-chip')||'').trim());
-        let saved=[];try{const parsed=JSON.parse(String(fd.get('foliosSeleccionados')||'[]'));if(Array.isArray(parsed))saved=parsed;}catch(_){}
-        const chipText=String(form.querySelector('[data-assign-chips]')?.textContent||'').match(/\d{5,6}/g)||[];
-        const fromState=[...(form.__assignSet||[]),...saved,...chipText];
-        const raw=String(form.elements.namedItem('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
-        const folios=[...new Set([...chips,...fromState,...raw].map(x=>String(x).replace(/\D/g,'')).map(x=>x.length===6&&x[0]==='0'?x.slice(1):x).filter(x=>/^\d{5}$/.test(x)))].map(Number);
-        if(!folios.length)throw new Error('No se detectaron las hojas capturadas. Vuelve a agregarlas.');
-        item.modo='VARIOS';item.folios=folios;
-      }
+      const item=selectionItem(form);
       item.serieId=String(fd.get('serieId')||'');
       item.anioId=String(fd.get('anioId')||'');
       item.responsableId=String(fd.get('responsableId')||'');
@@ -553,44 +540,31 @@
     return prefix+' '+rows.map(x=>String(x.consecutivo).padStart(5,'0')+' ['+(x.estatus||'NO DISPONIBLE')+']'+(x.responsable?' · '+x.responsable:'')+(x.persona?' · '+x.persona:'')).join(', ');
   }
   function selectionItem(form){
-    const field=name=>form.elements.namedItem(name);
-    const modo=String(field('modo')?.value||'RANGO');
-    const item={modo};
-    if(modo==='RANGO'){
-      const normalizeRangeFolio=value=>{
-        let n=String(value||'').replace(/\D/g,'');
-        if(n.length===6&&n.startsWith('0'))n=n.slice(1);
-        return n;
-      };
-      const ds=normalizeRangeFolio(form.desde?.value),hs=normalizeRangeFolio(form.hasta?.value);
-      if(!/^\d{5}$/.test(ds)||!/^\d{5}$/.test(hs))throw new Error('Desde y Hasta deben tener 5 dígitos, o 6 posiciones cuando incluyen cero inicial.');
-      item.desde=Number(ds);item.hasta=Number(hs);
+    const get=name=>form.querySelector('[name="'+name+'"]');
+    const mode=String(get('modo')?.value||'RANGO').toUpperCase();
+    const normalize=value=>{
+      const digits=String(value??'').trim().replace(/^\s*(?:M|CFDI|SPF|N)-\d{4}-/i,'').replace(/\D/g,'');
+      const num=digits.length===6&&digits[0]==='0'?digits.slice(1):digits;
+      if(!/^\d{5}$/.test(num))throw new Error('Folio inválido: '+value+'. Captura cinco dígitos (o seis con cero inicial).');
+      return Number(num);
+    };
+    const item={modo:mode};
+    if(mode==='RANGO'){
+      item.desde=normalize(get('desde')?.value);
+      item.hasta=normalize(get('hasta')?.value);
       if(item.hasta<item.desde)throw new Error('Hasta no puede ser menor que Desde.');
-    }else if(modo==='INDIVIDUAL'){
-      const raw0=String(form.individual?.value||'').replace(/\D/g,'');
-      const raw=raw0.length===6&&raw0.startsWith('0')?raw0.slice(1):raw0;
-      if(!/^\d{5}$/.test(raw))throw new Error('El folio individual debe tener 5 dígitos, o 6 posiciones cuando incluye cero inicial.');
-      item.individual=Number(raw);
-    }else{
-      // Fuente robusta: estado interno + chips visibles + texto aún no convertido.
-      // Así la selección no se pierde por eventos del formulario antes de enviar.
-      const chipValues=[...form.querySelectorAll('[data-assign-chip]')].map(b=>String(b.dataset.assignChip||'')).filter(Boolean);
-      const set=new Set([...(form.__assignSet||[]),...chipValues].map(String));
-      const raw=String(field('varios')?.value||'').trim();
-      if(raw){
-        const parts=raw.split(/[\s,;]+/).filter(Boolean);
-        for(const p of parts){
-          const n0=String(p).replace(/\D/g,'');
-          const n=n0.length===6&&n0.startsWith('0')?n0.slice(1):n0;
-          if(!/^\d{5}$/.test(n))throw new Error('El folio '+p+' debe tener 5 dígitos, o 6 posiciones si incluye cero inicial.');
-          set.add(n);
-        }
-      }
-      const nums=[...set];
-      if(!nums.length)throw new Error('Agrega al menos una hoja.');
-      form.__assignSet=new Set(nums);
-      item.folios=nums.map(Number);
-    }
+    }else if(mode==='INDIVIDUAL'){
+      item.individual=normalize(get('individual')?.value);
+    }else if(mode==='VARIOS'){
+      // Los chips son la fuente visible; un campo oculto conserva exactamente la misma lista.
+      const chipContainer=form.querySelector('[data-assign-chips]');
+      const chipValues=[...(chipContainer?.querySelectorAll('[data-assign-chip]')||[])].map(el=>el.getAttribute('data-assign-chip'));
+      let stored=[];try{const a=JSON.parse(get('foliosSeleccionados')?.value||'[]');if(Array.isArray(a))stored=a;}catch(_){}
+      const pending=String(get('varios')?.value||'').split(/[\s,;]+/).filter(Boolean);
+      const raw=[...chipValues,...stored,...(form.__assignSet||[]),...pending].filter(v=>v!==null&&v!==undefined&&String(v).trim()!=='');
+      item.folios=[...new Set(raw.map(normalize))];
+      if(!item.folios.length)throw new Error('Agrega al menos una hoja.');
+    }else throw new Error('Forma de selección inválida.');
     return item;
   }
   function setupSelectionUI(o,kind){
@@ -604,7 +578,7 @@
       chips.innerHTML=[...form.__assignSet].map(n=>'<span style="display:inline-flex;align-items:center;gap:7px;background:#e2e8f0;border-radius:999px;padding:6px 10px;font-weight:800">'+esc(n)+'<button type="button" data-assign-chip="'+esc(n)+'" style="border:0;background:transparent;cursor:pointer;font-size:16px;line-height:1">×</button></span>').join('');
       chips.querySelectorAll('[data-assign-chip]').forEach(b=>b.onclick=()=>{form.__assignSet.delete(String(b.dataset.assignChip));renderChips();validate();});
     };
-    const payload=()=>{const item=selectionItem(form);if(kind==='responsable'||kind==='retorno'){item.serieId=form.serieId.value;item.anioId=form.anioId.value;if(kind==='retorno')item.responsableId=form.responsableId.value;}else item.asignacionId=form.asignacionId.value;return item;};
+    const payload=()=>{const item=selectionItem(form);if(kind==='responsable'||kind==='retorno'){item.serieId=form.querySelector('[name="serieId"]').value;item.anioId=form.querySelector('[name="anioId"]').value;if(kind==='retorno')item.responsableId=form.querySelector('[name="responsableId"]').value;}else item.asignacionId=form.querySelector('[name="asignacionId"]').value;return item;};
     let seq=0;
     const validate=async()=>{
       const my=++seq;
@@ -631,20 +605,20 @@
       status.textContent='✓ '+form.__assignSet.size+' hoja(s) capturadas. Se validarán juntas al confirmar.';
       status.style.color='#15803d';
     };
-    form.modo.onchange=()=>{
+    form.querySelector('[name="modo"]').onchange=()=>{
       o.querySelectorAll('[data-assign-mode]').forEach(x=>x.style.display=x.dataset.assignMode===form.modo.value?'':'none');
       form.__assignSet.clear();renderChips();
-      ['desde','hasta','individual','varios'].forEach(n=>{if(form[n])form[n].value='';});
+      ['desde','hasta','individual','varios'].forEach(n=>{if(form.querySelector('[name="'+n+'"]'))form.querySelector('[name="'+n+'"]').value='';});
       status.textContent='Captura las hojas para validar disponibilidad.';status.style.color='#64748b';
     };
-    ['desde','hasta'].forEach(n=>form[n]?.addEventListener('input',()=>{form[n].value=form[n].value.replace(/\D/g,'').slice(0,6);const v=form[n].value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
-    form.individual?.addEventListener('input',()=>{form.individual.value=form.individual.value.replace(/\D/g,'').slice(0,6);const v=form.individual.value;const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();});
+    ['desde','hasta'].forEach(n=>form.querySelector('[name="'+n+'"]')?.addEventListener('input',()=>{form.querySelector('[name="'+n+'"]').value=form.querySelector('[name="'+n+'"]').value.replace(/\D/g,'').slice(0,6);const v=form.querySelector('[name="'+n+'"]').value;if(v.length===5||(v.length===6&&v.startsWith('0')))validate();}));
+    form.querySelector('[name="individual"]')?.addEventListener('input',()=>{form.querySelector('[name="individual"]').value=form.querySelector('[name="individual"]').value.replace(/\D/g,'').slice(0,6);const v=form.querySelector('[name="individual"]').value;const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();});
     varios?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();process();}});
     varios?.addEventListener('input',()=>{varios.value=varios.value.replace(/[^0-9,\s]/g,'');if(/^\d{5}$/.test(varios.value.trim()))process();});
-    form.serieId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
-    form.anioId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.individual?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
-    form.asignacionId?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
-    form.responsableId?.addEventListener('change',()=>{
+    form.querySelector('[name="serieId"]')?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.querySelector('[name="individual"]')?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
+    form.querySelector('[name="anioId"]')?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();{const v=String(form.querySelector('[name="individual"]')?.value||'');const n=v.length===6&&v.startsWith('0')?v.slice(1):v;if(n.length===5)validate();}});
+    form.querySelector('[name="asignacionId"]')?.addEventListener('change',()=>{form.__assignSet.clear();renderChips();status.textContent='Selecciona hojas de esta custodia.';status.style.color='#64748b';});
+    form.querySelector('[name="responsableId"]')?.addEventListener('change',()=>{
       // Al ASIGNAR a responsable, cambiar el responsable no cambia la serie/año ni los folios:
       // conservar VARIOS. En RETORNO sí depende del responsable y debe reiniciarse.
       if(kind==='retorno'){
