@@ -540,7 +540,8 @@
     return prefix+' '+rows.map(x=>String(x.consecutivo).padStart(5,'0')+' ['+(x.estatus||'NO DISPONIBLE')+']'+(x.responsable?' · '+x.responsable:'')+(x.persona?' · '+x.persona:'')).join(', ');
   }
   function selectionItem(form){
-    const modo=String(form.modo?.value||'RANGO');
+    const field=name=>form.elements.namedItem(name);
+    const modo=String(field('modo')?.value||'RANGO');
     const item={modo};
     if(modo==='RANGO'){
       const normalizeRangeFolio=value=>{
@@ -562,7 +563,7 @@
       // Así la selección no se pierde por eventos del formulario antes de enviar.
       const chipValues=[...form.querySelectorAll('[data-assign-chip]')].map(b=>String(b.dataset.assignChip||'')).filter(Boolean);
       const set=new Set([...(form.__assignSet||[]),...chipValues].map(String));
-      const raw=String(form.varios?.value||'').trim();
+      const raw=String(field('varios')?.value||'').trim();
       if(raw){
         const parts=raw.split(/[\s,;]+/).filter(Boolean);
         for(const p of parts){
@@ -580,7 +581,7 @@
     return item;
   }
   function setupSelectionUI(o,kind){
-    const form=o.querySelector('form'),status=o.querySelector('[data-assign-status]'),chips=o.querySelector('[data-assign-chips]'),varios=form.varios;
+    const form=o.querySelector('form'),status=o.querySelector('[data-assign-status]'),chips=o.querySelector('[data-assign-chips]'),varios=form.elements.namedItem('varios');
     form.__assignSet=new Set();
     const renderChips=()=>{
       if(!chips)return;
@@ -602,7 +603,7 @@
       }catch(e){if(my!==seq)return;status.textContent=e.message||e;status.style.color='#b91c1c';}
     };
     const process=()=>{
-      const parts=String(varios?.value||'').split(/[\s,]+/).filter(Boolean);if(!parts.length)return;
+      const parts=String(varios?.value||'').split(/[\s,;]+/).filter(Boolean);if(!parts.length)return;
       varios.value='';
       for(const p of parts){
         const n0=String(p).replace(/\D/g,'');
