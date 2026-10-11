@@ -273,10 +273,10 @@ async function comprobarGuardar(){
  state.busy=true;$('#casComprobarGuardar').disabled=true;statusBox('#casComprobarEstado','Guardando comprobación…');
  let saved=false;
  try{
-  await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00'});
+  await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00',comentarios:$('#casComprobarComentarios').value.trim()});
   saved=true;
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
-  comprobarSelectedId=null;$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');
+  comprobarSelectedId=null;$('#casComprobarComentarios').value='';$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');
   statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Actualizando saldos…');
   try{await refreshBalances();casSimpleHistory();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');casDeliveryAsk(op,pending,amount);}
   catch(e){statusBox('#casComprobarEstado','✓ Comprobación guardada, pero no se pudieron actualizar los saldos: '+(e.message||e),true);}
@@ -307,7 +307,7 @@ async function casAuditLoad(){
   casAuditRows=filtered;
   const sum=type=>rows.filter(x=>x.tipo===type).reduce((n,x)=>n+x.monto,0);
   const ticketCount=rows.filter(x=>x.tipo==='TICKET').reduce((n,x)=>n+x.tickets,0)+rows.filter(x=>x.tipo==='COMPROBACION').reduce((n,x)=>n+x.tickets,0);
-    body.innerHTML=filtered.map(x=>'<tr><td>'+esc(String(x.fecha).slice(0,16).replace('T',' '))+'</td><td><b>'+esc(x.tipo)+'</b></td><td>'+esc(x.operador)+'</td><td>'+esc(x.referencia)+'</td><td>'+money(x.monto)+'</td><td>'+esc(x.estatus)+(x.tipo==='ENTREGA'?'<br><button type="button" class="cc-btn cc-btn-light" data-cas-edit="'+esc(x.id)+'" style="margin-top:5px;font-size:11px">Editar importe</button>':'')+'</td></tr>').join('')||'<tr><td colspan="6">Sin movimientos de Casetas para los filtros seleccionados.</td></tr>';
+    body.innerHTML=filtered.map(x=>'<tr><td>'+esc(String(x.fecha).slice(0,16).replace('T',' '))+'</td><td><b>'+esc(x.tipo)+'</b></td><td>'+esc(x.operador)+'</td><td>'+esc(x.referencia)+'</td><td>'+money(x.monto)+'</td><td>'+esc(x.estatus)+'</td></tr>').join('')||'<tr><td colspan="6">Sin movimientos de Casetas para los filtros seleccionados.</td></tr>';
   status.textContent=filtered.length+' movimientos de Casetas';
  }catch(e){status.textContent='Error al consultar historial: '+(e.message||e);body.innerHTML='<tr><td colspan="6">No fue posible cargar los movimientos.</td></tr>';}finally{btn.disabled=false;}
 }
