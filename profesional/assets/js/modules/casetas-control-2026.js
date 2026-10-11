@@ -168,10 +168,47 @@ function comprobarPick(id){
  const op=ops().find(o=>o.id===id);if(!op)return;
  comprobarSelectedId=id;state.op=id;$('#casComprobarOperador').value=(op.numero_empleado?op.numero_empleado+' · ':'')+op.nombre;$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');comprobarUpdate();
 }
+function casLocalDate(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function casSimpleHistory(){
+ const body=$('#casSimpleHistory');if(!body)return;
+ const op=comprobarSelectedId;if(!op){body.innerHTML='<tr><td colspan="4">Selecciona un operador.</td></tr>';return;}
+ const advances=(state.data?.anticipos||[]).filter(a=>a.operadorId===op).map(a=>({date:a.fecha||'',kind:'Entrega',ref:a.folio,amount:a.montoEntregado||0}));
+ const tickets=(state.data?.tickets||[]).filter(t=>t.operador_id===op).map(t=>({date:t.fecha||t.created_at||'',kind:'Comprobación',ref:t.folio_ticket||'Ticket',amount:t.total||0}));
+ const rows=[...advances,...tickets].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,10);
+ body.innerHTML=rows.map(x=>'<tr><td>'+esc(String(x.date).slice(0,16).replace('T',' '))+'</td><td>'+esc(x.kind)+'</td><td>'+esc(x.ref||'—')+'</td><td><b>'+money(x.amount)+'</b></td></tr>').join('')||'<tr><td colspan="4">Sin movimientos registrados.</td></tr>';
+}
+let casCFDIRequest=0;
+async function casSimpleCFDI(){
+ const op=ops().find(o=>o.id===comprobarSelectedId),status=$('#casSimpleCFDIStatus'),body=$('#casSimpleCFDIBody'),from=$('#casSimpleCFDIFrom').value,to=$('#casSimpleCFDITo').value,request=++casCFDIRequest;
+ if(!op){status.textContent='Selecciona un operador.';body.innerHTML='';return;}
+ if(!from||!to||from>to){status.textContent='Selecciona un rango válido.';return;}
+ status.textContent='Consultando CFDI…';body.innerHTML='';
+ try{
+ const {data,error}=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,cliente_nombre,servicio,operador_id,operador_nombre').gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59').or('operador_id.eq.'+op.id+',operador_nombre.eq.'+encodeURIComponent(op.nombre)).order('fecha_comprobacion',{ascending:false}).limit(500);
+ if(error)throw error;
+ const unique=[...new Map((data||[]).filter(x=>x.folio_id).map(x=>[x.folio_id,x])).values()],ids=unique.map(x=>x.folio_id),folios=[];
+ for(let i=0;i<ids.length;i+=100){let f=await client().from('hs_folios').select('id,folio').in('id',ids.slice(i,i+100));if(f.error)throw f.error;folios.push(...(f.data||[]));}
+ if(request!==casCFDIRequest)return;
+ const map=new Map(folios.map(f=>[f.id,f.folio])),rows=unique.filter(x=>/^CFDI-/i.test(map.get(x.folio_id)||'')).sort((a,b)=>String(b.fecha_comprobacion||b.fecha||'').localeCompare(String(a.fecha_comprobacion||a.fecha||'')));
+ body.innerHTML=rows.map(x=>'<tr><td>'+esc((x.fecha_comprobacion||x.fecha||'').slice(0,16).replace('T',' '))+'</td><td><b>'+esc(map.get(x.folio_id))+'</b></td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'</td></tr>').join('')||'<tr><td colspan="4">Sin CFDI comprobadas en este periodo.</td></tr>';
+ status.textContent=rows.length+' hojas CFDI · '+from+' a '+to+(data.length===500?' · Límite de consulta: 500':'');
+ }catch(e){if(request===casCFDIRequest)status.textContent='Error al consultar CFDI: '+(e.message||e);}
+}
+async function casComprobarEntregar(){
+ const op=ops().find(o=>o.id===comprobarSelectedId),amount=Number($('#casComprobarNuevaEntrega').value),fecha=$('#casComprobarNuevaFecha').value,btn=$('#casComprobarEntregar'),box='#casComprobarEntregaEstado';
+ if(state.busy){statusBox(box,'Hay otra operación en curso.',true);return;}
+ if(!op){statusBox(box,'Selecciona un operador.',true);return;}
+ if(!Number.isFinite(amount)||amount<=0){statusBox(box,'Captura un importe válido.',true);return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){statusBox(box,'Selecciona una fecha válida.',true);return;}
+ if(!confirm('¿Entregar '+money(amount)+' a '+op.nombre+'?'))return;
+ state.busy=true;btn.disabled=true;statusBox(box,'Guardando entrega…');
+ try{await rpc('cc_ant_casetas_entregar',{operadorId:op.id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});$('#casComprobarNuevaEntrega').value='';statusBox(box,'Entrega guardada. Actualizando saldos…');try{await refreshBalances();casSimpleHistory();statusBox(box,'✓ Entrega guardada y saldos actualizados.');}catch(e){statusBox(box,'✓ Entrega guardada; error al actualizar saldos: '+(e.message||e),true);}}
+ catch(e){statusBox(box,'No se guardó la entrega: '+(e.message||e),true);}finally{state.busy=false;btn.disabled=false;}
+}
 function comprobarUpdate(){
  const pending=funds(comprobarSelectedId).reduce((s,a)=>s+Number(a.pendiente||0),0);
  $('#casComprobarSaldo').textContent=money(pending);
- comprobarResumen();
+ comprobarResumen();casSimpleHistory();
 }
 function comprobarItems(){
  return [...document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]')].map(el=>({tipoUnidad:el.dataset.casQty,cantidad:Number(el.value)}));
@@ -202,12 +239,12 @@ async function comprobarGuardar(){
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
   comprobarSelectedId=null;$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');
   statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Actualizando saldos…');
-  try{await refreshBalances();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');}
+  try{await refreshBalances();casSimpleHistory();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');}
   catch(e){statusBox('#casComprobarEstado','✓ Comprobación guardada, pero no se pudieron actualizar los saldos: '+(e.message||e),true);}
  }catch(e){if(!saved)fail('No se confirmó la comprobación: '+(e.message||e));}
  finally{state.busy=false;$('#casComprobarGuardar').disabled=false;}
 }
-function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;$('#casComprobarGuardar').onclick=comprobarGuardar;const ci=$('#casComprobarOperador');ci.addEventListener('focus',comprobarOptions);ci.addEventListener('input',()=>{comprobarSelectedId=null;comprobarOptions();comprobarUpdate();});ci.addEventListener('keydown',e=>{if(e.key==='Escape')$('#casComprobarSuggestions').hidden=true;else if(e.key==='Enter'){const first=$('#casComprobarSuggestions [data-comprobar-op]');if(first&&!$('#casComprobarSuggestions').hidden){e.preventDefault();comprobarPick(first.dataset.comprobarOp);}}});$('#casComprobarSuggestions').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-comprobar-op]');if(b){e.preventDefault();comprobarPick(b.dataset.comprobarOp);}});$('#casComprobarTiposFilas').addEventListener('input',comprobarResumen);document.addEventListener('pointerdown',e=>{if(!e.target.closest('#casComprobarSimple .cas-operator-picker'))$('#casComprobarSuggestions').hidden=true;});const ei=$('#casEntregaOperador');ei.addEventListener('focus',entregaOptions);ei.addEventListener('input',()=>{entregaSelectedId=null;entregaOptions();});ei.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#casEntregaSuggestions').hidden=true;}else if(e.key==='Enter'){let first=$('#casEntregaSuggestions [data-entrega-op]');if(first&&!$('#casEntregaSuggestions').hidden){e.preventDefault();entregaPick(first.dataset.entregaOp);}}});$('#casEntregaSuggestions').addEventListener('pointerdown',e=>{let b=e.target.closest('[data-entrega-op]');if(b){e.preventDefault();entregaPick(b.dataset.entregaOp);}});document.addEventListener('pointerdown',e=>{if(!e.target.closest('.cas-operator-picker')){$('#casEntregaSuggestions').hidden=true;ei.setAttribute('aria-expanded','false');}});$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
+function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;$('#casSimpleCFDITo').value=casLocalDate();$('#casSimpleCFDIFrom').value=casLocalDate(new Date(Date.now()-6*86400000));$('#casComprobarNuevaFecha').value=casLocalDate();$('#casComprobarGuardar').onclick=comprobarGuardar;$('#casComprobarEntregar').onclick=casComprobarEntregar;$('#casSimpleCFDILoad').onclick=casSimpleCFDI;const ci=$('#casComprobarOperador');ci.addEventListener('focus',comprobarOptions);ci.addEventListener('input',()=>{comprobarSelectedId=null;comprobarOptions();comprobarUpdate();++casCFDIRequest;$('#casSimpleCFDIBody').innerHTML='<tr><td colspan="4">Selecciona un operador.</td></tr>';});ci.addEventListener('keydown',e=>{if(e.key==='Escape')$('#casComprobarSuggestions').hidden=true;else if(e.key==='Enter'){const first=$('#casComprobarSuggestions [data-comprobar-op]');if(first&&!$('#casComprobarSuggestions').hidden){e.preventDefault();comprobarPick(first.dataset.comprobarOp);}}});$('#casComprobarSuggestions').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-comprobar-op]');if(b){e.preventDefault();comprobarPick(b.dataset.comprobarOp);}});$('#casComprobarTiposFilas').addEventListener('input',comprobarResumen);document.addEventListener('pointerdown',e=>{if(!e.target.closest('#casComprobarSimple .cas-operator-picker'))$('#casComprobarSuggestions').hidden=true;});const ei=$('#casEntregaOperador');ei.addEventListener('focus',entregaOptions);ei.addEventListener('input',()=>{entregaSelectedId=null;entregaOptions();});ei.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#casEntregaSuggestions').hidden=true;}else if(e.key==='Enter'){let first=$('#casEntregaSuggestions [data-entrega-op]');if(first&&!$('#casEntregaSuggestions').hidden){e.preventDefault();entregaPick(first.dataset.entregaOp);}}});$('#casEntregaSuggestions').addEventListener('pointerdown',e=>{let b=e.target.closest('[data-entrega-op]');if(b){e.preventDefault();entregaPick(b.dataset.entregaOp);}});document.addEventListener('pointerdown',e=>{if(!e.target.closest('.cas-operator-picker')){$('#casEntregaSuggestions').hidden=true;ei.setAttribute('aria-expanded','false');}});$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
 window.ccCasetasNuevoOpen=open;window.ccCasetasNuevoClose=function(){let el=$('#ccAntViewCasetasNuevo');if(el){el.classList.remove('cas-fullscreen');el.style.display='none';}document.body.style.overflow='';let b=document.querySelector('#ccPanelAnticipos [data-antv="anticipos"]');if(b&&window.ccAntView)window.ccAntView('anticipos',b);};
 window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';setupWorkspace();bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casEntregaFecha').value=iso(today);$('#casComprobarFecha').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
 })();
