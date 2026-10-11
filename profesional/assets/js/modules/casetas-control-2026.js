@@ -3,7 +3,7 @@
 'use strict';
 const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), money=n=>Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});
 const state={data:null,op:null,busy:false,loaded:false};
-const sb=()=>window.supabaseClient||window.ccSupabase||window.sb||window.supabase;
+const sb=()=>window.gmSupabase;
 function client(){let s=sb();if(s&&typeof s.rpc==='function')return s;throw Error('No hay sesión de Supabase disponible');}
 async function rpc(name,item){let {data,error}=await client().rpc(name,item===undefined?undefined:{p_item:item});if(error)throw error;if(data?.ok===false)throw Error(data.error||'Operación rechazada');return data;}
 function note(t,bad=false){let el=$('#casMessage');if(el){el.textContent=t||'';el.style.color=bad?'#b91c1c':'#0f766e';}}
