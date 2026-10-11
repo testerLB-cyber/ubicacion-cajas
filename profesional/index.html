@@ -1388,7 +1388,8 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script src="assets/js/modules/gerencial-analytics.js"></script>
 <link rel="stylesheet" href="assets/css/style-027.css" id="cc-config-tabs-css"/ media="print" onload="this.media='all'">
 <script id="gm-supabase-inline" src="assets/js/vendor/supabase-sdk.js"></script>
-<script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>\n<script src="assets/js/core/rpc-traffic-guard.js?v=20261005-egress1"></script>
+<script id="gm-supabase-config" src="assets/js/config/supabase-config.js"></script>
+<script src="assets/js/core/rpc-traffic-guard.js?v=20261005-egress1"></script>
 <script id="gm-control-cajas-js" src="assets/js/modules/control-cajas-core.js?v=20261009-geocercas-kmz-v3"></script>
 <script src="assets/js/core/module-registry.js?v=20260924-invoice-status2"></script>
 <script src="assets/js/modules/inventario.js"></script>
@@ -1451,7 +1452,8 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script src="assets/js/modules/service-sheets-cancel-v1.js?v=20261005-no-auto-refresh2"></script>
 <script src="assets/js/modules/service-sheets-unit-trailer-v1.js?v=20261010-check-button-fix1"></script>
 <script src="assets/js/modules/service-sheets-comprobacion-final-v1.js?v=20261005-refresh-optimized1"></script>
-<script src="assets/js/modules/service-sheets-proformas-v1.js?v=20261003-pdf-ejecutivo1"></script>\n\n\n\n<script src="assets/js/modules/service-sheets-comprobacion-stable-view.js?v=20261006-perf-page1"></script>
+<script src="assets/js/modules/service-sheets-proformas-v1.js?v=20261003-pdf-ejecutivo1"></script>
+<script src="assets/js/modules/service-sheets-comprobacion-stable-view.js?v=20261006-perf-page1"></script>
 <script src="assets/js/modules/service-sheets-comprobacion-ux-v2.js?v=20261006-search-all-v2"></script>
 <script src="assets/js/modules/service-sheets-history-full-edit-v1.js?v=20261006-cfdi-invoice1"></script>\n<script id="ccMobileLazyExternal">
 (function(){
@@ -1522,6 +1524,7 @@ function filter(){
  manager.querySelectorAll('#ccCatalogContent .ant-catalog-row').forEach(function(row){row.style.display=!q||row.textContent.toLocaleLowerCase('es').includes(q)?'':'none'});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+window.addEventListener('load',setup);
 document.addEventListener('ccAnt:data-refreshed',function(){setTimeout(filter,0)});
 })();
 </script></body>
