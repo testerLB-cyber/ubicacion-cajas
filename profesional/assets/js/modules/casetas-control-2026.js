@@ -6,7 +6,7 @@ const state={data:null,op:null,busy:false,loaded:false};
 const sb=()=>window.gmSupabase;
 function client(){let s=sb();if(s&&typeof s.rpc==='function')return s;throw Error('No hay sesión de Supabase disponible');}
 async function rpc(name,item){let {data,error}=await client().rpc(name,item===undefined?undefined:{p_item:item});if(error)throw error;if(data?.ok===false)throw Error(data.error||'Operación rechazada');return data;}
-function note(t,bad=false){let el=$('#casMessage');if(el){el.textContent=t||'';el.style.color=bad?'#b91c1c':'#0f766e';}}
+function note(t,bad=false){let el=$('#casMessage');if(el){const visible=bad||(/registrad[oa]|conciliaci[oó]n registrada/i.test(t||''));el.textContent=visible?(t||''):'';el.hidden=!visible;el.style.display=visible?'block':'none';el.style.color=bad?'#b91c1c':'#0f766e';}}
 function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('entregar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
 function active(){return (state.data?.anticipos||[]).filter(a=>Number(a.pendiente)>0);}
 function funds(op){return active().filter(a=>a.operadorId===op);}
