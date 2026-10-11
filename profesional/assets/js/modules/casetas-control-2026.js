@@ -7,7 +7,7 @@ const sb=()=>window.gmSupabase;
 function client(){let s=sb();if(s&&typeof s.rpc==='function')return s;throw Error('No hay sesión de Supabase disponible');}
 async function rpc(name,item){let {data,error}=await client().rpc(name,item===undefined?undefined:{p_item:item});if(error)throw error;if(data?.ok===false)throw Error(data.error||'Operación rechazada');return data;}
 function note(t,bad=false){let el=$('#casMessage');if(el){el.textContent=t||'';el.style.color=bad?'#b91c1c':'#0f766e';}}
-function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
+function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('entregar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
 function active(){return (state.data?.anticipos||[]).filter(a=>Number(a.pendiente)>0);}
 function funds(op){return active().filter(a=>a.operadorId===op);}
 function ops(){return state.data?.operadores||[];}
@@ -76,7 +76,36 @@ async function batchSave(){
  finally{state.busy=false;$('#casBatchSave').disabled=false;}
  await load();batchRender();
 }
+function setupWorkspace(){
+ const root=$('#ccAntViewCasetasNuevo'),section=$('#casOperatorSection');if(!root||!section||root.dataset.workspace)return;root.dataset.workspace='1';
+ const cards=[...section.querySelectorAll(':scope > .cas-card')];const byTitle=t=>cards.find(x=>x.querySelector('h3')?.textContent.toLowerCase().includes(t));
+ const groups=[
+ ['entregar','Entregar fondos',[byTitle('devolver efectivo')]],
+ ['comprobar','Comprobar tickets',[byTitle('comprobación y conciliación')]],
+ ['conciliar','Conciliación integral',[byTitle('conciliación integral')]],
+ ['historial','Historial y tickets',[byTitle('fondos e historial'),byTitle('tickets registrados')]],
+ ['cfdi','Servicios CFDI',[byTitle('hojas cfdi')]]
+ ];
+ const nav=document.createElement('nav');nav.className='cas-work-tabs';nav.setAttribute('aria-label','Operaciones de casetas');
+ const host=document.createElement('div');host.className='cas-work-content';
+ for(const [id,title,items] of groups){
+  const btn=document.createElement('button');btn.type='button';btn.textContent=title;btn.dataset.casTab=id;nav.append(btn);
+  const panel=document.createElement('section');panel.className='cas-work-panel';panel.dataset.casPanel=id;panel.hidden=true;
+  for(const item of items.filter(Boolean))panel.append(item);
+  host.append(panel);
+ }
+ section.prepend(host);section.prepend(nav);
+ const hero=section.querySelector('.cas-action-hero');if(hero)hero.remove();
+ nav.addEventListener('click',e=>{const b=e.target.closest('[data-cas-tab]');if(b)showWorkspaceTab(b.dataset.casTab);});
+ showWorkspaceTab('entregar');
+}
+function showWorkspaceTab(id){
+ const root=$('#ccAntViewCasetasNuevo');if(!root)return;
+ root.querySelectorAll('[data-cas-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.casTab===id);b.setAttribute('aria-selected',String(b.dataset.casTab===id));});
+ root.querySelectorAll('[data-cas-panel]').forEach(p=>{p.hidden=p.dataset.casPanel!==id;p.style.display=p.hidden?'none':'block';});
+}
+window.ccCasetasShowTab=showWorkspaceTab;
 function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
 window.ccCasetasNuevoOpen=open;window.ccCasetasNuevoClose=function(){let el=$('#ccAntViewCasetasNuevo');if(el){el.classList.remove('cas-fullscreen');el.style.display='none';}document.body.style.overflow='';let b=document.querySelector('#ccPanelAnticipos [data-antv="anticipos"]');if(b&&window.ccAntView)window.ccAntView('anticipos',b);};
-window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
+window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';setupWorkspace();bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
 })();
