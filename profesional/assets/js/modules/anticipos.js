@@ -129,7 +129,7 @@ window.ccAntRenderSaldos=function(){
  }
 };
 window.ccAntAbrirPendientesOperador=function(operadorId){
- var o=(D.operadores||[]).find(x=>x.id===operadorId),ants=(D.anticipos||[]).filter(a=>a.operadorId===operadorId&&a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO');
+ var o=(D.operadores||[]).find(x=>x.id===operadorId),ants=(D.anticipos||[]).filter(a=>a.operadorId===operadorId&&a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO'&&a.esCasetas!==true&&a.es_casetas!==true&&!/^CAS-/i.test(String(a.folio||'')));
  document.getElementById('ccAntOpPendModal')?.remove();var ov=document.createElement('div');ov.id='ccAntOpPendModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
  var rows=ants.map(a=>{var p=Math.max(0,Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0));return '<tr><td><strong>'+h(a.folio)+'</strong><div style="font-size:9px;color:#64748b">'+f(a.fecha)+' · '+h(a.destino||'')+'</div></td><td>'+h(a.unidad||'—')+'</td><td>'+m(a.montoEntregado||0)+'</td><td>'+m(a.comprobado||0)+'</td><td><strong>'+m(p)+'</strong></td><td>'+(p>0?'<button class="cc-btn cc-btn-primary" data-comp-ant="'+h(a.id)+'">Comprobar</button>':'<span class="cc-badge">Sin pendiente</span>')+'</td></tr>'}).join('');
  ov.innerHTML='<div style="background:#fff;width:min(860px,97vw);max-height:92vh;overflow:auto;border-radius:16px"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between"><div><strong>'+h(o?.nombre||'Operador')+'</strong><div style="font-size:10px;color:#cbd5e1">Anticipos pendientes de comprobar</div></div><button id="ccAntOpPendClose" style="background:none;border:0;color:#fff;font-size:22px">×</button></div><div style="padding:18px"><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>ANTICIPO</th><th>UNIDAD</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ACCIÓN</th></tr></thead><tbody>'+((rows)||'<tr><td colspan="6">No tiene anticipos pendientes.</td></tr>')+'</tbody></table></div></div></div>';
@@ -197,6 +197,7 @@ window.ccAntComprobar=async function(id){
   var a=(D.anticipos||[]).find(function(x){return x.id===id});
   if(a&&a.estatus==='CERRADO'){alert('Este anticipo está cerrado. Debe abrirse antes de registrar comprobaciones.');return}
   if(!a){alert('No se encontró el anticipo.');return}
+  if(a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''))){alert('Los anticipos de casetas solo se comprueban desde el módulo Casetas.');return}
   var ds=detAnt(id);
   if(!ds.length){alert('Este anticipo no tiene conceptos para comprobar.');return}
   var cs=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'">'+h(x.concepto)+'</option>'}).join('');
