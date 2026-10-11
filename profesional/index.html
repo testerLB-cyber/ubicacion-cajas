@@ -89,6 +89,20 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 
 <style id="ccAntCasetasRetiradas20261010">#ccPanelAnticipos [data-antv="casetas"],#ccPanelAnticipos [onclick*="ccCasLoad"],#ccAntViewCasetas{display:none!important}</style>
+<style id="ccAntCatalogTablesFinal">
+#ccAntViewCatalogos .ant-catalog-count{padding:10px 12px;color:#64748b;font-size:12px;font-weight:800;background:#f8fafc;border-radius:9px;margin-bottom:8px}
+#ccAntViewCatalogos .ant-catalog-table{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+#ccAntViewCatalogos .ant-catalog-table-head,#ccAntViewCatalogos .ant-catalog-row{display:grid;grid-template-columns:minmax(160px,1.2fr) minmax(150px,1.5fr) minmax(92px,.5fr);gap:12px;align-items:center;padding:12px 14px}
+#ccAntViewCatalogos .ant-catalog-table-head{background:#eef3fa;color:#475569;font-size:11px;font-weight:900}
+#ccAntViewCatalogos .ant-catalog-row{border-top:1px solid #edf2f7;font-size:13px}
+#ccAntViewCatalogos .ant-catalog-row:nth-child(odd){background:#fafcff}
+#ccAntViewCatalogos .ant-catalog-row strong{color:#172b4d;font-size:13px}
+#ccAntViewCatalogos .ant-catalog-row>span{color:#64748b}
+#ccAntViewCatalogos .ant-catalog-row button{justify-self:end;font-size:12px}
+#ccAntViewCatalogos .ant-catalog-empty{padding:24px;color:#64748b;text-align:center}
+#ccAntViewCatalogos .ant-catalog-badge{font-size:11px;border-radius:8px;background:#e0f2fe;color:#075985;padding:6px 8px;width:max-content}
+@media(max-width:650px){#ccAntViewCatalogos .ant-catalog-table-head{display:none}#ccAntViewCatalogos .ant-catalog-row{grid-template-columns:1fr auto;gap:5px;padding:14px}#ccAntViewCatalogos .ant-catalog-row strong{grid-column:1}#ccAntViewCatalogos .ant-catalog-row>span:not(.ant-catalog-badge){grid-column:1;grid-row:2}#ccAntViewCatalogos .ant-catalog-row button{grid-column:2;grid-row:1/3}}
+</style>
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccBootSplash"><div class="box"><b>Tráfico App</b><span id="ccBootSplashText">Abriendo Control Logístico…</span></div></div>
@@ -1429,7 +1443,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261011-kpis-general-casetas"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261010-catalogos-tablas-editar-v3"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
