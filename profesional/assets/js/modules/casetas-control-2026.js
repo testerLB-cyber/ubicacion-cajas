@@ -83,22 +83,25 @@ async function batchSave(){
 }
 function setupWorkspace(){
  const root=$('#ccAntViewCasetasNuevo'),section=$('#casOperatorSection');if(!root||!section||root.dataset.workspace)return;root.dataset.workspace='1';
- const cards=[...section.querySelectorAll(':scope > .cas-card')];const byTitle=t=>cards.find(x=>x.querySelector('h3')?.textContent.toLowerCase().includes(t));
+ const cards=[...section.querySelectorAll(':scope > .cas-card')];
+ const audit=$('#casAuditPanel');if(audit){const oldNav=audit.previousElementSibling;if(oldNav?.classList.contains('cas-work-nav'))oldNav.remove();}
  const groups=[
  ['entregar','Entregar',[section.querySelector('#casEntregaSimple')]],
- ['comprobar','Comprobar',[section.querySelector('#casComprobarSimple')]]
+ ['comprobar','Comprobar',[section.querySelector('#casComprobarSimple')]],
+ ['historial','Historial',[audit]]
  ];
  const nav=document.createElement('nav');nav.className='cas-work-tabs';nav.setAttribute('aria-label','Operaciones de casetas');
  const host=document.createElement('div');host.className='cas-work-content';
  for(const [id,title,items] of groups){
   const btn=document.createElement('button');btn.type='button';btn.textContent=title;btn.dataset.casTab=id;nav.append(btn);
   const panel=document.createElement('section');panel.className='cas-work-panel';panel.dataset.casPanel=id;panel.hidden=true;
-  for(const item of items.filter(Boolean))panel.append(item);if(id==='comprobar'){const form=panel.querySelector('#casComprobarSimple'),audit=form?.querySelector('#casAuditPanel');if(form&&audit){const layout=document.createElement('div');layout.className='cas-comprobar-side-layout';form.parentNode.insertBefore(layout,form);layout.append(form);layout.append(audit);audit.hidden=false;audit.style.display='block';const nav=audit.previousElementSibling;if(nav?.classList.contains('cas-work-nav'))nav.remove();}}
+  for(const item of items.filter(Boolean)){panel.append(item);if(id==='historial'){item.hidden=false;item.style.display='block';}}
   host.append(panel);
  }
- section.prepend(host);section.prepend(nav);for(const card of cards){if(!card.closest('.cas-work-panel'))card.style.display='none';}
+ section.prepend(host);section.prepend(nav);
+ for(const card of cards){if(!card.closest('.cas-work-panel'))card.style.display='none';}
  const hero=section.querySelector('.cas-action-hero');if(hero)hero.remove();
- nav.addEventListener('click',e=>{const b=e.target.closest('[data-cas-tab]');if(b)showWorkspaceTab(b.dataset.casTab);});
+ nav.addEventListener('click',e=>{const b=e.target.closest('[data-cas-tab]');if(b){showWorkspaceTab(b.dataset.casTab);if(b.dataset.casTab==='historial'){casAuditOperators();casAuditLoad();}}});
  showWorkspaceTab('entregar');
 }
 function showWorkspaceTab(id){
