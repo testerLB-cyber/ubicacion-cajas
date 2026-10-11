@@ -26,7 +26,7 @@ function tariffList(D){const rr=(D.dest.destinoConceptosGeneral||[]).filter(x=>S
 async function renderCatalogs(force=false){
  const root=document.getElementById('ccAntViewCatalogos');if(!root)return;
  if(force||!data)await load();const D=data;
- const cats=[['cuentas','Cuentas y cajas','CUENTA'],['conceptos','Conceptos','CONCEPTO'],['destinos','Destinos','DESTINO'],['metodos','Métodos de depósito','METODO_DEPOSITO'],['movimientos','Movimientos de caja','TIPO_MOV_CAJA'],['beneficiarios','Beneficiarios','RESPONSABLE'],['tarifas','Configuración por destino','DESTINO_CONFIG']];
+ const cats=[['cuentas','Cuentas y cajas','CUENTA'],['conceptos','Conceptos','CONCEPTO'],['destinos','Destinos','DESTINO'],['metodos','Métodos de depósito','METODO_DEPOSITO'],['tarifas','Configuración por destino','DESTINO_CONFIG']];
  if(!cats.some(c=>c[0]===selected))selected='cuentas';
  if(!document.getElementById('ccAntCanonical20261010Style')){let st=document.createElement('style');st.id='ccAntCanonical20261010Style';st.textContent=`
  #ccAntViewCatalogos #ccAntCanonicalSelector{display:flex;flex-direction:column;gap:3px;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
@@ -57,8 +57,6 @@ async function renderCatalogs(force=false){
   if(k==='conceptos')content.innerHTML=rows(active(D.base.conceptos||[]),x=>x.categoria||x.estatus,'CONCEPTO');
   if(k==='destinos')content.innerHTML=rows(active(D.base.destinos||[]),x=>x.descripcion||x.estatus,'DESTINO');
   if(k==='metodos')content.innerHTML=rows(active(D.base.metodosDeposito||[]),x=>x.descripcion||x.estatus,'METODO_DEPOSITO');
-  if(k==='movimientos')content.innerHTML=rows(active(D.base.tiposMovCaja||[]),x=>x.naturaleza||x.codigo,'TIPO_MOV_CAJA');
-  if(k==='beneficiarios')content.innerHTML=rows(active(D.base.beneficiarios||D.base.responsables||[]),x=>x.estatus||'ACTIVO','RESPONSABLE');
   if(k==='tarifas')content.innerHTML=tariffList(D);
   root.querySelector('[data-add]').textContent=k==='tarifas'?'+ Configurar':'+ Agregar';
  }
