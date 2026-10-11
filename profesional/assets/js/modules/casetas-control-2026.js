@@ -80,7 +80,7 @@ function setupWorkspace(){
  const root=$('#ccAntViewCasetasNuevo'),section=$('#casOperatorSection');if(!root||!section||root.dataset.workspace)return;root.dataset.workspace='1';
  const cards=[...section.querySelectorAll(':scope > .cas-card')];const byTitle=t=>cards.find(x=>x.querySelector('h3')?.textContent.toLowerCase().includes(t));
  const groups=[
- ['entregar','Entregar',[byTitle('devolver efectivo')]],
+ ['entregar','Entregar',[section.querySelector('#casEntregaSimple')]],
  ['comprobar','Comprobar',[byTitle('comprobación y conciliación')]]
  ];
  const nav=document.createElement('nav');nav.className='cas-work-tabs';nav.setAttribute('aria-label','Operaciones de casetas');
@@ -91,7 +91,7 @@ function setupWorkspace(){
   for(const item of items.filter(Boolean))panel.append(item);
   host.append(panel);
  }
- section.prepend(host);section.prepend(nav);
+ section.prepend(host);section.prepend(nav);for(const card of cards){if(!card.closest('.cas-work-panel'))card.style.display='none';}
  const hero=section.querySelector('.cas-action-hero');if(hero)hero.remove();
  nav.addEventListener('click',e=>{const b=e.target.closest('[data-cas-tab]');if(b)showWorkspaceTab(b.dataset.casTab);});
  showWorkspaceTab('entregar');
