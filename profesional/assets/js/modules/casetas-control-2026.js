@@ -112,7 +112,7 @@ function entregaOptions(){
  const input=$('#casEntregaOperador'),list=$('#casEntregaSuggestions');if(!input||!list)return;
  const q=input.value.trim().toLocaleLowerCase('es-MX'),matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
  list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-entrega-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
- list.hidden=document.activeElement!==input;input.setAttribute('aria-expanded',String(!list.hidden));
+ list.hidden=false;input.setAttribute('aria-expanded','true');
 }
 function entregaPick(id){
  const op=ops().find(o=>o.id===id);if(!op)return;
@@ -162,11 +162,11 @@ function comprobarOptions(){
  const q=input.value.trim().toLocaleLowerCase('es-MX');
  const matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)||(o.id||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
  list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-comprobar-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
- list.hidden=document.activeElement!==input;input.setAttribute('aria-expanded',String(!list.hidden));
+ list.hidden=false;input.setAttribute('aria-expanded','true');
 }
 function comprobarPick(id){
  const op=ops().find(o=>o.id===id);if(!op)return;
- comprobarSelectedId=id;state.op=id;$('#casComprobarOperador').value=(op.numero_empleado?op.numero_empleado+' · ':'')+op.nombre;$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');comprobarUpdate();
+ comprobarSelectedId=id;state.op=id;$('#casComprobarOperador').value=(op.numero_empleado?op.numero_empleado+' · ':'')+op.nombre;$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');comprobarUpdate();casSimpleHistory();casSimpleCFDI();
 }
 function casLocalDate(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function casSimpleHistory(){
@@ -250,7 +250,7 @@ async function comprobarGuardar(){
 }
 
 let casAuditRows=[];
-function casAuditTab(tab){const history=tab==='historial';$('#casAuditPanel').hidden=!history;$('#casAuditPanel').style.display=history?'block':'none';$('#casOperationalWorkspace').style.display=history?'none':'block';document.querySelectorAll('#ccAntViewCasetasNuevo [data-cas-work]').forEach(b=>{b.classList.toggle('selected',b.dataset.casWork===tab);b.setAttribute('aria-current',b.dataset.casWork===tab?'page':'false')});if(history){casAuditOperators();if(!casAuditRows.length)casAuditLoad();}}
+function casAuditTab(tab){const history=tab==='historial';const panel=$('#casAuditPanel');panel.hidden=!history;panel.style.display=history?'block':'none';document.querySelectorAll('#ccAntViewCasetasNuevo [data-cas-work]').forEach(b=>b.classList.toggle('selected',b.dataset.casWork===tab));if(history){casAuditOperators();casAuditLoad();}}
 function casAuditOperators(){const el=$('#casAuditOperator'),value=el.value;el.innerHTML='<option value="">Todos los operadores</option>'+ops().map(o=>'<option value="'+esc(o.id)+'">'+esc(o.nombre)+'</option>').join('');el.value=value;}
 function casAuditCsv(){if(!casAuditRows.length)return;const cols=['Fecha','Movimiento','Operador','Folio / Referencia','Importe','Estado'];const rows=[cols,...casAuditRows.map(x=>[x.fecha,x.tipo,x.operador,x.referencia,x.monto,x.estatus])];const csv='\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='historial-casetas-'+casLocalDate()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 async function casAuditLoad(){
@@ -258,7 +258,7 @@ async function casAuditLoad(){
  if(from&&to&&from>to){status.textContent='El rango de fechas no es válido.';return;}
  const btn=$('#casAuditSearch');btn.disabled=true;status.textContent='Consultando registros…';body.innerHTML='<tr><td colspan="6">Cargando historial…</td></tr>';
  try{
- const query=(table,columns,dateColumn)=>{let q=client().from(table).select(columns).order(dateColumn,{ascending:false}).limit(1000);if(from)q=q.gte(dateColumn,from+'T00:00:00');if(to)q=q.lte(dateColumn,to+'T23:59:59');if(op&&table!=='cc_ant_movimientos_caja')q=q.eq('operador_id',op);return q;};
+ const query=(table,columns,dateColumn)=>{let q=client().from(table).select(columns).order(dateColumn,{ascending:false}).limit(1000);if(from)q=q.gte(dateColumn,from);if(to)q=q.lte(dateColumn,to+'T23:59:59');if(op&&table!=='cc_ant_movimientos_caja')q=q.eq('operador_id',op);return q;};
  const tasks=[];
  if(!kind||kind==='ENTREGA')tasks.push(['entregas',query('cc_anticipos','id,folio,fecha,created_at,operador_id,monto,monto_entregado,estatus','fecha').eq('es_casetas',true)]);
  if(!kind||kind==='COMPROBACION')tasks.push(['comprobaciones',query('cc_ant_casetas_comprobaciones_resumen','id,fecha,created_at,operador_id,cantidad,importe_total','fecha')]);
