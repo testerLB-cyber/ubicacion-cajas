@@ -1504,5 +1504,69 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-<script src="assets/js/modules/casetas-control-2026.js?v=20261010-reports-v1"></script><script>document.addEventListener("DOMContentLoaded",()=>{window.ccCasetasNuevoInit?.();const d=document.getElementById("casTicketDate");if(d)d.value=new Date().toISOString().slice(0,10);});</script></body>
+<script src="assets/js/modules/casetas-control-2026.js?v=20261010-reports-v1"></script><script>document.addEventListener("DOMContentLoaded",()=>{window.ccCasetasNuevoInit?.();const d=document.getElementById("casTicketDate");if(d)d.value=new Date().toISOString().slice(0,10);});</script><style id="ccAntCatalogV2Style">
+#ccAntViewCatalogos .cc-ant-report-grid{display:block!important}
+#ccAntViewCatalogos .cc-config-card{border:1px solid #dce5ef!important;background:white!important;border-radius:16px!important;box-shadow:0 4px 20px #10213a0a!important;padding:16px!important;margin:0 0 16px!important}
+#ccAntViewCatalogos .cc-config-card .cc-toolbar{display:flex!important;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+#ccAntViewCatalogos .cc-config-card .cc-toolbar strong{font-size:17px!important}
+#ccAntViewCatalogos .cc-config-card button{border-radius:10px!important;min-height:38px}
+#ccAntViewCatalogos .cc-config-card [id^="ccAntCat"]>div{padding:12px 14px!important;border-bottom:1px solid #edf2f7!important}
+#ccAntViewCatalogos .cc-config-card [id^="ccAntCat"]>div:nth-child(2n){background:#f8fafc}
+#ccAntCatalogV2Header{background:linear-gradient(115deg,#102448,#2355a2);border-radius:16px;padding:19px;color:#fff;margin:14px 0}
+#ccAntCatalogV2Header strong{font-size:20px;display:block}
+#ccAntCatalogV2Header p{margin:6px 0 0;color:#dbeafe;font-size:13px}
+#ccAntCatalogV2Tabs{display:flex;gap:8px;overflow-x:auto;padding:8px 0 14px;scrollbar-width:thin}
+#ccAntCatalogV2Tabs button{flex:0 0 auto;border:1px solid #d8e3ef;border-radius:11px;background:#fff;color:#334155;padding:12px 15px;font-weight:750;cursor:pointer}
+#ccAntCatalogV2Tabs button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+#ccAntCatalogV2Search{width:100%;max-width:450px;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;margin:0 0 16px}
+@media(max-width:650px){#ccAntCatalogV2Tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}#ccAntCatalogV2Tabs button{white-space:normal;font-size:12px;padding:10px 6px}#ccAntViewCatalogos .cc-config-card{padding:12px!important}}
+</style>
+<script id="ccAntCatalogV2Script">
+(function(){
+var specs=[
+ ['ccAntCatDestinoConceptos','Configuración por destino'],
+ ['ccAntCatDestinos','Destinos'],
+ ['ccAntCatConceptos','Conceptos'],
+ ['ccAntCatCuentas','Cuentas y cajas'],
+ ['ccAntCatMetodos','Métodos de depósito'],
+ ['ccAntCatTiposMovCaja','Movimientos de caja'],
+ ['ccAntCatTiposAnticipo','Tipos de unidad'],
+ ['ccAntCatOperadores','Operadores'],
+ ['casTarifasCatalogo','Tarifas de casetas']
+],active='ccAntCatDestinoConceptos';
+function init(){
+ var root=document.getElementById('ccAntViewCatalogos');if(!root)return;
+ var old=root.querySelector('#ccAntCatalogIntro');if(old)old.style.display='none';
+ var oldTabs=root.querySelector('#ccAntCatalogTabs');if(oldTabs)oldTabs.style.display='none';
+ var oldSearch=root.querySelector('#ccAntCatalogSearch');if(oldSearch)oldSearch.style.display='none';
+ if(root.querySelector('#ccAntCatalogV2Tabs'))return;
+ var header=document.createElement('div');header.id='ccAntCatalogV2Header';header.innerHTML='<strong>Catálogos de anticipos</strong><p>Elige una categoría. Cada sección conserva sus acciones de consulta y registro.</p>';
+ var tabs=document.createElement('div');tabs.id='ccAntCatalogV2Tabs';
+ var search=document.createElement('input');search.id='ccAntCatalogV2Search';search.type='search';search.placeholder='Buscar registros de esta sección';
+ root.prepend(search);root.prepend(tabs);root.prepend(header);
+ specs.forEach(function(spec){
+  var el=document.getElementById(spec[0]);var card=spec[0]==='casTarifasCatalogo'?el:el?.closest('.cc-config-card');
+  if(!card)return;card.dataset.ccCatalogV2=spec[0];
+  var b=document.createElement('button');b.type='button';b.textContent=spec[1];b.dataset.target=spec[0];
+  b.onclick=function(){active=spec[0];search.value='';render()};tabs.appendChild(b);
+ });
+ search.oninput=render;
+ render();
+}
+function render(){
+ var root=document.getElementById('ccAntViewCatalogos');if(!root)return;
+ root.querySelectorAll('[data-cc-catalog-v2]').forEach(function(card){card.style.setProperty('display',card.dataset.ccCatalogV2===active?'block':'none','important')});
+ root.querySelectorAll('#ccAntCatalogV2Tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.target===active)});
+ var selected=root.querySelector('[data-cc-catalog-v2="'+active+'"]');if(!selected)return;
+ var q=(root.querySelector('#ccAntCatalogV2Search')?.value||'').toLocaleLowerCase('es').trim();
+ selected.querySelectorAll('[id^="ccAntCat"] > div').forEach(function(row){
+  var isCruce=active==='ccAntCatDestinoConceptos'&&/^cruce(?:\s|$|·)/i.test((row.querySelector('strong')?.textContent||'').trim());
+  row.style.display=isCruce||(q&&!row.textContent.toLocaleLowerCase('es').includes(q))?'none':'';
+ });
+}
+function start(){init();document.addEventListener('ccAnt:data-refreshed',function(){setTimeout(render,0)})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+</body>
 </html>
