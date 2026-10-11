@@ -241,6 +241,27 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 #ccAntViewCasetasNuevo.cas-fullscreen .cas-action-hero button:nth-child(3){background:#b45309}
 #ccAntViewCasetasNuevo.cas-fullscreen .cas-card{box-shadow:0 2px 12px #0f172a0a}
 @media(max-width:900px){#ccAntViewCasetasNuevo.cas-fullscreen .cas-layout{grid-template-columns:1fr!important}}
+</style><style id="casERPRedesign">
+#ccAntViewCasetasNuevo.cas-fullscreen{padding:14px 22px!important;background:#f5f7fb!important}
+#ccAntViewCasetasNuevo .cas-top{margin:0 0 12px!important;border-radius:12px!important;padding:14px 20px!important}
+#ccAntViewCasetasNuevo .cas-top h2{font-size:21px!important}
+#ccAntViewCasetasNuevo .cas-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:8px!important;margin:10px 0!important}
+#ccAntViewCasetasNuevo .cas-kpi{padding:10px!important;border-radius:10px!important;min-width:0}
+#ccAntViewCasetasNuevo .cas-kpi strong{font-size:17px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ccAntViewCasetasNuevo .cas-layout{grid-template-columns:250px minmax(0,1fr)!important;align-items:start}
+#ccAntViewCasetasNuevo .cas-layout>aside{position:sticky;top:85px;max-height:calc(100dvh - 105px);overflow:hidden;display:flex;flex-direction:column}
+#ccAntViewCasetasNuevo #casOperators{max-height:calc(100dvh - 230px)!important;overflow:auto}
+#ccAntViewCasetasNuevo .cas-work-tabs{display:flex;align-items:center;gap:5px;background:#e9eef5;padding:6px;border-radius:12px;margin:10px 0 14px;overflow-x:auto}
+#ccAntViewCasetasNuevo .cas-work-tabs button{background:transparent;border:0;border-radius:9px;padding:12px 16px;white-space:nowrap;font-size:13px;font-weight:750;color:#475569;cursor:pointer}
+#ccAntViewCasetasNuevo .cas-work-tabs button.active{background:#fff;color:#0f766e;box-shadow:0 1px 5px #0f172a1f}
+#ccAntViewCasetasNuevo .cas-work-panel>.cas-card{max-width:100%;margin-bottom:10px}
+#ccAntViewCasetasNuevo .cas-work-panel[hidden]{display:none!important}
+#ccAntViewCasetasNuevo .cas-layout main>.cas-card:first-child{margin-bottom:8px;padding:13px 18px}
+#ccAntViewCasetasNuevo .cas-layout main>.cas-card:first-child h3{font-size:17px!important}
+#ccAntViewCasetasNuevo .cas-person{padding:9px!important}
+#ccAntViewCasetasNuevo .cas-card{border-radius:11px!important}
+@media(max-width:1100px){#ccAntViewCasetasNuevo .cas-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:800px){#ccAntViewCasetasNuevo.cas-fullscreen{padding:8px!important}#ccAntViewCasetasNuevo .cas-layout{grid-template-columns:1fr!important}#ccAntViewCasetasNuevo .cas-layout>aside{position:static;max-height:230px}#ccAntViewCasetasNuevo #casOperators{max-height:140px!important}#ccAntViewCasetasNuevo .cas-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}#ccAntViewCasetasNuevo .cas-work-tabs button{padding:10px}}
 </style><div id="ccAntViewCasetasNuevo" class="cc-ant-view" style="display:none">
 <style>
 #ccAntViewCasetasNuevo{font-family:inherit}#ccAntViewCasetasNuevo .cas-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:#10233e;color:white;border-radius:16px;padding:22px;margin:12px 0}#ccAntViewCasetasNuevo .cas-top h2{font-size:24px;font-weight:800;margin:0}#ccAntViewCasetasNuevo .cas-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0}#ccAntViewCasetasNuevo .cas-kpi{background:white;border:1px solid #dbe4ee;border-radius:12px;padding:16px}#ccAntViewCasetasNuevo .cas-kpi small{display:block;color:#64748b}#ccAntViewCasetasNuevo .cas-kpi strong{display:block;font-size:19px;margin-top:6px}#ccAntViewCasetasNuevo .cas-layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);gap:14px}#ccAntViewCasetasNuevo .cas-card{background:white;border:1px solid #dbe4ee;border-radius:14px;padding:18px;margin-bottom:14px}#ccAntViewCasetasNuevo .cas-person{display:flex;width:100%;text-align:left;flex-direction:column;padding:10px;margin:6px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;cursor:pointer}#ccAntViewCasetasNuevo .cas-person.selected{background:#eff6ff;border-color:#2563eb}#ccAntViewCasetasNuevo .cas-person span{font-size:12px;color:#64748b}#ccAntViewCasetasNuevo .cas-person strong{color:#0f766e}#ccAntViewCasetasNuevo .cas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#ccAntViewCasetasNuevo label{display:block;font-weight:650;font-size:12px;margin:8px 0}#ccAntViewCasetasNuevo input,#ccAntViewCasetasNuevo select{display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:white}#ccAntViewCasetasNuevo table{width:100%;font-size:12px}#ccAntViewCasetasNuevo th,#ccAntViewCasetasNuevo td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}#ccAntViewCasetasNuevo .cas-scroll{overflow:auto;max-height:330px}#ccAntViewCasetasNuevo .cas-btn{padding:10px 16px;background:#0f766e;color:white;border-radius:9px;font-weight:700;margin-top:12px}#ccAntViewCasetasNuevo .cas-btn.blue{background:#1d4ed8}@media(max-width:850px){#ccAntViewCasetasNuevo .cas-layout{grid-template-columns:1fr}}
@@ -1309,5 +1330,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
-<script src="assets/js/modules/casetas-control-2026.js?v=20261010-4"></script><script>document.addEventListener("DOMContentLoaded",()=>{window.ccCasetasNuevoInit?.();const d=document.getElementById("casTicketDate");if(d)d.value=new Date().toISOString().slice(0,10);});</script></body>
+<script src="assets/js/modules/casetas-control-2026.js?v=20261010-5"></script><script>document.addEventListener("DOMContentLoaded",()=>{window.ccCasetasNuevoInit?.();const d=document.getElementById("casTicketDate");if(d)d.value=new Date().toISOString().slice(0,10);});</script></body>
 </html>
