@@ -259,6 +259,13 @@ function casDeliveryAsk(op,pending,amount){
  const m=$('#casDeliveryModal');m.hidden=false;m.style.display='flex';$('#casDeliveryYes').focus();
 }
 async function casDeliveryConfirm(){const op=casDeliveryOperator,monto=Number($('#casDeliveryModalAmount').value),fecha=$('#casDeliveryModalDate').value;if(!op||!Number.isFinite(monto)||monto<=0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(fecha)){$('#casDeliveryModalStatus').textContent='Indica una fecha y un importe válidos.';return;}const b=$('#casDeliveryConfirm');b.disabled=true;try{await rpc('cc_ant_casetas_entregar',{operadorId:op.id,monto,fecha:fecha+'T12:00:00',observaciones:'Entrega posterior a comprobación'});await refreshBalances();casDeliveryClose();statusBox('#casComprobarEstado','✓ Comprobación y entrega registradas correctamente.');}catch(e){ $('#casDeliveryModalStatus').textContent='No se registró la entrega: '+(e.message||e);}finally{b.disabled=false;}}
+function casConfirmExcess(op,excess){
+ return new Promise(resolve=>{
+  const modal=document.createElement('div');modal.style.cssText='position:fixed;inset:0;z-index:100010;background:#0f172abf;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML='<div role="dialog" aria-modal="true" aria-label="Excedente de comprobación" style="background:white;border-radius:18px;padding:24px;max-width:480px;width:100%;box-shadow:0 22px 60px #0004"><div style="font-size:14px;color:#64748b">Comprobación superior al anticipo</div><h3 style="font-size:23px;color:#0f172a;margin:8px 0">'+esc(op.nombre)+'</h3><div style="background:#fef3c7;border-radius:12px;padding:16px;margin:14px 0"><div style="font-size:13px">Importe adicional que corresponde al operador</div><strong style="font-size:30px;color:#92400e">'+money(excess)+'</strong></div><p style="color:#334155;font-size:14px">¿Ya entregaste este dinero al operador? Si confirmas que sí, se descontará de la caja. Si no, quedará registrado como <b>saldo pendiente por pagar al operador</b>.</p><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="cc-btn cc-btn-light" data-excess="CANCELAR">Cancelar</button><button type="button" class="cc-btn cc-btn-light" data-excess="PENDIENTE">No, dejar pendiente</button><button type="button" class="cc-btn cc-btn-primary" data-excess="PAGADO">Sí, dinero entregado</button></div></div>';
+  document.body.append(modal);modal.querySelectorAll('[data-excess]').forEach(b=>b.onclick=()=>{const mode=b.dataset.excess;modal.remove();resolve(mode);});
+ });
+}
 async function comprobarGuardar(){
  const fail=t=>statusBox('#casComprobarEstado',t,true);
  if(state.busy){fail('Hay una operación en curso. Espera un momento.');return;}
@@ -267,18 +274,18 @@ async function comprobarGuardar(){
  if(pending<=0){fail('El operador no tiene anticipos pendientes para comprobar');return;}
  if(items.some(i=>!Number.isSafeInteger(i.cantidad)||i.cantidad<0||i.cantidad>1000)){fail('Las cantidades deben ser números enteros entre 0 y 1000');return;}
  if(qty<=0){fail('Captura al menos un ticket');return;}
- if(!Number.isFinite(amount)||amount<=0){fail('El importe de comprobación no es válido');return;}if(amount>pending){fail('El importe excede el saldo pendiente. La comprobación negativa requiere habilitación contable en el servidor; no se registró ninguna operación.');return;}
+ if(!Number.isFinite(amount)||amount<=0){fail('El importe de comprobación no es válido');return;}
  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){fail('Selecciona una fecha válida');return;}
- if(!confirm('¿Comprobar '+qty+' tickets por '+money(amount)+' para '+op.nombre+'?')){fail('Operación cancelada; no se registró ninguna comprobación.');return;}
+ let excesoModo='';if(amount>pending){excesoModo=await casConfirmExcess(op,amount-pending);if(excesoModo==='CANCELAR'){fail('Operación cancelada; no se registró ninguna comprobación.');return;}}else if(!confirm('¿Comprobar '+qty+' tickets por '+money(amount)+' para '+op.nombre+'?')){fail('Operación cancelada; no se registró ninguna comprobación.');return;}
  state.busy=true;$('#casComprobarGuardar').disabled=true;statusBox('#casComprobarEstado','Guardando comprobación…');
  let saved=false;
  try{
-  await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00',comentarios:$('#casComprobarComentarios').value.trim()});
+  await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00',comentarios:$('#casComprobarComentarios').value.trim(),excesoModo});
   saved=true;
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
   comprobarSelectedId=null;$('#casComprobarComentarios').value='';$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');
   statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Actualizando saldos…');
-  try{await refreshBalances();casSimpleHistory();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');casDeliveryAsk(op,pending,amount);}
+  try{await refreshBalances();casSimpleHistory();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');if(excesoModo==='PENDIENTE')statusBox('#casComprobarEstado','✓ Comprobación guardada. Excedente registrado como saldo pendiente por pagar al operador.');else casDeliveryAsk(op,pending,amount);}
   catch(e){statusBox('#casComprobarEstado','✓ Comprobación guardada, pero no se pudieron actualizar los saldos: '+(e.message||e),true);}
  }catch(e){if(!saved)fail('No se confirmó la comprobación: '+(e.message||e));}
  finally{state.busy=false;$('#casComprobarGuardar').disabled=false;}
