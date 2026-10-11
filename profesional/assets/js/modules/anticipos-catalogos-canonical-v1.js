@@ -32,6 +32,9 @@ async function casetasCatalog(content){
  const result=await rpc('cc_ant_casetas_tarifas_list'),items=result.tarifas||[];
  content.innerHTML='<p style="color:#64748b">Precio por ticket y tipo de unidad. Los cambios no modifican comprobaciones anteriores.</p><div class="ant-canonical-list">'+items.map(t=>'<div class="ant-canonical-row"><strong>'+esc(t.nombre)+'</strong><span>'+Number(t.importe).toFixed(2)+' MXN/ticket · Orden '+esc(t.orden)+' · '+(t.activo?'Activo':'Inactivo')+'</span><button data-cas-edit="'+esc(t.id)+'">Editar</button></div>').join('')+'</div>';
  content.querySelectorAll('[data-cas-edit]').forEach(b=>b.onclick=()=>casetasEdit(items.find(t=>String(t.id)===b.dataset.casEdit)));
+ content.querySelectorAll('[data-cas-toggle]').forEach(b=>b.onclick=async()=>{const t=items.find(x=>String(x.id)===b.dataset.casToggle);if(!t||!canEdit())return alert('Sin permiso');if(!confirm((t.activo?'¿Inhabilitar ':'¿Habilitar ')+t.nombre+'?'))return;b.disabled=true;try{await rpc('cc_ant_casetas_tarifas_guardar',{p_item:{id:t.id,nombre:t.nombre,importe:t.importe,activo:!t.activo,orden:t.orden}});await casetasCatalog(content);window.ccCasetasTarifasCargar?.();}catch(e){alert(e.message||e);b.disabled=false;}});
+ content.querySelectorAll('[data-cas-delete]').forEach(b=>b.onclick=async()=>{const t=items.find(x=>String(x.id)===b.dataset.casDelete);if(!t||!canEdit())return alert('Sin permiso');if(!confirm('¿Eliminar definitivamente '+t.nombre+'? Si tiene comprobaciones históricas, el sistema impedirá eliminarla; puedes inhabilitarla.'))return;b.disabled=true;try{await rpc('cc_ant_casetas_tarifas_eliminar',{p_id:t.id});await casetasCatalog(content);window.ccCasetasTarifasCargar?.();}catch(e){alert(e.message||e);b.disabled=false;}});
+
 }
 async function renderCatalogs(force=false){
  const root=document.getElementById('ccAntViewCatalogos');if(!root)return;
