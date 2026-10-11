@@ -24,11 +24,11 @@ function render(){
  $('#casFunds').innerHTML=ff.map(a=>'<option value="'+esc(a.id)+'">'+esc(a.folio)+' · '+money(a.pendiente)+'</option>').join('');
  $('#casHistory').innerHTML=(d.anticipos||[]).filter(a=>a.operadorId===state.op).slice(0,25).map(a=>'<tr><td>'+esc(a.folio)+'</td><td>'+esc((a.fecha||'').slice(0,10))+'</td><td>'+money(a.montoEntregado)+'</td><td>'+money(a.comprobado)+'</td><td>'+money(a.devuelto)+'</td><td><b>'+money(a.pendiente)+'</b></td></tr>').join('')||'<tr><td colspan="6">Sin movimientos</td></tr>';
  $('#casTickets').innerHTML=(d.tickets||[]).filter(t=>t.operador_id===state.op).slice(0,25).map(t=>'<tr><td>'+esc((t.fecha||'').slice(0,10))+'</td><td>'+esc(t.plaza||'—')+'</td><td>'+esc(t.folio_ticket||'—')+'</td><td>'+money(t.total)+'</td><td>'+esc(t.estatus)+'</td></tr>').join('')||'<tr><td colspan="5">Sin tickets</td></tr>';
- $('#casOperatorSection').hidden=!op;$('#casOperatorSection').style.display=op?'block':'none';
+ $('#casOperatorSection').hidden=false;$('#casOperatorSection').style.display='block';
  calc();
 }
 function calc(){let p=funds(state.op).reduce((s,a)=>s+Number(a.pendiente||0),0),ticket=Number($('#casTicketAmount')?.value||0),dev=Number($('#casReturnAmount')?.value||0),ent=Number($('#casNewAmount')?.value||0),cash=$('#casCashDeclared')?.value;$('#casExpected').textContent=money(p-ticket-dev+ent);$('#casDeclaredDiff').textContent=cash===''?'Sin declarar':money(Number(cash)-(p-ticket-dev+ent));}
-async function load(){if(state.busy)return;state.busy=true;note('Consultando saldos…');try{const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;if(!state.op&&ops().length)state.op=ops()[0].id;note('Información actualizada');render();entregaOptions();if(comprobarSelectedId)comprobarUpdate();}catch(e){note(e.message||String(e),true)}finally{state.busy=false;}}
+async function load(){if(state.busy)return;state.busy=true;note('Consultando saldos…');try{const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;note('Información actualizada');render();entregaOptions();comprobarUpdate();}catch(e){note(e.message||String(e),true)}finally{state.busy=false;}}
 async function act(kind){if(state.busy||!state.op)return;let f=$('#casFunds').value,amount=Number($(kind==='ticket'?'#casTicketAmount':kind==='return'?'#casReturnAmount':'#casNewAmount').value),pending=funds(state.op).find(a=>a.id===f);if(!Number.isFinite(amount)||amount<=0){note('Indique un importe válido',true);return;}if(kind!=='delivery'&&(!pending||amount>Number(pending.pendiente))){note('El importe excede el fondo seleccionado',true);return;}if(!confirm('¿Confirmar '+(kind==='ticket'?'ticket':kind==='return'?'devolución de efectivo':'entrega')+' por '+money(amount)+'?'))return;
 state.busy=true;note('Registrando movimiento…');
 try{let payload;if(kind==='ticket'){payload={anticipoId:f,monto:amount,fecha:$('#casTicketDate').value,folioTicket:$('#casTicketFolio').value.trim(),plaza:$('#casTicketPlaza').value.trim(),carril:$('#casTicketLane').value.trim(),observaciones:$('#casTicketNotes').value.trim()};await rpc('cc_ant_casetas_ticket',payload);}
@@ -130,13 +130,13 @@ let comprobarSelectedId=null;
 function comprobarOptions(){
  const input=$('#casComprobarOperador'),list=$('#casComprobarSuggestions');if(!input||!list)return;
  const q=input.value.trim().toLocaleLowerCase('es-MX');
- const matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
+ const matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)||(o.id||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
  list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-comprobar-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
  list.hidden=document.activeElement!==input;input.setAttribute('aria-expanded',String(!list.hidden));
 }
 function comprobarPick(id){
  const op=ops().find(o=>o.id===id);if(!op)return;
- comprobarSelectedId=id;state.op=id;$('#casComprobarOperador').value=op.nombre;$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');comprobarUpdate();
+ comprobarSelectedId=id;state.op=id;$('#casComprobarOperador').value=(op.numero_empleado?op.numero_empleado+' · ':'')+op.nombre;$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');comprobarUpdate();
 }
 function comprobarUpdate(){
  const ff=funds(comprobarSelectedId),pending=ff.reduce((s,a)=>s+Number(a.pendiente||0),0),sel=$('#casComprobarFondo'),prev=sel.value;
@@ -151,7 +151,7 @@ function comprobarResumen(){
 }
 async function comprobarGuardar(){
  if(state.busy)return;
- const op=ops().find(o=>o.id===comprobarSelectedId&&o.nombre===$('#casComprobarOperador').value.trim()),f=funds(comprobarSelectedId).find(a=>a.id===$('#casComprobarFondo').value),qty=Number($('#casComprobarCantidad').value),amount=Number($('#casComprobarImporte').value),fecha=$('#casComprobarFecha').value;
+ const op=ops().find(o=>o.id===comprobarSelectedId&&((o.numero_empleado?o.numero_empleado+' · ':'')+o.nombre)===$('#casComprobarOperador').value.trim()),f=funds(comprobarSelectedId).find(a=>a.id===$('#casComprobarFondo').value),qty=Number($('#casComprobarCantidad').value),amount=Number($('#casComprobarImporte').value),fecha=$('#casComprobarFecha').value;
  if(!op){note('Selecciona un operador válido',true);return;}
  if(!f){note('El operador no tiene fondos pendientes para comprobar',true);return;}
  if(!Number.isSafeInteger(qty)||qty<1){note('Captura la cantidad de tickets',true);return;}
