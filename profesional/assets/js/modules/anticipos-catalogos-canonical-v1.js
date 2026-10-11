@@ -23,6 +23,11 @@ async function openTariff(destinoId,typeId=''){
  if(typeId)type.value=typeId;hydrate();
 }
 function tariffList(D){const rr=(D.dest.destinoConceptosGeneral||[]).filter(x=>String(x.estatus).toUpperCase()==='ACTIVO'),g={};rr.forEach(x=>{const k=x.destinoId+'|'+x.tipoUnidadGeneralId;(g[k]??={destinoId:x.destinoId,tipoId:x.tipoUnidadGeneralId,tipo:x.tipoUnidadGeneral,items:[]}).items.push(x);});return '<div style="display:grid;gap:10px">'+active(D.base.destinos).map(d=>'<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong>'+esc(d.nombre)+'</strong><button class="cc-btn cc-btn-primary" data-config="'+esc(d.id)+'">Nueva configuración</button></div>'+Object.values(g).filter(x=>String(x.destinoId)===String(d.id)).map(x=>'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0"><div style="display:flex;justify-content:space-between"><strong>'+esc(x.tipo)+'</strong><button class="cc-btn cc-btn-light" data-config="'+esc(d.id)+'" data-type="'+esc(x.tipoId)+'">Editar</button></div>'+x.items.map(i=>'<div class="cc-note">'+esc(i.concepto)+' · $'+Number(i.monto||0).toFixed(2)+'</div>').join('')+'</div>').join('')+'</div>').join('')+'</div>';}
+async function casetasCatalog(content){
+ const result=await rpc('cc_ant_casetas_tarifas_list'),items=result.tarifas||[];
+ content.innerHTML='<p style="color:#64748b">Precio por ticket y tipo de unidad. Los cambios no modifican comprobaciones anteriores.</p><div class="ant-canonical-list">'+items.map(t=>'<div class="ant-canonical-row"><strong>'+esc(t.nombre)+'</strong><span>'+Number(t.importe).toFixed(2)+' MXN/ticket · '+(t.activo?'Activo':'Inactivo')+'</span><button data-cas-edit="'+esc(t.id)+'">Editar</button></div>').join('')+'</div>';
+ content.querySelectorAll('[data-cas-edit]').forEach(b=>b.onclick=()=>casetasEdit(items.find(t=>String(t.id)===b.dataset.casEdit)));
+}
 async function renderCatalogs(force=false){
  const root=document.getElementById('ccAntViewCatalogos');if(!root)return;
  if(force||!data)await load();const D=data;
@@ -58,10 +63,11 @@ async function renderCatalogs(force=false){
   if(k==='destinos')content.innerHTML=rows(active(D.base.destinos||[]),x=>x.descripcion||x.estatus,'DESTINO');
   if(k==='metodos')content.innerHTML=rows(active(D.base.metodosDeposito||[]),x=>x.descripcion||x.estatus,'METODO_DEPOSITO');
   if(k==='tarifas')content.innerHTML=tariffList(D);
-  root.querySelector('[data-add]').textContent=k==='tarifas'?'+ Configurar':'+ Agregar';
+  if(k==='casetas')casetasCatalog(content).catch(e=>content.textContent=e.message||String(e));
+  root.querySelector('[data-add]').textContent=k==='tarifas'?'+ Configurar':k==='casetas'?'+ Nueva tarifa':'+ Agregar';
  }
  root.querySelector('[data-search]').oninput=e=>{let q=e.target.value.toLocaleLowerCase('es');content.querySelectorAll('.ant-canonical-row').forEach(row=>row.hidden=!row.textContent.toLocaleLowerCase('es').includes(q))};
- root.querySelector('[data-add]').onclick=()=>{if(!canEdit())return alert('Requiere permiso anticipos.catalogos');if(selected==='tarifas')return window.ccAntConfigDestino?.();const c=cats.find(c=>c[0]===selected);window.ccAntCatalogoForm?.(c[2])};
+ root.querySelector('[data-add]').onclick=()=>{if(!canEdit())return alert('Requiere permiso anticipos.catalogos');if(selected==='casetas')return casetasEdit(null);if(selected==='tarifas')return window.ccAntConfigDestino?.();const c=cats.find(c=>c[0]===selected);window.ccAntCatalogoForm?.(c[2])};
  content.onclick=e=>{const config=e.target.closest('[data-config]');if(config)return openTariff(config.dataset.config,config.dataset.type||'');const edit=e.target.closest('[data-edit]');if(edit){if(!canEdit())return alert('Requiere permiso anticipos.catalogos');window.ccAntCatalogoForm?.(edit.dataset.edit,edit.dataset.id)}};
  show(selected);
 }
