@@ -1,4 +1,4 @@
-/* Control de Casetas v1: carga bajo demanda, sin fotos automáticas */
+/* Control de Casetas: consulta bajo demanda */
 (function(){
 'use strict';
 const $=s=>document.querySelector(s), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), money=n=>Number(n||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'});
