@@ -1281,5 +1281,25 @@ if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js',{upda
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check,{once:true});else check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});window.ccCheckProfesionalUpdate=check;
 })();
 </script>
+<!-- anticipo-casetas-ui-removal-20261010 -->
+<script>
+(function(){
+  function cleanCasetasButtons(){
+    const root=document.getElementById('ccPanelAnticipos');
+    if(!root)return;
+    root.querySelectorAll('button,a,[role="button"],input[type="button"]').forEach(function(el){
+      const label=((el.innerText||el.textContent||el.value||'')+'').replace(/\s+/g,' ').trim().toLowerCase();
+      if(/^(?:comprobaci[oó]n\s+(?:de\s+)?casetas|casetas)$/.test(label)||el.dataset.antv==='casetas'){
+        el.remove();
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    cleanCasetasButtons();
+    const root=document.getElementById('ccPanelAnticipos');
+    if(root){let pending=false;new MutationObserver(function(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;cleanCasetasButtons()})}).observe(root,{childList:true,subtree:true});}
+  });
+})();
+</script>
 </body>
 </html>
