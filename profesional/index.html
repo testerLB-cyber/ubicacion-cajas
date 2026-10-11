@@ -1458,10 +1458,17 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 </script>
 
 <script id="cc-profesional-updater">
-(()=>{const CURRENT='PRO-20261010-BOOT-71';let latest=CURRENT;
-async function check(){try{const v=await fetch('./version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json());latest=String(v.version||CURRENT);let b=document.getElementById('ccUpdateProfesional');if(latest===CURRENT){if(b)b.remove();return;}if(!b){b=document.createElement('button');b.id='ccUpdateProfesional';b.type='button';b.style.cssText='position:fixed;right:18px;bottom:76px;z-index:99999;padding:12px 16px;border:0;border-radius:12px;background:#07111f;color:#fff;font-weight:800;box-shadow:0 8px 28px #0003';b.onclick=async()=>{try{const reg=await navigator.serviceWorker?.getRegistration('./');await reg?.update();reg?.waiting?.postMessage({type:'SKIP_WAITING'});}catch(_){} location.reload()};document.body.appendChild(b)}b.textContent='Actualizar Tráfico · '+latest;}catch(_){}}
-if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{reg.update().catch(()=>{});setInterval(()=>reg.update().catch(()=>{}),300000)}).catch(()=>{});/* Controller changes take effect on next navigation; never force a second page load. */}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check,{once:true});else check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});window.ccCheckProfesionalUpdate=check;
+/* Version/update banner disabled by request. Service worker maintenance remains active. */
+(function(){
+ function hideVersionBanner(){document.getElementById('ccUpdateProfesional')?.remove();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hideVersionBanner,{once:true});else hideVersionBanner();
+ window.ccCheckProfesionalUpdate=function(){hideVersionBanner();};
+ if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(function(reg){
+   reg.update().catch(function(){});
+   setInterval(function(){reg.update().catch(function(){});},300000);
+  }).catch(function(){});
+ }
 })();
 </script>
 
