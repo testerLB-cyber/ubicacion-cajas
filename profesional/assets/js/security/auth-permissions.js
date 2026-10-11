@@ -266,18 +266,13 @@ window.ccDeleteAppUser=async function(userId,email){
 document.addEventListener('DOMContentLoaded',()=>{
  if(!sb){msg('Supabase no está disponible.','error');return;}
 
- const rememberEl=document.getElementById('ccRememberSession');
  const loginForm=document.getElementById('ccLoginForm');
  const bootstrapForm=document.getElementById('ccBootstrapForm');
-
- if(rememberEl)rememberEl.checked=localStorage.getItem('cc_remember_session')!=='0';
-
+ // Profesional: el navegador puede guardar credenciales, pero el acceso requiere
+ // pulsar Iniciar sesión en cada visita. No se restaura la sesión automáticamente.
  if(loginForm){
   loginForm.addEventListener('submit',e=>{
    e.preventDefault();
-   const remember=!!document.getElementById('ccRememberSession')?.checked;
-   localStorage.setItem('cc_remember_session',remember?'1':'0');
-   if(remember)sessionStorage.setItem('cc_session_current','1');
    login(document.getElementById('ccLoginEmail')?.value||'',document.getElementById('ccLoginPassword')?.value||'');
   });
  }
@@ -299,14 +294,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 
  (async()=>{
   try{
-   const remember=localStorage.getItem('cc_remember_session')!=='0';
-   if(!remember&&!sessionStorage.getItem('cc_session_current'))await sb.auth.signOut().catch(()=>{});
-   const {data}=await sb.auth.getSession();
-   if(data?.session){
-    sessionStorage.setItem('cc_session_current','1');
-    try{await loadAccess();}catch(e){await sb.auth.signOut().catch(()=>{});msg(e.message||String(e),'error');}
-   }
+   // Close any persisted web session. Mobile V2 has its own separate auth flow.
+   await sb.auth.signOut({scope:'local'});
+   window.CC_AUTH_READY=false;
   }catch(e){console.warn('AUTH INIT',e);}
+
  })();
 });
 })();
