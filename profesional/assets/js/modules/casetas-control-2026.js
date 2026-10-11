@@ -131,6 +131,7 @@ window.ccCasetasShowTab=showWorkspaceTab;
 let entregaSelectedId=null;
 function entregaOptions(){
  const input=$('#casEntregaOperador'),list=$('#casEntregaSuggestions');if(!input||!list)return;
+ if(!input.value.trim()){list.hidden=true;list.innerHTML='';input.setAttribute('aria-expanded','false');return;}
  const q=input.value.trim().toLocaleLowerCase('es-MX'),matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
  list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-entrega-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
  list.hidden=false;input.setAttribute('aria-expanded','true');
@@ -180,6 +181,7 @@ document.addEventListener('click',e=>{const save=e.target.closest('[data-tarifa-
 let comprobarSelectedId=null;
 function comprobarOptions(){
  const input=$('#casComprobarOperador'),list=$('#casComprobarSuggestions');if(!input||!list)return;
+ if(!input.value.trim()){list.hidden=true;list.innerHTML='';input.setAttribute('aria-expanded','false');return;}
  const q=input.value.trim().toLocaleLowerCase('es-MX');
  const matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)||(o.id||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
  list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-comprobar-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
