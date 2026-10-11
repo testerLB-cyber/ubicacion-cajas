@@ -112,7 +112,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
     <div class="cc-login-body">
       <form id="ccLoginForm">
         <div class="cc-login-field"><label>Correo</label><input id="ccLoginEmail" type="email" autocomplete="username" required></div>
-        <div class="cc-login-field"><label>Contraseña</label><input id="ccLoginPassword" type="password" autocomplete="current-password" required></div><label style="display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;color:#475569;margin:-2px 0 12px;cursor:pointer"><input id="ccRememberSession" type="checkbox" checked style="width:auto"> Mantener sesión iniciada en este dispositivo</label>
+        <div class="cc-login-field"><label>Contraseña</label><input id="ccLoginPassword" type="password" autocomplete="current-password" required></div>
         <button id="ccLoginBtn" class="cc-login-btn" type="submit"><i class="fa-solid fa-lock"></i> Iniciar sesión</button>
       </form>
       <div id="ccLoginMsg" class="cc-login-msg"></div>
@@ -1392,7 +1392,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(load,80)});
 })();
 </script>
-<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261010-web-sessions-notifications1"></script>
+<script id="cc-auth-security-js" src="assets/js/security/auth-permissions.js?v=20261010-manual-login-v72"></script>
 <script src="assets/js/core/web-session-admin-v1.js?v=20261010-operator-modal2"></script>
 <script src="assets/js/core/realtime-notifications-v1.js?v=20261007-sospush1"></script>
 <script src="assets/js/core/sos-critical-alerts.js?v=20261007-sospush1"></script>
