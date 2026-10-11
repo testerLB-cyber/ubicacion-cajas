@@ -6,7 +6,12 @@ const state={data:null,op:null,busy:false,loaded:false};
 const sb=()=>window.gmSupabase;
 function client(){let s=sb();if(s&&typeof s.rpc==='function')return s;throw Error('No hay sesión de Supabase disponible');}
 async function rpc(name,item){let {data,error}=await client().rpc(name,item===undefined?undefined:{p_item:item});if(error)throw error;if(data?.ok===false)throw Error(data.error||'Operación rechazada');return data;}
-function note(t,bad=false){let el=$('#casMessage');if(el){const visible=bad||(/registrad[oa]|conciliaci[oó]n registrada/i.test(t||''));el.textContent=visible?(t||''):'';el.hidden=!visible;el.style.display=visible?'block':'none';el.style.color=bad?'#b91c1c':'#0f766e';}const box=$('#casComprobarEstado');if(box&&$('#ccAntViewCasetasNuevo [data-cas-panel="comprobar"]')?.style.display!=='none'){const visible=!!t;box.textContent=t||'';box.hidden=!visible;box.style.display=visible?'block':'none';box.style.color=bad?'#991b1b':'#065f46';box.style.background=bad?'#fef2f2':'#ecfdf5';box.style.border=bad?'1px solid #fecaca':'1px solid #a7f3d0';}}
+function statusBox(id,t,bad=false){const box=$(id);if(!box)return;box.textContent=t||'';box.hidden=!t;box.style.display=t?'block':'none';box.style.color=bad?'#991b1b':'#065f46';box.style.background=bad?'#fef2f2':'#ecfdf5';box.style.border=bad?'1px solid #fecaca':'1px solid #a7f3d0';}
+function note(t,bad=false){const el=$('#casMessage');if(el){const visible=bad||(/registrad[oa]|conciliaci[oó]n registrada/i.test(t||''));el.textContent=visible?(t||''):'';el.hidden=!visible;el.style.display=visible?'block':'none';el.style.color=bad?'#b91c1c':'#0f766e';}
+const active=$('#ccAntViewCasetasNuevo [data-cas-panel="comprobar"]')?.style.display!=='none';
+if(active)statusBox('#casComprobarEstado',t,bad);else statusBox('#casEntregaEstado',t,bad);
+}
+async function refreshBalances(){const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;render();entregaOptions();comprobarUpdate();return d;}
 function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('entregar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
 function active(){return (state.data?.anticipos||[]).filter(a=>Number(a.pendiente)>0);}
 function funds(op){return active().filter(a=>a.operadorId===op);}
@@ -114,17 +119,23 @@ function entregaPick(id){
  entregaSelectedId=id;$('#casEntregaOperador').value=op.nombre;$('#casEntregaSuggestions').hidden=true;$('#casEntregaOperador').setAttribute('aria-expanded','false');
 }
 async function guardarEntrega(){
- if(state.busy)return;
+ if(state.busy){statusBox('#casEntregaEstado','Hay una operación en curso. Espera un momento.',true);return;}
  const name=$('#casEntregaOperador').value.trim(),matching=ops().filter(o=>o.id===entregaSelectedId&&o.nombre===name),amount=Number($('#casEntregaImporte').value),fecha=$('#casEntregaFecha').value;
- if(matching.length!==1){note('Selecciona un operador válido de la lista',true);return;}
- if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))){note('Captura un importe válido',true);return;}
- if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
- if(!confirm('¿Entregar '+money(amount)+' a '+matching[0].nombre+' con fecha '+fecha+'?'))return;
- state.busy=true;$('#casEntregaGuardar').disabled=true;note('Registrando entrega…');
- try{await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});state.op=matching[0].id;entregaSelectedId=null;$('#casEntregaOperador').value='';$('#casEntregaImporte').value='';$('#casEntregaFecha').value=new Date().toLocaleDateString('en-CA');$('#casEntregaSuggestions').hidden=true;$('#casEntregaOperador').setAttribute('aria-expanded','false');note('Entrega registrada correctamente');}
- catch(e){note(e.message||String(e),true);}
+ const fail=t=>statusBox('#casEntregaEstado',t,true);
+ if(matching.length!==1){fail('Selecciona un operador válido de la lista');return;}
+ if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))){fail('Captura un importe válido');return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){fail('Selecciona la fecha de entrega');return;}
+ if(!confirm('¿Entregar '+money(amount)+' a '+matching[0].nombre+' con fecha '+fecha+'?')){statusBox('#casEntregaEstado','Operación cancelada; no se registró ningún movimiento.',true);return;}
+ state.busy=true;$('#casEntregaGuardar').disabled=true;statusBox('#casEntregaEstado','Guardando entrega…');
+ let saved=false;
+ try{
+  await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});
+  saved=true;state.op=matching[0].id;entregaSelectedId=null;$('#casEntregaOperador').value='';$('#casEntregaImporte').value='';$('#casEntregaFecha').value=new Date().toLocaleDateString('en-CA');$('#casEntregaSuggestions').hidden=true;
+  statusBox('#casEntregaEstado','✓ Entrega guardada correctamente. Actualizando saldos…');
+  try{await refreshBalances();statusBox('#casEntregaEstado','✓ Entrega guardada correctamente. Saldos actualizados.');}
+  catch(e){statusBox('#casEntregaEstado','✓ Entrega guardada, pero no se pudieron actualizar los saldos: '+(e.message||e),true);}
+ }catch(e){if(!saved)fail('No se confirmó el registro de la entrega: '+(e.message||e));}
  finally{state.busy=false;$('#casEntregaGuardar').disabled=false;}
- if(state.op===matching[0].id)await load();
 }
 let casTarifas=[];
 async function cargarTarifas(){
@@ -171,24 +182,28 @@ function comprobarResumen(){
  $('#casComprobarResumen').textContent=!comprobarSelectedId?'Selecciona un operador para consultar todos sus anticipos pendientes.':'Tickets: '+qty+' · Total comprobado: '+money(amount)+' · Saldo anterior: '+money(pending)+' · Restante: '+money(pending-amount);
 }
 async function comprobarGuardar(){
- if(state.busy){note('Espera a que termine la consulta anterior',true);return;}
+ const fail=t=>statusBox('#casComprobarEstado',t,true);
+ if(state.busy){fail('Hay una operación en curso. Espera un momento.');return;}
  const op=ops().find(o=>o.id===comprobarSelectedId&&((o.numero_empleado?o.numero_empleado+' · ':'')+o.nombre)===$('#casComprobarOperador').value.trim()),pending=funds(comprobarSelectedId).reduce((s,a)=>s+Number(a.pendiente||0),0),items=comprobarItems(),qty=items.reduce((s,i)=>s+i.cantidad,0),amount=items.reduce((s,i)=>s+i.cantidad*Number(casTarifas.find(t=>t.id===i.tipoUnidad)?.importe||0),0),fecha=$('#casComprobarFecha').value;
- if(!op){note('Selecciona un operador válido',true);return;}
- if(pending<=0){note('El operador no tiene anticipos pendientes para comprobar',true);return;}
- if(items.some(i=>!Number.isSafeInteger(i.cantidad)||i.cantidad<0||i.cantidad>1000)){note('Las cantidades deben ser números enteros de cero o más',true);return;}
- if(qty<=0){note('Captura al menos un ticket en cualquiera de las unidades',true);return;}
- if(!Number.isFinite(amount)||amount<=0||amount>pending){note('El importe total excede los anticipos pendientes',true);return;}
- if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){note('Selecciona una fecha válida',true);return;}
- if(!confirm('¿Comprobar '+qty+' tickets por '+money(amount)+' para '+op.nombre+'?'))return;
- state.busy=true;$('#casComprobarGuardar').disabled=true;note('Registrando comprobación…');
+ if(!op){fail('Selecciona un operador válido de la lista');return;}
+ if(pending<=0){fail('El operador no tiene anticipos pendientes para comprobar');return;}
+ if(items.some(i=>!Number.isSafeInteger(i.cantidad)||i.cantidad<0||i.cantidad>1000)){fail('Las cantidades deben ser números enteros entre 0 y 1000');return;}
+ if(qty<=0){fail('Captura al menos un ticket');return;}
+ if(!Number.isFinite(amount)||amount<=0||amount>pending){fail('El total de '+money(amount)+' excede el saldo pendiente de '+money(pending));return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){fail('Selecciona una fecha válida');return;}
+ if(!confirm('¿Comprobar '+qty+' tickets por '+money(amount)+' para '+op.nombre+'?')){fail('Operación cancelada; no se registró ninguna comprobación.');return;}
+ state.busy=true;$('#casComprobarGuardar').disabled=true;statusBox('#casComprobarEstado','Guardando comprobación…');
+ let saved=false;
  try{
   await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00'});
+  saved=true;
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
-  comprobarSelectedId=null;$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');comprobarUpdate();
-  note('Comprobación registrada correctamente');
- }catch(e){note(e.message||String(e),true);}
+  comprobarSelectedId=null;$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');
+  statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Actualizando saldos…');
+  try{await refreshBalances();statusBox('#casComprobarEstado','✓ Comprobación guardada correctamente. Saldos actualizados.');}
+  catch(e){statusBox('#casComprobarEstado','✓ Comprobación guardada, pero no se pudieron actualizar los saldos: '+(e.message||e),true);}
+ }catch(e){if(!saved)fail('No se confirmó la comprobación: '+(e.message||e));}
  finally{state.busy=false;$('#casComprobarGuardar').disabled=false;}
- await load();comprobarUpdate();
 }
 function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;$('#casComprobarGuardar').onclick=comprobarGuardar;const ci=$('#casComprobarOperador');ci.addEventListener('focus',comprobarOptions);ci.addEventListener('input',()=>{comprobarSelectedId=null;comprobarOptions();comprobarUpdate();});ci.addEventListener('keydown',e=>{if(e.key==='Escape')$('#casComprobarSuggestions').hidden=true;else if(e.key==='Enter'){const first=$('#casComprobarSuggestions [data-comprobar-op]');if(first&&!$('#casComprobarSuggestions').hidden){e.preventDefault();comprobarPick(first.dataset.comprobarOp);}}});$('#casComprobarSuggestions').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-comprobar-op]');if(b){e.preventDefault();comprobarPick(b.dataset.comprobarOp);}});$('#casComprobarTiposFilas').addEventListener('input',comprobarResumen);document.addEventListener('pointerdown',e=>{if(!e.target.closest('#casComprobarSimple .cas-operator-picker'))$('#casComprobarSuggestions').hidden=true;});const ei=$('#casEntregaOperador');ei.addEventListener('focus',entregaOptions);ei.addEventListener('input',()=>{entregaSelectedId=null;entregaOptions();});ei.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#casEntregaSuggestions').hidden=true;}else if(e.key==='Enter'){let first=$('#casEntregaSuggestions [data-entrega-op]');if(first&&!$('#casEntregaSuggestions').hidden){e.preventDefault();entregaPick(first.dataset.entregaOp);}}});$('#casEntregaSuggestions').addEventListener('pointerdown',e=>{let b=e.target.closest('[data-entrega-op]');if(b){e.preventDefault();entregaPick(b.dataset.entregaOp);}});document.addEventListener('pointerdown',e=>{if(!e.target.closest('.cas-operator-picker')){$('#casEntregaSuggestions').hidden=true;ei.setAttribute('aria-expanded','false');}});$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
 window.ccCasetasNuevoOpen=open;window.ccCasetasNuevoClose=function(){let el=$('#ccAntViewCasetasNuevo');if(el){el.classList.remove('cas-fullscreen');el.style.display='none';}document.body.style.overflow='';let b=document.querySelector('#ccPanelAnticipos [data-antv="anticipos"]');if(b&&window.ccAntView)window.ccAntView('anticipos',b);};
