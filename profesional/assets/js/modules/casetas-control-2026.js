@@ -80,11 +80,8 @@ function setupWorkspace(){
  const root=$('#ccAntViewCasetasNuevo'),section=$('#casOperatorSection');if(!root||!section||root.dataset.workspace)return;root.dataset.workspace='1';
  const cards=[...section.querySelectorAll(':scope > .cas-card')];const byTitle=t=>cards.find(x=>x.querySelector('h3')?.textContent.toLowerCase().includes(t));
  const groups=[
- ['entregar','Entregar fondos',[byTitle('devolver efectivo')]],
- ['comprobar','Comprobar tickets',[byTitle('comprobación y conciliación')]],
- ['conciliar','Conciliación integral',[byTitle('conciliación integral')]],
- ['historial','Historial y tickets',[byTitle('fondos e historial'),byTitle('tickets registrados')]],
- ['cfdi','Servicios CFDI',[byTitle('hojas cfdi')]]
+ ['entregar','Entregar',[byTitle('devolver efectivo')]],
+ ['comprobar','Comprobar',[byTitle('comprobación y conciliación')]]
  ];
  const nav=document.createElement('nav');nav.className='cas-work-tabs';nav.setAttribute('aria-label','Operaciones de casetas');
  const host=document.createElement('div');host.className='cas-work-content';
