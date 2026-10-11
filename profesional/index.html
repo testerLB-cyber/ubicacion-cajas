@@ -92,7 +92,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <style id="ccAntCasetasRetiradas20261010">#ccPanelAnticipos [data-antv="casetas"],#ccPanelAnticipos [onclick*="ccCasLoad"],#ccAntViewCasetas{display:none!important}</style>
 
-</head>
+<style id="ccOplLoginBrandStyle">#ccLoginGate .cc-login-opl{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;font-size:32px;font-weight:900;letter-spacing:3px}#ccLoginGate .cc-login-opl img{border-radius:8px}</style></head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccBootSplash"><div class="box"><b>Tráfico App</b><span id="ccBootSplashText">Abriendo Control Logístico…</span></div></div>
 <script>
@@ -103,10 +103,13 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
  setTimeout(function(){if(el){el.style.background='#fff';el.style.color='#991b1b';if(txt)txt.innerHTML='No fue posible terminar de cargar. Revisa señal o abre nuevamente la página.';}},15000);
 })();
 </script>
+<script>
+(function(){try{document.addEventListener('DOMContentLoaded',function(){var logo=document.getElementById('ccLoginCompanyLogo');var saved=localStorage.getItem('cc_company_logo_login');if(logo&&saved&&/^data:image\/(?:png|jpeg|webp);base64,/.test(saved)){logo.src=saved;logo.style.display='block'}})}catch(e){}})();
+</script>
 <div id="ccLoginGate">
   <div class="cc-login-card">
     <div class="cc-login-brand">
-      <h2><i class="fa-solid fa-truck-fast"></i> Tráfico App</h2>
+      <h2 class="cc-login-opl"><img id="ccLoginCompanyLogo" alt="Logotipo de la empresa" style="display:none;max-width:112px;max-height:75px;object-fit:contain;margin:0 auto 10px"><span>OPL</span></h2>
       <p>Acceso seguro · Control Logístico</p>
     </div>
     <div class="cc-login-body">
