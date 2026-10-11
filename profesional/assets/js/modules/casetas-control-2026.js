@@ -118,7 +118,7 @@ async function guardarEntrega(){
  const name=$('#casEntregaOperador').value.trim(),matching=ops().filter(o=>o.id===entregaSelectedId&&o.nombre===name),amount=Number($('#casEntregaImporte').value),fecha=$('#casEntregaFecha').value;
  if(matching.length!==1){note('Selecciona un operador válido de la lista',true);return;}
  if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))){note('Captura un importe válido',true);return;}
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
  if(!confirm('¿Entregar '+money(amount)+' a '+matching[0].nombre+' con fecha '+fecha+'?'))return;
  state.busy=true;$('#casEntregaGuardar').disabled=true;note('Registrando entrega…');
  try{await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});state.op=matching[0].id;$('#casEntregaImporte').value='';note('Entrega registrada correctamente');}
