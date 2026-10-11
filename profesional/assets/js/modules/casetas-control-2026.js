@@ -179,7 +179,9 @@ function comprobarItems(){
 function comprobarResumen(){
  const pending=funds(comprobarSelectedId).reduce((s,a)=>s+Number(a.pendiente||0),0),items=comprobarItems(),qty=items.reduce((s,i)=>s+(Number.isSafeInteger(i.cantidad)&&i.cantidad>=0?i.cantidad:0),0),amount=items.reduce((s,i)=>s+(Number.isSafeInteger(i.cantidad)&&i.cantidad>=0?i.cantidad*Number(casTarifas.find(t=>t.id===i.tipoUnidad)?.importe||0):0),0);
  $('#casComprobarImporteCalculado').textContent=money(amount);
- $('#casComprobarResumen').textContent=!comprobarSelectedId?'Selecciona un operador para consultar todos sus anticipos pendientes.':'Tickets: '+qty+' · Total comprobado: '+money(amount)+' · Saldo anterior: '+money(pending)+' · Restante: '+money(pending-amount);
+ const box=$('#casComprobarResumen');
+ const rows=[['Tickets',String(qty)],['Total comprobado',money(amount)],['Saldo anterior',money(pending)],['Saldo restante',money(pending-amount)]];
+ box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px">'+rows.map(([label,value],i)=>'<div style="background:#fff;border:1px solid '+(i===3?'#99f6e4':'#dbeafe')+';border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(15,23,42,.04)"><div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:5px">'+esc(label)+'</div><strong style="display:block;font-size:19px;line-height:1.25;color:'+(i===3?'#0f766e':'#0f172a')+'">'+esc(value)+'</strong></div>').join('')+'</div>'+(!comprobarSelectedId?'<div style="font-size:12px;color:#64748b;margin-top:10px">Selecciona un operador para consultar sus anticipos pendientes.</div>':'');
 }
 async function comprobarGuardar(){
  const fail=t=>statusBox('#casComprobarEstado',t,true);
