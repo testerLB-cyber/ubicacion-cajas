@@ -76,7 +76,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <link rel="stylesheet" href="assets/css/style-021.css" id="cc-auth-security-css"/ media="print" onload="this.media='all'">
 <link rel="stylesheet" href="assets/css/style-022.css" id="cc-anticipos-css"/ media="print" onload="this.media='all'">
-<link rel="stylesheet" href="assets/css/casetas-profesional-v2.css?v=20260926-4"/ media="print" onload="this.media='all'">
+
 <link rel="stylesheet" href="assets/css/style-023.css"/ media="print" onload="this.media='all'">
 
 <style id="ccAntCompactActionsStyle">
@@ -86,7 +86,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 #ccAntBody td:last-child .cc-btn i{font-size:9px!important;margin-right:3px!important}
 @media (max-width:900px){#ccAntBody td:last-child{min-width:300px}#ccAntBody td:last-child .cc-btn{font-size:8.5px!important;padding:4px 6px!important}}
 </style>
-<link rel="stylesheet" href="assets/css/casetas-erp.css?v=20260926-safe3" media="print" onload="this.media='all'">
+
 
 <style id="ccAntCasetasRetiradas20261010">#ccPanelAnticipos [data-antv="casetas"],#ccPanelAnticipos [onclick*="ccCasLoad"],#ccAntViewCasetas{display:none!important}</style>
 </head>
@@ -1207,7 +1207,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261005-egress3"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261010-sin-casetas"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
@@ -1281,25 +1281,6 @@ if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js',{upda
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',check,{once:true});else check();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check()});window.ccCheckProfesionalUpdate=check;
 })();
 </script>
-<!-- anticipo-casetas-ui-removal-20261010 -->
-<script>
-(function(){
-  function cleanCasetasButtons(){
-    const root=document.getElementById('ccPanelAnticipos');
-    if(!root)return;
-    root.querySelectorAll('button,a,[role="button"],input[type="button"]').forEach(function(el){
-      const label=((el.innerText||el.textContent||el.value||'')+'').replace(/\s+/g,' ').trim().toLowerCase();
-      if(/^(?:comprobaci[oó]n\s+(?:de\s+)?casetas|casetas)$/.test(label)||el.dataset.antv==='casetas'){
-        el.remove();
-      }
-    });
-  }
-  document.addEventListener('DOMContentLoaded',function(){
-    cleanCasetasButtons();
-    const root=document.getElementById('ccPanelAnticipos');
-    if(root){let pending=false;new MutationObserver(function(){if(pending)return;pending=true;requestAnimationFrame(function(){pending=false;cleanCasetasButtons()})}).observe(root,{childList:true,subtree:true});}
-  });
-})();
-</script>
+
 </body>
 </html>
