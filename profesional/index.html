@@ -408,7 +408,74 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>CONCEPTO</th><th>REGISTROS</th><th>AUTORIZADO</th></tr></thead><tbody id="ccAntRepConcepto"></tbody></table></div>
 </div>
 </div>
-<div id="ccAntViewCatalogos" class="cc-ant-view" style="display:none"><div class="cc-config-card" id="casTarifasCatalogo" style="grid-column:1/-1"><div class="cc-toolbar"><strong>Casetas · Tarifas por tipo de unidad</strong><button class="cc-btn cc-btn-light" type="button" onclick="ccCasetasTarifasCargar()">Actualizar</button></div><p style="font-size:12px;color:#64748b">Edita el importe por ticket o inactiva un tipo. Los cambios aplican a futuras comprobaciones.</p><div id="casTarifasLista">Abre el catálogo para consultar tarifas.</div></div>
+<div id="ccAntViewCatalogos" class="cc-ant-view" style="display:none"><style id="ccCatalogosOrganizados20261010">
+#ccAntViewCatalogos .cc-ant-report-grid{display:block!important}
+#ccAntViewCatalogos .cc-config-card{margin:0 0 14px!important;border:1px solid #dce5f0;border-radius:14px;padding:16px;background:#fff;box-shadow:0 3px 14px #0f172a08}
+#ccAntViewCatalogos .cc-config-card .cc-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+#ccAntViewCatalogos .cc-config-card .cc-toolbar strong{font-size:17px}
+#ccAntViewCatalogos .cc-config-card .cc-toolbar .cc-btn{min-height:38px}
+#ccAntViewCatalogos .cc-config-card>div[id^="ccAntCat"]{max-height:52vh;overflow:auto}
+#ccAntViewCatalogos .cc-config-card>div[id^="ccAntCat"]>div{padding:12px!important}
+#ccAntViewCatalogos .cc-config-card>div[id^="ccAntCat"]>div:nth-child(even){background:#f8fafc}
+#ccAntCatalogTabs{display:flex;gap:8px;flex-wrap:wrap;padding:12px;background:#f1f5f9;border:1px solid #dbe4ef;border-radius:14px;margin:14px 0}
+#ccAntCatalogTabs button{border:1px solid #d5e0ed;background:#fff;color:#334155;border-radius:10px;padding:11px 14px;font-weight:750;cursor:pointer}
+#ccAntCatalogTabs button.active{background:#2563eb;color:white;border-color:#2563eb}
+#ccAntCatalogIntro{padding:17px 18px;background:linear-gradient(110deg,#102344,#17428a);border-radius:14px;color:#fff}
+#ccAntCatalogIntro strong{font-size:20px;display:block}
+#ccAntCatalogIntro p{margin:5px 0 0;color:#dbeafe;font-size:13px}
+#ccAntCatalogSearch{display:block;width:100%;max-width:500px;border:1px solid #cbd5e1;border-radius:10px;padding:11px 14px;margin:10px 0 14px;background:white}
+@media(max-width:650px){#ccAntCatalogTabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#ccAntCatalogTabs button{padding:11px 6px;font-size:12px}#ccAntViewCatalogos .cc-config-card{padding:12px}}
+</style>
+<script id="ccCatalogosOrganizadosScript20261010">
+(function(){
+ var sections=[
+ ['casTarifasCatalogo','Tarifas de casetas','Importes por tipo de unidad'],
+ ['ccAntCatDestinoConceptos','Configuración por destino','Tarifas y conceptos por destino'],
+ ['ccAntCatDestinos','Destinos','Lugares y rutas autorizadas'],
+ ['ccAntCatConceptos','Conceptos','Motivos y tipos de gastos'],
+ ['ccAntCatCuentas','Cuentas y cajas','Origen de fondos'],
+ ['ccAntCatMetodos','Métodos de depósito','Formas de entregar dinero'],
+ ['ccAntCatTiposMovCaja','Movimientos de caja','Entradas y salidas'],
+ ['ccAntCatTiposAnticipo','Tipos de unidad','Vehículos autorizados'],
+ ['ccAntCatOperadores','Operadores','Personal operativo']
+ ];
+ var selected='ccAntCatDestinoConceptos';
+ function setup(){
+  var root=document.getElementById('ccAntViewCatalogos');
+  if(!root||root.querySelector('#ccAntCatalogTabs'))return;
+  var intro=document.createElement('div');intro.id='ccAntCatalogIntro';
+  intro.innerHTML='<strong>Administración de catálogos</strong><p>Selecciona un catálogo para consultar sus registros, agregar o configurar. Los cambios requieren permisos.</p>';
+  root.insertBefore(intro,root.firstChild);
+  var tabs=document.createElement('div');tabs.id='ccAntCatalogTabs';tabs.setAttribute('role','navigation');tabs.setAttribute('aria-label','Catálogos de anticipos');
+  sections.forEach(function(item){
+   var card=item[0]==='casTarifasCatalogo'?document.getElementById(item[0]):document.getElementById(item[0])?.closest('.cc-config-card');
+   if(!card)return;
+   card.dataset.catalogSection=item[0];
+   var btn=document.createElement('button');btn.type='button';btn.textContent=item[1];btn.title=item[2];btn.dataset.catalogTarget=item[0];
+   btn.addEventListener('click',function(){selected=item[0];show()});tabs.appendChild(btn);
+  });
+  intro.after(tabs);
+  var search=document.createElement('input');search.type='search';search.id='ccAntCatalogSearch';search.placeholder='Buscar dentro del catálogo seleccionado…';
+  search.addEventListener('input',function(){filterRows(search.value)});
+  tabs.after(search);show();
+ }
+ function show(){
+  var root=document.getElementById('ccAntViewCatalogos');if(!root)return;
+  root.querySelectorAll('[data-catalog-section]').forEach(function(card){card.style.display=card.dataset.catalogSection===selected?'block':'none'});
+  root.querySelectorAll('[data-catalog-target]').forEach(function(btn){var on=btn.dataset.catalogTarget===selected;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false')});
+  var search=root.querySelector('#ccAntCatalogSearch');if(search){search.value='';filterRows('')}
+ }
+ function filterRows(term){
+  var root=document.getElementById('ccAntViewCatalogos');if(!root)return;
+  var card=Array.from(root.querySelectorAll('[data-catalog-section]')).find(function(x){return x.dataset.catalogSection===selected});if(!card)return;
+  var q=String(term||'').toLocaleLowerCase('es').trim();
+  var rows=card.querySelectorAll('[id^="ccAntCat"] > div, #casTarifasLista > div');
+  rows.forEach(function(row){row.style.display=!q||row.textContent.toLocaleLowerCase('es').includes(q)?'':'none'});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
+})();
+</script>
+<div class="cc-config-card" id="casTarifasCatalogo" style="grid-column:1/-1"><div class="cc-toolbar"><strong>Casetas · Tarifas por tipo de unidad</strong><button class="cc-btn cc-btn-light" type="button" onclick="ccCasetasTarifasCargar()">Actualizar</button></div><p style="font-size:12px;color:#64748b">Edita el importe por ticket o inactiva un tipo. Los cambios aplican a futuras comprobaciones.</p><div id="casTarifasLista">Abre el catálogo para consultar tarifas.</div></div>
 <div class="cc-ant-report-grid">
   <div class="cc-config-card"><div class="cc-toolbar"><strong>Operadores</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('OPERADOR')">Agregar</button></div><div id="ccAntCatOperadores"></div></div>
   <div class="cc-config-card"><div class="cc-toolbar"><strong>Conceptos</strong><button class="cc-btn cc-btn-primary" onclick="ccAntCatalogoForm('CONCEPTO')">Agregar</button></div><div id="ccAntCatConceptos"></div></div>
