@@ -223,39 +223,6 @@ async function guardarEntrega(){
  finally{state.busy=false;$('#casEntregaGuardar').disabled=false;}
 }
 
-async function casTicketOCR(file){
- const out=document.getElementById('casOCRResult'),input=document.getElementById('casComprobarComentarios');
- if(!file||!out||!input)return;
- if(!file.type.startsWith('image/')){out.textContent='Selecciona una fotografía válida.';return;}
- out.textContent='Leyendo ticket… (prueba OCR, no guarda la fotografía)';
- try{
-  if(!window.Tesseract){
-   await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(Error('No se pudo cargar el lector OCR. Comprueba la conexión.'));document.head.appendChild(script);});
-  }
-  const result=await window.Tesseract.recognize(file,'eng');
-  const raw=result.data?.text||'';
-  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  let candidates=[];
-  for(let i=0;i<lines.length;i++){
-   const line=lines[i],norm=line.toLowerCase();
-   const vals=[...line.matchAll(/(?:\$\s*)?(\d{1,5}[.,]\d{2})\b/g)].map(m=>Number(m[1].replace(',','.')));
-   if(!vals.length)continue;
-   const score=/\b(total|importe|monto\s*total|a\s*pagar)\b/i.test(norm)?10:/\b(iva|subtotal|base)\b/i.test(norm)?-10:0;
-   vals.forEach(v=>candidates.push({v,score}));
-  }
-  candidates=candidates.filter(x=>x.v>0&&x.v<100000);
-  candidates.sort((a,b)=>b.score-a.score||b.v-a.v);
-  const total=candidates[0]?.v;
-  if(total==null){out.textContent='No se identificó un total confiable. Revisa la fotografía e intenta nuevamente.';return;}
-  const formatted=total.toLocaleString('es-MX',{style:'currency',currency:'MXN'});
-  const message='[Prueba OCR] Posible total del ticket: '+formatted+' (verificar contra fotografía)';
-  input.value=(input.value.trim()?input.value.trim()+'\n':'')+message;
-  input.dispatchEvent(new Event('input',{bubbles:true}));
-  out.textContent='Importe detectado: '+formatted+'. Se agregó a comentarios para revisión; no cambia la comprobación.';
- }catch(e){out.textContent='No se pudo leer el ticket: '+(e.message||e);}
-}
-document.addEventListener('change',e=>{if(e.target?.id==='casOCRFile'){casTicketOCR(e.target.files?.[0]);e.target.value='';}});
-
 let casTarifas=[];
 async function cargarTarifas(){
  try{const data=await rpc('cc_ant_casetas_tarifas_list');casTarifas=data.tarifas||[];
