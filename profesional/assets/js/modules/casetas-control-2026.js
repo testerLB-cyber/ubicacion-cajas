@@ -121,7 +121,7 @@ async function guardarEntrega(){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
  if(!confirm('¿Entregar '+money(amount)+' a '+matching[0].nombre+' con fecha '+fecha+'?'))return;
  state.busy=true;$('#casEntregaGuardar').disabled=true;note('Registrando entrega…');
- try{await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});state.op=matching[0].id;$('#casEntregaImporte').value='';note('Entrega registrada correctamente');}
+ try{await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});state.op=matching[0].id;entregaSelectedId=null;$('#casEntregaOperador').value='';$('#casEntregaImporte').value='';$('#casEntregaFecha').value=new Date().toLocaleDateString('en-CA');$('#casEntregaSuggestions').hidden=true;$('#casEntregaOperador').setAttribute('aria-expanded','false');note('Entrega registrada correctamente');}
  catch(e){note(e.message||String(e),true);}
  finally{state.busy=false;$('#casEntregaGuardar').disabled=false;}
  if(state.op===matching[0].id)await load();
@@ -184,6 +184,7 @@ async function comprobarGuardar(){
  try{
   await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00'});
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
+  comprobarSelectedId=null;$('#casComprobarOperador').value='';$('#casComprobarSuggestions').hidden=true;$('#casComprobarOperador').setAttribute('aria-expanded','false');$('#casComprobarFecha').value=new Date().toLocaleDateString('en-CA');comprobarUpdate();
   note('Comprobación registrada correctamente');
  }catch(e){note(e.message||String(e),true);}
  finally{state.busy=false;$('#casComprobarGuardar').disabled=false;}
