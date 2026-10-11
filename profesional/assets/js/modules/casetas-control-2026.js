@@ -28,7 +28,7 @@ function render(){
  calc();
 }
 function calc(){let p=funds(state.op).reduce((s,a)=>s+Number(a.pendiente||0),0),ticket=Number($('#casTicketAmount')?.value||0),dev=Number($('#casReturnAmount')?.value||0),ent=Number($('#casNewAmount')?.value||0),cash=$('#casCashDeclared')?.value;$('#casExpected').textContent=money(p-ticket-dev+ent);$('#casDeclaredDiff').textContent=cash===''?'Sin declarar':money(Number(cash)-(p-ticket-dev+ent));}
-async function load(){if(state.busy)return;state.busy=true;note('Consultando saldos…');try{const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;if(!state.op&&ops().length)state.op=ops()[0].id;note('Información actualizada');render();loadCFDI();}catch(e){note(e.message||String(e),true)}finally{state.busy=false;}}
+async function load(){if(state.busy)return;state.busy=true;note('Consultando saldos…');try{const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;if(!state.op&&ops().length)state.op=ops()[0].id;note('Información actualizada');render();entregaOptions();}catch(e){note(e.message||String(e),true)}finally{state.busy=false;}}
 async function act(kind){if(state.busy||!state.op)return;let f=$('#casFunds').value,amount=Number($(kind==='ticket'?'#casTicketAmount':kind==='return'?'#casReturnAmount':'#casNewAmount').value),pending=funds(state.op).find(a=>a.id===f);if(!Number.isFinite(amount)||amount<=0){note('Indique un importe válido',true);return;}if(kind!=='delivery'&&(!pending||amount>Number(pending.pendiente))){note('El importe excede el fondo seleccionado',true);return;}if(!confirm('¿Confirmar '+(kind==='ticket'?'ticket':kind==='return'?'devolución de efectivo':'entrega')+' por '+money(amount)+'?'))return;
 state.busy=true;note('Registrando movimiento…');
 try{let payload;if(kind==='ticket'){payload={anticipoId:f,monto:amount,fecha:$('#casTicketDate').value,folioTicket:$('#casTicketFolio').value.trim(),plaza:$('#casTicketPlaza').value.trim(),carril:$('#casTicketLane').value.trim(),observaciones:$('#casTicketNotes').value.trim()};await rpc('cc_ant_casetas_ticket',payload);}
@@ -105,7 +105,24 @@ function showWorkspaceTab(id){
  root.querySelectorAll('[data-cas-panel]').forEach(p=>{p.hidden=p.dataset.casPanel!==id;p.style.display=p.hidden?'none':'block';});
 }
 window.ccCasetasShowTab=showWorkspaceTab;
-function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
+function entregaOptions(){
+ const list=$('#casEntregaOperadores');if(!list)return;
+ list.innerHTML=ops().map(o=>'<option value="'+esc(o.nombre)+'"></option>').join('');
+}
+async function guardarEntrega(){
+ if(state.busy)return;
+ const name=$('#casEntregaOperador').value.trim(),matching=ops().filter(o=>o.nombre.toLocaleLowerCase('es-MX')===name.toLocaleLowerCase('es-MX')),amount=Number($('#casEntregaImporte').value),fecha=$('#casEntregaFecha').value;
+ if(matching.length!==1){note('Selecciona un operador válido de la lista',true);return;}
+ if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))){note('Captura un importe válido',true);return;}
+ if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
+ if(!confirm('¿Entregar '+money(amount)+' a '+matching[0].nombre+' con fecha '+fecha+'?'))return;
+ state.busy=true;$('#casEntregaGuardar').disabled=true;note('Registrando entrega…');
+ try{await rpc('cc_ant_casetas_entregar',{operadorId:matching[0].id,monto:amount,fecha:fecha+'T12:00:00',observaciones:''});state.op=matching[0].id;$('#casEntregaImporte').value='';note('Entrega registrada correctamente');}
+ catch(e){note(e.message||String(e),true);}
+ finally{state.busy=false;$('#casEntregaGuardar').disabled=false;}
+ if(state.op===matching[0].id)await load();
+}
+function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
 window.ccCasetasNuevoOpen=open;window.ccCasetasNuevoClose=function(){let el=$('#ccAntViewCasetasNuevo');if(el){el.classList.remove('cas-fullscreen');el.style.display='none';}document.body.style.overflow='';let b=document.querySelector('#ccPanelAnticipos [data-antv="anticipos"]');if(b&&window.ccAntView)window.ccAntView('anticipos',b);};
-window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';setupWorkspace();bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
+window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';setupWorkspace();bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casEntregaFecha').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
 })();
