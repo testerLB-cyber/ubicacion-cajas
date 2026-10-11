@@ -26,7 +26,7 @@ function tariffList(D){const rr=(D.dest.destinoConceptosGeneral||[]).filter(x=>S
 async function renderCatalogs(force=false){
  const root=document.getElementById('ccAntViewCatalogos');if(!root)return;
  if(force||!data)await load();const D=data;
- const cats=[['cuentas','Cuentas y cajas','CUENTA'],['conceptos','Conceptos','CONCEPTO'],['destinos','Destinos','DESTINO'],['metodos','Métodos de depósito','METODO_DEPOSITO'],['tarifas','Configuración por destino','DESTINO_CONFIG']];
+ const cats=[['cuentas','Cuentas y cajas','CUENTA'],['conceptos','Conceptos','CONCEPTO'],['destinos','Destinos','DESTINO'],['metodos','Métodos de depósito','METODO_DEPOSITO'],['tarifas','Configuración por destino','DESTINO_CONFIG'],['casetas','Tarifas de Casetas','CASETAS_TARIFA']];
  if(!cats.some(c=>c[0]===selected))selected='cuentas';
  if(!document.getElementById('ccAntCanonical20261010Style')){let st=document.createElement('style');st.id='ccAntCanonical20261010Style';st.textContent=`
  #ccAntViewCatalogos #ccAntCanonicalSelector{display:flex;flex-direction:column;gap:3px;padding:8px;border:1px solid #e2e8f0;border-radius:14px;background:#fff}
