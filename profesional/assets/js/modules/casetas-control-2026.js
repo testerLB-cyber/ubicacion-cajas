@@ -22,7 +22,7 @@ function render(){
  const d=state.data,s=summary(),op=current(),ff=funds(state.op);
  const pendingOps=new Set((d.anticipos||[]).filter(a=>Number(a.pendiente||0)>0).map(a=>a.operadorId)).size;
  const pendingAnt=(d.anticipos||[]).filter(a=>Number(a.pendiente||0)>0).length;
- const metrics=[['Caja principal',s.cuenta?.nombre||'SIN CONFIGURAR'],['Saldo estimado de caja',money(s.balance)],['Entregado acumulado',money(s.ent)],['Tickets comprobados',money(s.comp)],['Efectivo devuelto',money(s.dev)],['Pendiente de justificar',money(s.pend)],['Operadores con pendiente',String(pendingOps)],['Anticipos CAS pendientes',String(pendingAnt)]];
+ const metrics=[['Caja principal',s.cuenta?.nombre||'SIN CONFIGURAR'],['Saldo estimado de caja',money(s.balance)],['Entregado acumulado',money(s.ent)],['Tickets comprobados',money(s.comp)],['Efectivo devuelto',money(s.dev)],['Pendiente de justificar',money(s.pend)],['Operadores con pendiente',String(pendingOps)],['Anticipos CAS pendientes',String(pendingAnt)],['Diferencia por justificar',money(Math.max(0,s.ent-s.comp-s.dev-s.pend))]];
  $('#casMetrics').innerHTML=metrics.map((x,i)=>'<div class="cas-kpi"'+(i===5||i===6||i===7?' role="button" tabindex="0" data-cas-kpi-pending="1" title="Ver saldos por operador" style="cursor:pointer"':'')+'><small>'+esc(x[0])+'</small><strong>'+esc(x[1])+'</strong></div>').join('');
  const q=($('#casSearch')?.value||'').toLowerCase().trim();
  $('#casOperators').hidden=!$('#casSearch').dataset.expanded&&!q;
@@ -31,7 +31,7 @@ function render(){
  let pending=ff.reduce((n,a)=>n+Number(a.pendiente||0),0);
  $('#casOperatorBalance').textContent=money(pending);
  $('#casFunds').innerHTML=ff.map(a=>'<option value="'+esc(a.id)+'">'+esc(a.folio)+' · '+money(a.pendiente)+'</option>').join('');
- $('#casHistory').innerHTML=(d.anticipos||[]).filter(a=>a.operadorId===state.op).slice(0,25).map(a=>'<tr><td>'+esc(a.folio)+'</td><td>'+esc((a.fecha||'').slice(0,10))+'</td><td>'+money(a.montoEntregado)+'</td><td>'+money(a.comprobado)+'</td><td>'+money(a.devuelto)+'</td><td><b>'+money(a.pendiente)+'</b></td></tr>').join('')||'<tr><td colspan="6">Sin movimientos</td></tr>';
+ $('#casHistory').innerHTML=(d.anticipos||[]).filter(a=>a.operadorId===state.op).slice(0,25).map(a=>{const delivered=Number(a.montoEntregado||0),checked=Number(a.comprobado||0),returned=Number(a.devuelto||0),pending=Number(a.pendiente||0),diff=delivered-checked-returned-pending;return '<tr title="Conciliación: entregado - comprobado - devuelto - pendiente = '+money(diff)+'"><td>'+esc(a.folio)+'</td><td>'+esc((a.fecha||'').slice(0,10))+'</td><td>'+money(delivered)+'</td><td>'+money(checked)+'</td><td>'+money(returned)+'</td><td><b>'+money(pending)+'</b>'+(Math.abs(diff)>0.01?'<small style="display:block;color:#b91c1c">Diferencia: '+money(diff)+'</small>':'')+'</td></tr>'}).join('')||'<tr><td colspan="6">Sin movimientos</td></tr>';
  $('#casTickets').innerHTML=(d.tickets||[]).filter(t=>t.operador_id===state.op).slice(0,25).map(t=>'<tr><td>'+esc((t.fecha||'').slice(0,10))+'</td><td>'+esc(t.plaza||'—')+'</td><td>'+esc(t.folio_ticket||'—')+'</td><td>'+money(t.total)+'</td><td>'+esc(t.estatus)+'</td></tr>').join('')||'<tr><td colspan="5">Sin tickets</td></tr>';
  $('#casOperatorSection').hidden=false;$('#casOperatorSection').style.display='block';
  calc();
