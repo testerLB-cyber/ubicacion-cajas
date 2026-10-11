@@ -245,7 +245,19 @@ function comprobarResumen(){
 }
 let casDeliveryOperator=null;
 function casDeliveryClose(){const m=$('#casDeliveryModal');m.hidden=true;m.style.display='none';casDeliveryOperator=null;$('#casDeliveryFields').hidden=true;$('#casDeliveryConfirm').hidden=true;$('#casDeliveryYes').hidden=false;$('#casDeliveryModalStatus').textContent='';}
-function casDeliveryAsk(op,pending,amount){casDeliveryOperator=op;const result=pending-amount;$('#casDeliveryTitle').textContent='Comprobación guardada correctamente';$('#casDeliveryInfo').textContent='Operador: '+op.nombre+' · Comprobado: '+money(amount)+' · Saldo restante: '+money(result)+'. ¿Deseas entregar más dinero al operador?';$('#casDeliveryModalDate').value=casLocalDate();$('#casDeliveryModalAmount').value='';const m=$('#casDeliveryModal');m.hidden=false;m.style.display='flex';$('#casDeliveryYes').focus();}
+function casDeliveryAsk(op,pending,amount){
+ casDeliveryOperator=op;
+ const advances=(state.data?.anticipos||[]).filter(a=>a.operadorId===op.id);
+ const total=k=>advances.reduce((n,a)=>n+Number(a[k]||0),0);
+ const remaining=total('pendiente');
+ const returned=total('devuelto');
+ const card=(label,value,accent,desc)=>'<div style="background:'+accent+';padding:14px;border-radius:13px;border:1px solid #e2e8f0;min-width:0"><div style="font-size:12px;font-weight:700;color:#475569">'+esc(label)+'</div><strong style="display:block;font-size:23px;line-height:1.4;color:#0f172a">'+esc(money(value))+'</strong><small style="color:#64748b">'+esc(desc)+'</small></div>';
+ $('#casDeliveryTitle').textContent='✓ Comprobación registrada';
+ $('#casDeliveryInfo').innerHTML='<strong style="font-size:15px;color:#0f172a">'+esc(op.nombre)+'</strong><br><span style="font-size:13px">Resumen del efectivo y comprobaciones del operador</span>';
+ $('#casDeliverySummary').innerHTML=card('Saldo antes de comprobar',pending,'#f1f5f9','Pendiente previo')+card('Comprobado ahora',amount,'#eff6ff','Tickets registrados')+card('Efectivo devuelto',returned,'#f0fdf4','Devoluciones acumuladas')+card('Saldo pendiente actual',remaining,'#ecfdf5','Por comprobar o devolver')+'<div style="grid-column:1/-1;background:#f8fafc;border-radius:10px;padding:12px;font-size:13px;color:#334155"><strong>¿Deseas entregar más dinero al operador?</strong><br>El saldo pendiente es dinero por justificar; no confirma el efectivo físico que lleva consigo.</div>';
+ $('#casDeliveryModalDate').value=casLocalDate();$('#casDeliveryModalAmount').value='';
+ const m=$('#casDeliveryModal');m.hidden=false;m.style.display='flex';$('#casDeliveryYes').focus();
+}
 async function casDeliveryConfirm(){const op=casDeliveryOperator,monto=Number($('#casDeliveryModalAmount').value),fecha=$('#casDeliveryModalDate').value;if(!op||!Number.isFinite(monto)||monto<=0||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(fecha)){$('#casDeliveryModalStatus').textContent='Indica una fecha y un importe válidos.';return;}const b=$('#casDeliveryConfirm');b.disabled=true;try{await rpc('cc_ant_casetas_entregar',{operadorId:op.id,monto,fecha:fecha+'T12:00:00',observaciones:'Entrega posterior a comprobación'});await refreshBalances();casDeliveryClose();statusBox('#casComprobarEstado','✓ Comprobación y entrega registradas correctamente.');}catch(e){ $('#casDeliveryModalStatus').textContent='No se registró la entrega: '+(e.message||e);}finally{b.disabled=false;}}
 async function comprobarGuardar(){
  const fail=t=>statusBox('#casComprobarEstado',t,true);
