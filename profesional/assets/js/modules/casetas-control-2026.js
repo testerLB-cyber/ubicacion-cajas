@@ -105,13 +105,20 @@ function showWorkspaceTab(id){
  root.querySelectorAll('[data-cas-panel]').forEach(p=>{p.hidden=p.dataset.casPanel!==id;p.style.display=p.hidden?'none':'block';});
 }
 window.ccCasetasShowTab=showWorkspaceTab;
+let entregaSelectedId=null;
 function entregaOptions(){
- const list=$('#casEntregaOperadores');if(!list)return;
- list.innerHTML=ops().map(o=>'<option value="'+esc(o.nombre)+'"></option>').join('');
+ const input=$('#casEntregaOperador'),list=$('#casEntregaSuggestions');if(!input||!list)return;
+ const q=input.value.trim().toLocaleLowerCase('es-MX'),matches=ops().filter(o=>!q||(o.nombre||'').toLocaleLowerCase('es-MX').includes(q)||(o.numero_empleado||'').toLocaleLowerCase('es-MX').includes(q)).slice(0,12);
+ list.innerHTML=matches.map(o=>'<button type="button" class="cas-operator-option" role="option" data-entrega-op="'+esc(o.id)+'"><span>'+esc(o.nombre)+'</span><small>'+esc(o.numero_empleado||'')+'</small></button>').join('')||'<div class="cas-operator-empty">No se encontraron operadores</div>';
+ list.hidden=document.activeElement!==input;input.setAttribute('aria-expanded',String(!list.hidden));
+}
+function entregaPick(id){
+ const op=ops().find(o=>o.id===id);if(!op)return;
+ entregaSelectedId=id;$('#casEntregaOperador').value=op.nombre;$('#casEntregaSuggestions').hidden=true;$('#casEntregaOperador').setAttribute('aria-expanded','false');
 }
 async function guardarEntrega(){
  if(state.busy)return;
- const name=$('#casEntregaOperador').value.trim(),matching=ops().filter(o=>o.nombre.toLocaleLowerCase('es-MX')===name.toLocaleLowerCase('es-MX')),amount=Number($('#casEntregaImporte').value),fecha=$('#casEntregaFecha').value;
+ const name=$('#casEntregaOperador').value.trim(),matching=ops().filter(o=>o.id===entregaSelectedId&&o.nombre===name),amount=Number($('#casEntregaImporte').value),fecha=$('#casEntregaFecha').value;
  if(matching.length!==1){note('Selecciona un operador válido de la lista',true);return;}
  if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(Math.round(amount*100))){note('Captura un importe válido',true);return;}
  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(fecha)){note('Selecciona la fecha de entrega',true);return;}
@@ -122,7 +129,7 @@ async function guardarEntrega(){
  finally{state.busy=false;$('#casEntregaGuardar').disabled=false;}
  if(state.op===matching[0].id)await load();
 }
-function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
+function bind(){let root=$('#ccAntViewCasetasNuevo');root.addEventListener('click',e=>{let o=e.target.closest('[data-op]');if(o){state.op=o.dataset.op;batch.length=0;render();batchRender();loadCFDI();document.getElementById('casOperatorSection')?.scrollIntoView({behavior:'smooth',block:'start'});}let k=e.target.closest('[data-cas-action]');if(k)act(k.dataset.casAction);let remove=e.target.closest('[data-batch-remove]');if(remove){batch.splice(Number(remove.dataset.batchRemove),1);batchRender();}});$('#casSearch').addEventListener('input',render);root.addEventListener('input',e=>{if(['casTicketAmount','casReturnAmount','casNewAmount','casCashDeclared'].includes(e.target.id))calc();});$('#casRefresh').onclick=load;$('#casEntregaGuardar').onclick=guardarEntrega;const ei=$('#casEntregaOperador');ei.addEventListener('focus',entregaOptions);ei.addEventListener('input',()=>{entregaSelectedId=null;entregaOptions();});ei.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#casEntregaSuggestions').hidden=true;}else if(e.key==='Enter'){let first=$('#casEntregaSuggestions [data-entrega-op]');if(first&&!$('#casEntregaSuggestions').hidden){e.preventDefault();entregaPick(first.dataset.entregaOp);}}});$('#casEntregaSuggestions').addEventListener('pointerdown',e=>{let b=e.target.closest('[data-entrega-op]');if(b){e.preventDefault();entregaPick(b.dataset.entregaOp);}});document.addEventListener('pointerdown',e=>{if(!e.target.closest('.cas-operator-picker')){$('#casEntregaSuggestions').hidden=true;ei.setAttribute('aria-expanded','false');}});$('#casBatchAdd').onclick=batchAdd;$('#casBatchSave').onclick=batchSave;for(const id of ['#casBatchReturn','#casBatchDelivery'])$(id).addEventListener('input',batchRender);$('#casCFDILoad').onclick=loadCFDI;}
 window.ccCasetasNuevoOpen=open;window.ccCasetasNuevoClose=function(){let el=$('#ccAntViewCasetasNuevo');if(el){el.classList.remove('cas-fullscreen');el.style.display='none';}document.body.style.overflow='';let b=document.querySelector('#ccPanelAnticipos [data-antv="anticipos"]');if(b&&window.ccAntView)window.ccAntView('anticipos',b);};
 window.ccCasetasNuevoInit=function(){let el=$('#ccAntViewCasetasNuevo');if(el&&!el.dataset.bound){el.dataset.bound='1';setupWorkspace();bind();const today=new Date(),past=new Date(today.getTime()-6*86400000);const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');$('#casCFDITo').value=iso(today);$('#casEntregaFecha').value=iso(today);$('#casBatchDate').value=iso(today);$('#casCFDIFrom').value=iso(past);}};
 })();
