@@ -103,8 +103,22 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
  setTimeout(function(){if(el){el.style.background='#fff';el.style.color='#991b1b';if(txt)txt.innerHTML='No fue posible terminar de cargar. Revisa señal o abre nuevamente la página.';}},15000);
 })();
 </script>
-<script>
-(function(){try{document.addEventListener('DOMContentLoaded',function(){var logo=document.getElementById('ccLoginCompanyLogo');var saved=localStorage.getItem('cc_company_logo_login');if(logo&&saved&&/^data:image\/(?:png|jpeg|webp);base64,/.test(saved)){logo.src=saved;logo.style.display='block'}})}catch(e){}})();
+<script id="ccOplPublicLogoBoot">
+(function(){
+ function paint(src){var img=document.getElementById('ccLoginCompanyLogo');if(img&&/^data:image\/(png|jpeg|webp);base64,/.test(src||'')){img.src=src;img.style.display='block';}}
+ async function load(){
+  try{
+   var cached=localStorage.getItem('cc_company_logo_login');if(cached)paint(cached);
+   var client=window.gmSupabase;if(!client||!client.rpc)return false;
+   var res=await client.rpc('cc_opl_public_logo');
+   if(res.error)throw res.error;
+   if(typeof res.data==='string'&&res.data){paint(res.data);try{localStorage.setItem('cc_company_logo_login',res.data)}catch(_){}}
+   return true;
+  }catch(e){console.warn('OPL logo',e);return true}
+ }
+ function boot(){var tries=0;var timer=setInterval(async function(){if(await load()||++tries>45)clearInterval(timer)},200)}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
 </script>
 <div id="ccLoginGate">
   <div class="cc-login-card">
