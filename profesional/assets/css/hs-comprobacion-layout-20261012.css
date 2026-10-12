@@ -1,0 +1,32 @@
+/* Control de Hojas / Comprobacion: presentacion exclusivamente.
+   Conserva botones, listeners, modales y reglas existentes. */
+@media(min-width:900px){
+ #hs104CompList .hs-list-dialog{width:min(1380px,94vw)!important;max-width:94vw!important;max-height:94vh!important;}
+ #hs104CompList .hs-list-dialog-body{padding:20px 24px!important;}
+ #hs104CompList .hs-list-dialog-body .hs104-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 18px!important;}
+ .hs-edit-comp-card{width:min(1320px,94vw)!important;max-width:94vw!important;}
+ .hs-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px 18px!important;}
+}
+#hs104CompList .hs-list-dialog{border-radius:16px!important;box-shadow:0 24px 75px rgba(15,23,42,.24)!important;overflow:hidden!important;}
+#hs104CompList .hs-list-dialog-head{padding:15px 20px!important;}
+#hs104CompList .hs-list-dialog-body{overflow:auto!important;max-height:calc(94vh - 85px)!important;}
+#hs104CompList .hs-list-dialog-body input,
+#hs104CompList .hs-list-dialog-body select,
+#hs104CompList .hs-list-dialog-body textarea,
+.hs-edit-comp-body input,.hs-edit-comp-body select,.hs-edit-comp-body textarea{box-sizing:border-box;min-width:0;max-width:100%;}
+#hsCompStableBar{padding:7px!important;gap:8px!important;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:13px;margin:0 0 12px!important;}
+#hsCompStableBar button{border-radius:10px!important;min-height:37px!important;padding:8px 18px!important;}
+#hs104CompList .hs-list-row{margin-bottom:5px!important;border:1px solid #e2e8f0!important;border-radius:10px!important;background:white!important;}
+#hs104CompList .hs-list-row:hover{background:#f8fafc!important;}
+#hs104Hist{overflow-x:auto;}
+#hs104Hist table{border-collapse:separate;border-spacing:0;width:100%;}
+#hs104Hist th{position:sticky;top:0;background:#f8fafc;z-index:1;font-size:11px!important;}
+#hs104Hist td{vertical-align:middle;padding-top:8px!important;padding-bottom:8px!important;}
+#hs104Hist tbody tr:hover{background:#f8fafc;}
+.hs-edit-comp-head{padding:17px 22px!important;}
+.hs-edit-comp-body{padding:20px 24px!important;}
+@media(max-width:899px){
+ #hs104CompList .hs-list-dialog{width:98vw!important;max-width:98vw!important;}
+ .hs-edit-comp-card{width:97vw!important;max-width:97vw!important;}
+ .hs-edit-grid{grid-template-columns:1fr!important;}
+}
