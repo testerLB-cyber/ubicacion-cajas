@@ -843,8 +843,18 @@
    }
  }
  function applyMain(){
-   ensureSwitch(); const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[]; const trs=[...document.querySelectorAll('#ccAntBody tr')];
-   trs.forEach((tr,i)=>{const a=data[i]; if(!a)return; const ben=isBen(a); tr.style.display=(modo==='BENEFICIARIO'?ben:!ben)?'':'none'; if(ben){const td=tr.querySelectorAll('td');if(td[2])td[2].innerHTML='<strong>'+esc(nombre(a))+'</strong><div style="font-size:9px;color:#7c3aed;font-weight:800">BENEFICIARIO</div>';}}
+   ensureSwitch();const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[],trs=[...document.querySelectorAll('#ccAntBody tr')];
+   trs.forEach((tr,i)=>{
+     const a=data[i];if(!a)return;const ben=isBen(a);tr.style.display=(modo==='BENEFICIARIO'?ben:!ben)?'':'none';
+     if(!ben)return;
+     const td=tr.querySelectorAll('td'),ds=(base.detalles||[]).filter(x=>x.anticipoId===a.id&&String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
+     const x=(extra.cajaChica||[]).find(z=>z.id===a.id)||{},conceptos=ds.map(d=>String(d.concepto||'Concepto')+' · '+money(d.monto)).join(' / ');
+     if(td[2])td[2].innerHTML='<strong>'+esc(nombre(a))+'</strong><div style="font-size:9px;color:#7c3aed;font-weight:800">BENEFICIARIO</div>';
+     if(td[3])td[3].innerHTML='<strong>'+esc(x.cuenta||a.cuenta||'Caja chica')+'</strong><div style="font-size:10px;color:#475569;white-space:normal">'+esc(conceptos||'Ver detalle del anticipo')+'</div>';
+     if(td[4])td[4].textContent='Por concepto';
+     if(td[5])td[5].textContent=a.metodoDeposito||x.metodoDeposito||'—';
+     if(td[6])td[6].textContent=a.observaciones||x.observaciones||'—';
+   });
  }
  function applyPending(){
    ensurePendingSwitch(); const trs=[...document.querySelectorAll('#ccAntPendBody tr')];
@@ -860,8 +870,42 @@
  }
  async function pdfBenef(a){
    if(!window.jspdf?.jsPDF)return window.ccAntPDF?.(a);
-   const ds=(base.detalles||[]).filter(x=>x.anticipoId===a.id&&String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
-   const d=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'letter'});d.setFont('helvetica','bold');d.setFontSize(16);d.text('ANTICIPO A BENEFICIARIO',14,16);d.setFontSize(9);d.setFont('helvetica','normal');d.text('Folio: '+String(a.folio||''),14,23);d.text('Fecha: '+new Date(a.fecha).toLocaleDateString('es-MX'),14,29);d.text('Beneficiario: '+nombre(a),14,35,{maxWidth:180});d.text('Método: '+String(a.metodoDeposito||'—'),14,41);d.autoTable({startY:48,head:[['Concepto','Monto']],body:ds.map(x=>[String(x.concepto||''),money(x.monto)]),styles:{fontSize:9},headStyles:{fillColor:[76,29,149]}});let y=(d.lastAutoTable?.finalY||60)+10;d.setFont('helvetica','bold');d.text('Total autorizado: '+money(a.montoAutorizado??a.monto),14,y);d.text('Total entregado: '+money(a.montoEntregado??a.monto),14,y+7);y+=28;d.line(14,y,82,y);d.line(120,y,190,y);d.setFontSize(8);d.setFont('helvetica','normal');d.text('Beneficiario · Enterado',26,y+5);d.text('Autoriza',143,y+5);d.setFontSize(7);d.text('El beneficiario reconoce haber recibido el monto indicado y se compromete a presentar la comprobación correspondiente.',14,250,{maxWidth:180});d.save('Anticipo_'+(a.folio||'beneficiario')+'.pdf');
+   const client=sb(),id=a.id;
+   // Leer el registro real para evitar etiquetas y detalles ausentes en las listas resumidas.
+   const [ar,dr]=await Promise.all([
+     client.from('cc_anticipos').select('folio,fecha,monto,monto_autorizado,monto_entregado,estatus,observaciones,referencia,responsable_id,cuenta_id,metodo_deposito_id').eq('id',id).single(),
+     client.from('cc_ant_detalles').select('concepto_id,monto,estatus').eq('anticipo_id',id)
+   ]);
+   if(ar.error||dr.error)throw ar.error||dr.error;
+   const record=ar.data||{},details=(dr.data||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
+   const [rr,cr,mr,concepts]=await Promise.all([
+     record.responsable_id?client.from('cc_ant_responsables').select('nombre').eq('id',record.responsable_id).maybeSingle():Promise.resolve({data:null}),
+     record.cuenta_id?client.from('cc_ant_cuentas').select('nombre').eq('id',record.cuenta_id).maybeSingle():Promise.resolve({data:null}),
+     record.metodo_deposito_id?client.from('cc_ant_metodos_deposito').select('nombre').eq('id',record.metodo_deposito_id).maybeSingle():Promise.resolve({data:null}),
+     details.length?client.from('cc_ant_conceptos').select('id,nombre').in('id',details.map(x=>x.concepto_id)):Promise.resolve({data:[]})
+   ]);
+   const cn=new Map((concepts.data||[]).map(x=>[x.id,x.nombre]));
+   const beneficiary=rr.data?.nombre||nombre(a),account=cr.data?.nombre||'—',method=mr.data?.nombre||'—';
+   const d=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'letter'}),W=216;
+   d.setFillColor(15,35,64);d.rect(0,0,W,29,'F');d.setTextColor(255,255,255);d.setFont('helvetica','bold');d.setFontSize(16);d.text('ANTICIPO A BENEFICIARIO',14,14);
+   d.setFontSize(9);d.text(String(record.folio||a.folio||''),14,22);d.setTextColor(30,41,59);
+   const rows=[
+     ['Beneficiario',beneficiary],['Fecha',record.fecha?new Date(record.fecha).toLocaleDateString('es-MX'):'—'],
+     ['Cuenta de origen',account],['Método de entrega',method],['Estado',record.estatus||'—'],
+     ['Referencia',record.referencia||'—'],['Observaciones',record.observaciones||'—']
+   ];
+   let y=38;
+   for(const [label,value] of rows){d.setFont('helvetica','bold');d.setFontSize(9);d.text(label+':',14,y);d.setFont('helvetica','normal');const lines=d.splitTextToSize(String(value),132);d.text(lines,68,y);y+=Math.max(7,lines.length*4.5+2);}
+   d.setFont('helvetica','bold');d.setFontSize(11);d.text('Desglose de conceptos',14,y+4);y+=9;
+   if(typeof d.autoTable==='function')d.autoTable({startY:y,head:[['Concepto','Importe']],body:details.map(x=>[cn.get(x.concepto_id)||'Concepto sin nombre',money(x.monto)]),styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[30,64,112]},columnStyles:{1:{halign:'right'}}});
+   y=(d.lastAutoTable?.finalY||y+15)+11;
+   if(y>235){d.addPage();y=25;}
+   d.setFont('helvetica','bold');d.setFontSize(10);
+   d.text('Total autorizado: '+money(record.monto_autorizado??record.monto),14,y);
+   d.text('Total entregado: '+money(record.monto_entregado??record.monto),115,y);y+=20;
+   d.setDrawColor(148,163,184);d.line(14,y,88,y);d.line(125,y,199,y);
+   d.setFont('helvetica','normal');d.setFontSize(8);d.text('Recibe / Beneficiario',33,y+5);d.text('Autoriza / Entrega',146,y+5);
+   d.save('Anticipo_'+String(record.folio||a.folio||'beneficiario')+'.pdf');
  }
  function installPdfWrap(){
    if(typeof window.ccAntPDFById==='function'&&!window.ccAntPDFById.__benefPdf){const old=window.ccAntPDFById;const w=async function(id){const a=(base.anticipos||[]).find(x=>x.id===id);if(a&&isBen(a))return pdfBenef(a);return old.apply(this,arguments)};w.__benefPdf=true;window.ccAntPDFById=w;}
