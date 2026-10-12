@@ -101,6 +101,13 @@ function compactList(){const rows=filtered(),box=$('asgList');if(!rows.length){b
 }
 
 function render(){stats();$('asgBoardSub').textContent=' · '+(RANGE==='day'?'hoy':RANGE==='3d'?'3 días':'7 días')+' · '+filtered().length+' servicios';compactList()}
+function openCalendarAssignment(date,hour,unit=null){
+ $('asgFS').classList.remove('on');
+ openModal();
+ $('asgHora').value=date+'T'+String(hour).padStart(2,'0')+':00';
+ if(unit)setPick('asgUnidad',unit.id,unit.numero);
+ availability().then(syncAssignmentTrailer);
+}
 function openFullscreen(){$('asgFSHora').value=localInput();$('asgFSVentana').innerHTML=W.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+' · '+x.duracionMinutos+' min</option>').join('');$('asgFS').classList.add('on');$('asgFSClose').onclick=()=>$('asgFS').classList.remove('on');$('asgFSRefresh').onclick=loadFullscreen;document.querySelectorAll('.asgFSTab').forEach(b=>b.onclick=()=>{FSVIEW=b.dataset.fsview;document.querySelectorAll('.asgFSTab').forEach(x=>x.classList.toggle('on',x===b));renderFullscreen()});$('asgFSHora').onchange=loadFullscreen;$('asgFSVentana').onchange=loadFullscreen;loadFullscreen()}
 async function loadFullscreen(){const h=$('asgFSHora').value;if(!h)return;const r=await sb().rpc('cc_assignment_availability',{p_servicio_at:new Date(h+'-07:00').toISOString(),p_ventana_id:$('asgFSVentana').value||null});if(r.error){$('asgFSContent').innerHTML='<div class="asgEmpty">Error: '+esc(r.error.message)+'</div>';return}AV=r.data||{operadores:[],unidades:[]};
 const date=h.slice(0,10),anchor=new Date(date+'T12:00:00'),dow=(anchor.getDay()+6)%7,mon=new Date(anchor);mon.setDate(mon.getDate()-dow);const sun=new Date(mon);sun.setDate(sun.getDate()+6);
@@ -127,7 +134,7 @@ function renderFSHorario(){
  for(let h=0;h<24;h++)html+='<div style="position:absolute;top:'+(h*hourHeight+3)+'px;left:8px;color:#475569;font-size:11px;font-weight:700">'+String(h).padStart(2,'0')+':00</div>';
  html+='</div>';
  dates.forEach((day,i)=>{
-  html+='<div style="height:'+totalHeight+'px;position:relative;min-width:0;border-left:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,'+(i%2?'#f8fafc':'#fff')+' 0px,'+(i%2?'#f8fafc':'#fff')+' 51px,#e2e8f0 51px,#e2e8f0 52px)">';
+  html+='<div data-calendar-day="'+keys[i]+'" title="Doble clic en una hora para programar un viaje" style="height:'+totalHeight+'px;position:relative;min-width:0;border-left:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,'+(i%2?'#f8fafc':'#fff')+' 0px,'+(i%2?'#f8fafc':'#fff')+' 51px,#e2e8f0 51px,#e2e8f0 52px)">';
   const list=rows.filter(x=>key(new Date(x.servicio_at))===keys[i]);
   list.forEach(x=>{const bits=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(x.servicio_at)).split(':'),minutes=Number(bits[0])*60+Number(bits[1]),top=minutes/60*hourHeight,height=Math.max(34,Number(x.duracion_minutos||180)/60*hourHeight);
    const clr=x.prioridad==='CRITICA'?'#991b1b':x.prioridad==='URGENTE'?'#c2410c':'#1d4ed8';
@@ -136,6 +143,13 @@ function renderFSHorario(){
  });
  html+='</div></div>';
  $('asgFSContent').innerHTML=html;
+ const calendar=$('asgFSContent').querySelector('[data-calendar-day]')?.closest('[style*="overflow:auto"]');
+ $('asgFSContent').querySelectorAll('[data-calendar-day]').forEach(col=>col.addEventListener('dblclick',e=>{
+   if(e.target.closest('[data-fsedit]'))return;
+   const rect=col.getBoundingClientRect(),position=Math.max(0,Math.min(23,Math.floor((e.clientY-rect.top)/hourHeight)));
+   openCalendarAssignment(col.dataset.calendarDay,position);
+ }));
+ if(calendar){const isToday=keys.includes(today());const target=Math.max(0,(isToday?nowHermosilloHour():Number(base.slice(11,13)))-2)*hourHeight;calendar.scrollTop=target;}
  $('asgFSContent').querySelectorAll('[data-fsedit]').forEach(b=>b.onclick=()=>{const row=FSROWS.find(x=>String(x.id)===String(b.dataset.fsedit));if(row){$('asgFS').classList.remove('on');openModal(row)}});
 }
 
