@@ -92,6 +92,23 @@
     const firstInstall=!pendingCard.dataset.hsCompUxReady||!histCard.dataset.hsCompUxReady;
     pendingCard.dataset.hsCompUxReady='1';histCard.dataset.hsCompUxReady='1';
     if(firstInstall)applyMode(false);
+    // Colocar el mismo input funcional en un lugar visible y estable dentro de Pendientes.
+    const globalSearch=document.getElementById('hs104CompGlobal');
+    if(globalSearch){
+      let searchBar=pendingCard.querySelector('#hsCompVisibleSearchBar');
+      if(!searchBar){
+        searchBar=document.createElement('div');searchBar.id='hsCompVisibleSearchBar';
+        searchBar.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin:8px 0 12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:11px';
+        searchBar.innerHTML='<label for="hs104CompGlobal" style="font-weight:800;font-size:12px;color:#0f172a;white-space:nowrap"><i class="fa-solid fa-magnifying-glass"></i> Buscar hoja u operador</label>';
+        const toolbar=pendingCard.querySelector('.cc-toolbar');
+        if(toolbar)toolbar.insertAdjacentElement('afterend',searchBar);
+        else pendingCard.insertBefore(searchBar,pendingCard.firstChild);
+      }
+      if(globalSearch.parentElement!==searchBar)searchBar.appendChild(globalSearch);
+      globalSearch.placeholder='Buscar por folio (ej. 10506), operador o beneficiario...';
+      globalSearch.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;flex:1 1 330px;min-width:210px;max-width:100%;min-height:38px;border:1px solid #cbd5e1;border-radius:9px;padding:8px 12px;background:white;color:#0f172a';
+      globalSearch.setAttribute('aria-label','Buscar por folio u operador en todas las pendientes');
+    }
     // El buscador principal #hs104CompGlobal es el único para Pendientes.
     document.getElementById('hsCompUxFolioSearch')?.parentElement?.remove();
     ensureHistorySearch(histCard);
