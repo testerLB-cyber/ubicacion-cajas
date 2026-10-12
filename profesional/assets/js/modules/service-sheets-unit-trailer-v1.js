@@ -80,23 +80,26 @@
   }
 
   function confirmPreloaded(row,ev){
-    const pre=ev?.precaptura||null;
-    const val=s=>String(row.querySelector(s)?.value||'').trim();
-    const unit=ev?.unidadNumero||val('[data-hs-unidad]')||'—';
-    const trailer=ev?.remolqueNumero||val('[data-hs-remolque]')||'';
-    const cliente=pre?.cliente||row.querySelector('[data-cliente]')?.selectedOptions?.[0]?.textContent?.trim()||'—';
-    const tipo=pre?.tipoViaje||val('[data-tipo]')||'—';
-    const clas=pre?.clasificacion||val('[data-clas]')||'—';
-    const usado=pre?.dondeUtilizado||val('[data-obs]')||'—';
-    return confirm('¿Seguro que deseas COMPROBAR esta hoja con la información precargada?\n\n'+
-      'Folio: '+(row.dataset.hsFolio||'—')+'\n'+
-      'Cliente: '+cliente+'\n'+
-      'Tipo de servicio: '+tipo+'\n'+
-      'Clasificación: '+clas+'\n'+
-      'Unidad: '+unit+'\n'+
-      (trailer?'Remolque: '+trailer+'\n':'')+
-      'Dónde se utilizó / comentarios: '+usado+'\n\n'+
-      'Al confirmar, esta información será aceptada y la hoja quedará comprobada.');
+    const value=selector=>String(row.querySelector(selector)?.value||'').trim();
+    const display=(label,value)=>'<div style="padding:10px;border-bottom:1px solid #e2e8f0"><div style="font-size:11px;color:#64748b">'+label+'</div><strong style="font-size:13px;color:#0f172a">'+esc(value||'No registrado')+'</strong></div>';
+    const client=row.querySelector('[data-cliente]')?.selectedOptions?.[0]?.textContent?.trim()||value('[data-cliente-search]');
+    return new Promise(resolve=>{
+      document.getElementById('hsPrecheckReviewModal')?.remove();
+      const overlay=document.createElement('div');overlay.id='hsPrecheckReviewModal';
+      overlay.style.cssText='position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex;align-items:center;justify-content:center;padding:15px;background:rgba(15,23,42,.78)';
+      overlay.innerHTML='<div role="dialog" aria-modal="true" aria-label="Confirmar comprobación" style="width:min(760px,98vw);max-height:92vh;overflow:auto;background:white;border-radius:14px;box-shadow:0 25px 80px #0006"><div style="padding:16px 20px;background:#0f172a;color:white"><b>Revisar precaptura antes de comprobar</b><div style="opacity:.8;font-size:12px">'+esc(row.dataset.hsFolio||'')+'</div></div><div style="padding:12px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0">'+
+       display('Operador / Beneficiario',row.dataset.hsPerson)+display('Fecha del servicio',value('[data-fecha]'))+
+       display('Cliente',client)+display('Tipo de viaje',value('[data-tipo]'))+
+       display('Clasificación',value('[data-clas]'))+display('Unidad',value('[data-hs-unidad]'))+
+       display('Remolque',value('[data-hs-remolque]')||'No aplica')+display('Dónde se utilizó / Observaciones',value('[data-obs]'))+
+       '</div><p style="padding:4px 20px;color:#475569;font-size:12px">Al aceptar, se validarán los datos obligatorios y se comprobará la hoja. Si falta algún dato, usa Editar primero.</p><div style="padding:14px 20px;display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;border-top:1px solid #e2e8f0"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="button" class="cc-btn cc-btn-light" data-edit>Editar datos</button><button type="button" class="cc-btn cc-btn-primary" data-accept>Aceptar y comprobar</button></div></div>';
+      document.body.appendChild(overlay);
+      const close=answer=>{overlay.remove();resolve(answer);};
+      overlay.querySelector('[data-cancel]').onclick=()=>close(false);
+      overlay.querySelector('[data-edit]').onclick=()=>{close(false);row.querySelector('[data-hs-edit]')?.click();};
+      overlay.querySelector('[data-accept]').onclick=()=>close(true);
+      overlay.onclick=e=>{if(e.target===overlay)close(false);};
+    });
   }
 
   function decorateRow(row){
@@ -199,7 +202,7 @@
       const row=direct.closest('[data-row]');if(!row||row.dataset.hsUnitTrailer!=='1')return;
       e.preventDefault();e.stopImmediatePropagation();
       const ev=EVIDENCE.get(String(row.dataset.row));
-      if(!confirmPreloaded(row,ev))return;
+      if(!await confirmPreloaded(row,ev))return;
       if(direct.disabled)return;direct.disabled=true;const old=direct.innerHTML;direct.textContent='Comprobando...';
       try{await save(row);row.dataset.hsCheckCompleted='1';direct.textContent='Comprobado ✓';document.getElementById('hs104Refresh')?.click();}
       catch(err){alert(err?.message||err);}
