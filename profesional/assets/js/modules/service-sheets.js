@@ -13,7 +13,7 @@
   }
 
   /* Control de Hojas principal v104: carga única y protegida contra duplicados. */
-  load('assets/js/modules/service-sheets-v104.js?v=20261012-compact-search-v4','hojas-v104-principal');
+  load('assets/js/modules/service-sheets-v104.js?v=20261012-fast-partial-search-v5','hojas-v104-principal');
 
   /* Hojas web: selección de unidad, detección de Tracto-Camión y remolque obligatorio. */
   load('assets/js/modules/service-sheets-unit-trailer-v1.js?v=20261006-cfdi-invoice1','hojas-unidad-remolque');
