@@ -158,7 +158,7 @@
 
   function botonesListado(){
     const body=document.getElementById('ccAntBody'),rows=Array.from(body?.querySelectorAll('tr')||[]),data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
-    rows.forEach((tr,i)=>{const a=data[i];if(!a)return;const actions=tr.lastElementChild?.querySelector('div')||tr.lastElementChild;if(!actions||actions.querySelector('[data-prof-comp-view]'))return;const b=document.createElement('button');b.type='button';b.className='cc-btn';b.style.background='#7c3aed';b.style.color='#fff';b.dataset.profCompView=a.id;b.innerHTML='<i class="fa-solid fa-receipt mr-1"></i>Ver comprobantes';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();if(typeof window.ccProfVerComprobantes==='function')window.ccProfVerComprobantes(a.id)};actions.appendChild(b)});
+    rows.forEach((tr,i)=>{const a=data[i];if(!a)return;const isCasetas=a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''));if(isCasetas){tr.querySelectorAll('[data-prof-comp-view]').forEach(b=>b.remove());return;}const actions=tr.lastElementChild?.querySelector('div')||tr.lastElementChild;if(!actions||actions.querySelector('[data-prof-comp-view]'))return;const b=document.createElement('button');b.type='button';b.className='cc-btn';b.style.background='#7c3aed';b.style.color='#fff';b.dataset.profCompView=a.id;b.innerHTML='<i class="fa-solid fa-receipt mr-1"></i>Ver comprobantes';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();if(typeof window.ccProfVerComprobantes==='function')window.ccProfVerComprobantes(a.id)};actions.appendChild(b)});
   }
 
   function install(){
