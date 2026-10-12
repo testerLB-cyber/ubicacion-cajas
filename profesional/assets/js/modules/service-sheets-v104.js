@@ -204,6 +204,10 @@
       '<div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>ESTADO</th><th>RESPONSABLE</th><th>PERSONA</th><th>SERVICIO / CLIENTE</th></tr></thead><tbody id="hs104CtlBody"></tbody></table></div>'+
       '<div class="hs104-actions" style="margin-top:10px;align-items:center"><span id="hs104CtlPageInfo" class="hs104-note"></span><button type="button" class="cc-btn cc-btn-light" id="hs104CtlPrev">Anterior</button><button type="button" class="cc-btn cc-btn-light" id="hs104CtlNext">Siguiente</button></div></div>';
     const body=v.querySelector('#hs104CtlBody'),search=v.querySelector('#hs104CtlSearch'),status=v.querySelector('#hs104CtlStatus'),serie=v.querySelector('#hs104CtlSerie'),desde=v.querySelector('#hs104CtlDesde'),hasta=v.querySelector('#hs104CtlHasta'),fechaDesde=v.querySelector('#hs104CtlFechaDesde'),fechaHasta=v.querySelector('#hs104CtlFechaHasta'),clear=v.querySelector('#hs104CtlClear'),excel=v.querySelector('#hs104CtlExcel'),info=v.querySelector('#hs104CtlPageInfo'),prev=v.querySelector('#hs104CtlPrev'),next=v.querySelector('#hs104CtlNext');
+    // El control abre únicamente la última semana; fechas ampliables por el usuario.
+    const localYmd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const setDefaultWeek=()=>{const now=new Date(),week=new Date(now);week.setDate(now.getDate()-6);fechaDesde.value=localYmd(week);fechaHasta.value=localYmd(now);};
+    setDefaultWeek();
     let page=1,pages=1,timer=null,req=0;
     const paint=rows=>{body.innerHTML=rows.length?rows.map(x=>{const fd=x.fecha_control||x.created_at,lab=x.tipo_fecha_control==='ASIGNACION_RESPONSABLE'?'Asignación responsable':'Creación';return '<tr><td><strong>'+esc(x.folio)+'</strong></td><td>'+esc(fd?new Date(fd).toLocaleDateString('es-MX'):'—')+'<div class="hs104-note">'+lab+'</div></td><td><span class="hs104-pill">'+esc(x.estatus)+'</span></td><td>'+esc(x.responsable_nombre||'—')+'</td><td>'+esc(x.beneficiario_nombre||x.operador_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'<div class="hs104-note">'+esc(x.cliente_nombre||'')+'</div></td></tr>'}).join(''):'<tr><td colspan="6" style="text-align:center;padding:22px">Sin resultados con los filtros seleccionados.</td></tr>'};
     const n=v=>{const x=Number(v);return Number.isFinite(x)&&v!==''?Math.trunc(x):null};
@@ -263,7 +267,7 @@
     search.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)};
     [status,serie,fechaDesde,fechaHasta].forEach(x=>x.onchange=refresh);
     [desde,hasta].forEach(x=>x.oninput=()=>{clearTimeout(timer);timer=setTimeout(refresh,250)});
-    clear.onclick=()=>{status.value='';serie.value='';desde.value='';hasta.value='';fechaDesde.value='';fechaHasta.value='';search.value='';refresh()};
+    clear.onclick=()=>{status.value='';serie.value='';desde.value='';hasta.value='';search.value='';setDefaultWeek();refresh()};
     excel.onclick=exportExcel;
     prev.onclick=()=>{if(page>1){page--;loadPage()}};
     next.onclick=()=>{if(page<pages){page++;loadPage()}};
