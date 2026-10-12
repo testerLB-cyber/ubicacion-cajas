@@ -12,7 +12,7 @@ const active=$('#ccAntViewCasetasNuevo [data-cas-panel="comprobar"]')?.style.dis
 if(active)statusBox('#casComprobarEstado',t,bad);else statusBox('#casEntregaEstado',t,bad);
 }
 async function refreshBalances(){const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;render();entregaOptions();comprobarUpdate();return d;}
-function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;const search=$('#casSearch');if(search){search.value='';delete search.dataset.expanded;}const list=$('#casOperators');if(list)list.hidden=true;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('entregar');casAuditTab('operar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
+function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;const search=$('#casSearch');if(search){search.value='';delete search.dataset.expanded;}const list=$('#casOperators');if(list)list.hidden=true;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('saldos');casAuditTab('operar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
 function active(){return (state.data?.anticipos||[]).filter(a=>Number(a.pendiente)>0);}
 function funds(op){return active().filter(a=>a.operadorId===op);}
 function ops(){return state.data?.operadores||[];}
@@ -90,9 +90,9 @@ function setupWorkspace(){
  const cards=[...section.querySelectorAll(':scope > .cas-card')];
  const audit=$('#casAuditPanel');if(audit){const oldNav=audit.previousElementSibling;if(oldNav?.classList.contains('cas-work-nav'))oldNav.remove();}
  const groups=[
- ['entregar','Entregar',[section.querySelector('#casEntregaSimple')]],
+ ['saldos','Saldos por Operador',[]],
+ ['entregar','Entrega',[section.querySelector('#casEntregaSimple')]],
  ['comprobar','Comprobar',[section.querySelector('#casComprobarSimple')]],
- ['saldos','Saldos por operador',[]],
  ['historial','Historial',[audit]],
  ['reportes','Reportes',[]]
  ];
