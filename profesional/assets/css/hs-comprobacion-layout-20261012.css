@@ -73,3 +73,9 @@
  #hs104CompList .hs-pending-columns{line-height:1.15!important;}
  #hsCompPendingGridHeader{padding:7px 8px!important;}
 }
+
+/* Detalle de servicio visible en precargadas, alineado a estilo de Historial. */
+#hs104CompList .hs-preload-service-detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0;border-top:1px solid #e2e8f0;background:#f8fafc;font-size:11px;color:#334155}
+#hs104CompList .hs-preload-service-detail>span{padding:6px 10px;min-width:0;overflow-wrap:anywhere;border-right:1px solid #e2e8f0}
+#hs104CompList .hs-preload-service-detail b{display:block;font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:2px}
+#hs104CompList .hs-list-row:has(.hs-preload-service-detail){height:auto!important}
