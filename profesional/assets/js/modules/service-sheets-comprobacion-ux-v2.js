@@ -129,6 +129,13 @@
   }
 
   function patchPending(){
+    const first=document.querySelector('#hs104CompList .hs-list-row[data-row]');
+    if(first&&first.parentNode){
+      const parent=first.parentNode;
+      let head=document.getElementById('hsCompPendingGridHeader');
+      if(!head){head=document.createElement('div');head.id='hsCompPendingGridHeader';head.innerHTML='<span>Folio / Operador / Servicio</span><span style="text-align:right">Acciones de comprobación</span>';}
+      if(head.parentNode!==parent||head.nextSibling!==first)parent.insertBefore(head,first);
+    }
     document.querySelectorAll('#hs104CompList [data-row]').forEach(row=>{
       const actions=row.querySelector('.hs-list-head-actions'),edit=row.querySelector('[data-hs-edit]'),ret=row.querySelector('[data-return]'),cancel=row.querySelector('[data-hs-cancel]');
       if(!actions||!edit||!ret)return;
