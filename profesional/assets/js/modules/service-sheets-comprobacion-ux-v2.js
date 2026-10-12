@@ -133,12 +133,25 @@
     if(first&&first.parentNode){
       const parent=first.parentNode;
       let head=document.getElementById('hsCompPendingGridHeader');
-      if(!head){head=document.createElement('div');head.id='hsCompPendingGridHeader';head.innerHTML='<span>Folio / Operador / Servicio</span><span style="text-align:right">Acciones de comprobación</span>';}
+      if(!head){head=document.createElement('div');head.id='hsCompPendingGridHeader';head.innerHTML='<span>Folio / Hoja</span><span>Operador / Beneficiario</span><span style="text-align:right">Acciones</span>';}
       if(head.parentNode!==parent||head.nextSibling!==first)parent.insertBefore(head,first);
     }
     document.querySelectorAll('#hs104CompList [data-row]').forEach(row=>{
       const actions=row.querySelector('.hs-list-head-actions'),edit=row.querySelector('[data-hs-edit]'),ret=row.querySelector('[data-return]'),cancel=row.querySelector('[data-hs-cancel]');
       if(!actions||!edit||!ret)return;
+      const info=row.querySelector('.hs-list-info');
+      const rowHead=row.querySelector('.hs-list-head');
+      if(info&&rowHead){
+        let cols=rowHead.querySelector('.hs-pending-columns');
+        if(!cols){
+          cols=document.createElement('div');
+          cols.className='hs-pending-columns';
+          cols.innerHTML='<span class="hs-pending-folio"></span><span class="hs-pending-person"></span>';
+          rowHead.insertBefore(cols,actions);
+        }
+        cols.querySelector('.hs-pending-folio').textContent=row.dataset.hsFolio||info.querySelector('strong')?.textContent?.trim()||'—';
+        cols.querySelector('.hs-pending-person').textContent=row.dataset.hsPerson||'—';
+      }
 
       // No reconstruir ni mover botones en cada MutationObserver:
       // un botón que cambia de nodo entre pointerdown/click puede perder el click.
