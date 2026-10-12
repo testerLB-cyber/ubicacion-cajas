@@ -204,7 +204,7 @@
       const ev=EVIDENCE.get(String(row.dataset.row));
       if(!await confirmPreloaded(row,ev))return;
       if(direct.disabled)return;direct.disabled=true;const old=direct.innerHTML;direct.textContent='Comprobando...';
-      try{await save(row);row.dataset.hsCheckCompleted='1';direct.textContent='Comprobado ✓';document.getElementById('hs104Refresh')?.click();}
+      try{await save(row);row.dataset.hsCheckCompleted='1';direct.textContent='Comprobado ✓';row.dispatchEvent(new CustomEvent('hs104:row-comprobada',{bubbles:true,detail:{folioId:row.dataset.row,hadPrecapture:!!row.querySelector('.hs104-pill.hs104-ok')}}));}
       catch(err){alert(err?.message||err);}
       finally{if(row.dataset.hsCheckCompleted==='1'){direct.disabled=true;}else{direct.disabled=false;if(row.isConnected)direct.innerHTML=old;}}
       return;
@@ -213,7 +213,7 @@
     const row=btn.closest('[data-row]');if(!row||row.dataset.hsUnitTrailer!=='1')return;
     e.preventDefault();e.stopImmediatePropagation();
     if(btn.disabled)return;btn.disabled=true;const old=btn.textContent;btn.textContent='Comprobando...';
-    try{await save(row);row.dataset.hsCheckCompleted='1';btn.textContent='Comprobado ✓';document.getElementById('hs104Refresh')?.click();}
+    try{await save(row);row.dataset.hsCheckCompleted='1';btn.textContent='Comprobado ✓';row.dispatchEvent(new CustomEvent('hs104:row-comprobada',{bubbles:true,detail:{folioId:row.dataset.row,hadPrecapture:!!row.querySelector('.hs104-pill.hs104-ok')}}));}
     catch(err){alert(err?.message||err);}
     finally{if(row.dataset.hsCheckCompleted==='1'){btn.disabled=true;}else{btn.disabled=false;if(row.isConnected)btn.textContent=old;}}
   },true);
