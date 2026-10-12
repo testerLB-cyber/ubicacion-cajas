@@ -45,6 +45,10 @@
     const form=document.getElementById('hsForm');if(!form||document.getElementById('hsUnit'))return;
     const used=document.getElementById('hsUsedAt')?.closest('.field');if(!used)return;
     const client=document.getElementById('hsClient');if(client)client.required=true;if(client&&client.tagName==='SELECT'){const input=document.createElement('input');input.id='hsClientAuto';input.autocomplete='off';input.required=true;input.placeholder='Escribe mínimo 2 letras del cliente';const dl=document.createElement('div');dl.id='mobileHsClientSuggest';dl.style.cssText='display:none;border:1px solid #cbd5e1;border-radius:12px;margin-top:6px;max-height:220px;overflow:auto;background:#fff;position:relative;z-index:30';client.style.display='none';client.insertAdjacentElement('afterend',input);input.insertAdjacentElement('afterend',dl);const render=()=>{const q=norm(input.value);client.value='';if(q.length<2){dl.style.display='none';dl.innerHTML='';return;}const os=[...client.options].filter(o=>o.value&&norm(o.textContent).includes(q)).slice(0,30);dl.innerHTML=os.length?os.map(o=>'<button type="button" data-client-id="'+esc(o.value)+'" data-client-name="'+esc(o.textContent)+'" style="display:block;width:100%;padding:12px;text-align:left;border:0;border-bottom:1px solid #e2e8f0;background:#fff;font:inherit">'+esc(o.textContent)+'</button>').join(''):'<div style="padding:12px;color:#64748b">Sin coincidencias</div>';dl.style.display='block';};input.addEventListener('input',render);dl.addEventListener('click',e=>{const b=e.target.closest('[data-client-id]');if(!b)return;client.value=b.dataset.clientId;input.value=b.dataset.clientName;dl.style.display='none';});}
+    if(!document.getElementById('hsServiceDate')){
+      const date=document.createElement('div');date.className='field';date.innerHTML='<label for="hsServiceDate">Fecha real del servicio *</label><input id="hsServiceDate" type="date" required><div class="muted" style="font-size:11px">Indica el día en que se realizó el servicio; no se utiliza automáticamente la fecha actual.</div>';
+      used.parentNode.insertBefore(date,used);
+    }
     const wrap=document.createElement('div');wrap.innerHTML='<div class="field"><label>Unidad *</label><input id="hsUnit" list="mobileHsUnitList" autocomplete="off" required placeholder="Escribe o selecciona unidad"><datalist id="mobileHsUnitList"></datalist><div id="hsUnitStatus" class="unit-status muted">Escribe y selecciona una unidad del catálogo.</div></div><div class="field hidden" id="hsTrailerField"><label>Caja *</label><input id="hsTrailer" autocomplete="off" placeholder="Escribe número de caja/remolque"><div class="muted" style="font-size:11px;margin-top:5px">Captura la caja/remolque manualmente.</div></div>';
     const nodes=[...wrap.children];nodes.forEach(n=>used.parentNode.insertBefore(n,used));
     ['input','change','blur'].forEach(ev=>document.getElementById('hsUnit').addEventListener(ev,syncOperatorUnit));
@@ -57,7 +61,7 @@
     input.dataset.unitId='';input.dataset.tracto='0';trailerField.classList.add('hidden');trailerInput.required=false;if(input.value.trim()){input.classList.add('unit-invalid');status.className='unit-status bad';status.textContent='Selecciona una unidad válida del catálogo.';}else status.textContent='Escribe y selecciona una unidad del catálogo.';return null;
   }
   function syncOperatorUnit(){return syncInput(document.getElementById('hsUnit'),document.getElementById('hsUnitStatus'),document.getElementById('hsTrailerField'),document.getElementById('hsTrailer'))}
-  function prefillOperator(){ensureOperatorFields();fillLists();const ev=HS_CURRENT?.evidencia||{};const i=document.getElementById('hsUnit'),t=document.getElementById('hsTrailer');if(i){i.value=ev.unidadNumero||'';t.value=ev.remolqueNumero||'';syncOperatorUnit();}ensureDelayField();const h=document.getElementById('hsDelayHours');if(h){const parsed=Number(ev.cantidadCobro||String(ev.clasificacion||'').replace(/[^0-9.]/g,''));h.value=Number.isFinite(parsed)&&parsed>0?parsed:'';}syncDelayField();}
+  function prefillOperator(){ensureOperatorFields();fillLists();const ev=HS_CURRENT?.evidencia||{};const i=document.getElementById('hsUnit'),t=document.getElementById('hsTrailer');const date=document.getElementById('hsServiceDate');if(date)date.value=ev.fechaServicio||'';if(i){i.value=ev.unidadNumero||'';t.value=ev.remolqueNumero||'';syncOperatorUnit();}ensureDelayField();const h=document.getElementById('hsDelayHours');if(h){const parsed=Number(ev.cantidadCobro||String(ev.clasificacion||'').replace(/[^0-9.]/g,''));h.value=Number.isFinite(parsed)&&parsed>0?parsed:'';}syncDelayField();}
 
   const prevOpenHs=typeof openHs==='function'?openHs:null;
   if(prevOpenHs){openHs=function(id){const r=prevOpenHs(id);setTimeout(prefillOperator,0);return r;};}
@@ -70,6 +74,10 @@
     const b=document.getElementById('hsSave');if(b.disabled)return;b.disabled=true;
     let path='';
     try{
+      const serviceDate=document.getElementById('hsServiceDate')?.value||'';
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(serviceDate))throw new Error('Captura la fecha real en que se realizó el servicio.');
+      const localToday=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      if(serviceDate>localToday)throw new Error('La fecha del servicio no puede ser futura.');
       const cv=String(document.getElementById('hsClient')?.value||'').trim();if(!cv)throw new Error('Selecciona un cliente válido del catálogo.');const u=syncOperatorUnit();if(!u)throw new Error('La Unidad es obligatoria. Selecciona una unidad válida del catálogo.');
       const rem=String(document.getElementById('hsTrailer')?.value||'').trim();if(u.esTracto&&!rem)throw new Error('La Caja es obligatoria cuando la unidad es Tracto-camión. Selecciona una caja.');
       const delay=isDelay();const hours=delay?Number(document.getElementById('hsDelayHours')?.value||0):null;
@@ -79,7 +87,7 @@
       if(!HS_FILE)throw new Error('La foto es obligatoria.');
       const au=await sb.auth.getUser(),uid=au.data?.user?.id;path=uid+'/'+HS_CURRENT.id+'/'+Date.now()+'.jpg';
       let r=await sb.storage.from('app-hojas-servicio').upload(path,HS_FILE,{contentType:'image/jpeg'});if(r.error)throw r.error;
-      r=await sb.rpc('app_mobile_save_evidence_v4',{p_folio_id:HS_CURRENT.id,p_cliente_id:document.getElementById('hsClient').value,p_tipo_viaje_id:document.getElementById('hsTrip').value,p_clasificacion_id:classId,p_donde_utilizado:document.getElementById('hsUsedAt').value.trim(),p_foto_path:path,p_unidad_id:u.id,p_remolque_numero:u.esTracto?rem:'',p_cantidad_cobro:delay?hours:null});
+      r=await sb.rpc('app_mobile_save_evidence_v5',{p_folio_id:HS_CURRENT.id,p_cliente_id:document.getElementById('hsClient').value,p_tipo_viaje_id:document.getElementById('hsTrip').value,p_clasificacion_id:classId,p_donde_utilizado:document.getElementById('hsUsedAt').value.trim(),p_foto_path:path,p_unidad_id:u.id,p_remolque_numero:u.esTracto?rem:'',p_cantidad_cobro:delay?hours:null,p_fecha_servicio:serviceDate});
       if(r.error||!r.data?.ok)throw new Error(r.error?.message||r.data?.error||'No se pudo guardar');
       msg('hsMsg','Evidencia guardada con unidad'+(u.esTracto?' y remolque':'')+'. Pendiente de comprobación web.','oktxt');await loadAll(false);setTimeout(renderHs,250);
     }catch(err){msg('hsMsg',err.message||err,'err')}finally{b.disabled=false;}
