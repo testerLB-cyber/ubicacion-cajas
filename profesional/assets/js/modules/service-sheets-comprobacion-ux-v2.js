@@ -393,14 +393,31 @@
   }
 
   let patchTimer=null;
-  const obs=new MutationObserver(mutations=>{
-    const relevant=mutations.some(m=>!m.target.closest?.('#hs104Hist'));
-    if(!relevant)return;
-    clearTimeout(patchTimer);
-    patchTimer=setTimeout(patch,200);
-  });
-  function start(){obs.observe(document.body,{childList:true,subtree:true});patch();}
+  let observedList=null;
+  let listObs=null;
+  function bindList(){
+    const list=document.getElementById('hs104CompList');
+    if(!list||list===observedList)return;
+    if(listObs)listObs.disconnect();
+    observedList=list;
+    listObs=new MutationObserver(mutations=>{
+      if(!mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1 && (n.matches?.('[data-row]')||n.querySelector?.('[data-row]')))))return;
+      clearTimeout(patchTimer);
+      patchTimer=setTimeout(patchPending,80);
+    });
+    listObs.observe(list,{childList:true,subtree:true});
+    patch();
+  }
+  function start(){
+    style();
+    bindList();
+    if(!observedList){
+      const boot=new MutationObserver(()=>{if(document.getElementById('hs104CompList')){boot.disconnect();bindList();}});
+      boot.observe(document.body,{childList:true,subtree:true});
+    }
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  document.addEventListener('hs104:data-refreshed',()=>{bindList();patchPending();});
   document.addEventListener('hs104:history-rendered',()=>{if(showHistory)patchHistory(false);});
   document.addEventListener('click',e=>{
     const edit=e.target.closest?.('#hs104CompList [data-hs-edit]');
@@ -432,7 +449,7 @@
       }
     }
     if(e.target.closest?.('[data-v="Comprobacion"],#ccTabHojasServicio,#hs104Refresh')){
-      cache=null;setTimeout(patch,250);
+      cache=null;setTimeout(()=>{bindList();patch();},120);
     }
   },true);
   /* Historial: sin intervalos que reconstruyan o alteren la botonera. */
