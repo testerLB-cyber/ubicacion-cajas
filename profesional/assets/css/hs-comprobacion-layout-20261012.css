@@ -46,3 +46,20 @@
 #hsCompPendingGridHeader{display:grid;grid-template-columns:minmax(330px,1fr) minmax(370px,auto);align-items:center;background:#0f172a;color:white;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:10px 12px;border-radius:10px 10px 0 0;}
 #hs104CompList .hs-list-row:nth-of-type(even){background:#f8fafc!important;}
 @media(max-width:849px){#hsCompPendingGridHeader{display:none!important;}}
+
+/* Tabla pendiente: folio, operador y acciones en columnas reales. */
+@media(min-width:850px){
+ #hsCompPendingGridHeader{grid-template-columns:minmax(155px,1.1fr) minmax(190px,1.5fr) minmax(310px,2fr)!important;}
+ #hs104CompList .hs-list-head{grid-template-columns:minmax(0,2.6fr) minmax(310px,2fr)!important;gap:0!important;padding:3px 10px!important;min-height:32px!important;}
+ #hs104CompList .hs-list-info{display:none!important;}
+ #hs104CompList .hs-pending-columns{display:grid;grid-template-columns:minmax(155px,1.1fr) minmax(190px,1.5fr);align-items:center;gap:10px;min-width:0;}
+ #hs104CompList .hs-pending-folio{font-weight:800;color:#0f172a;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ #hs104CompList .hs-pending-person{font-size:11px;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ #hs104CompList .hs-list-head-actions{gap:4px!important;}
+ #hs104CompList .hs-list-head-actions .cc-btn{font-size:9px!important;padding:3px 7px!important;min-height:25px!important;}
+}
+@media(max-width:849px){
+ #hs104CompList .hs-pending-columns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:5px;font-size:11px;}
+ #hs104CompList .hs-list-info{display:none!important;}
+ #hs104CompList .hs-pending-folio{font-weight:800;}
+}
