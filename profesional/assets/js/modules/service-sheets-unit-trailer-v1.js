@@ -138,18 +138,24 @@
     grid.appendChild(trailerField);
     const input=unitField.querySelector('[data-hs-unidad]');
     const ev=EVIDENCE.get(String(row.dataset.row));
-    if(ev?.unidadNumero){
-      input.value=ev.unidadNumero;
-      trailerField.querySelector('[data-hs-remolque]').value=ev.remolqueNumero||'';
+    const precapturedUnit=row.dataset.hsPreUnit||'';
+    const precapturedTrailer=row.dataset.hsPreRemolque||'';
+    if(ev?.unidadNumero||precapturedUnit){
+      input.value=ev?.unidadNumero||precapturedUnit;
+      trailerField.querySelector('[data-hs-remolque]').value=ev?.remolqueNumero||precapturedTrailer||'';
       const info=row.querySelector('.hs-list-info');
       if(info&&!info.querySelector('[data-hs-unit-summary]')){
         const summary=document.createElement('div');
         summary.dataset.hsUnitSummary='1';
         summary.className='hs104-note';
         summary.style.cssText='margin-top:4px;font-weight:800;color:#334155';
-        summary.innerHTML='<span><i class="fa-solid fa-truck"></i> Unidad: '+esc(ev.unidadNumero)+'</span>'+(ev.remolqueNumero?' <span style="margin-left:8px"><i class="fa-solid fa-trailer"></i> Remolque: '+esc(ev.remolqueNumero)+'</span>':'');
+        summary.innerHTML='<span><i class="fa-solid fa-truck"></i> Unidad: '+esc(input.value)+'</span>'+(trailerField.querySelector('[data-hs-remolque]').value?' <span style="margin-left:8px"><i class="fa-solid fa-trailer"></i> Remolque: '+esc(trailerField.querySelector('[data-hs-remolque]').value)+'</span>':'');
         info.appendChild(summary);
       }
+    }
+    if(row.querySelector('.hs104-pill.hs104-ok')&&!input.value){
+      const status=row.querySelector('[data-hs-unidad-status]');
+      if(status){status.textContent='La precaptura móvil no guardó unidad. Selecciona la unidad real para comprobar; no se asignará una automáticamente.';status.style.color='#b45309';}
     }
     ['input','change','blur'].forEach(evt=>input.addEventListener(evt,()=>setUnitState(row,false)));
     const trailerInput=trailerField.querySelector('[data-hs-remolque]'),trailerStatus=trailerField.querySelector('[data-hs-remolque-status]');
