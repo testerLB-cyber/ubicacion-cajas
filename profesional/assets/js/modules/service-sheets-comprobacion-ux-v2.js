@@ -92,7 +92,8 @@
     const firstInstall=!pendingCard.dataset.hsCompUxReady||!histCard.dataset.hsCompUxReady;
     pendingCard.dataset.hsCompUxReady='1';histCard.dataset.hsCompUxReady='1';
     if(firstInstall)applyMode(false);
-    ensurePendingSearch(pendingCard);
+    // El buscador principal #hs104CompGlobal es el único para Pendientes.
+    document.getElementById('hsCompUxFolioSearch')?.parentElement?.remove();
     ensureHistorySearch(histCard);
   }
 
