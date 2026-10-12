@@ -390,34 +390,52 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 #ccAntViewCasetasNuevo #casEntregaSimple button{width:100%;padding:12px!important}
 @media(max-width:600px){#ccAntViewCasetasNuevo #casEntregaSimple{padding:14px!important;margin:8px auto!important}#ccAntViewCasetasNuevo #casEntregaSimple .cas-grid{grid-template-columns:1fr!important}}
 </style><style id="casetasDesktopForms20261012">
-/* Control de casetas: distribución de escritorio, sin alterar lógica ni IDs. */
-@media (min-width: 901px){
- #ccAntViewCasetasNuevo .cas-layout main{max-width:1500px!important;width:100%!important;min-width:0}
+/* Versión PC: resolver ancho de toda la cadena de contenedores y no sólo el formulario. */
+#ccAntViewCasetasNuevo #casOperationalWorkspace,
+#ccAntViewCasetasNuevo #casOperationalWorkspace>.cas-layout,
+#ccAntViewCasetasNuevo #casOperationalWorkspace>.cas-layout>main,
+#ccAntViewCasetasNuevo #casOperatorSection,
+#ccAntViewCasetasNuevo .cas-work-panel{width:100%!important;max-width:none!important;min-width:0!important;box-sizing:border-box}
+#ccAntViewCasetasNuevo #casOperationalWorkspace>.cas-layout{grid-template-columns:minmax(0,1fr)!important}
+#ccAntViewCasetasNuevo #casOperationalWorkspace>.cas-layout>aside{display:none!important}
+#ccAntViewCasetasNuevo #casOperationalWorkspace>.cas-layout>main{margin:0!important;padding:0!important}
+#ccAntViewCasetasNuevo #casEntregaSimple,
+#ccAntViewCasetasNuevo #casComprobarSimple{width:100%!important;max-width:none!important;min-width:0!important;margin:10px 0!important;box-sizing:border-box!important}
+#ccAntViewCasetasNuevo #casEntregaSimple .cas-grid>*,
+#ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>*{min-width:0}
+@media(min-width:1000px){
  #ccAntViewCasetasNuevo #casEntregaSimple,
- #ccAntViewCasetasNuevo #casComprobarSimple{max-width:1450px!important;width:100%!important;margin:14px auto!important;padding:24px 28px!important;box-sizing:border-box}
- #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid{display:grid!important;grid-template-columns:minmax(300px,1.65fr) minmax(175px,1fr) minmax(175px,1fr)!important;gap:16px 20px!important;align-items:end}
- #ccAntViewCasetasNuevo #casEntregaSimple .cas-grid>label:first-child{grid-column:auto!important}
- #ccAntViewCasetasNuevo #casEntregaSimple #casEntregaGuardar{width:auto!important;min-width:230px!important;margin-top:18px!important}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(260px,.8fr)!important;gap:12px 20px!important;align-items:start}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:first-child{grid-column:1/3!important;grid-row:1}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(2){grid-column:3!important;grid-row:1}
- #ccAntViewCasetasNuevo #casComprobarTipos{grid-column:1/3!important;grid-row:2/5;padding:16px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(4){grid-column:3!important;grid-row:2}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(5){grid-column:3!important;grid-row:3}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(6){grid-column:3!important;grid-row:4}
- #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{display:grid!important;grid-template-columns:minmax(100px,1fr) 100px 110px!important;gap:14px!important;margin:10px 0!important}
- #ccAntViewCasetasNuevo #casComprobarSimple #casComprobarGuardar{width:auto!important;min-width:240px!important;margin-top:10px!important}
- #ccAntViewCasetasNuevo #casComprobarSimple textarea{min-height:88px!important}
- #ccAntViewCasetasNuevo #casComprobarResumen{margin-top:16px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple{padding:20px 24px!important}
+ #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid{display:grid!important;grid-template-columns:minmax(250px,2fr) minmax(170px,1fr) minmax(170px,1fr)!important;gap:16px!important;align-items:end}
+ #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid>label:first-child{grid-column:1!important}
+ #ccAntViewCasetasNuevo #casEntregaSimple #casEntregaGuardar{width:auto!important;min-width:220px;margin-top:16px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{display:grid!important;grid-template-columns:minmax(0,1.25fr) minmax(0,1.25fr) minmax(250px,.9fr)!important;column-gap:22px!important;row-gap:12px!important;align-items:start}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:first-child{grid-column:1/3!important;grid-row:1!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(2){grid-column:3!important;grid-row:1!important}
+ #ccAntViewCasetasNuevo #casComprobarTipos{grid-column:1/3!important;grid-row:2/5!important;padding:14px 16px!important;background:#f8fafc;border:1px solid #dce4ed;border-radius:10px}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(4){grid-column:3!important;grid-row:2!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(5){grid-column:3!important;grid-row:3!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(6){grid-column:3!important;grid-row:4!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(6){grid-column:3!important}
+ #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{display:grid!important;grid-template-columns:minmax(110px,1fr) 100px 116px!important;gap:12px!important;align-items:center!important;margin:9px 0!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple #casComprobarGuardar{width:auto!important;min-width:250px!important;margin-top:8px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple textarea{min-height:75px!important}
 }
-@media (min-width: 601px) and (max-width: 900px){
- #ccAntViewCasetasNuevo #casEntregaSimple,#ccAntViewCasetasNuevo #casComprobarSimple{max-width:100%!important;width:100%!important;margin:10px auto!important}
- #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+@media(min-width:650px) and (max-width:999px){
+ #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid{grid-template-columns:1.4fr 1fr!important}
+ #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid>label:first-child{grid-column:1/-1!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{grid-template-columns:1fr 1fr!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:first-child{grid-column:1/-1!important}
+ #ccAntViewCasetasNuevo #casComprobarTipos{grid-column:1/-1!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:last-child{grid-column:1/-1!important}
 }
-@media (max-width: 600px){
- #ccAntViewCasetasNuevo #casEntregaSimple,#ccAntViewCasetasNuevo #casComprobarSimple{width:100%!important;max-width:100%!important}
+@media(max-width:649px){
+ #ccAntViewCasetasNuevo #casEntregaSimple,
+ #ccAntViewCasetasNuevo #casComprobarSimple{padding:12px!important}
+ #ccAntViewCasetasNuevo #casEntregaSimple>.cas-grid,
  #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{grid-template-columns:minmax(0,1fr)!important}
- #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{grid-template-columns:minmax(90px,1fr) 75px 88px!important;gap:5px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>*{grid-column:1!important;grid-row:auto!important}
+ #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{grid-template-columns:minmax(70px,1fr) 72px 95px!important;gap:5px!important}
 }
 </style><div id="ccAntViewCasetasNuevo" class="cc-ant-view" style="display:none">
 <style>
