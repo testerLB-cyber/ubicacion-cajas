@@ -31,7 +31,7 @@
     const style=document.createElement('style');
     style.id='hs-mobile-photo-modal-style';
     style.textContent=`
-      #hsMobilePhotoModal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.76);backdrop-filter:blur(4px)}
+      #hsMobilePhotoModal{position:fixed;inset:0;z-index:2147482000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.76);backdrop-filter:blur(4px)}
       #hsMobilePhotoModal.is-open{display:flex}
       #hsMobilePhotoModal .hs-photo-modal-card{position:relative;width:min(94vw,980px);max-height:92vh;background:#fff;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.34);overflow:hidden;display:flex;flex-direction:column}
       #hsMobilePhotoModal .hs-photo-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#fff}
