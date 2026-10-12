@@ -76,7 +76,7 @@
     const rows=Array.from(body?.querySelectorAll('tr')||[]);
     const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
     rows.forEach((tr,i)=>{
-      const a=data[i];if(!a||!tieneComprobacion(a))return;
+      const a=data[i];if(!a||a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''))||!tieneComprobacion(a))return;
       const estado=String(a.estatus||'').toUpperCase();
       if(!['CERRADO','CANCELADO'].includes(estado)){
         tr.style.background='#fef3c7';tr.style.boxShadow='inset 4px 0 0 #f59e0b';tr.dataset.comprobacionLista='1';
