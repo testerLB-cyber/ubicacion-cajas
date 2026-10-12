@@ -837,6 +837,23 @@
         drawCards();
       }catch(e){if(req===pendingReq){pendingInfo.textContent='Error al consultar: '+(e.message||e);}}
     };
+    v.addEventListener('hs104:row-comprobada',event=>{
+      const id=String(event.detail?.folioId||'');if(!id)return;
+      D.foliosAsignadosOperador=(D.foliosAsignadosOperador||[]).filter(x=>String(x.id)!==id);
+      if(pendingRemote)pendingRemote=pendingRemote.filter(x=>String(x.id)!==id);
+      const target=v.querySelectorAll('#hs104CompList [data-row]');
+      for(const el of target)if(String(el.dataset.row)===id)el.remove();
+      const visibleRows=v.querySelectorAll('#hs104CompList [data-row]').length;
+      if(pendingInfo&&pendingRemote!==null)pendingInfo.textContent='Página '+pendingPage+' de '+pendingPages+' · registro comprobado · '+visibleRows+' visibles';
+      if(pendingTotals?.ok){
+        pendingTotals.pendientes=Math.max(0,Number(pendingTotals.pendientes)-1);
+        if(event.detail?.hadPrecapture)pendingTotals.precargadas=Math.max(0,Number(pendingTotals.precargadas)-1);
+        else pendingTotals.sinCaptura=Math.max(0,Number(pendingTotals.sinCaptura)-1);
+        const b=v.querySelectorAll('#hs104CompKpis .hs104-comp-kpi b');
+        if(b.length>=3){b[0].textContent=pendingTotals.pendientes;b[1].textContent=pendingTotals.precargadas;b[2].textContent=pendingTotals.sinCaptura;}
+      }
+      if(!visibleRows){const container=v.querySelector('#hs104CompList .hs104-row');if(container)container.insertAdjacentHTML('beforeend','<div style="padding:20px;text-align:center;color:#64748b">No quedan hojas en esta página. Utiliza Siguiente o Actualizar para continuar.</div>');}
+    });
     const refreshPendingTotals=async()=>{
       try{const result=await rpc('hs_pendientes_totales');if(!document.body.contains(v))return;pendingTotals=result;const box=v.querySelector('#hs104CompKpis');if(box){const cells=box.querySelectorAll('.hs104-comp-kpi b');if(cells.length>=3){cells[0].textContent=result.pendientes;cells[1].textContent=result.precargadas;cells[2].textContent=result.sinCaptura;}}}
       catch(e){console.warn('No se pudieron consultar totales de comprobación',e);}
@@ -847,7 +864,7 @@
       v.querySelector('#hs104CompFilter').value='PRECARGADA';
       loadPendingPage();
     };
-    v.addEventListener('click',e=>{if(e.target.closest('#hs104KpiPreloaded'))showAllPreloaded();});
+    v.addEventListener('click',e=>{if(e.target.closest('#hs104KpiPreloaded'))showAllPreloaded();if(e.target.closest('#hs104KpiAllPending')){pendingOnlyPreloaded=false;pendingPage=1;v.querySelector('#hs104CompFilter').value='TODAS';v.querySelector('#hs104CompGlobal').value='';v.querySelector('#hs104PendingFrom').value='';v.querySelector('#hs104PendingTo').value='';loadPendingPage();}});
     v.querySelector('#hs104PendingRangeGo').onclick=()=>{pendingPage=1;loadPendingPage();};
     v.querySelector('#hs104PendingRangeReset').onclick=()=>{pendingOnlyPreloaded=false;++pendingReq;pendingRemote=null;pendingPage=1;v.querySelector('#hs104PendingFrom').value='';v.querySelector('#hs104PendingTo').value='';v.querySelector('#hs104CompGlobal').value='';pendingInfo.textContent='Mostrando últimas 500 asignadas';pendingPrev.style.display='none';pendingNext.style.display='none';drawCards();};
     pendingPrev.onclick=()=>{if(pendingPage>1){pendingPage--;loadPendingPage();}};
@@ -858,7 +875,7 @@
     const drawCards=()=>{
       const list=v.querySelector('#hs104CompList'),q=norm(v.querySelector('#hs104CompGlobal')?.value||''),f=v.querySelector('#hs104CompFilter')?.value||'TODAS';
       if(list.querySelector('.hs-list-modal-open'))document.body.style.overflow='';
-      const all=(pendingRemote!==null?pendingRemote:(D.foliosAsignadosOperador||[])),ready=all.filter(x=>!!x.precaptura).length;const totalPendientes=pendingTotals?.ok?Number(pendingTotals.pendientes):Number(D.resumen?.asignadosOperador??all.length);const totalReady=pendingTotals?.ok?Number(pendingTotals.precargadas):ready;const totalWithout=pendingTotals?.ok?Number(pendingTotals.sinCaptura):Math.max(0,totalPendientes-totalReady);const k=v.querySelector('#hs104CompKpis');if(k)k.innerHTML='<div class="hs104-comp-kpi"><b>'+totalPendientes+'</b> Pendientes</div><button type="button" class="hs104-comp-kpi ready" id="hs104KpiPreloaded" title="Mostrar todas las precargadas"><b>'+totalReady+'</b> Precargadas <i class="fa-solid fa-arrow-up-right-from-square"></i></button><div class="hs104-comp-kpi pending"><b>'+totalWithout+'</b> Sin captura</div>';const rows=all.filter(x=>{const pre=x.precaptura,pt=personType(x);if(f==='PRECARGADA'&&!pre)return false;if(f==='PENDIENTE'&&pre)return false;if((f==='OPERADOR'||f==='BENEFICIARIO')&&pt!==f)return false;const hay=norm([x.folio,personName(x),pt,x.responsable,pre?.cliente,pre?.tipoViaje,pre?.clasificacion,x.unidad,x.unidadNumero,x.remolque,x.remolqueNumero].filter(Boolean).join(' '));return !q||hay.includes(q)});
+      const all=(pendingRemote!==null?pendingRemote:(D.foliosAsignadosOperador||[])),ready=all.filter(x=>!!x.precaptura).length;const totalPendientes=pendingTotals?.ok?Number(pendingTotals.pendientes):Number(D.resumen?.asignadosOperador??all.length);const totalReady=pendingTotals?.ok?Number(pendingTotals.precargadas):ready;const totalWithout=pendingTotals?.ok?Number(pendingTotals.sinCaptura):Math.max(0,totalPendientes-totalReady);const k=v.querySelector('#hs104CompKpis');if(k)k.innerHTML='<button type="button" class="hs104-comp-kpi" id="hs104KpiAllPending" title="Ver todas las hojas pendientes con paginación"><b>'+totalPendientes+'</b> Pendientes <i class="fa-solid fa-arrow-up-right-from-square"></i></button><button type="button" class="hs104-comp-kpi ready" id="hs104KpiPreloaded" title="Mostrar todas las precargadas"><b>'+totalReady+'</b> Precargadas <i class="fa-solid fa-arrow-up-right-from-square"></i></button><div class="hs104-comp-kpi pending"><b>'+totalWithout+'</b> Sin captura</div>';const rows=all.filter(x=>{const pre=x.precaptura,pt=personType(x);if(f==='PRECARGADA'&&!pre)return false;if(f==='PENDIENTE'&&pre)return false;if((f==='OPERADOR'||f==='BENEFICIARIO')&&pt!==f)return false;const hay=norm([x.folio,personName(x),pt,x.responsable,pre?.cliente,pre?.tipoViaje,pre?.clasificacion,x.unidad,x.unidadNumero,x.remolque,x.remolqueNumero].filter(Boolean).join(' '));return !q||hay.includes(q)});
       if(!rows.length){list.innerHTML='<div style="padding:28px;text-align:center;color:#64748b">No hay hojas pendientes con esta búsqueda o filtro.</div>';return;}
       list.innerHTML='<div class="hs104-row">'+rows.map(x=>{
         const pre=x.precaptura;
