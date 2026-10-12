@@ -437,6 +437,43 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
  #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>*{grid-column:1!important;grid-row:auto!important}
  #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{grid-template-columns:minmax(70px,1fr) 72px 95px!important;gap:5px!important}
 }
+
+/* Comprobar y CFDI, juntos en una misma pantalla de PC. */
+@media(min-width:1100px){
+ #ccAntViewCasetasNuevo .cas-work-panel.cas-comprobar-two-columns:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr)!important;gap:14px!important;align-items:start!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-two-columns>#casComprobarSimple,
+ #ccAntViewCasetasNuevo .cas-comprobar-side{min-width:0!important;margin:0!important;width:100%!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-two-columns>#casComprobarSimple{padding:14px 16px!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-side>section{margin:0 0 12px!important;padding:14px 16px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:9px 12px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:first-child{grid-column:1!important;grid-row:1!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(2){grid-column:2!important;grid-row:1!important}
+ #ccAntViewCasetasNuevo #casComprobarTipos{grid-column:1/-1!important;grid-row:2!important;padding:10px 12px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(4){grid-column:1!important;grid-row:3!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(5){grid-column:2!important;grid-row:3!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(6){grid-column:1/-1!important;grid-row:4!important}
+ #ccAntViewCasetasNuevo #casComprobarTiposFilas>label{grid-template-columns:minmax(90px,1fr) 88px 105px!important;gap:9px!important;margin:4px 0!important}
+ #ccAntViewCasetasNuevo #casComprobarTiposFilas input{padding:5px 7px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple textarea{min-height:54px!important;height:54px!important}
+ #ccAntViewCasetasNuevo #casComprobarSaldo{font-size:18px!important;padding:6px 10px!important;margin:3px 0!important}
+ #ccAntViewCasetasNuevo #casComprobarResumen{padding:7px 9px!important;margin:8px 0!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-side .cas-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-side .cas-scroll{max-height:265px!important;overflow:auto}
+ #ccAntViewCasetasNuevo .cas-comprobar-side h3{font-size:14px!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-side .cc-btn{margin-top:8px}
+}
+@media(min-width:750px) and (max-width:1099px){
+ #ccAntViewCasetasNuevo .cas-work-panel.cas-comprobar-two-columns:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-two-columns>#casComprobarSimple{padding:12px!important}
+ #ccAntViewCasetasNuevo .cas-comprobar-side>section{margin:0 0 10px!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:first-child,
+ #ccAntViewCasetasNuevo #casComprobarTipos,
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:last-child{grid-column:1/-1!important;grid-row:auto!important}
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(2),
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(4),
+ #ccAntViewCasetasNuevo #casComprobarSimple>.cas-grid>label:nth-child(5){grid-column:auto!important;grid-row:auto!important}
+}
 </style><div id="ccAntViewCasetasNuevo" class="cc-ant-view" style="display:none">
 <style>
 #ccAntViewCasetasNuevo{font-family:inherit}#ccAntViewCasetasNuevo .cas-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:#10233e;color:white;border-radius:16px;padding:22px;margin:12px 0}#ccAntViewCasetasNuevo .cas-top h2{font-size:24px;font-weight:800;margin:0}#ccAntViewCasetasNuevo .cas-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0}#ccAntViewCasetasNuevo .cas-kpi{background:white;border:1px solid #dbe4ee;border-radius:12px;padding:16px}#ccAntViewCasetasNuevo .cas-kpi small{display:block;color:#64748b}#ccAntViewCasetasNuevo .cas-kpi strong{display:block;font-size:19px;margin-top:6px}#ccAntViewCasetasNuevo .cas-layout{display:grid;grid-template-columns:minmax(210px,260px) minmax(0,1fr);gap:14px}#ccAntViewCasetasNuevo .cas-card{background:white;border:1px solid #dbe4ee;border-radius:14px;padding:18px;margin-bottom:14px}#ccAntViewCasetasNuevo .cas-person{display:flex;width:100%;text-align:left;flex-direction:column;padding:10px;margin:6px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;cursor:pointer}#ccAntViewCasetasNuevo .cas-person.selected{background:#eff6ff;border-color:#2563eb}#ccAntViewCasetasNuevo .cas-person span{font-size:12px;color:#64748b}#ccAntViewCasetasNuevo .cas-person strong{color:#0f766e}#ccAntViewCasetasNuevo .cas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}#ccAntViewCasetasNuevo label{display:block;font-weight:650;font-size:12px;margin:8px 0}#ccAntViewCasetasNuevo input,#ccAntViewCasetasNuevo select{display:block;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:white}#ccAntViewCasetasNuevo table{width:100%;font-size:12px}#ccAntViewCasetasNuevo th,#ccAntViewCasetasNuevo td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left}#ccAntViewCasetasNuevo .cas-scroll{overflow:auto;max-height:330px}#ccAntViewCasetasNuevo .cas-btn{padding:10px 16px;background:#0f766e;color:white;border-radius:9px;font-weight:700;margin-top:12px}#ccAntViewCasetasNuevo .cas-btn.blue{background:#1d4ed8}@media(max-width:850px){#ccAntViewCasetasNuevo .cas-layout{grid-template-columns:1fr}}
