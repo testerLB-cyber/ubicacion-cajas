@@ -71,26 +71,8 @@
   }
   window.ccProfVerComprobantes=verComprobantes;
 
-  function mejorarListado(){
-    const body=document.getElementById('ccAntBody');
-    const rows=Array.from(body?.querySelectorAll('tr')||[]);
-    const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
-    rows.forEach((tr,i)=>{
-      const a=data[i];if(!a||a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''))||!tieneComprobacion(a))return;
-      const estado=String(a.estatus||'').toUpperCase();
-      if(!['CERRADO','CANCELADO'].includes(estado)){
-        tr.style.background='#fef3c7';tr.style.boxShadow='inset 4px 0 0 #f59e0b';tr.dataset.comprobacionLista='1';
-      }
-      const actions=tr.lastElementChild?.querySelector('div')||tr.lastElementChild;if(!actions)return;
-      if(!actions.querySelector('[data-prof-comp-view]')){
-        const v=document.createElement('button');v.type='button';v.className='cc-btn';v.style.background='#7c3aed';v.style.color='#fff';v.dataset.profCompView=a.id;v.innerHTML='<i class="fa-solid fa-receipt mr-1"></i>Ver comprobantes';v.onclick=ev=>{ev.preventDefault();ev.stopPropagation();verComprobantes(a.id)};actions.appendChild(v);
-      }
-      if(!['CERRADO','CANCELADO'].includes(estado)&&!actions.querySelector('[data-ant-close-main]')){
-        const b=document.createElement('button');b.type='button';b.className='cc-btn cc-btn-primary';b.dataset.antCloseMain=a.id;b.innerHTML='<i class="fa-solid fa-circle-check mr-1"></i>Cerrar anticipo';b.title='Finalizar este anticipo usando sus comprobaciones registradas';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();if(typeof window.ccAntCerrar==='function')window.ccAntCerrar(a.id)};actions.appendChild(b);
-      }
-    });
+  function mejorarListado(){ /* Acciones solo en barra superior del listado de Operadores. */
   }
-
   function instalar(){
     if(typeof window.ccAntRender!=='function')return;
     if(window.ccAntRender.__profCierreEnListado)return;
@@ -156,11 +138,8 @@
     wrapped.__profCompsV2=true;window.ccAntComprobar=wrapped;
   }
 
-  function botonesListado(){
-    const body=document.getElementById('ccAntBody'),rows=Array.from(body?.querySelectorAll('tr')||[]),data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[];
-    rows.forEach((tr,i)=>{const a=data[i];if(!a)return;const isCasetas=a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''));if(isCasetas){tr.querySelectorAll('[data-prof-comp-view]').forEach(b=>b.remove());return;}const actions=tr.lastElementChild?.querySelector('div')||tr.lastElementChild;if(!actions||actions.querySelector('[data-prof-comp-view]'))return;const b=document.createElement('button');b.type='button';b.className='cc-btn';b.style.background='#7c3aed';b.style.color='#fff';b.dataset.profCompView=a.id;b.innerHTML='<i class="fa-solid fa-receipt mr-1"></i>Ver comprobantes';b.onclick=ev=>{ev.preventDefault();ev.stopPropagation();if(typeof window.ccProfVerComprobantes==='function')window.ccProfVerComprobantes(a.id)};actions.appendChild(b)});
+  function botonesListado(){ /* Acciones solo en barra superior del listado de Operadores. */
   }
-
   function install(){
     wrapComprobar();botonesListado();
     if(typeof window.ccAntRender==='function'&&!window.ccAntRender.__profCompsListV2){const o=window.ccAntRender,w=function(){const r=o.apply(this,arguments);setTimeout(botonesListado,0);wrapComprobar();return r};w.__profCompsListV2=true;window.ccAntRender=w}
