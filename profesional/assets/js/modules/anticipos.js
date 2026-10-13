@@ -23,6 +23,32 @@ window.ccAntLoad=async function(force=false){
  __ccAntLoadPromise=(async()=>{try{
    var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');
    D=r.data;
+   // Conciliar ANT contra la tabla de origen: evita que una respuesta RPC cacheada
+   // o una versión previa del listado omita folios. Nunca modificar datos.
+   try {
+     const raw=await sb().from('cc_anticipos')
+       .select('id,folio,fecha,estatus,operador_id,destino_id,unidad_id,metodo_deposito_id,monto,monto_entregado,viaje')
+       .like('folio','ANT-%').order('fecha',{ascending:false}).limit(1000);
+     if(raw.error)throw raw.error;
+     const source=raw.data||[], indexed=new Map((D.anticipos||[]).map(a=>[String(a.id),a]));
+     const opNames=new Map((D.operadores||[]).map(o=>[String(o.id),o.nombre]));
+     const destNames=new Map((D.destinos||[]).map(d=>[String(d.id),d.nombre]));
+     const methodNames=new Map((D.metodosDeposito||[]).map(m=>[String(m.id),m.nombre]));
+     const unitNames=new Map((D.unidadesCarro||[]).map(u=>[String(u.id),u.numero]));
+     for(const a of source){
+       const old=indexed.get(String(a.id))||{};
+       indexed.set(String(a.id),{...old,id:a.id,folio:a.folio,fecha:a.fecha,
+         estatus:a.estatus,operadorId:a.operador_id,operador:old.operador||opNames.get(String(a.operador_id))||'Sin operador',
+         destino:old.destino||destNames.get(String(a.destino_id))||'—',
+         unidad:old.unidad||unitNames.get(String(a.unidad_id))||'—',
+         metodoDeposito:old.metodoDeposito||methodNames.get(String(a.metodo_deposito_id))||'—',
+         montoEntregado:a.monto_entregado??a.monto,viaje:a.viaje||old.viaje||'',
+         esCasetas:false,es_casetas:false});
+     }
+     D.anticipos=Array.from(indexed.values());
+     window.__ccAntDbReconciliation={sourceCount:source.length,renderCount:D.anticipos.filter(a=>/^ANT-/i.test(a.folio||'')).length,
+       missing:source.filter(a=>!D.anticipos.some(x=>String(x.id)===String(a.id))).map(a=>a.folio)};
+   }catch(reconcileError){console.warn('ANT: no se pudo conciliar directamente; se conserva RPC',reconcileError);}
    __ccAntLastLoad=Date.now();ccAntRender();if(k)k.removeAttribute('aria-busy');
    try{document.dispatchEvent(new CustomEvent('ccAnt:data-refreshed',{detail:{at:__ccAntLastLoad}}))}catch(_){}
    // Catálogos secundarios no bloquean los indicadores.
