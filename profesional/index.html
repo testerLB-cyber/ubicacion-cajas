@@ -291,27 +291,33 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
 <script id="ccAntRemoveObsoleteOperatorKpi">
-/* El indicador "Operadores con pendiente" fue retirado del panel.
-   Evita que renderizadores antiguos lo vuelvan a insertar. */
+/* Elimina el KPI obsoleto del panel real "Saldos de cajas / cuentas"
+   y de cualquier vista de anticipos, incluso si lo crea un módulo tardío. */
 (function(){
-  const panelId='ccAntKpis';
-  const obsolete=/^operadores\s+con\s+pendiente$/i;
+  const unwanted=/^operadores\\s+con\\s+pendiente$/i;
+  let cleaning=false;
   function clean(){
-    const panel=document.getElementById(panelId);
-    if(!panel)return;
-    for(const card of panel.querySelectorAll('.cc-ant-kpi')){
-      const label=card.querySelector('small');
-      if(label&&obsolete.test((label.textContent||'').trim()))card.remove();
-    }
+    if(cleaning)return;
+    cleaning=true;
+    try{
+      const panel=document.getElementById('ccPanelAnticipos')||document;
+      for(const node of panel.querySelectorAll('small,label,span,p,div,h3,h4')){
+        if(node.children.length||!unwanted.test((node.textContent||'').trim()))continue;
+        const card=node.closest('.cc-ant-kpi,.cc-kpi,.kpi-card,.stat-card,.metric-card,.cc-stat,.cc-caja-kpi');
+        if(card){card.remove();continue}
+        let candidate=node.parentElement;
+        for(let depth=0;candidate&&depth<3;depth++,candidate=candidate.parentElement){
+          if(candidate.querySelectorAll('strong,b').length===1&&candidate.textContent.trim().length<95){candidate.remove();break}
+        }
+      }
+    }finally{cleaning=false}
   }
   function attach(){
-    const panel=document.getElementById(panelId);
-    if(!panel)return;
     clean();
+    const panel=document.getElementById('ccPanelAnticipos')||document.body;
     new MutationObserver(clean).observe(panel,{childList:true,subtree:true,characterData:true});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});
-  else attach();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
 })();
 </script>
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
@@ -1497,7 +1503,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261012-kpi-operadores-retirado-v13"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261012-kpi-operadores-retirado-v14"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
@@ -1509,7 +1515,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
     if(!p?.classList.contains('active'))return;
     loading=true;
     const s=document.createElement('script');
-    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261012-kpi-operadores-retirado-v13';
+    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261012-kpi-operadores-retirado-v14';
     s.onload=()=>{loaded=true;loading=false;setTimeout(()=>window.ccAntLoad?.(true),50)};
     s.onerror=()=>{loading=false;console.warn('No se pudo cargar flujo profesional de Anticipos')};
     document.body.appendChild(s);
