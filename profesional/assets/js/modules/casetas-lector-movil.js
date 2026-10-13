@@ -26,7 +26,7 @@ function feedback(){
  try{navigator.vibrate?.([150,70,150]);}catch{}
 }
 async function sendPair(){
- if(!channel||!lastQr||!lastTotal||Date.now()-qrAt>90000||Date.now()-totalAt>90000)return;
+ if(!channel||!lastQr||!lastTotal||Math.abs(qrAt-totalAt)>90000)return;
  const qr=lastQr,total=lastTotal;
  try{
   const result=await channel.send({type:'broadcast',event:'ticket',payload:{qr,total,at:Date.now()}});
@@ -41,8 +41,8 @@ async function sendPair(){
 async function onScan(value){
  value=String(value||'').trim().slice(0,400);const now=Date.now();
  if(!value||value===lastRead&&now-lastReadAt<12000||lastQr)return;
- lastRead=value;lastReadAt=now;lastQr=value;qrAt=now;scanStart=performance.now();ocrStart=0;lastTotal='';
- $('qrValue').textContent=value;status('✓ QR detectado · Enfoca ahora el campo TOTAL');
+ lastRead=value;lastReadAt=now;lastQr=value;qrAt=now;scanStart=performance.now();ocrStart=0;
+ $('qrValue').textContent=value;status(lastTotal?'✓ QR y TOTAL reconocidos':'✓ QR detectado · Enfoca ahora el campo TOTAL');await sendPair();
 }
 async function getWorker(){
  if(worker)return worker;
@@ -56,7 +56,7 @@ async function getWorker(){
  return workerPromise;
 }
 async function readTotal(){
- if(!running||ocrBusy||!lastQr||lastTotal)return;
+ if(!running||ocrBusy||lastTotal)return;
  const v=$('video');if(!v.videoWidth||!v.videoHeight)return;
  ocrBusy=true;try{
   const w=await getWorker();if(!ocrStart)ocrStart=performance.now();
@@ -64,7 +64,7 @@ async function readTotal(){
   base.width=Math.max(1,Math.round(v.videoWidth*scale));base.height=Math.max(1,Math.round(v.videoHeight*scale));
   base.getContext('2d').drawImage(v,0,0,base.width,base.height);
   for(const angle of [0,90,270]){
-   if(!running||!lastQr)break;
+   if(!running||lastTotal)break;
    const c=document.createElement('canvas'),rotated=angle!==0;
    c.width=rotated?base.height:base.width;c.height=rotated?base.width:base.height;
    const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(angle*Math.PI/180);ctx.drawImage(base,-base.width/2,-base.height/2);
@@ -84,8 +84,8 @@ function stop(){
 async function scanLoop(){
  if(!running)return;
  if(detector&&!lastQr){try{const hits=await detector.detect($('video'));if(hits?.[0])await onScan(hits[0].rawValue);}catch(e){status('Lector QR: '+e.message);}}
- if(lastQr&&!ocrBusy)readTotal();
- if(running)loopTimer=setTimeout(scanLoop,lastQr?550:180);
+ if(!ocrBusy&&!lastTotal)readTotal();
+ if(running)loopTimer=setTimeout(scanLoop,650);
 }
 async function start(){
  if(running||starting)return;
@@ -101,7 +101,7 @@ async function start(){
   }else{
    if(!window.ZXingBrowser?.BrowserMultiFormatReader)throw new Error('No cargó el lector QR compatible. Verifica internet.');
    const reader=new window.ZXingBrowser.BrowserMultiFormatReader();
-   zxingControls=await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}},$('video'),result=>{if(result&&running)onScan(result.getText()).catch(e=>status(e.message));});
+   running=true;zxingControls=await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}},$('video'),result=>{if(result)onScan(result.getText()).catch(e=>status(e.message));});
    stream=$('video').srcObject;running=true;status('Cámara activa · Apunta al QR');
   }
   scanLoop();
