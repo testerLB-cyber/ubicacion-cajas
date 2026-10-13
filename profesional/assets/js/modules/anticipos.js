@@ -282,16 +282,31 @@ window.ccAntComprobar=async function(id){
     }catch(err){console.warn('QR comprobación:',err);if(qrBox)qrBox.innerHTML='<div style="padding:60px 10px;color:#b45309;font-size:10px">No se pudo generar el QR.<br>La captura interna sigue disponible.</div>';if(linkText)linkText.textContent='QR no disponible'}
   })();
 
+  function getPhotoRef(x){return String(x?.evidencia_url||x?.evidenciaUrl||'').trim()}
+  async function showPhoto(x){
+    var raw=getPhotoRef(x);if(!raw)return;
+    var link=raw;
+    if(!/^https:\/\//i.test(raw)){
+      var path=raw.replace(/^\/+/, '').replace(/^cc-anticipos\//,'');
+      var signed=await sb().storage.from('cc-anticipos').createSignedUrl(path,300);
+      if(signed.error)throw signed.error;
+      link=signed.data?.signedUrl||'';
+    }
+    if(!/^https:\/\//i.test(link))throw Error('No se pudo obtener un enlace válido de la fotografía.');
+    var windowPhoto=window.open(link,'_blank','noopener,noreferrer');
+    if(!windowPhoto)throw Error('El navegador bloqueó la foto. Permite ventanas emergentes para este sitio.');
+  }
   async function refresh(){
     await ccAntLoad(true);a=(D.anticipos||[]).find(function(x){return x.id===id})||a;
     var list=(D.comprobaciones||[]).filter(function(x){return x.anticipo_id===id&&x.estatus==='ACTIVO'}),listEl=ov.querySelector('#ccCompList');
     var entregado=Number(a.montoEntregado??a.monto_entregado??a.monto??0);var comprobado=list.reduce(function(sum,x){return sum+Number(x.monto||0)},0);var elEnt=ov.querySelector('#ccCompDelivered'),elComp=ov.querySelector('#ccCompTotalSaved'),elRest=ov.querySelector('#ccCompRemaining');if(elEnt)elEnt.textContent=m(entregado);if(elComp)elComp.textContent=m(comprobado);if(elRest)elRest.textContent=m(entregado-comprobado-Number(a.devuelto||0));
-    if(listEl)listEl.innerHTML='<strong>Comprobaciones registradas · '+list.length+'</strong>'+list.map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:8px;align-items:center"><span>'+f(x.fecha)+' · '+h(x.concepto)+' · <b>'+m(x.monto)+'</b>'+(x.evidencia_url||x.evidenciaUrl?'<a href="'+h(x.evidencia_url||x.evidenciaUrl)+'" target="_blank" rel="noopener" style="margin-left:8px">Ver imagen</a>':'')+'</span><span style="display:flex;gap:5px"><button type="button" class="cc-btn cc-btn-light" data-edit-proof="'+h(x.id)+'">Editar</button><button type="button" class="cc-btn cc-btn-light" data-delete-proof="'+h(x.id)+'">Quitar</button></span></div>'}).join('');
+    if(listEl)listEl.innerHTML='<strong>Comprobaciones registradas · '+list.length+'</strong>'+list.map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:8px;align-items:center"><span>'+f(x.fecha)+' · '+h(x.concepto)+' · <b>'+m(x.monto)+'</b>'+(getPhotoRef(x)?'<button type="button" class="cc-btn cc-btn-light" data-view-proof-photo="'+h(x.id)+'" style="margin-left:8px">Ver foto</button>':'')+'</span><span style="display:flex;gap:5px"><button type="button" class="cc-btn cc-btn-light" data-edit-proof="'+h(x.id)+'">Editar</button><button type="button" class="cc-btn cc-btn-light" data-delete-proof="'+h(x.id)+'">Quitar</button></span></div>'}).join('');
   }
 
   var listEl=ov.querySelector('#ccCompList');
   if(listEl)listEl.addEventListener('click',async function(ev){
     var edit=ev.target.closest('[data-edit-proof]'),del=ev.target.closest('[data-delete-proof]');
+    var view=ev.target.closest('[data-view-proof-photo]');if(view){var photoProof=(D.comprobaciones||[]).find(x=>String(x.id)===String(view.dataset.viewProofPhoto));try{if(photoProof)await showPhoto(photoProof)}catch(error){alert('No se pudo abrir la fotografía: '+(error.message||error))}return}
     if(!edit&&!del)return;
     var proofId=(edit||del).getAttribute(edit?'data-edit-proof':'data-delete-proof');
     var proof=(D.comprobaciones||[]).find(x=>String(x.id)===String(proofId));
@@ -305,9 +320,10 @@ window.ccAntComprobar=async function(id){
         var editModal=document.createElement('div');editModal.id='ccAntProofEditModal';editModal.style='position:fixed;inset:0;z-index:120800;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;padding:12px';
         var conceptOptions=(D.conceptos||[]).map(function(x){return '<option value="'+h(x.id)+'"'+(String(x.id)===String(proof.conceptoId||proof.concepto_id)?' selected':'')+'>'+h(x.nombre)+'</option>'}).join('');
         var proofDate=String(proof.fecha||'').slice(0,10);
-        var proofFile=proof.evidencia_url||proof.evidenciaUrl||'';
-        editModal.innerHTML='<div style="background:white;width:min(720px,97vw);max-height:95vh;overflow:auto;border-radius:14px"><div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;color:white;padding:13px 16px"><b>Editar comprobación · '+h(a.folio)+'</b><button type="button" data-edit-close style="color:white;border:0;background:transparent;font-size:24px">×</button></div><form id="ccAntProofEditForm" style="padding:16px"><div class="cc-grid"><div class="cc-field"><label>Fecha de comprobación</label><input type="date" value="'+h(proofDate)+'" disabled title="La fecha original se conserva"></div><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+conceptOptions+'</select></div><div class="cc-field"><label>Tipo de documento *</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio de documento</label><input name="folioDocumento" value="'+h(proof.folioDocumento||proof.folio_documento||'')+'"></div><div class="cc-field"><label>Importe *</label><input name="monto" type="number" min="0.01" step="0.01" required value="'+h(proof.monto||'')+'"></div></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones" rows="3">'+h(proof.observaciones||'')+'</textarea></div><div id="ccAntProofPhotoView" style="margin:10px 0;font-size:12px">'+(proofFile?'<a href="'+h(proofFile)+'" target="_blank" rel="noopener">Ver fotografía / archivo actual</a>':'Sin fotografía adjunta')+'</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="cc-btn cc-btn-light" type="button" data-edit-close>Cancelar</button><button class="cc-btn cc-btn-primary" type="submit">Guardar cambios</button></div><div data-edit-error style="margin-top:9px;color:#b91c1c"></div></form></div>';
+        var proofFile=getPhotoRef(proof);
+        editModal.innerHTML='<div style="background:white;width:min(720px,97vw);max-height:95vh;overflow:auto;border-radius:14px"><div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;color:white;padding:13px 16px"><b>Editar comprobación · '+h(a.folio)+'</b><button type="button" data-edit-close style="color:white;border:0;background:transparent;font-size:24px">×</button></div><form id="ccAntProofEditForm" style="padding:16px"><div class="cc-grid"><div class="cc-field"><label>Fecha de comprobación</label><input type="date" value="'+h(proofDate)+'" disabled title="La fecha original se conserva"></div><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+conceptOptions+'</select></div><div class="cc-field"><label>Tipo de documento *</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio de documento</label><input name="folioDocumento" value="'+h(proof.folioDocumento||proof.folio_documento||'')+'"></div><div class="cc-field"><label>Importe *</label><input name="monto" type="number" min="0.01" step="0.01" required value="'+h(proof.monto||'')+'"></div></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones" rows="3">'+h(proof.observaciones||'')+'</textarea></div><div id="ccAntProofPhotoView" style="margin:10px 0;font-size:12px">'+(proofFile?'<button type="button" class="cc-btn cc-btn-light" data-edit-view-photo>Ver foto</button>':'')+'</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="cc-btn cc-btn-light" type="button" data-edit-close>Cancelar</button><button class="cc-btn cc-btn-primary" type="submit">Guardar cambios</button></div><div data-edit-error style="margin-top:9px;color:#b91c1c"></div></form></div>';
         document.body.appendChild(editModal);
+        var photoBtn=editModal.querySelector('[data-edit-view-photo]');if(photoBtn)photoBtn.onclick=async function(){try{await showPhoto(proof)}catch(error){alert('No se pudo abrir la fotografía: '+(error.message||error))}};
         editModal.querySelector('[name="tipoDocumento"]').value=String(proof.tipoDocumento||proof.tipo_documento||'TICKET').toUpperCase();
         editModal.querySelectorAll('[data-edit-close]').forEach(function(x){x.onclick=function(){editModal.remove()}});
         editModal.querySelector('#ccAntProofEditForm').onsubmit=async function(evt){
