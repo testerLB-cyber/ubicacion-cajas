@@ -58,7 +58,7 @@ try{
   for(let offset=0;offset<20000;offset+=500){
     const q=await client().from('hs_comprobaciones')
       .select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id')
-      .gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59')
+      .gte('fecha_comprobacion',new Date(Date.parse(from+'T00:00:00Z')-86400000).toISOString()).lte('fecha_comprobacion',new Date(Date.parse(to+'T00:00:00Z')+172799999).toISOString())
       .order('fecha_comprobacion',{ascending:false}).range(offset,offset+499);
     if(q.error)throw q.error;
     results.push(...(q.data||[]));
@@ -73,7 +73,7 @@ try{
   const found=new Map();
   results.forEach(x=>{
     const folio=byId.get(String(x.folio_id));if(!folio||!/^CFDI-/i.test(folio.folio||''))return;
-    const date=String(x.fecha_comprobacion||x.fecha_uso||x.fecha||'').slice(0,10);
+    const date=String(x.fecha||x.fecha_uso||x.fecha_comprobacion||'').slice(0,10);
     if(date<from||date>to)return;
     const linked=String(folio.operador_id||'')===String(op.id)||normalize(folio.operador_nombre)===ops||String(x.operador_id||'')===String(op.id)||String(x.asignacion_operador_id||'')===String(op.id)||normalize(x.operador_nombre)===ops;
     if(!linked)return;
