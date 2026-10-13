@@ -288,6 +288,26 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
  });
 })();
 </script>
+<script id="ccAntKpiMainFixV8">
+(function(){
+'use strict';
+var lastData=null,busy=false,queued=false;
+function money(v){return Number(v||0).toLocaleString('es-MX',{style:'currency',currency:'MXN'})}
+function update(){
+ var root=document.getElementById('ccPanelAnticipos');if(!root)return;
+ var labels=Array.from(root.querySelectorAll('small,span,div')).filter(function(el){return !el.children.length&&/^(\\+\\s*7\\s*d[ií]as|operadores con pendiente|total comprobado)$/i.test((el.textContent||'').trim())});
+ var legacy=labels.find(function(el){return /^\\+\\s*7\\s*d[ií]as$/i.test(el.textContent.trim())});if(legacy){var box=legacy.closest('.cc-ant-kpi,.cc-kpi,[class*="metric"],[class*="stat"],[class*="indicator"]')||legacy.parentElement;if(box)box.remove()}
+ var label=labels.find(function(el){return /^(operadores con pendiente|total comprobado)$/i.test(el.textContent.trim())});
+ if(!label)return;
+ label.textContent='TOTAL COMPROBADO';
+ var box=label.closest('.cc-ant-kpi,.cc-kpi,[class*="metric"],[class*="stat"],[class*="indicator"]')||label.parentElement;
+ var value=box&&box.querySelector('strong,b,[class*="value"]');if(value&&lastData)value.textContent=money(lastData);
+}
+async function refresh(){if(busy){queued=true;return}if(!window.gmSupabase)return;busy=true;try{var r=await window.gmSupabase.rpc('cc_ant_list');if(r&&r.data&&r.data.ok){lastData=(r.data.anticipos||[]).filter(function(a){return a.estatus!=='CANCELADO'}).reduce(function(n,a){return n+Number(a.comprobado||0)},0);update()}}catch(e){}finally{busy=false;if(queued){queued=false;setTimeout(refresh,0)}}}
+function init(){var root=document.getElementById('ccPanelAnticipos');if(!root)return;var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(update,0)}).observe(root,{childList:true,subtree:true});update();document.addEventListener('ccAnt:data-refreshed',refresh);root.addEventListener('click',function(){setTimeout(refresh,1200)});refresh()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
 <div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>TIPO ANTICIPO</th><th>MÉTODO</th><th>VIAJE</th><th>AUTORIZADO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
