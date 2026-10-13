@@ -1,4 +1,4 @@
-(()=>{'use strict';const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('session');let stream=null,detector=null,channel=null,running=false,lock='',lockAt=0,lastSeen=new Map(),count=0,torch=false,zxingControls=null;const status=t=>$('status').textContent=t;let audioContext=null;
+(()=>{'use strict';const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('session');let stream=null,detector=null,channel=null,running=false,lock='',lockAt=0,lastSeen=new Map(),count=0,torch=false,zxingControls=null;const status=t=>$('status').textContent=t;let audioContext=null,ocrWorker=null,ocrBusy=false,lastQr='',lastQrAt=0,lastTotal='',lastTotalAt=0,ocrLoading=null;
 function unlockAudio(){try{audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}}
 function beep(){
  try{
@@ -16,15 +16,74 @@ function beep(){
  }catch{}
 }
 function feedback(){beep();try{if(typeof navigator.vibrate==='function')navigator.vibrate([180,75,220]);}catch{}}
+function extractTotal(text){
+ const lines=String(text||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+ for(let i=0;i<lines.length;i++){
+  const s=lines[i].toUpperCase().replace(/T0TAL/g,'TOTAL');
+  const m=s.match(/\bTOTAL\s*[:=$-]?\s*(.*)/);
+  if(!m)continue;
+  const candidate=m[1].trim()||lines[i+1]||'';
+  const amount=candidate.match(/\$?\s*(\d{1,5}(?:[.,]\d{3})*[.,]\d{2}|\d{1,5})\b/);
+  if(!amount)continue;
+  let n=amount[1].replace(/,/g,'.');const value=Number(n);
+  if(value>0&&value<=10000)return value.toFixed(2);
+ }
+ return '';
+}
 async function onScan(raw){
  raw=String(raw||'').trim();const now=Date.now();
- if(!raw||(lastSeen.has(raw)&&now-lastSeen.get(raw)<12000)||(raw===lock&&now-lockAt<2000))return;
- lastSeen.set(raw,now);lock=raw;lockAt=now;
- for(const [k,t] of lastSeen)if(now-t>60000)lastSeen.delete(k);
- const sent=await channel.send({type:'broadcast',event:'scan',payload:{value:raw,at:now}});
- if(sent==='ok'){count++;$('count').textContent=count;const li=document.createElement('li');li.textContent=new Date().toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo'})+' · '+raw;$('history').prepend(li);feedback();status('✓ Enviado · '+count+' lecturas');}
- else status('Sin conexión con computadora; vuelve a intentar.');
+ if(!raw||(raw===lastQr&&now-lastQrAt<15000))return;
+ lastQr=raw;lastQrAt=now;
+ status('✓ QR leído. Buscando campo TOTAL…');
+ $('qrValue').textContent=raw;
+ await sendPair();
 }
+async function sendPair(){
+ if(!lastQr||!lastTotal||Date.now()-lastQrAt>90000||Date.now()-lastTotalAt>90000)return;
+ const raw=lastQr,total=lastTotal;
+ const sent=await channel.send({type:'broadcast',event:'ticket',payload:{qr:raw,total,at:Date.now()}});
+ if(sent==='ok'){
+  count++;$('count').textContent=count;
+  const li=document.createElement('li');li.textContent='QR: '+raw+' · TOTAL: $'+total;$('history').prepend(li);
+  feedback();status('✓ QR + TOTAL $'+total+' enviados a Observaciones');
+  lastQr='';lastTotal='';$('qrValue').textContent='Esperando QR…';$('totalValue').textContent='Esperando TOTAL…';
+ }else status('Sin conexión; vuelve a intentar.');
+}
+async function initOCR(){
+ if(ocrWorker)return ocrWorker;
+ if(!ocrLoading)ocrLoading=(async()=>{
+  status('Preparando OCR en el celular (primera vez puede tardar)…');
+  if(!window.Tesseract?.createWorker)throw new Error('No se cargó el OCR. Revisa internet.');
+  ocrWorker=await window.Tesseract.createWorker('spa+eng',1);
+  return ocrWorker;
+ })().catch(e=>{ocrLoading=null;throw e;});
+ return ocrLoading;
+}
+async function scanTotal(){
+ if(!running||ocrBusy||!lastQr||lastTotal)return;
+ const video=$('video');if(!video.videoWidth||!video.videoHeight)return;
+ ocrBusy=true;
+ try{
+  const worker=await initOCR();
+  const canvas=document.createElement('canvas');
+  const scale=Math.min(1,1200/Math.max(video.videoWidth,video.videoHeight));
+  canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);
+  canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+  let total='';
+  for(const angle of [0,90,270]){
+   const img=document.createElement('canvas'),side=angle!==0;
+   img.width=side?canvas.height:canvas.width;img.height=side?canvas.width:canvas.height;
+   const ctx=img.getContext('2d');ctx.translate(img.width/2,img.height/2);ctx.rotate(angle*Math.PI/180);ctx.drawImage(canvas,-canvas.width/2,-canvas.height/2);
+   const result=await worker.recognize(img);
+   total=extractTotal(result?.data?.text);
+   if(total)break;
+  }
+  if(total){lastTotal=total;lastTotalAt=Date.now();$('totalValue').textContent='$'+total;await sendPair();}
+  else status('QR detectado. Apunta al texto TOTAL del ticket; buscando…');
+ }catch(e){status('OCR: '+e.message);}
+ finally{ocrBusy=false;}
+}
+setInterval(()=>{if(running&&lastQr&&!lastTotal)scanTotal();},1600);
 async function start(){
  unlockAudio();
  if(running)return;
@@ -55,7 +114,7 @@ async function loop(){
 function pause(){
  running=false;
  try{zxingControls?.stop()}catch{}zxingControls=null;
- stream?.getTracks?.().forEach(t=>t.stop());stream=null;
+ stream?.getTracks?.().forEach(t=>t.stop());stream=null;lastQr='';lastTotal='';
  $('video').srcObject=null;status('Cámara pausada');
 }
 async function init(){if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Enlace de vinculación inválido.');return;}try{const sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});channel=sb.channel('casetas-lector-'+token,{config:{broadcast:{ack:true}}});channel.on('broadcast',{event:'stop'},()=>{pause();status('La computadora desconectó el lector.');});channel.subscribe(s=>{if(s==='SUBSCRIBED'){status('Conectado con la computadora · Activa la cámara');start();}else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('Sin conexión. Revisa internet y vuelve a abrir el enlace.');});}catch(e){status('Error de conexión: '+e.message)}}$('start').onclick=start;$('pause').onclick=pause;$('torch').onclick=async()=>{try{const t=stream?.getVideoTracks()[0];torch=!torch;await t.applyConstraints({advanced:[{torch}]});}catch{status('Linterna no disponible en este dispositivo.')}};window.addEventListener('pagehide',pause);init();})();
