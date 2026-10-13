@@ -222,7 +222,7 @@
   }
 
   function hideCajaChicaFromMain(){
-    const ids=new Set((state.extra?.cajaChica||[]).map(x=>x.id));const rows=Array.from(document.querySelectorAll('#ccAntBody tr')),data=window.ccAntFiltered||[];rows.forEach((tr,i)=>{if(data[i]&&ids.has(data[i].id))tr.style.display='none'});
+    const ids=new Set((state.extra?.cajaChica||[]).map(x=>x.id));const rows=Array.from(document.querySelectorAll('#ccAntBody tr')),data=window.ccAntFiltered||[];rows.forEach((tr,i)=>{const a=data[i];if(!a)return;if(/^ANT-/i.test(String(a.folio||''))){tr.style.display='';return;}if(ids.has(a.id))tr.style.display='none'});
   }
 
   async function refresh(){
