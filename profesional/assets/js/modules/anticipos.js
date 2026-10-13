@@ -32,10 +32,14 @@ window.ccAntLoad=async function(force=false){
 };
 function saldo(c){var x=Number(c.saldo_inicial||0);(D.movimientos||[]).filter(z=>z.cuenta_id===c.id&&z.estatus==='ACTIVO').forEach(z=>{var n=Number(z.monto||0);if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(z.tipo))x+=n;else if(['ANTICIPO','AJUSTE_SALIDA'].includes(z.tipo))x-=n});return x}
 function detAnt(id){return(D.detalles||[]).filter(x=>x.anticipoId===id&&x.estatus==='ACTIVO')}
+function ccAntTotalComprobado(){
+ var activos=new Set((D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO').map(x=>String(x.id)));
+ return (D.comprobaciones||[]).reduce(function(total,x){return total+(x.estatus==='ACTIVO'&&activos.has(String(x.anticipo_id||x.anticipoId))?Math.max(0,Number(x.monto||0)):0)},0);
+}
 function ccAntFixComprobadoCard(){
  var panel=document.getElementById('ccPanelAnticipos');if(!panel)return;
  var general=(D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO'&&!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));
- var total=general.reduce((n,x)=>n+Math.max(0,Number(x.comprobado||0)),0);
+ var total=ccAntTotalComprobado();
  panel.querySelectorAll('small,span,div').forEach(function(el){
   if(el.children.length||!/^operadores con pendiente$/i.test((el.textContent||'').trim()))return;
   var card=el.closest('.cc-ant-kpi,.cc-kpi,.cc-ant-summary-card,.cc-ant-stat,.stat-card')||el.parentElement;
@@ -53,7 +57,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
  var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0),late=active.filter(x=>x.estatus==='PENDIENTE'&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;
- var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=general.reduce((n,x)=>n+Math.max(0,Number(x.comprobado||0)),0);var generalLate=general.filter(x=>Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0))>0&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div><div class="cc-ant-kpi"><small>+7 días</small><strong>'+generalLate+'</strong></div>';
+ var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=ccAntTotalComprobado();var generalLate=general.filter(x=>Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0))>0&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div><div class="cc-ant-kpi"><small>+7 días</small><strong>'+generalLate+'</strong></div>';
  var op=document.getElementById('ccAntOperadorFiltro');if(op){var cur=op.value;op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=cur}
  var de=document.getElementById('ccAntDesde')?.value||'',ha=document.getElementById('ccAntHasta')?.value||'',oi=op?.value||'',es=document.getElementById('ccAntEstatusFiltro')?.value||'';
  var rows=all.filter(x=>{var d=String(x.fecha||'').slice(0,10);return(!de||d>=de)&&(!ha||d<=ha)&&(!oi||x.operadorId===oi)&&(!es||x.estatus===es)});window.ccAntFiltered=rows;
