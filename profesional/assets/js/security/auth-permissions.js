@@ -60,6 +60,8 @@ async function loadAccess(){
  document.body.classList.remove('cc-auth-locked');
  document.getElementById('ccLoginGate')?.classList.add('cc-hidden');
  applyAccess();
+ window.ccSyncAdminMenu?.();
+ document.dispatchEvent(new CustomEvent('cc:access-ready'));
  if(typeof window.ccInitCloud==='function')await window.ccInitCloud();
 }
 async function login(email,password){
