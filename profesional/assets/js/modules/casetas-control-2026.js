@@ -310,14 +310,37 @@ async function casSimpleCFDI(){
  if(!from||!to||from>to){status.textContent='Selecciona un rango válido.';return;}
  status.textContent='Consultando CFDI…';body.innerHTML='';
  try{
- const {data,error}=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,cliente_nombre,servicio,operador_id,operador_nombre').gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59').or('operador_id.eq.'+op.id+',operador_nombre.eq.'+encodeURIComponent(op.nombre)).order('fecha_comprobacion',{ascending:false}).limit(500);
- if(error)throw error;
- const unique=[...new Map((data||[]).filter(x=>x.folio_id).map(x=>[x.folio_id,x])).values()],ids=unique.map(x=>x.folio_id),folios=[];
- for(let i=0;i<ids.length;i+=100){let f=await client().from('hs_folios').select('id,folio').in('id',ids.slice(i,i+100));if(f.error)throw f.error;folios.push(...(f.data||[]));}
- if(request!==casCFDIRequest)return;
- const map=new Map(folios.map(f=>[f.id,f.folio])),rows=unique.filter(x=>/^CFDI-/i.test(map.get(x.folio_id)||'')).sort((a,b)=>String(b.fecha_comprobacion||b.fecha||'').localeCompare(String(a.fecha_comprobacion||a.fecha||'')));
- body.innerHTML=rows.map(x=>'<tr><td>'+esc((x.fecha_comprobacion||x.fecha||'').slice(0,16).replace('T',' '))+'</td><td><b>'+esc(map.get(x.folio_id))+'</b></td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'</td></tr>').join('')||'<tr><td colspan="4">Sin CFDI comprobadas en este periodo.</td></tr>';
- status.textContent=rows.length+' hojas CFDI · '+from+' a '+to+(data.length===500?' · Límite de consulta: 500':'');
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+  const tokens=norm(op.nombre).split(' ').filter(Boolean);
+  const sameName=v=>{const n=norm(v).split(' ');return tokens.length>1&&tokens.every(t=>n.includes(t));};
+  const found=[],folioMap=new Map();
+  // Fecha operativa, no fecha UTC: comprobaciones nocturnas no deben desaparecer.
+  for(let offset=0;offset<20000;offset+=500){
+   const q=await client().from('hs_comprobaciones').select('folio_id,fecha,fecha_uso,fecha_comprobacion,cliente_nombre,servicio,tipo_viaje,clasificacion,operador_id,operador_nombre,asignacion_operador_id')
+    .gte('fecha_comprobacion',new Date(Date.parse(from+'T00:00:00Z')-86400000).toISOString())
+    .lte('fecha_comprobacion',new Date(Date.parse(to+'T00:00:00Z')+172799999).toISOString())
+    .order('fecha_comprobacion',{ascending:false}).range(offset,offset+499);
+   if(q.error)throw q.error;
+   found.push(...(q.data||[]));
+   if((q.data||[]).length<500)break;
+  }
+  const ids=[...new Set(found.map(x=>x.folio_id).filter(Boolean))];
+  for(let i=0;i<ids.length;i+=100){
+   const q=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,servicio').in('id',ids.slice(i,i+100));
+   if(q.error)throw q.error;
+   q.data.forEach(f=>folioMap.set(String(f.id),f));
+  }
+  if(request!==casCFDIRequest)return;
+  const rows=[...new Map(found.filter(x=>{
+   const f=folioMap.get(String(x.folio_id));if(!f||!/^CFDI-/i.test(f.folio))return false;
+   const date=String(x.fecha||x.fecha_uso||x.fecha_comprobacion||'').slice(0,10);
+   if(date<from||date>to)return false;
+   const linked=String(f.operador_id||'')===String(op.id)||String(x.operador_id||'')===String(op.id)||String(x.asignacion_operador_id||'')===String(op.id)||sameName(f.operador_nombre)||sameName(x.operador_nombre);
+   const service=norm([x.tipo_viaje,x.servicio,x.clasificacion,f.servicio].filter(Boolean).join(' '));
+   return linked&&/(EXPORT|IMPORT|FORAN|EXPO|IMPO)/.test(service);
+  }).map(x=>[x.folio_id,x])).values()].sort((x,y)=>String(y.fecha||'').localeCompare(String(x.fecha||'')));
+  body.innerHTML=rows.map(x=>{const f=folioMap.get(String(x.folio_id));return '<tr><td>'+esc(String(x.fecha||x.fecha_uso||x.fecha_comprobacion||'').slice(0,10))+'</td><td><b>'+esc(f.folio)+'</b></td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.tipo_viaje||x.servicio||f.servicio||'—')+'</td></tr>';}).join('')||'<tr><td colspan="4">Sin CFDI de exportación, importación o foráneos comprobados en este periodo.</td></tr>';
+  status.textContent=rows.length+' hojas CFDI · '+from+' a '+to;
  }catch(e){if(request===casCFDIRequest)status.textContent='Error al consultar CFDI: '+(e.message||e);}
 }
 async function casComprobarEntregar(){
