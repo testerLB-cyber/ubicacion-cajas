@@ -66,7 +66,35 @@ function ccAntTotalComprobado(){
 }
 // La base de datos es la única fuente del estatus oficial; no inferirlo por comprobaciones históricas.
 function ccAntEstadoVisible(x){const e=String(x.estatus||'ABIERTO').trim().toUpperCase();return ['ABIERTO','PARCIALMENTE COMPROBADO','CERRADO','CANCELADO'].includes(e)?e:'ABIERTO';}
+function ccAntDebtRows(){
+ var ledger=(D.saldosOperador||[]).filter(x=>String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO' && (D.anticipos||[]).some(a=>String(a.id)===String(x.anticipoId)&&/^ANT-/i.test(String(a.folio||''))));
+ var grouped=new Map();
+ ledger.forEach(x=>{var key=String(x.operadorId||'');var g=grouped.get(key)||{id:key,nombre:x.operador||'Operador',saldo:0,items:[]};
+   g.saldo+=Number(x.montoSigned||0);g.items.push(x);grouped.set(key,g)});
+ return [...grouped.values()].map(g=>({...g,adeudo:Math.max(0,-g.saldo)})).filter(g=>g.adeudo>0.009).sort((a,b)=>b.adeudo-a.adeudo);
+}
+function ccAntRenderAdeudos(){
+ var rows=ccAntDebtRows(),amount=rows.reduce((n,x)=>n+x.adeudo,0),k=document.getElementById('ccAntDebtKpi');
+ if(k)k.innerHTML='<small>Adeudo de operadores</small><strong>'+m(amount)+'</strong><span style="display:block;font-size:11px;margin-top:4px">'+rows.length+' operador(es) con adeudo</span>';
+ var total=document.getElementById('ccAntAdeudosTotal');if(total)total.textContent=m(amount);
+ var count=document.getElementById('ccAntAdeudosCount');if(count)count.textContent=String(rows.length);
+ var b=document.getElementById('ccAntAdeudosBody');if(!b)return;
+ var q=(document.getElementById('ccAntAdeudosBuscar')?.value||'').trim().toLocaleLowerCase('es-MX');
+ var filtered=rows.filter(x=>!q||x.nombre.toLocaleLowerCase('es-MX').includes(q)||x.items.some(y=>String(y.referencia||'').toLowerCase().includes(q)));
+ var html=filtered.map(g=>g.items.map((x,i)=>{
+  var ant=(D.anticipos||[]).find(a=>a.id===x.anticipoId);
+  return '<tr><td>'+h(g.nombre)+'</td><td>'+h(ant?.folio||x.referencia||'—')+'</td><td>'+f(x.fecha)+'</td><td>'+h(x.tipo||'—')+'</td><td>'+m(x.montoSigned||0)+'</td><td><strong>'+m(g.adeudo)+'</strong></td><td>'+h(x.observaciones||'—')+'</td></tr>'
+ }).join('')).join('');
+ if(b.__debtHtml!==html){b.innerHTML=html||'<tr><td colspan="7" style="padding:20px;text-align:center">Sin adeudos registrados.</td></tr>';b.__debtHtml=html}
+}
+function ccAntInstallAdeudos(){
+ var nav=document.querySelector('#ccPanelAnticipos .cc-ant-nav'),panel=document.getElementById('ccPanelAnticipos');if(!nav||!panel)return;
+ if(!document.getElementById('ccAntNavAdeudos')){var bt=document.createElement('button');bt.id='ccAntNavAdeudos';bt.type='button';bt.dataset.antv='adeudos';bt.className='cc-btn cc-btn-light';bt.textContent='Adeudos de operadores';bt.onclick=function(){ccAntView('adeudos',bt);ccAntRenderAdeudos()};nav.appendChild(bt)}
+ if(!document.getElementById('ccAntViewAdeudos')){var v=document.createElement('div');v.id='ccAntViewAdeudos';v.className='cc-ant-view';v.style.display='none';v.innerHTML='<div class="cc-toolbar"><div><strong>Adeudos de operadores</strong><div class="cc-note">Control de faltantes reconocidos al cerrar ANT. No aplica descuentos automáticos ni movimientos bancarios.</div></div></div><div class="cc-ant-kpis"><div class="cc-ant-kpi"><small>Saldo pendiente de recuperar</small><strong id="ccAntAdeudosTotal">$0.00</strong></div><div class="cc-ant-kpi"><small>Operadores con adeudo</small><strong id="ccAntAdeudosCount">0</strong></div></div><div class="cc-field" style="margin:15px 0"><label>Buscar operador o folio</label><input id="ccAntAdeudosBuscar" type="search" placeholder="Nombre o folio ANT" style="width:100%;max-width:450px;padding:11px;border:1px solid #cbd5e1;border-radius:9px"></div><div class="cc-inv-wrap" style="overflow:auto"><table class="cc-ant-table" style="width:100%;min-width:850px"><thead><tr><th>OPERADOR</th><th>FOLIO</th><th>FECHA</th><th>MOVIMIENTO</th><th>IMPORTE CON SIGNO</th><th>ADEUDO ACTUAL OPERADOR</th><th>OBSERVACIONES</th></tr></thead><tbody id="ccAntAdeudosBody"></tbody></table></div>';panel.appendChild(v);v.querySelector('#ccAntAdeudosBuscar').addEventListener('input',ccAntRenderAdeudos)}
+ var k=document.getElementById('ccAntKpis');if(k&&!document.getElementById('ccAntDebtKpi')){var el=document.createElement('div');el.id='ccAntDebtKpi';el.className='cc-ant-kpi';k.appendChild(el)}
+}
 window.ccAntRender=function(){
+ ccAntInstallAdeudos();ccAntRenderAdeudos();
  var all=(D.anticipos||[]).filter(x=>x&&x.id),active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
  var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0);
  var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=ccAntTotalComprobado();var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k){var kpiHtml=rHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div>';if(k.__antHtml!==kpiHtml){k.innerHTML=kpiHtml;k.__antHtml=kpiHtml}}
