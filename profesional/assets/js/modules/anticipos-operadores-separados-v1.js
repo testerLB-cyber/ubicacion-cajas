@@ -25,6 +25,8 @@ function filtrarListado(){
   [...body.querySelectorAll('tr')].forEach(tr=>{
     const cells=tr.children;
     if(cells.length<3)return;
+    // Los folios ANT se muestran según los filtros del listado principal, nunca se ocultan por texto de operador.
+    if(/^ANT-/i.test((cells[0]?.textContent||'').trim())){tr.style.display='';return;}
     const operador=norm(cells[2]?.textContent);
     // Los anticipos de beneficiarios no tienen operador y cuentan con su listado propio.
     if(!operador||operador==='—'||operador==='-'||operador==='BENEFICIARIO')tr.style.display='none';
