@@ -868,7 +868,7 @@
  function installPdfWrap(){
    if(typeof window.ccAntPDFById==='function'&&!window.ccAntPDFById.__benefPdf){const old=window.ccAntPDFById;const w=async function(id){const a=(base.anticipos||[]).find(x=>x.id===id);if(a&&isBen(a))return pdfBenef(a);return old.apply(this,arguments)};w.__benefPdf=true;window.ccAntPDFById=w;}
  }
- async function boot(){if(!window.gmSupabase||!window.CC_AUTH_READY)return setTimeout(boot,400);try{await loadData()}catch(e){console.warn('Filtro operador/beneficiario',e)}installRenderWrap();installLinksWrap();applyAll();const oldLoad=window.ccAntLoad;if(typeof oldLoad==='function'&&!oldLoad.__tipoPersona){const w=async function(){const r=await oldLoad.apply(this,arguments);try{await loadData()}catch(e){}setTimeout(applyAll,0);return r};w.__tipoPersona=true;window.ccAntLoad=w;}}
+ async function boot(){if(!window.gmSupabase||!window.CC_AUTH_READY)return setTimeout(boot,400);try{await loadData()}catch(e){console.warn('Filtro operador/beneficiario',e)}installRenderWrap();installLinksWrap();applyAll();const oldLoad=window.ccAntLoad;if(typeof oldLoad==='function'&&!oldLoad.__tipoPersona){const w=async function(){const r=await oldLoad.apply(this,arguments);if(r)setTimeout(applyAll,0);return r};w.__tipoPersona=true;window.ccAntLoad=w;}}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,2200));else setTimeout(boot,2200);
 })();
 
