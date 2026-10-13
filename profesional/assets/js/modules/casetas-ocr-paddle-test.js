@@ -12,45 +12,60 @@ function parse(lines){
  const hora=pick(/\b(\d{1,2}:\d{2}(?::\d{2})?)\b/);
  return ['TICKET DE CASETA · LECTURA OCR','Caseta: '+plaza,'Folio: '+folio,'Fecha: '+fecha,'Hora: '+hora,'Importe detectado: '+(money.at(-1)||'No identificado'),'Revisar contra fotografía original.'].join('\n');
 }
+let tesseractLoader=null;
+function loadScript(src){
+ return new Promise((resolve,reject)=>{
+  const s=document.createElement('script');s.src=src;s.async=true;
+  s.onload=resolve;s.onerror=()=>reject(new Error('No se pudo descargar el motor OCR.'));
+  document.head.appendChild(s);
+ });
+}
+async function prepareImage(file){
+ const img=await createImageBitmap(file);
+ const scale=Math.min(1,1600/Math.max(img.width,img.height));
+ const canvas=document.createElement('canvas');
+ canvas.width=Math.max(1,Math.round(img.width*scale));
+ canvas.height=Math.max(1,Math.round(img.height*scale));
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
+ ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.drawImage(img,0,0,canvas.width,canvas.height);
+ img.close?.();
+ return canvas;
+}
 async function run(){
  const file=$('casOcrFile')?.files?.[0],button=$('casOcrRun');
  if(!file){status('Selecciona una fotografía primero.');return;}
  if(!file.type.startsWith('image/')){status('El archivo debe ser una imagen.');return;}
  if(file.size>15*1024*1024){status('Imagen demasiado grande (máximo 15 MB).');return;}
  button.disabled=true;
+ let worker=null;
  try{
-  status('Preparando PaddleOCR móvil… Si no termina en 45 segundos, se cancelará la espera.');
-  if(!paddlePromise)paddlePromise=(async()=>{
-   const urls=[
-    'https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js@0.4.2/+esm',
-    'https://esm.sh/@paddleocr/paddleocr-js@0.4.2?bundle'
-   ];
-   let error=null;
-   for(const url of urls){
-    try{
-     const mod=await import(url);
-     const PaddleOCR=mod.PaddleOCR||mod.default?.PaddleOCR||(typeof mod.default?.create==='function'?mod.default:null);
-     if(typeof PaddleOCR?.create!=='function')throw new Error('La biblioteca cargó sin exportar PaddleOCR.create');
-     status('Inicializando modelos PP-OCRv5…');
-     return await Promise.race([PaddleOCR.create({textDetectionModelName:'PP-OCRv5_mobile_det',textRecognitionModelName:'PP-OCRv5_mobile_rec',ortOptions:{backend:'wasm',numThreads:1}}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('La carga de modelos tardó más de 45 segundos. Prueba con Wi-Fi o desde una computadora; no se agregó información incompleta.')),45000))]);
-    }catch(e){error=e;console.warn('[Casetas OCR] No se pudo inicializar desde',url,e);}
-   }
-   throw error||new Error('No se pudo inicializar PaddleOCR');
-  })().catch(e=>{paddlePromise=null;throw e;});
-  const ocr=await paddlePromise;
-  status('Reconociendo texto de la fotografía…');
-  const [result]=await Promise.race([ocr.predict(file),new Promise((_,reject)=>setTimeout(()=>reject(new Error('El reconocimiento tardó más de 40 segundos. Prueba una imagen más pequeña.')),40000))]);
-  const items=(result?.items||[]).filter(i=>String(i.text||'').trim()).sort((a,b)=>{const ay=Math.min(...(a.poly||[[0,0]]).map(p=>p[1]||0)),by=Math.min(...(b.poly||[[0,0]]).map(p=>p[1]||0));return ay-by;});
-  if(!items.length){status('No se reconoció texto. Prueba con mejor iluminación y el ticket completo.');return;}
-  const summary=parse(items.map(i=>String(i.text).trim()));
-  const box=$('casOcrPreview');box.textContent=summary;box.style.display='block';
+  status('Preparando imagen…');
+  const image=await prepareImage(file);
+  status('Cargando motor OCR ligero…');
+  if(!tesseractLoader)tesseractLoader=loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').catch(e=>{tesseractLoader=null;throw e;});
+  await tesseractLoader;
+  if(!window.Tesseract?.createWorker)throw new Error('El motor OCR no se cargó correctamente.');
+  status('Preparando reconocimiento de texto…');
+  const task=(async()=>{
+   worker=await window.Tesseract.createWorker('spa+eng',1,{logger:m=>{
+    if(m.status==='recognizing text')status('Leyendo ticket… '+Math.round((m.progress||0)*100)+'%');
+   }});
+   const result=await worker.recognize(image);
+   return result?.data?.text||'';
+  })();
+  const text=await Promise.race([task,new Promise((_,reject)=>setTimeout(()=>reject(new Error('El reconocimiento tardó demasiado. Prueba con una foto más clara o de menor tamaño.')),60000))]);
+  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!lines.length){status('No se reconoció texto. Prueba otra foto con buena luz.');return;}
+  const summary=parse(lines);
+  const preview=$('casOcrPreview');preview.textContent=summary+'\n\nTexto completo detectado:\n'+lines.join('\n');preview.style.display='block';
   const comments=$('casComprobarComentarios');if(!comments){status('No se encontró el campo Comentarios.');return;}
   const current=comments.value.trimEnd(),next=current+(current?'\n\n':'')+summary;
-  if(comments.maxLength>0&&next.length>comments.maxLength){status('Texto reconocido, pero excede el límite de Comentarios ('+comments.maxLength+' caracteres). Se muestra abajo para copiar o resumir.');return;}
+  if(comments.maxLength>0&&next.length>comments.maxLength){status('Se reconoció el ticket, pero Observaciones está lleno. Revisa el resultado abajo y libera espacio.');return;}
   comments.value=next;comments.dispatchEvent(new Event('input',{bubbles:true}));
-  status('✓ OCR completado: '+items.length+' líneas. Resultado agregado a Comentarios; revisa los datos antes de guardar.');
- }catch(e){status('No se pudo ejecutar PaddleOCR: '+(e?.message||String(e))+' — Comprueba conexión y compatibilidad del navegador.');}
- finally{button.disabled=false;}
+  status('✓ Ticket leído y datos organizados en Observaciones. Verifica antes de guardar.');
+ }catch(e){status('No se pudo leer la fotografía: '+(e?.message||String(e)));}
+ finally{button.disabled=false;try{await worker?.terminate()}catch{}}
 }
 function init(){$('casOcrRun')?.addEventListener('click',run);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
