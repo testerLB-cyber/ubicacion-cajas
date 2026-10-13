@@ -2,130 +2,104 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const token=new URLSearchParams(location.search).get('session');
-const status=message=>{const e=$('status');if(e)e.textContent=message;};
-let channel=null,stream=null,detector=null,zxingControls=null,worker=null,workerPromise=null;
-let running=false,starting=false,ocrBusy=false,lastQr='',qrAt=0,lastTotal='',totalAt=0,lastRead='',lastReadAt=0,count=0,ocrStart=0,scanStart=0,torch=false,loopTimer=null;
-let frames=0,ocrAttempts=0,qrEngine='Sin iniciar',connectionState='Conectando',lastOcrError='',lastOcrText='';
-function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (2 s): '+frames+' · Modo: OCR TOTAL'+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
-
-const amounts=text=>{
- const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').replace(/\s+/g,' ').trim()).filter(Boolean);
- const amountFrom=s=>{
-  const values=String(s||'').match(/\$?\s*\d{1,5}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g)||[];
-  for(const raw of values){let n=raw.replace(/[$\s]/g,'');if(/[,.]\d{3}[,.]\d{2}$/.test(n))n=n.replace(/[,.](?=\d{3}[,.])/g,'');if(/,\d{1,2}$/.test(n))n=n.replace(',','.');const v=Number(n);if(Number.isFinite(v)&&v>0&&v<=10000)return v.toFixed(2)}
-  return '';
- };
- for(let i=0;i<lines.length;i++){
-  const l=lines[i];const match=l.match(/\bTOTAL\b\s*[:=$-]?\s*(.*)/);
-  if(!match||/\bSUBTOTAL\b/.test(l))continue;
-  const value=amountFrom(match[1])||amountFrom(lines[i+1]||'');
-  if(value)return value;
+let channel=null,worker=null,workerPromise=null,selectedTotal='',busy=false;
+const status=t=>{$('status').textContent=t};
+const normalize=s=>String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[|]/g,'I');
+function amountOf(input){
+ const matches=String(input||'').match(/(?:\$\s*)?\d{1,5}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g)||[];
+ for(const raw of matches){
+  let n=raw.replace(/[$\s]/g,'');
+  if(/^\d{1,3}(?:[.,]\d{3})+[.,]\d{2}$/.test(n))n=n.replace(/[.,](?=\d{3}[.,])/g,'');
+  else if(/^\d{1,3},\d{3}$/.test(n))n=n.replace(',','');
+  else if(/^\d{1,5},\d{1,2}$/.test(n))n=n.replace(',','.');
+  const value=Number(n);
+  if(Number.isFinite(value)&&value>0&&value<=10000)return value.toFixed(2);
  }
  return '';
-};
-function showOcrResult(text,total){
- const modal=$('ocrResult');if(!modal)return;
- $('ocrResultTotal').textContent=total?'TOTAL: $'+total:'TOTAL no identificado';
- $('ocrResultTotal').style.color=total?'#16a34a':'#b45309';
+}
+function extractTotal(text){
  const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
- $('ocrResultText').textContent=lines.length?lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'No se obtuvo texto legible.';
- modal.hidden=false;
+ for(let i=0;i<lines.length;i++){
+  const line=normalize(lines[i]).replace(/T[O0][T7][A4][L1I]/g,'TOTAL').replace(/\s+/g,' ');
+  // Only an explicit TOTAL label is accepted; never infer from folio, IVA or subtotal.
+  const m=line.match(/(?:^|[^\w])TOTAL\s*[:=$-]?\s*(.*)/);
+  if(!m||/\bSUBTOTAL\b/.test(line))continue;
+  const value=amountOf(m[1])||amountOf(lines[i+1]||'');
+  if(value)return {value,line:lines[i],next:lines[i+1]||''};
+ }
+ return null;
 }
-let audio=null;
-function feedback(){
- try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume?.();const t=audio.currentTime;for(const [d,f] of [[0,1000],[.17,1350]]){const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audio.destination);o.start(t+d);o.stop(t+d+.13);}}catch{}
- try{navigator.vibrate?.([150,70,150]);}catch{}
-}
-async function sendPair(){
- if(!channel||!lastTotal)return;
- const total=lastTotal;
- try{
-  const result=await channel.send({type:'broadcast',event:'total',payload:{total,at:Date.now()}});
-  if(result!=='ok')throw Error('Envío no confirmado: '+result);
-  count++;$('count').textContent=String(count);
-  const item=document.createElement('li');item.textContent='TOTAL: $'+total;$('history').prepend(item);
-  status('TOTAL $'+total+' enviado a Observaciones');feedback();
- }catch(e){status('TOTAL $'+total+' leído; error al enviar: '+e.message);}
-}
-async function onScan(value){
- value=String(value||'').trim().slice(0,400);const now=Date.now();
- if(!value||value===lastRead&&now-lastReadAt<12000||lastQr)return;
- lastRead=value;lastReadAt=now;lastQr=value;qrAt=now;scanStart=performance.now();ocrStart=0;
- $('qrValue').textContent=value;feedback();status(lastTotal?'✓ QR y TOTAL reconocidos':'✓ QR detectado · Enfoca ahora el campo TOTAL');await sendPair();
-}
-async function getWorker(){
+async function ocrWorker(){
  if(worker)return worker;
  if(!workerPromise)workerPromise=(async()=>{
-  if(!window.Tesseract?.createWorker)throw new Error('No cargó Tesseract OCR. Revisa conexión.');
-  status('Cargando reconocimiento OCR…');
-  const w=await window.Tesseract.createWorker('eng',1);
-  try{await w.setParameters({tessedit_pageseg_mode:'6'});}catch{}
-  worker=w;return worker;
- })().catch(e=>{workerPromise=null;throw e;});
+  if(!window.Tesseract?.createWorker)throw Error('No cargó el motor OCR. Revisa tu conexión.');
+  status('Cargando OCR para analizar la fotografía…');
+  worker=await window.Tesseract.createWorker('spa+eng',1);
+  try{await worker.setParameters({tessedit_pageseg_mode:'6'});}catch{}
+  return worker;
+ })().catch(e=>{workerPromise=null;throw e});
  return workerPromise;
 }
-async function readTotal(){
- if(!running||ocrBusy||lastTotal)return;
- const v=$('video');if(!v.videoWidth||!v.videoHeight)return;
- ocrBusy=true;ocrAttempts++;diagnostic();try{
-  const w=await getWorker();if(!ocrStart)ocrStart=performance.now();
-  const base=document.createElement('canvas');const scale=Math.min(1,1100/Math.max(v.videoWidth,v.videoHeight));
-  base.width=Math.max(1,Math.round(v.videoWidth*scale));base.height=Math.max(1,Math.round(v.videoHeight*scale));
-  base.getContext('2d').drawImage(v,0,0,base.width,base.height);
-  for(const angle of [0,90,270]){
-   if(!running||lastTotal)break;
-   const c=document.createElement('canvas'),rotated=angle!==0;
-   c.width=rotated?base.height:base.width;c.height=rotated?base.width:base.height;
-   const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(angle*Math.PI/180);ctx.drawImage(base,-base.width/2,-base.height/2);
-   const res=await w.recognize(c);const recognized=String(res?.data?.text||'');lastOcrText=recognized.replace(/\s+/g,' ').slice(0,130);diagnostic();const total=amounts(recognized);showOcrResult(recognized,total);
-   if(total){lastTotal=total;totalAt=Date.now();feedback();$('totalValue').textContent='$'+total;await sendPair();break;}
-  }
-  if(!lastTotal)status('Enfoca la palabra TOTAL: y el importe');
- }catch(e){lastOcrError=String(e.message||e);status('Error OCR: '+lastOcrError);}finally{ocrBusy=false;diagnostic();}
-}
-function stop(){
- running=false;diagnostic();starting=false;clearTimeout(loopTimer);
- 
- try{stream?.getTracks()?.forEach(t=>t.stop());}catch{}stream=null;
- $('video').srcObject=null;lastTotal='';$('totalValue').textContent='Esperando TOTAL…';
- status('Cámara pausada · Pulsa Iniciar cámara para reanudar');
-}
-function scanLoop(){
- if(!running)return;
- frames++;if(frames%5===0)diagnostic();
- if(!ocrBusy&&!lastTotal)void readTotal();
- if(running)loopTimer=setTimeout(scanLoop,2000);
-}
-async function start(){
- if(running||starting)return;
- starting=true;
+async function analyze(){
+ const file=$('photo').files?.[0];if(!file)return status('Selecciona una fotografía del ticket.');
+ if(!file.type.startsWith('image/')&&!/\.(jpg|jpeg|png|webp)$/i.test(file.name))return status('Elige una imagen JPG, PNG o WebP.');
+ if(file.size>15*1024*1024)return status('La foto supera el máximo de 15 MB.');
+ if(busy)return;busy=true;selectedTotal='';$('send').disabled=true;$('totalValue').textContent='Analizando…';$('ocrResult').hidden=true;
+ $('analyze').disabled=true;const started=performance.now();let img=null;
  try{
-  if(!navigator.mediaDevices?.getUserMedia)throw Error('Cámara no disponible. Usa HTTPS y permite el acceso.');
-  status('Iniciando cámara OCR…');
-  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
-  const video=$('video');video.srcObject=stream;await video.play();
-  running=true;scanStart=performance.now();lastTotal='';
-  status('Cámara activa · Leyendo TOTAL: cada 2 segundos');diagnostic();scanLoop();
- }catch(e){running=false;status('Error de cámara: '+e.message);try{stream?.getTracks()?.forEach(t=>t.stop())}catch{}stream=null;}
- finally{starting=false;}
+  img=await createImageBitmap(file);
+  const scale=Math.min(2,1800/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+  const worker=await ocrWorker();let bestText='',match=null;
+  for(const deg of [0,90,270]){
+   const c=document.createElement('canvas'),side=deg!==0;c.width=side?h:w;c.height=side?w:h;
+   const ctx=c.getContext('2d',{willReadFrequently:true});
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.translate(c.width/2,c.height/2);ctx.rotate(deg*Math.PI/180);ctx.drawImage(img,-w/2,-h/2,w,h);
+   status('Leyendo fotografía'+(deg?' (rotación '+deg+'°)':'')+'…');
+   const res=await worker.recognize(c),txt=String(res?.data?.text||'');
+   if(txt.trim().length>bestText.trim().length)bestText=txt;
+   match=extractTotal(txt);if(match){bestText=txt;break}
+  }
+  selectedTotal=match?.value||'';
+  $('totalValue').textContent=match?'$'+match.value:'No identificado';
+  $('ocrResultTotal').textContent=match?'TOTAL: $'+match.value:'TOTAL no identificado';
+  $('ocrResultTotal').style.color=match?'#15803d':'#b45309';
+  $('ocrResultLine').textContent=match?'Renglón: '+match.line+(match.next?' | Siguiente: '+match.next:''):'Busca una línea que diga TOTAL: seguida del importe.';
+  $('ocrResultText').textContent=bestText.trim()||'No se reconoció texto en la imagen.';
+  $('ocrResult').hidden=false;
+  $('send').disabled=!match||!channel;
+  const seconds=((performance.now()-started)/1000).toFixed(1);
+  status(match?'✓ TOTAL $'+match.value+' identificado en '+seconds+' s. Revisa el resultado antes de enviarlo.':'No se identificó TOTAL con confianza ('+seconds+' s). Revisa el texto reconocido.');
+ }catch(e){status('No se pudo leer la foto: '+e.message);$('totalValue').textContent='Error';}
+ finally{img?.close?.();busy=false;$('analyze').disabled=false}
 }
-async function init(){
- $('ocrResultClose')?.addEventListener('click',()=>{$('ocrResult').hidden=true});
- $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);$('next').addEventListener('click',()=>{lastTotal='';$('totalValue').textContent='Esperando TOTAL…';$('ocrResult').hidden=true;status('Leyendo siguiente ticket · Enfoca TOTAL:');});
- $('torch').addEventListener('click',async()=>{try{const t=stream?.getVideoTracks()?.[0];if(!t)throw new Error('Primero enciende cámara');torch=!torch;await t.applyConstraints({advanced:[{torch}]});}catch(e){status('Linterna: '+e.message);}});
- window.addEventListener('pagehide',stop);
- if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Vínculo inválido. Genera otro QR en la computadora.');return;}
- if(!window.supabase?.createClient){status('No cargó la conexión a Supabase. Recarga.');return;}
+async function send(){
+ if(!selectedTotal||!channel)return status('No hay un TOTAL confirmado o falta vincular con la computadora.');
+ $('send').disabled=true;
+ try{
+  const result=await channel.send({type:'broadcast',event:'total',payload:{total:selectedTotal,at:Date.now()}});
+  if(result!=='ok')throw Error('Sin confirmación: '+result);
+  status('✓ TOTAL $'+selectedTotal+' enviado a Observaciones');
+ }catch(e){status('No se pudo enviar: '+e.message);$('send').disabled=false}
+}
+function init(){
+ $('analyze').onclick=analyze;$('send').onclick=send;
+ $('photo').onchange=()=>{
+  selectedTotal='';$('send').disabled=true;$('ocrResult').hidden=true;$('totalValue').textContent='Pendiente de leer';
+  const file=$('photo').files?.[0];if(!file)return;
+  const preview=$('preview');if(preview.dataset.url)URL.revokeObjectURL(preview.dataset.url);
+  preview.dataset.url=URL.createObjectURL(file);preview.src=preview.dataset.url;preview.hidden=false;
+  status('Foto seleccionada: '+file.name+' · Presiona Leer TOTAL.');
+ };
+ window.addEventListener('pagehide',()=>{if($('preview').dataset.url)URL.revokeObjectURL($('preview').dataset.url);worker?.terminate?.()});
+ if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Modo de prueba: puedes leer fotos. Para enviar a Observaciones, abre este lector desde Casetas → Comprobación.');return}
+ if(!window.supabase?.createClient)return status('Modo de prueba sin conexión: OCR disponible; Supabase no cargó.');
  try{
   const sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   channel=sb.channel('casetas-lector-'+token,{config:{broadcast:{ack:true}}});
-  channel.on('broadcast',{event:'stop'},()=>{stop();status('La computadora desconectó el lector.');});
-  channel.subscribe(state=>{connectionState=state;diagnostic();
-   if(state==='SUBSCRIBED'){status('Conectado · Pulsa Iniciar cámara');}
-   else if(state==='TIMED_OUT'||state==='CHANNEL_ERROR'||state==='CLOSED')status('Fallo de conexión ('+state+'). Revisa WiFi/datos.');
-  });
-  setTimeout(()=>{if(!running&&$('status').textContent==='Conectando…')status('La conexión está tardando. Comprueba internet y pulsa Iniciar cámara.');},8000);
- }catch(e){status('Error de conexión: '+e.message);}
+  channel.on('broadcast',{event:'stop'},()=>{channel=null;$('send').disabled=true;status('La computadora desconectó el lector.')});
+  channel.subscribe(state=>{if(state==='SUBSCRIBED'){status('Conectado con Casetas. Selecciona una fotografía.');$('send').disabled=!selectedTotal}
+    else if(state==='TIMED_OUT'||state==='CHANNEL_ERROR')status('Sin conexión con la computadora; puedes probar OCR localmente.')});
+ }catch(e){status('OCR disponible sin envío: '+e.message)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
