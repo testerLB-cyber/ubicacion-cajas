@@ -1485,7 +1485,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
     if(!p?.classList.contains('active'))return;
     loading=true;
     const s=document.createElement('script');
-    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261005-lazy-egress1';
+    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261012-single-source-v10';
     s.onload=()=>{loaded=true;loading=false;setTimeout(()=>window.ccAntLoad?.(true),50)};
     s.onerror=()=>{loading=false;console.warn('No se pudo cargar flujo profesional de Anticipos')};
     document.body.appendChild(s);
