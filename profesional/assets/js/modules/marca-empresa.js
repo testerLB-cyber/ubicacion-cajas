@@ -12,7 +12,7 @@ const picker=$('brandClient');const {data:clients,error}=await db().from('cc_cli
 let clientLogo='';picker.onchange=async()=>{clientLogo='';$('brandClientPreview').style.display='none';if(!picker.value)return;try{const info=await call({action:'read',cliente_id:picker.value});clientLogo=info.client?.logo||'';$('brandClientPreview').src=clientLogo;$('brandClientPreview').style.display=clientLogo?'block':'none'}catch(e){$('brandClientMsg').textContent=e.message}};
 $('brandClientFile').onchange=async e=>{try{clientLogo=await image(e.target.files[0]);$('brandClientPreview').src=clientLogo;$('brandClientPreview').style.display='block'}catch(err){alert(err.message)}};
 $('brandClientClear').onclick=()=>{clientLogo='';$('brandClientPreview').style.display='none'};
-$('brandClientSave').onclick=async()=>{if(!picker.value)return alert('Selecciona un cliente.');const btn=$('brandClientSave');btn.disabled=true;try{await call({action:'save_client',cliente_id:picker.value,logo:clientLogo});$('brandClientMsg').textContent='Logo del cliente guardado.'}catch(e){$('brandClientMsg').textContent=e.message}finally{btn.disabled=false}};
+$('brandClientSave').onclick=async()=>{if(!picker.value)return alert('Selecciona un cliente.');const btn=$('brandClientSave');btn.disabled=true;try{await call({action:'save_client',cliente_id:picker.value,logo:clientLogo});const confirmed=await call({action:'read',cliente_id:picker.value});if((confirmed.client?.logo||'')!==clientLogo)throw Error('El servidor no confirmó que el logotipo haya quedado almacenado.');$('brandClientMsg').textContent='✓ Logo guardado y verificado para '+picker.options[picker.selectedIndex].text+'.';}catch(e){$('brandClientMsg').textContent=e.message}finally{btn.disabled=false}};
 }
 const originalClientForm=window.ccNuevoCliente;
 if(typeof originalClientForm==='function'){
@@ -27,7 +27,7 @@ if(typeof originalClientForm==='function'){
    const input=section.querySelector('input');
    input.onchange=async e=>{
     const msg=section.querySelector('#brandClientInlineMsg');msg.textContent='Guardando logo…';
-    try{const logo=await image(e.target.files[0]);await call({action:'save_client',cliente_id:id,logo});msg.textContent='Logo guardado correctamente.'}
+    try{const logo=await image(e.target.files[0]);await call({action:'save_client',cliente_id:id,logo});const verified=await call({action:'read',cliente_id:id});if((verified.client?.logo||'')!==logo)throw Error('El servidor no confirmó el logotipo guardado.');msg.textContent='✓ Logo guardado y verificado.'}
     catch(err){msg.textContent='Error: '+err.message}
    };
  };
