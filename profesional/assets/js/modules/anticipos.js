@@ -18,16 +18,17 @@ window.ccAntLoad=async function(force=false){
  if(!canAntView()||!antPanelActive())return false;
  if(__ccAntLoadPromise){if(force)__ccAntPendingForce=true;return __ccAntLoadPromise}
  if(!force&&Date.now()-__ccAntLastLoad<8000){ccAntRender();return true}
+ var k=document.getElementById('ccAntKpis');if(k)k.setAttribute('aria-busy','true');
  if(force)window.gmInvalidateRpcCache?.(['cc_ant_list']);
  __ccAntLoadPromise=(async()=>{try{
    var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');
    D=r.data;
-   __ccAntLastLoad=Date.now();ccAntRender();
+   __ccAntLastLoad=Date.now();ccAntRender();if(k)k.removeAttribute('aria-busy');
    try{document.dispatchEvent(new CustomEvent('ccAnt:data-refreshed',{detail:{at:__ccAntLastLoad}}))}catch(_){}
    // Catálogos secundarios no bloquean los indicadores.
    sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre').then(function(tm){D.tiposMovCaja=tm&&tm.data?tm.data:[]}).catch(function(){D.tiposMovCaja=[]});
    return true;
- }catch(err){var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
+ }catch(err){if(k)k.removeAttribute('aria-busy');var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
  finally{__ccAntLoadPromise=null;if(__ccAntPendingForce){__ccAntPendingForce=false;setTimeout(function(){ccAntLoad(true)},0)}}})();
  return __ccAntLoadPromise;
 };
@@ -37,22 +38,10 @@ function ccAntTotalComprobado(){
  var activos=new Set((D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO').map(x=>String(x.id)));
  return (D.comprobaciones||[]).reduce(function(total,x){return total+(x.estatus==='ACTIVO'&&activos.has(String(x.anticipo_id||x.anticipoId))?Math.max(0,Number(x.monto||0)):0)},0);
 }
-function ccAntNormalizeIndicators(){
- var k=document.getElementById('ccAntKpis');if(!k)return;
- var cards=Array.from(k.children);
- cards.forEach(function(card){var label=card.querySelector('small');if(label&&/[+][ ]*7[ ]*d[ií]as/i.test(label.textContent||''))card.remove()});
- var comprobado=ccAntTotalComprobado();
- var card=Array.from(k.children).find(function(el){return /total comprobado/i.test(el.querySelector('small')?.textContent||'')});
- if(!card){card=document.createElement('div');card.className='cc-ant-kpi';card.innerHTML='<small>Total comprobado</small><strong></strong>';k.appendChild(card)}
- var amount=card.querySelector('strong');if(amount&&amount.textContent!==m(comprobado))amount.textContent=m(comprobado);
-}
-function ccAntInstallKpiGuard(){var k=document.getElementById('ccAntKpis');if(!k||k.__ccKpiGuard)return;k.__ccKpiGuard=true;new MutationObserver(ccAntNormalizeIndicators).observe(k,{childList:true,subtree:true,characterData:true});ccAntNormalizeIndicators()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccAntInstallKpiGuard);else ccAntInstallKpiGuard();
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
- var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0),late=active.filter(x=>x.estatus==='PENDIENTE'&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;
+ var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0);
  var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=ccAntTotalComprobado();var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div>';
- ccAntNormalizeIndicators();
  var op=document.getElementById('ccAntOperadorFiltro');if(op){var cur=op.value;op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=cur}
  var de=document.getElementById('ccAntDesde')?.value||'',ha=document.getElementById('ccAntHasta')?.value||'',oi=op?.value||'',es=document.getElementById('ccAntEstatusFiltro')?.value||'';
  var rows=all.filter(x=>{var d=String(x.fecha||'').slice(0,10);return(!de||d>=de)&&(!ha||d<=ha)&&(!oi||x.operadorId===oi)&&(!es||x.estatus===es)});window.ccAntFiltered=rows;
