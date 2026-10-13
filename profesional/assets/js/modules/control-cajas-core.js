@@ -1691,10 +1691,27 @@ window.ccImportarGeocercasArchivo=async function(file){
    let kml;
    if(ext==='kml')kml=await file.text();
    else{
-    await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',()=>!!window.JSZip);
-    const zip=await window.JSZip.loadAsync(await file.arrayBuffer());
-    const kmlFiles=zip.file(/\.kml$/i);if(!kmlFiles.length)throw Error('El KMZ no contiene archivos KML.');
-    kml=await kmlFiles[0].async('text');
+    const bytes=await file.arrayBuffer();
+    const header=new Uint8Array(bytes.slice(0,4));
+    const isZip=header[0]===0x50&&header[1]===0x4b&&
+      ((header[2]===0x03&&header[3]===0x04)||(header[2]===0x05&&header[3]===0x06)||(header[2]===0x07&&header[3]===0x08));
+    if(!isZip){
+      const plain=new TextDecoder('utf-8').decode(bytes).replace(/^\uFEFF/,'').trimStart();
+      if(/^<\?xml\b/i.test(plain)||/^<kml(?:\s|>)/i.test(plain)){
+        kml=plain;
+      }else{
+        throw Error('El archivo .KMZ no es un ZIP/KMZ válido ni contiene KML. Vuelve a exportarlo como KMZ o KML desde el programa de origen.');
+      }
+    }else{
+      await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',()=>!!window.JSZip);
+      let zip;
+      try{zip=await window.JSZip.loadAsync(bytes)}
+      catch(e){throw Error('El KMZ está incompleto o dañado: no se puede abrir su estructura ZIP. Exporta el archivo nuevamente.')}
+      const kmlFiles=zip.file(/\.kml$/i).filter(entry=>!entry.dir);
+      if(!kmlFiles.length)throw Error('El KMZ no contiene un archivo KML con geocercas.');
+      const preferred=kmlFiles.find(entry=>/(^|\/)doc\.kml$/i.test(entry.name))||kmlFiles[0];
+      kml=await preferred.async('text');
+    }
    }
    const xml=new DOMParser().parseFromString(kml,'application/xml');
    if(xml.querySelector('parsererror'))throw Error('El KML contiene XML inválido.');
