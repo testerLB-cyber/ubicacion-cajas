@@ -169,7 +169,7 @@ window.ccAntRender=function(){
    (D.comprobaciones||[]).forEach(co=>{if(String(co.estatus||'ACTIVO').trim().toUpperCase()!=='ACTIVO')return;var id=String(co.anticipo_id||co.anticipoId||'');if(id)__antCompCounts.set(id,(__antCompCounts.get(id)||0)+1)});
    var __cierresMap=new Map((D.cierres||[]).filter(x=>!x.reabierto_at).map(x=>[String(x.anticipo_id),x]));
    var __listHtml=rows.length?rows.map(x=>{
-     var p=Math.max(0,Number(x.pendiente!=null?x.pendiente:Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)));
+     var p=String(x.estatus||'').toUpperCase()==='CERRADO'?0:Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0));
      var cierre=__cierresMap.get(String(x.id)),comprobacionReal=cierre?Number(cierre.monto_comprobado_real??cierre.monto_comprobado??x.comprobado??0):Number(x.comprobado||0),comprobacionDinero=cierre?Number(cierre.monto_comprobado_dinero??cierre.monto_comprobado??0):Math.min(Number(x.comprobado||0),Math.max(0,Number(x.montoEntregado||0)-Number(x.devuelto||0)));
      var status=ccAntEstadoVisible(x),deudaOperador=ccAntDebtRows().some(g=>g.items.some(mv=>String(mv.anticipoId)===String(x.id)&&Number(mv.montoSigned)<0)),statusLabel=status==='CERRADO'&&deudaOperador?'CERRADO CON ADEUDO':status,compCount=__antCompCounts.get(String(x.id))||0,statusClass=status==='ABIERTO'?'open':status==='CERRADO'?'closed':status==='CANCELADO'?'cancelled':'partial',selected=String(window.ccAntSelectedId||'')===String(x.id);
      var numberOrDash=z=>z==null||String(z).trim()===''?'—':h(z);
@@ -256,10 +256,10 @@ window.ccAntCerrar=function(id){
    :'<option value="SIN_DIFERENCIA">Sin diferencia</option>';
  var info='<div class="cc-config-alert"><strong>Entregado:</strong> '+m(entregado)+' · <strong>Comprobación real:</strong> '+m(real)+' · <strong>Devoluciones previas:</strong> '+m(dev)+
    '<br><strong>Comprobación dinero:</strong> '+m(Math.min(real,disponible))+
-   (exceso>0.009?'<br><strong>Excedente documentado:</strong> '+m(exceso):faltante>0.009?'<br><strong>Pendiente:</strong> '+m(faltante):'<br><strong>Sin diferencia</strong>')+'</div>';
+   (exceso>0.009?'<br><strong>Excedente documentado:</strong> '+m(exceso):faltante>0.009?'<br><strong>Faltante que se registrará a cargo del operador:</strong> '+m(faltante):'<br><strong>Sin diferencia</strong>')+'</div>';
  modal('Cerrar anticipo · '+a.folio,info+
    '<div class="cc-field" style="margin-top:12px"><label>'+(exceso>0.009?'¿Reconocer el excedente como saldo real a favor del operador?':'Resolución de cierre')+' *</label><input name="resolucionTexto" list="ccAntCierreOpciones" autocomplete="off" placeholder="Escribe o selecciona una respuesta" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px"><datalist id="ccAntCierreOpciones">'+(exceso>0.009?'<option value="Sí, reconocer saldo a favor del operador"></option><option value="No, conservar solo la comprobación real"></option>':faltante>0.009?'<option value="Registrar faltante a cargo del operador"></option><option value="Dinero devuelto a caja"></option>':'<option value="Sin diferencia"></option>')+'</datalist></div>'+
-   '<div class="cc-note" style="margin:10px 0">La comprobación real se conserva íntegra. Si no reconoces el excedente, la comprobación dinero queda limitada al anticipo disponible, sin generar saldo a favor.</div>'+
+   '<div class="cc-note" style="margin:10px 0">Al confirmar se suman definitivamente todas las comprobaciones activas y se bloquean nuevas comprobaciones. Un faltante se registrará como adeudo del operador, sin descuentos bancarios automáticos. Si no reconoces un excedente, la comprobación dinero se limita al anticipo disponible.</div>'+
    '<div class="cc-field"><label>Observaciones de cierre</label><textarea name="observaciones" placeholder="Motivo y detalle de la conciliación"></textarea></div>',
    async fd=>{
      var choices=exceso>0.009?{'Sí, reconocer saldo a favor del operador':'SALDO_A_FAVOR','No, conservar solo la comprobación real':'NO_RECONOCER_EXCEDENTE'}:faltante>0.009?{'Registrar faltante a cargo del operador':'CARGAR_FALTANTE','Dinero devuelto a caja':'REGRESAR_CAMBIO'}:{'Sin diferencia':'SIN_DIFERENCIA'};
