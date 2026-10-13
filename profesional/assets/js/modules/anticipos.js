@@ -269,13 +269,25 @@ window.ccAntCerrar=function(id){
      var rr=await sb().rpc('cc_ant_close',{p_item:item});if(rr.error)throw rr.error;if(!rr.data?.ok)throw new Error(rr.data?.error||'No se pudo cerrar');
    });
 };
+window.ccAntBalanceIncludeCasetas=false;
+function ccAntBalanceAllowed(a){
+ var folio=String(a.folio||'');
+ return /^ANT-/i.test(folio)||(window.ccAntBalanceIncludeCasetas && (a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(folio)));
+}
 window.ccAntRenderSaldos=function(){
  var op=document.getElementById('ccAntSaldoOperador'),tp=document.getElementById('ccAntSaldoTipo');if(!op||!tp)return;
  var ov=op.value,tv=tp.value;
  op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=ov;
+ var balanceKpi=document.getElementById('ccAntSaldoKpis');
+ if(balanceKpi&&!document.getElementById('ccAntBalanceCasetasToggle')){
+  var label=document.createElement('label');label.id='ccAntBalanceCasetasToggle';label.style.cssText='display:inline-flex;align-items:center;gap:9px;padding:10px 13px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;cursor:pointer;font-weight:700;font-size:12px;margin:8px 0';
+  label.innerHTML='<input type="checkbox" id="ccAntBalanceCasetasCheck" style="width:17px;height:17px;accent-color:#2563eb"> Incluir también anticipos de casetas';
+  balanceKpi.parentElement?.insertBefore(label,balanceKpi);
+  label.querySelector('input').addEventListener('change',function(){window.ccAntBalanceIncludeCasetas=this.checked;ccAntRenderSaldos()});
+ }
  var groups={};
  (D.operadores||[]).forEach(o=>{if(!ov||o.id===ov)groups[o.id]={id:o.id,operador:o.nombre,anticipos:[],entregado:0,aplicado:0,pendiente:0}});
- (D.anticipos||[]).filter(a=>a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO'&&(!ov||a.operadorId===ov)).forEach(a=>{
+ (D.anticipos||[]).filter(a=>ccAntBalanceAllowed(a)&&a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO'&&(!ov||a.operadorId===ov)).forEach(a=>{
    var pendiente=Number(a.pendiente!=null?a.pendiente:Math.max(0,Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0)));
    var g=groups[a.operadorId]||(groups[a.operadorId]={id:a.operadorId,operador:a.operador||'Sin operador',anticipos:[],entregado:0,aplicado:0,pendiente:0});
    g.anticipos.push(a);g.entregado+=Number(a.montoEntregado||0);g.aplicado+=Number(a.comprobado||0)+Number(a.devuelto||0);g.pendiente+=pendiente;
@@ -291,7 +303,7 @@ window.ccAntRenderSaldos=function(){
  }
 };
 window.ccAntAbrirPendientesOperador=function(operadorId){
- var o=(D.operadores||[]).find(x=>x.id===operadorId),ants=(D.anticipos||[]).filter(a=>a.operadorId===operadorId&&a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO');
+ var o=(D.operadores||[]).find(x=>x.id===operadorId),ants=(D.anticipos||[]).filter(a=>ccAntBalanceAllowed(a)&&a.operadorId===operadorId&&a.estatus!=='CANCELADO'&&a.estatus!=='CERRADO');
  document.getElementById('ccAntOpPendModal')?.remove();var ov=document.createElement('div');ov.id='ccAntOpPendModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
  var rows=ants.map(a=>{var cas=a.esCasetas===true||a.es_casetas===true||/^CAS-/i.test(String(a.folio||''));var p=Math.max(0,Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0));return '<tr><td><strong>'+h(a.folio)+'</strong><div style="font-size:9px;color:#64748b">'+f(a.fecha)+' · '+h(a.destino||'')+'</div></td><td>'+h(a.unidad||'—')+'</td><td>'+m(a.montoEntregado||0)+'</td><td>'+m(a.comprobado||0)+'</td><td><strong>'+m(p)+'</strong></td><td>'+(cas?'<span class="cc-badge" style="background:#eff6ff;color:#1d4ed8">'+(p>0?'Pendiente · comprobar en Casetas':'Comprobado · Casetas')+'</span>':(p>0?'<button class="cc-btn cc-btn-primary" data-comp-ant="'+h(a.id)+'">Comprobar</button>':'<span class="cc-badge">Sin pendiente</span>'))+'</td></tr>'}).join('');
  ov.innerHTML='<div style="background:#fff;width:min(860px,97vw);max-height:92vh;overflow:auto;border-radius:16px"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between"><div><strong>'+h(o?.nombre||'Operador')+'</strong><div style="font-size:10px;color:#cbd5e1">Anticipos pendientes de comprobar</div></div><button id="ccAntOpPendClose" style="background:none;border:0;color:#fff;font-size:22px">×</button></div><div style="padding:18px"><div class="cc-inv-wrap"><table class="cc-ant-table"><thead><tr><th>ANTICIPO</th><th>UNIDAD</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ACCIÓN</th></tr></thead><tbody>'+((rows)||'<tr><td colspan="6">No tiene anticipos pendientes.</td></tr>')+'</tbody></table></div></div></div>';
