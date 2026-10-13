@@ -1,5 +1,5 @@
 (function(){
-var D={resumen:{saldoCaja:0,pendienteConfirmar:0,totalPorComprobar:0,operadoresConPendiente:0,vencidos7Dias:0},operadores:[],conceptos:[],cuentas:[],destinos:[],destinoConceptos:[],metodosDeposito:[],tiposUnidadAnticipos:[],unidadesCarro:[],anticipos:[],detalles:[],comprobaciones:[],movimientos:[],cierres:[],saldosOperador:[]};
+var D={resumen:{saldoCaja:0,pendienteConfirmar:0,totalPorComprobar:0,vencidos7Dias:0},operadores:[],conceptos:[],cuentas:[],destinos:[],destinoConceptos:[],metodosDeposito:[],tiposUnidadAnticipos:[],unidadesCarro:[],anticipos:[],detalles:[],comprobaciones:[],movimientos:[],cierres:[],saldosOperador:[]};
 function sb(){return window.gmSupabase}
 function canAntView(){try{return window.CC_ACCESS?.rol==='ADMIN'||window.CC_ACCESS?.es_super_admin===true||(typeof window.ccPerm==='function'&&window.ccPerm('anticipos.ver'))}catch(_){return false}}
 function antPanelActive(){const p=document.getElementById('ccPanelAnticipos');return !!(p&&p.classList.contains('active')&&document.visibilityState!=='hidden')}
