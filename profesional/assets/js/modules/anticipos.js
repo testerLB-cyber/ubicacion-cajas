@@ -230,11 +230,13 @@ window.ccAntCerrar=function(id){
    '<br><strong>Comprobación dinero:</strong> '+m(Math.min(real,disponible))+
    (exceso>0.009?'<br><strong>Excedente documentado:</strong> '+m(exceso):faltante>0.009?'<br><strong>Pendiente:</strong> '+m(faltante):'<br><strong>Sin diferencia</strong>')+'</div>';
  modal('Cerrar anticipo · '+a.folio,info+
-   '<div class="cc-field" style="margin-top:12px"><label>'+(exceso>0.009?'¿Reconocer el excedente como saldo real a favor del operador?':'Resolución de cierre')+' *</label><select name="resolucion" required>'+options+'</select></div>'+
+   '<div class="cc-field" style="margin-top:12px"><label>'+(exceso>0.009?'¿Reconocer el excedente como saldo real a favor del operador?':'Resolución de cierre')+' *</label><input name="resolucionTexto" list="ccAntCierreOpciones" autocomplete="off" placeholder="Escribe o selecciona una respuesta" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px"><datalist id="ccAntCierreOpciones">'+(exceso>0.009?'<option value="Sí, reconocer saldo a favor del operador"></option><option value="No, conservar solo la comprobación real"></option>':faltante>0.009?'<option value="Registrar faltante a cargo del operador"></option><option value="Dinero devuelto a caja"></option>':'<option value="Sin diferencia"></option>')+'</datalist></div>'+
    '<div class="cc-note" style="margin:10px 0">La comprobación real se conserva íntegra. Si no reconoces el excedente, la comprobación dinero queda limitada al anticipo disponible, sin generar saldo a favor.</div>'+
    '<div class="cc-field"><label>Observaciones de cierre</label><textarea name="observaciones" placeholder="Motivo y detalle de la conciliación"></textarea></div>',
    async fd=>{
-     var item={anticipoId:id,resolucion:String(fd.get('resolucion')||''),observaciones:String(fd.get('observaciones')||'')};
+     var choices=exceso>0.009?{'Sí, reconocer saldo a favor del operador':'SALDO_A_FAVOR','No, conservar solo la comprobación real':'NO_RECONOCER_EXCEDENTE'}:faltante>0.009?{'Registrar faltante a cargo del operador':'CARGAR_FALTANTE','Dinero devuelto a caja':'REGRESAR_CAMBIO'}:{'Sin diferencia':'SIN_DIFERENCIA'};
+     var selected=String(fd.get('resolucionTexto')||'').trim();
+     var item={anticipoId:id,resolucion:choices[selected]||'',observaciones:String(fd.get('observaciones')||'')};
      if(!item.resolucion)throw new Error('Selecciona una resolución de cierre.');
      var rr=await sb().rpc('cc_ant_close',{p_item:item});if(rr.error)throw rr.error;if(!rr.data?.ok)throw new Error(rr.data?.error||'No se pudo cerrar');
    });
