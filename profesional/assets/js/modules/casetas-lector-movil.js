@@ -6,7 +6,7 @@ const status=message=>{const e=$('status');if(e)e.textContent=message;};
 let channel=null,stream=null,detector=null,zxingControls=null,worker=null,workerPromise=null;
 let running=false,starting=false,ocrBusy=false,lastQr='',qrAt=0,lastTotal='',totalAt=0,lastRead='',lastReadAt=0,count=0,ocrStart=0,scanStart=0,torch=false,loopTimer=null;
 let frames=0,ocrAttempts=0,qrEngine='Sin iniciar',connectionState='Conectando',lastOcrError='',lastOcrText='';
-function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (1/s): '+frames+' · QR: '+qrEngine+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
+function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (1/s): '+frames+' · Modo: OCR TOTAL'+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
 
 const amounts=text=>{
  const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').trim()).filter(Boolean);
@@ -29,17 +29,15 @@ function feedback(){
  try{navigator.vibrate?.([150,70,150]);}catch{}
 }
 async function sendPair(){
- if(!channel||!lastQr||!lastTotal||Math.abs(qrAt-totalAt)>90000)return;
- const qr=lastQr,total=lastTotal;
+ if(!channel||!lastTotal)return;
+ const total=lastTotal;
  try{
-  const result=await channel.send({type:'broadcast',event:'ticket',payload:{qr,total,at:Date.now()}});
-  if(result!=='ok')throw new Error('Sin confirmación de envío ('+result+')');
+  const result=await channel.send({type:'broadcast',event:'total',payload:{total,at:Date.now()}});
+  if(result!=='ok')throw Error('Envío no confirmado: '+result);
   count++;$('count').textContent=String(count);
-  const li=document.createElement('li');li.textContent='QR: '+qr+' · TOTAL: $'+total;$('history').prepend(li);
-  $('timing').textContent='Lectura y envío: '+((performance.now()-scanStart)/1000).toFixed(1)+' s';
-  feedback();status('✓ QR y TOTAL $'+total+' enviados a Observaciones');
-  lastQr='';lastTotal='';$('qrValue').textContent='Esperando QR…';$('totalValue').textContent='Esperando TOTAL…';
- }catch(e){status('Error al enviar ticket: '+e.message+' · Reintenta.');}
+  const item=document.createElement('li');item.textContent='TOTAL: $'+total;$('history').prepend(item);
+  status('TOTAL $'+total+' enviado a Observaciones');feedback();
+ }catch(e){status('TOTAL $'+total+' leído; error al enviar: '+e.message);}
 }
 async function onScan(value){
  value=String(value||'').trim().slice(0,400);const now=Date.now();
@@ -74,43 +72,34 @@ async function readTotal(){
    const res=await w.recognize(c);lastOcrText=String(res?.data?.text||'').replace(/\s+/g,' ').slice(0,130);diagnostic();const total=amounts(res?.data?.text);
    if(total){lastTotal=total;totalAt=Date.now();feedback();$('totalValue').textContent='$'+total;await sendPair();break;}
   }
-  if(!lastTotal&&lastQr)status('QR leído · Acerca y enfoca el renglón TOTAL');
+  if(!lastTotal)status('Enfoca la palabra TOTAL: y el importe');
  }catch(e){lastOcrError=String(e.message||e);status('Error OCR: '+lastOcrError);}finally{ocrBusy=false;diagnostic();}
 }
 function stop(){
  running=false;diagnostic();starting=false;clearTimeout(loopTimer);
- try{zxingControls?.stop();}catch{}zxingControls=null;
+ 
  try{stream?.getTracks()?.forEach(t=>t.stop());}catch{}stream=null;
- $('video').srcObject=null;lastQr='';lastTotal='';$('qrValue').textContent='Esperando QR…';$('totalValue').textContent='Esperando TOTAL…';
+ $('video').srcObject=null;lastTotal='';$('totalValue').textContent='Esperando TOTAL…';
  status('Cámara pausada · Pulsa Iniciar cámara para reanudar');
 }
-async function scanLoop(){
+function scanLoop(){
  if(!running)return;
- frames++;if(frames%10===0)diagnostic();
- if(detector&&!lastQr){try{const hits=await detector.detect($('video'));if(hits?.[0])await onScan(hits[0].rawValue);}catch(e){status('Lector QR: '+e.message);}}
- if(!ocrBusy&&!lastTotal)readTotal();
+ frames++;if(frames%5===0)diagnostic();
+ if(!ocrBusy&&!lastTotal)void readTotal();
  if(running)loopTimer=setTimeout(scanLoop,1000);
 }
 async function start(){
  if(running||starting)return;
  starting=true;
  try{
-  if(!navigator.mediaDevices?.getUserMedia)throw new Error('No hay acceso a cámara. Abre la página HTTPS en Chrome o Safari.');
-  status('Solicitando permiso de cámara…');
-  detector=null;
-  if(!window.ZXingBrowser?.BrowserMultiFormatReader&&'BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});qrEngine='Nativo BarcodeDetector';}catch{}}
-  if(!detector)qrEngine='ZXing';
-  if(detector){
-   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
-   $('video').srcObject=stream;await $('video').play();running=true;status('Cámara activa · Apunta al QR');
-  }else{
-   if(!window.ZXingBrowser?.BrowserMultiFormatReader)throw new Error('No cargó el lector QR compatible. Verifica internet.');
-   const reader=new window.ZXingBrowser.BrowserMultiFormatReader({delayBetweenScanAttempts:1000,delayBetweenScanSuccess:1000});
-   running=true;zxingControls=await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}},$('video'),result=>{if(result)onScan(result.getText()).catch(e=>status(e.message));});
-   stream=$('video').srcObject;running=true;status('Cámara activa · Apunta al QR');
-  }
-  diagnostic();scanLoop();
- }catch(e){status('No se pudo iniciar la cámara: '+e.message);running=false;try{stream?.getTracks()?.forEach(t=>t.stop());}catch{}}finally{starting=false;}
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('Cámara no disponible. Usa HTTPS y permite el acceso.');
+  status('Iniciando cámara OCR…');
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+  const video=$('video');video.srcObject=stream;await video.play();
+  running=true;scanStart=performance.now();lastTotal='';
+  status('Cámara activa · Leyendo TOTAL: cada segundo');diagnostic();scanLoop();
+ }catch(e){running=false;status('Error de cámara: '+e.message);try{stream?.getTracks()?.forEach(t=>t.stop())}catch{}stream=null;}
+ finally{starting=false;}
 }
 async function init(){
  $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);
