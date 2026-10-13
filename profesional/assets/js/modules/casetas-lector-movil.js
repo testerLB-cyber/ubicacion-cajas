@@ -41,83 +41,57 @@ async function ocrWorker(){
  return workerPromise;
 }
 
-let stream=null,watchTimer=null,stableSince=0,previous=null,captured=false;
-function stopCamera(){
- clearInterval(watchTimer);watchTimer=null;stableSince=0;previous=null;
- stream?.getTracks().forEach(t=>t.stop());stream=null;
-}
-function sample(){
- if(!stream||busy||captured)return;
- const video=$('video');if(!video.videoWidth)return;
- const c=$('probe'),ctx=c.getContext('2d',{willReadFrequently:true});
- c.width=100;c.height=140;
- // Analyse the central guide where the user must position the paper.
- ctx.drawImage(video,video.videoWidth*.13,video.videoHeight*.1,video.videoWidth*.74,video.videoHeight*.8,0,0,100,140);
- const pix=ctx.getImageData(0,0,100,140).data,grey=new Uint8Array(14000);
- let brightness=0,contrast=0,edges=0,difference=0;
- for(let i=0;i<grey.length;i++){const j=i*4;const v=Math.round(.299*pix[j]+.587*pix[j+1]+.114*pix[j+2]);grey[i]=v;brightness+=v}
- brightness/=grey.length;
- for(let y=2;y<138;y+=2)for(let x=2;x<98;x+=2){
-  const i=y*100+x,v=grey[i];
-  contrast+=Math.abs(4*v-grey[i-1]-grey[i+1]-grey[i-100]-grey[i+100]);
-  if(Math.abs(v-grey[i-1])>28)edges++;
-  if(previous)difference+=Math.abs(v-previous[i]);
- }
- previous=grey;
- const sharp=contrast/((136/2)*(96/2)),edgeRatio=edges/((136/2)*(96/2));
- const motion=difference/((136/2)*(96/2));
- const ok=brightness>55&&brightness<237&&sharp>18&&edgeRatio>.045&&motion<14;
- const now=performance.now();
- if(!ok){stableSince=0;$('countdown').textContent='Acomoda el ticket dentro del recuadro y mantén firme el teléfono';return}
- if(!stableSince)stableSince=now;
- const remaining=Math.max(0,Math.ceil((5000-(now-stableSince))/1000));
- $('countdown').textContent=remaining?'Ticket enfocado · Fotografía automática en '+remaining+' s':'Capturando ticket…';
- if(now-stableSince>=5000){captured=true;void capture();}
-}
-async function capture(){
- const video=$('video'),canvas=document.createElement('canvas');
- canvas.width=video.videoWidth;canvas.height=video.videoHeight;
- canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
- stopCamera();$('videoWrap').hidden=true;$('capturePreview').src=canvas.toDataURL('image/jpeg',.94);$('capturePreview').hidden=false;
- await analyzeCanvas(canvas);
-}
-async function analyzeCanvas(source){
- if(busy)return;busy=true;selectedTotal='';$('send').disabled=true;$('ocrResult').hidden=true;
- const started=performance.now();
+let stream=null,watchTimer=null,consecutive=0,lastCandidate='',recognized=false,scanCount=0;
+function stopCamera(){clearInterval(watchTimer);watchTimer=null;stream?.getTracks()?.forEach(t=>t.stop());stream=null;$('video').srcObject=null;}
+async function processFrame(){
+ if(!stream||busy||recognized||document.hidden)return;
+ const video=$('video');if(!video.videoWidth||!video.videoHeight)return;
+ busy=true;scanCount++;
  try{
-  const scale=Math.min(1,1800/Math.max(source.width,source.height)),w=Math.max(1,Math.round(source.width*scale)),h=Math.max(1,Math.round(source.height*scale));
-  const engine=await ocrWorker();let bestText='',match=null;
-  for(const deg of [0,90,270]){
-   const c=document.createElement('canvas'),side=deg!==0;c.width=side?h:w;c.height=side?w:h;
-   const ctx=c.getContext('2d',{willReadFrequently:true});ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
-   ctx.translate(c.width/2,c.height/2);ctx.rotate(deg*Math.PI/180);ctx.drawImage(source,-w/2,-h/2,w,h);
-   status('Analizando ticket capturado'+(deg?' · girado '+deg+'°':'')+'…');
-   const res=await engine.recognize(c),txt=String(res?.data?.text||'');
-   if(txt.trim().length>bestText.trim().length)bestText=txt;
-   match=extractTotal(txt);if(match){bestText=txt;break}
+  const engine=await ocrWorker();
+  const c=document.createElement('canvas');
+  const scale=Math.min(1,1400/Math.max(video.videoWidth,video.videoHeight));
+  c.width=Math.round(video.videoWidth*scale);c.height=Math.round(video.videoHeight*scale);
+  c.getContext('2d',{willReadFrequently:true}).drawImage(video,0,0,c.width,c.height);
+  status('Cámara en vivo · OCR lectura '+scanCount+' · Buscando TOTAL:');
+  const result=await engine.recognize(c);
+  const txt=String(result?.data?.text||''),match=extractTotal(txt);
+  $('ocrResult').hidden=false;
+  $('ocrResultText').textContent=txt.trim()||'No se reconoció texto en este cuadro.';
+  $('ocrResultLine').textContent=match?'Renglón detectado: '+match.line:'Apunta al renglón TOTAL: y mantén el ticket enfocado.';
+  if(match){
+   if(lastCandidate===match.value)consecutive++;else{lastCandidate=match.value;consecutive=1}
+   $('ocrResultTotal').textContent='TOTAL: $'+match.value+' · '+consecutive+'/2 lecturas';
+   $('ocrResultTotal').style.color='#15803d';
+   $('totalValue').textContent='$'+match.value;
+   if(consecutive>=2){
+    recognized=true;selectedTotal=match.value;
+    $('send').disabled=!channel;
+    status('✓ TOTAL $'+match.value+' confirmado en 2 lecturas. Revisa y envía a Observaciones.');
+    try{const audio=new (window.AudioContext||window.webkitAudioContext)();await audio.resume();const o=audio.createOscillator();o.connect(audio.destination);o.start();o.stop(audio.currentTime+.15);o.onended=()=>audio.close()}catch{}
+   }else status('TOTAL posible: $'+match.value+' · Falta segunda lectura coincidente');
+  }else{
+   consecutive=0;lastCandidate='';
+   $('ocrResultTotal').textContent='TOTAL aún no identificado';
+   $('ocrResultTotal').style.color='#b45309';
   }
-  selectedTotal=match?.value||'';
-  $('totalValue').textContent=match?'$'+match.value:'No identificado';
-  $('ocrResultTotal').textContent=match?'TOTAL: $'+match.value:'TOTAL no identificado';
-  $('ocrResultTotal').style.color=match?'#15803d':'#b45309';
-  $('ocrResultLine').textContent=match?'Renglón: '+match.line:'El OCR no identificó con confianza un importe junto a TOTAL:';
-  $('ocrResultText').textContent=bestText.trim()||'No se reconoció texto en el ticket.';
-  $('ocrResult').hidden=false;$('send').disabled=!match||!channel;
-  const secs=((performance.now()-started)/1000).toFixed(1);
-  status(match?'TOTAL encontrado en '+secs+' s. Verifica el resultado antes de enviarlo.':'No se encontró TOTAL ('+secs+' s). Puedes repetir la captura.');
- }catch(e){status('No se pudo analizar el ticket: '+e.message)}
+ }catch(e){status('Error OCR: '+e.message)}
  finally{busy=false}
 }
 async function openCamera(){
- if(busy)return;stopCamera();captured=false;$('ocrResult').hidden=true;$('capturePreview').hidden=true;$('videoWrap').hidden=false;
- $('countdown').textContent='Coloca el ticket dentro del recuadro';status('Activando cámara…');
+ if(busy)return;
+ stopCamera();recognized=false;consecutive=0;lastCandidate='';selectedTotal='';scanCount=0;
+ $('send').disabled=true;$('ocrResult').hidden=true;$('totalValue').textContent='Buscando…';
+ $('countdown').textContent='Video en vivo · OCR cada 2 segundos · Sin capturar fotos';
+ status('Activando cámara…');
  try{
-  if(!navigator.mediaDevices?.getUserMedia)throw Error('La cámara requiere HTTPS y permiso del navegador.');
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('Se requiere HTTPS y permiso para usar la cámara.');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
-  $('video').srcObject=stream;await $('video').play();
-  watchTimer=setInterval(sample,250);
-  status('Encuadra el ticket; al quedar enfocado y estable se capturará en 5 segundos.');
- }catch(e){status('Error al abrir cámara: '+e.message);$('countdown').textContent='Presiona Reintentar para dar permiso a la cámara.'}
+  const video=$('video');video.srcObject=stream;await video.play();
+  status('Cámara activa · Encuadra TOTAL:');
+  watchTimer=setInterval(()=>{void processFrame()},2000);
+  void processFrame();
+ }catch(e){status('No se pudo abrir la cámara: '+e.message);stopCamera()}
 }
 async function send(){
  if(!selectedTotal||!channel)return status('No hay un TOTAL confirmado o falta vincular con la computadora.');
