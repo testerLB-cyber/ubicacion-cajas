@@ -39,9 +39,14 @@ function ccAntTotalComprobado(){
 }
 function ccAntNormalizeIndicators(){
  var k=document.getElementById('ccAntKpis');if(!k)return;
- Array.from(k.children).forEach(function(card){var label=card.querySelector('small');if(label&&/\\+\\s*7\\s*d[ií]as/i.test(label.textContent||''))card.remove()});
+ var cards=Array.from(k.children);
+ cards.forEach(function(card){var label=card.querySelector('small');if(label&&/\\+\\s*7\\s*d[ií]as/i.test(label.textContent||''))card.remove()});
+ var comprobado=ccAntTotalComprobado();
+ var card=Array.from(k.children).find(function(el){return /total comprobado/i.test(el.querySelector('small')?.textContent||'')});
+ if(!card){card=document.createElement('div');card.className='cc-ant-kpi';card.innerHTML='<small>Total comprobado</small><strong></strong>';k.appendChild(card)}
+ var amount=card.querySelector('strong');if(amount&&amount.textContent!==m(comprobado))amount.textContent=m(comprobado);
 }
-function ccAntInstallKpiGuard(){var k=document.getElementById('ccAntKpis');if(!k||k.__ccKpiGuard)return;k.__ccKpiGuard=true;var obs=new MutationObserver(ccAntNormalizeIndicators);obs.observe(k,{childList:true});ccAntNormalizeIndicators()}
+function ccAntInstallKpiGuard(){var k=document.getElementById('ccAntKpis');if(!k||k.__ccKpiGuard)return;k.__ccKpiGuard=true;new MutationObserver(ccAntNormalizeIndicators).observe(k,{childList:true,subtree:true,characterData:true});ccAntNormalizeIndicators()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccAntInstallKpiGuard);else ccAntInstallKpiGuard();
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
