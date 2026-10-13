@@ -803,7 +803,7 @@
  function applyMain(){
    ensureSwitch();const data=Array.isArray(window.ccAntFiltered)?window.ccAntFiltered:[],trs=[...document.querySelectorAll('#ccAntBody tr')];
    trs.forEach((tr,i)=>{
-     const a=data[i];if(!a)return;const ben=isBen(a);tr.style.display=(modo==='BENEFICIARIO'?ben:!ben)?'':'none';
+     const a=data[i];if(!a)return;const ant=/^ANT-/i.test(String(a.folio||''));const ben=ant?false:isBen(a);tr.style.display=ant?'':(modo==='BENEFICIARIO'?ben:!ben)?'':'none';
      if(!ben)return;
      const td=tr.querySelectorAll('td'),ds=(base.detalles||[]).filter(x=>x.anticipoId===a.id&&String(x.estatus||'ACTIVO').toUpperCase()==='ACTIVO');
      const x=(extra.cajaChica||[]).find(z=>z.id===a.id)||{},conceptos=ds.map(d=>String(d.concepto||'Concepto')+' · '+money(d.monto)).join(' / ');
