@@ -36,15 +36,21 @@ function loadScript(src){
 }
 async function prepareImage(file,rotation=0){
  const img=await createImageBitmap(file);
- const scale=Math.min(1,1800/Math.max(img.width,img.height));
- const canvas=document.createElement('canvas');
- canvas.width=Math.max(1,Math.round(img.width*scale));
- canvas.height=Math.max(1,Math.round(img.height*scale));
- const ctx=canvas.getContext('2d',{willReadFrequently:true});
- ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
- ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(rotation*Math.PI/180);ctx.drawImage(img,-w/2,-h/2,w,h);
- img.close?.();
- return canvas;
+ try{
+  const scale=Math.min(1,1800/Math.max(img.width,img.height));
+  const w=Math.max(1,Math.round(img.width*scale));
+  const h=Math.max(1,Math.round(img.height*scale));
+  const canvas=document.createElement('canvas');
+  const sideways=Math.abs(rotation)%180===90;
+  canvas.width=sideways?h:w;
+  canvas.height=sideways?w:h;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.translate(canvas.width/2,canvas.height/2);
+  ctx.rotate(rotation*Math.PI/180);
+  ctx.drawImage(img,-w/2,-h/2,w,h);
+  return canvas;
+ }finally{img.close?.();}
 }
 async function run(){
  const file=$('casOcrFile')?.files?.[0],button=$('casOcrRun');
