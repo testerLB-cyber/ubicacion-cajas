@@ -223,7 +223,7 @@ window.ccAntComprobar=async function(id){
   var cs=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'">'+h(x.concepto)+'</option>'}).join('');
   var oldComp=document.getElementById('ccAntCompModal');if(oldComp)oldComp.remove();
   var ov=document.createElement('div');ov.id='ccAntCompModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
-  ov.innerHTML='<div class="cc-comp-shell"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Comprobar anticipo · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">Captura continua. Las fotos del QR aparecerán aquí automáticamente.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer">×</button></div><div class="cc-comp-body"><div class="cc-comp-layout"><div class="cc-comp-side"><div class="cc-comp-qr"><strong style="display:block;margin-bottom:8px">Tomar fotos desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div class="cc-note" style="margin-top:8px">El enlace solo permite tomar/subir fotos. Las fotos o PDF se envían rápido a la app para llenar los datos manualmente.</div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px;width:100%" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Borrador temporal.</strong><div style="margin-top:4px">Nada se convierte en comprobación definitiva hasta presionar Guardar comprobación.</div></div></div><div><form id="ccCompForm" class="cc-comp-form-card"><div class="cc-comp-form-title"><div><strong>Captura manual en la app</strong><div class="cc-note">También puedes agregar comprobantes directamente desde aquí.</div></div></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf"></div><div class="cc-field" style="margin-top:9px"><label>Descripción / artículos</label><textarea name="descripcion" rows="3"></textarea></div><div class="cc-comp-actions"><button class="cc-btn cc-btn-primary" type="submit"><i class="fa-solid fa-plus mr-1"></i>Agregar al borrador</button></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompDrafts" class="cc-comp-list"></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="cc-btn cc-btn-dark" id="ccCompSaveAll" type="button" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar comprobación</button></div><div id="ccCompList" class="cc-comp-list"></div></div></div></div></div>';
+  ov.innerHTML='<div class="cc-comp-shell"><div style="padding:15px 18px;background:#0f172a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Comprobar anticipo · '+h(a.folio)+'</strong><div style="font-size:10px;color:#cbd5e1;margin-top:2px">Captura continua. Las fotos del QR aparecerán aquí automáticamente.</div></div><button id="ccCompClose" style="background:none;border:0;color:#fff;font-size:22px;cursor:pointer">×</button></div><div class="cc-comp-body"><div class="cc-comp-layout"><div class="cc-comp-side"><div class="cc-comp-qr"><strong style="display:block;margin-bottom:8px">Tomar fotos desde celular</strong><div id="ccAntCompQR" style="display:inline-block;background:#fff;padding:10px;border-radius:10px;min-width:190px;min-height:190px"><div style="padding:70px 8px;color:#64748b;font-size:10px">Generando QR...</div></div><div class="cc-note" style="margin-top:8px">El enlace solo permite tomar/subir fotos. Las fotos o PDF se envían rápido a la app para llenar los datos manualmente.</div><div id="ccAntCompLinkText" style="font-size:9px;color:#64748b;margin-top:8px;word-break:break-all"></div><button class="cc-btn cc-btn-light" type="button" id="ccCompLink" style="margin-top:8px;width:100%" disabled>Copiar enlace</button></div><div class="cc-config-alert"><strong>Borrador temporal.</strong><div style="margin-top:4px">Nada se convierte en comprobación definitiva hasta presionar Guardar comprobación.</div></div></div><div><form id="ccCompForm" class="cc-comp-form-card"><div class="cc-comp-form-title"><div><strong>Captura manual en la app</strong><div class="cc-note">También puedes agregar comprobantes directamente desde aquí.</div></div></div><div class="cc-comp-fields"><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+cs+'</select></div><div class="cc-field"><label>Monto *</label><input name="monto" type="number" min="0.01" step="0.01" required></div></div><div class="cc-comp-docs"><div class="cc-field"><label>Tipo documento</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio</label><input name="folioDocumento"></div></div><div class="cc-field" style="margin-top:9px"><label>Foto / PDF <span style="font-weight:400;color:#64748b">(opcional)</span></label><input name="archivo" type="file" accept="image/*,application/pdf" capture="environment"></div><div class="cc-field" style="margin-top:9px"><label>Descripción / artículos</label><textarea name="descripcion" rows="3"></textarea></div><div class="cc-comp-actions"><button class="cc-btn cc-btn-primary" type="submit"><i class="fa-solid fa-plus mr-1"></i>Guardar comprobación</button></div><div id="ccCompMsg" style="margin-top:9px"></div></form><div id="ccCompDrafts" class="cc-comp-list"></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="cc-btn cc-btn-dark" id="ccCompSaveAll" type="button" disabled><i class="fa-solid fa-floppy-disk mr-1"></i>Guardar comprobación</button></div><div id="ccCompList" class="cc-comp-list"></div></div></div></div></div>';
   document.body.appendChild(ov);
 
   var mobileToken='',mobileUrl='',drafts=[],pollTimer=null,copyBtn=ov.querySelector('#ccCompLink'),qrBox=ov.querySelector('#ccAntCompQR'),linkText=ov.querySelector('#ccAntCompLinkText');
@@ -243,7 +243,7 @@ window.ccAntComprobar=async function(id){
 
   function renderDrafts(){
     var el=ov.querySelector('#ccCompDrafts'),btn=ov.querySelector('#ccCompSaveAll');if(!el)return;
-    if(!drafts.length){el.innerHTML='<strong>Borrador actual</strong><div class="cc-note" style="padding:10px 0">Esperando comprobantes. Las fotos enviadas desde el QR aparecerán aquí automáticamente.</div>';if(btn)btn.disabled=true;return}
+    if(!drafts.length){el.innerHTML='';if(btn)btn.disabled=true;return}
     el.innerHTML='<strong>Borrador actual · '+drafts.length+' comprobante(s)</strong>'+drafts.map(function(d,i){
       var opts=ds.map(function(x){return '<option value="'+h(x.conceptoId)+'"'+(x.conceptoId===d.conceptoId?' selected':'')+'>'+h(x.concepto)+'</option>'}).join('');
       var img=d.previewUrl?'<img src="'+h(d.previewUrl)+'" style="width:110px;max-height:140px;object-fit:contain;border-radius:9px;border:1px solid #e2e8f0;background:#fff">':'<div style="width:110px;height:90px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#64748b">Sin vista previa</div>';
@@ -283,9 +283,34 @@ window.ccAntComprobar=async function(id){
   async function refresh(){
     await ccAntLoad(true);a=(D.anticipos||[]).find(function(x){return x.id===id})||a;
     var list=(D.comprobaciones||[]).filter(function(x){return x.anticipo_id===id&&x.estatus==='ACTIVO'}),listEl=ov.querySelector('#ccCompList');
-    if(listEl)listEl.innerHTML='<strong>Comprobantes ya guardados</strong>'+list.map(function(x){return '<div style="padding:7px 0;border-bottom:1px solid #e2e8f0">'+f(x.fecha)+' · '+h(x.concepto)+' <b style="float:right">'+m(x.monto)+'</b></div>'}).join('');
+    if(listEl)listEl.innerHTML='<strong>Comprobaciones registradas · '+list.length+'</strong>'+list.map(function(x){return '<div style="padding:9px 0;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:8px;align-items:center"><span>'+f(x.fecha)+' · '+h(x.concepto)+' · <b>'+m(x.monto)+'</b></span><span style="display:flex;gap:5px"><button type="button" class="cc-btn cc-btn-light" data-edit-proof="'+h(x.id)+'">Editar</button><button type="button" class="cc-btn cc-btn-light" data-delete-proof="'+h(x.id)+'">Quitar</button></span></div>'}).join('');
   }
 
+  var listEl=ov.querySelector('#ccCompList');
+  if(listEl)listEl.addEventListener('click',async function(ev){
+    var edit=ev.target.closest('[data-edit-proof]'),del=ev.target.closest('[data-delete-proof]');
+    if(!edit&&!del)return;
+    var proofId=(edit||del).getAttribute(edit?'data-edit-proof':'data-delete-proof');
+    var proof=(D.comprobaciones||[]).find(x=>String(x.id)===String(proofId));
+    if(!proof)return;
+    try{
+      if(del){
+        if(!confirm('¿Quitar esta comprobación registrada?'))return;
+        var deleted=await sb().rpc('cc_ant_delete_comprobacion',{p_id:proofId,p_motivo:'Eliminada desde comprobación manual'});
+        if(deleted.error)throw deleted.error;
+      }else{
+        var amount=prompt('Importe de la comprobación',String(proof.monto||''));
+        if(amount===null)return;
+        var amountNumber=Number(amount);
+        if(!(amountNumber>0))throw Error('Importe inválido.');
+        var folio=prompt('Folio del documento',String(proof.folioDocumento||proof.folio_documento||''));
+        if(folio===null)return;
+        var edited=await sb().rpc('cc_ant_update_comprobacion',{p_item:{id:proofId,monto:amountNumber,concepto:proof.concepto,conceptoId:proof.conceptoId||proof.concepto_id,tipoDocumento:proof.tipoDocumento||proof.tipo_documento||'TICKET',folioDocumento:folio,observaciones:proof.observaciones||''}});
+        if(edited.error)throw edited.error;
+      }
+      await refresh();
+    }catch(e){alert('No se pudo modificar la comprobación: '+(e.message||e))}
+  });
   var formEl=ov.querySelector('#ccCompForm');
   if(formEl)formEl.onsubmit=async function(ev){
     ev.preventDefault();var submittedForm=ev.currentTarget||formEl,msgEl=ov.querySelector('#ccCompMsg');
@@ -293,8 +318,13 @@ window.ccAntComprobar=async function(id){
       var fd=new FormData(submittedForm),file=fd.get('archivo'),conceptoId=String(fd.get('conceptoId')||''),cx=(D.conceptos||[]).find(function(x){return x.id===conceptoId}),concepto=cx&&cx.nombre?cx.nombre:'Comprobante',monto=Number(fd.get('monto'));
       if(!conceptoId)throw new Error('Selecciona un concepto.');if(!(monto>0))throw new Error('Captura un monto válido.');
       var data='';if(file&&file.size)data=await ccAntFileData(file);
-      drafts.push({conceptoId:conceptoId,concepto:concepto,descripcion:String(fd.get('descripcion')||concepto),monto:monto,tipoDocumento:String(fd.get('tipoDocumento')||'TICKET'),folioDocumento:String(fd.get('folioDocumento')||''),fileData:data,fileName:(file&&file.size)?(file.name||'comprobante.jpg'):'',mime:(file&&file.size)?(file.type||'image/jpeg'):'',ocrTexto:'',ocrMonto:'',observaciones:'Captura interna'});
-      if(submittedForm&&typeof submittedForm.reset==='function')submittedForm.reset();if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Agregado al borrador. Puedes capturar otro comprobante.</span>';renderDrafts();
+      if(!mobileToken)throw Error('Enlace de comprobación todavía no disponible.');
+      var item={conceptoId:conceptoId,concepto:concepto,descripcion:String(fd.get('descripcion')||concepto),monto:monto,tipoDocumento:String(fd.get('tipoDocumento')||'TICKET'),folioDocumento:String(fd.get('folioDocumento')||''),fileData:data,fileName:(file&&file.size)?(file.name||'comprobante.jpg'):'',mime:(file&&file.size)?(file.type||'image/jpeg'):'',ocrTexto:'',ocrMonto:'',observaciones:'Captura interna'};
+      var saved=await sb().functions.invoke('cc-anticipo-public',{body:{action:'proof_batch',token:mobileToken,items:[item]}});
+      if(saved.error)throw saved.error;if(saved.data?.ok===false)throw Error(saved.data.error||'No se guardó');
+      if(submittedForm&&typeof submittedForm.reset==='function')submittedForm.reset();
+      if(msgEl)msgEl.innerHTML='<span style="color:#166534;font-weight:800">Comprobación guardada. Puedes capturar la siguiente.</span>';
+      await refresh();
     }catch(err){var txt=err&&err.message?err.message:String(err);if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt)}
   };
 
@@ -312,6 +342,16 @@ window.ccAntComprobar=async function(id){
     }catch(err){saveAll.disabled=false;var txt=err&&err.message?err.message:String(err);if(msgEl)msgEl.innerHTML='<span style="color:#b91c1c">'+h(txt)+'</span>';else alert(txt)}
   };
 
+  var done=document.createElement('button');
+  done.type='button';done.className='cc-btn cc-btn-primary';done.textContent='Comprobar todas y listo';
+  done.style.cssText='margin-top:12px;width:100%';
+  done.onclick=async function(){
+    if(drafts.length){alert('Primero guarda los comprobantes pendientes del borrador.');return}
+    await refresh();
+    if(pollTimer)clearInterval(pollTimer);
+    ov.remove();
+  };
+  ov.querySelector('#ccCompList')?.after(done);
   renderDrafts();await refresh();
  }catch(err){console.error('Abrir comprobación:',err);alert('No fue posible abrir la comprobación.\n\n'+(err&&err.message?err.message:String(err)))}
 };
