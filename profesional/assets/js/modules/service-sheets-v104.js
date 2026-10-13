@@ -106,6 +106,13 @@
   function installStyles(){
     if(document.getElementById('hs104-style'))return;
     const st=document.createElement('style');st.id='hs104-style';st.textContent=`
+      /* KPI compactos: solo Control de Hojas, sin afectar otros módulos */
+      #ccPanelHojasServicio #hs104Kpis{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:6px!important;margin:7px 0 9px!important}
+      #ccPanelHojasServicio #hs104Kpis .cc-ant-kpi{min-width:0!important;min-height:0!important;padding:7px 9px!important;border-radius:9px!important;box-shadow:none!important;display:flex!important;flex-direction:column!important;justify-content:center!important;gap:2px!important}
+      #ccPanelHojasServicio #hs104Kpis .cc-ant-kpi small{font-size:10px!important;line-height:1.15!important;margin:0!important;white-space:normal!important}
+      #ccPanelHojasServicio #hs104Kpis .cc-ant-kpi strong{font-size:19px!important;line-height:1.1!important;margin:0!important;letter-spacing:-.4px!important}
+      @media(max-width:1050px){#ccPanelHojasServicio #hs104Kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+      @media(max-width:550px){#ccPanelHojasServicio #hs104Kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}#ccPanelHojasServicio #hs104Kpis .cc-ant-kpi{padding:7px!important}#ccPanelHojasServicio #hs104Kpis .cc-ant-kpi strong{font-size:17px!important}}
       #ccPanelHojasServicio .hs104-nav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
       #ccPanelHojasServicio .hs104-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:13px;box-shadow:0 7px 18px #0f172a0a}
       #ccPanelHojasServicio .hs104-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}
