@@ -6,7 +6,7 @@ const status=message=>{const e=$('status');if(e)e.textContent=message;};
 let channel=null,stream=null,detector=null,zxingControls=null,worker=null,workerPromise=null;
 let running=false,starting=false,ocrBusy=false,lastQr='',qrAt=0,lastTotal='',totalAt=0,lastRead='',lastReadAt=0,count=0,ocrStart=0,scanStart=0,torch=false,loopTimer=null;
 let frames=0,ocrAttempts=0,qrEngine='Sin iniciar',connectionState='Conectando',lastOcrError='',lastOcrText='';
-function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Cuadros: '+frames+' · QR: '+qrEngine+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
+function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (1/s): '+frames+' · QR: '+qrEngine+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
 
 const amounts=text=>{
  const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').trim()).filter(Boolean);
@@ -89,7 +89,7 @@ async function scanLoop(){
  frames++;if(frames%10===0)diagnostic();
  if(detector&&!lastQr){try{const hits=await detector.detect($('video'));if(hits?.[0])await onScan(hits[0].rawValue);}catch(e){status('Lector QR: '+e.message);}}
  if(!ocrBusy&&!lastTotal)readTotal();
- if(running)loopTimer=setTimeout(scanLoop,650);
+ if(running)loopTimer=setTimeout(scanLoop,1000);
 }
 async function start(){
  if(running||starting)return;
@@ -105,7 +105,7 @@ async function start(){
    $('video').srcObject=stream;await $('video').play();running=true;status('Cámara activa · Apunta al QR');
   }else{
    if(!window.ZXingBrowser?.BrowserMultiFormatReader)throw new Error('No cargó el lector QR compatible. Verifica internet.');
-   const reader=new window.ZXingBrowser.BrowserMultiFormatReader();
+   const reader=new window.ZXingBrowser.BrowserMultiFormatReader({delayBetweenScanAttempts:1000,delayBetweenScanSuccess:1000});
    running=true;zxingControls=await reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:'environment'}}},$('video'),result=>{if(result)onScan(result.getText()).catch(e=>status(e.message));});
    stream=$('video').srcObject;running=true;status('Cámara activa · Apunta al QR');
   }
