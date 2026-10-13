@@ -1,13 +1,32 @@
-(()=>{'use strict';const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('session');let stream=null,detector=null,channel=null,running=false,lock='',lockAt=0,lastSeen=new Map(),count=0,torch=false,zxingControls=null;const status=t=>$('status').textContent=t;const beep=()=>{try{const a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.08;o.start();o.stop(a.currentTime+.09);setTimeout(()=>a.close(),400)}catch{}};async function onScan(raw){
+(()=>{'use strict';const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('session');let stream=null,detector=null,channel=null,running=false,lock='',lockAt=0,lastSeen=new Map(),count=0,torch=false,zxingControls=null;const status=t=>$('status').textContent=t;let audioContext=null;
+function unlockAudio(){try{audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}}
+function beep(){
+ try{
+  unlockAudio();if(!audioContext)return;
+  const now=audioContext.currentTime;
+  for(const [delay,freq,duration] of [[0,1050,.13],[.17,1350,.19]]){
+   const osc=audioContext.createOscillator(),gain=audioContext.createGain();
+   osc.type='square';osc.frequency.setValueAtTime(freq,now+delay);
+   gain.gain.setValueAtTime(.0001,now+delay);
+   gain.gain.exponentialRampToValueAtTime(.24,now+delay+.015);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+delay+duration);
+   osc.connect(gain);gain.connect(audioContext.destination);
+   osc.start(now+delay);osc.stop(now+delay+duration+.015);
+  }
+ }catch{}
+}
+function feedback(){beep();try{if(typeof navigator.vibrate==='function')navigator.vibrate([180,75,220]);}catch{}}
+async function onScan(raw){
  raw=String(raw||'').trim();const now=Date.now();
  if(!raw||(lastSeen.has(raw)&&now-lastSeen.get(raw)<12000)||(raw===lock&&now-lockAt<2000))return;
  lastSeen.set(raw,now);lock=raw;lockAt=now;
  for(const [k,t] of lastSeen)if(now-t>60000)lastSeen.delete(k);
  const sent=await channel.send({type:'broadcast',event:'scan',payload:{value:raw,at:now}});
- if(sent==='ok'){count++;$('count').textContent=count;const li=document.createElement('li');li.textContent=new Date().toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo'})+' · '+raw;$('history').prepend(li);beep();navigator.vibrate?.(65);status('✓ Enviado · '+count+' lecturas');}
+ if(sent==='ok'){count++;$('count').textContent=count;const li=document.createElement('li');li.textContent=new Date().toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo'})+' · '+raw;$('history').prepend(li);feedback();status('✓ Enviado · '+count+' lecturas');}
  else status('Sin conexión con computadora; vuelve a intentar.');
 }
 async function start(){
+ unlockAudio();
  if(running)return;
  if(!navigator.mediaDevices?.getUserMedia){status('La cámara requiere HTTPS y permisos del navegador.');return;}
  try{
