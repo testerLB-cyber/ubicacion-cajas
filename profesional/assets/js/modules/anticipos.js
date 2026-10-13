@@ -115,14 +115,26 @@ window.ccAntRender=function(){
  var actionsBar=document.getElementById('ccAntGlobalActions'),casetasRow=document.getElementById('ccAntMostrarCasetasWrap');if(actionsBar&&casetasRow){var operatorField=document.getElementById('ccAntOperatorSearch')?.parentElement;var preceding=operatorField&&operatorField.parentElement===casetasRow.parentElement?operatorField:casetasRow;if(preceding.nextElementSibling!==actionsBar)preceding.insertAdjacentElement('afterend',actionsBar)}
  var tab=body?.closest('table');if(tab)tab.classList.add('cc-ant-list-clean');
  var includeCasetas=!!document.getElementById('ccAntMostrarCasetas')?.checked;
- var rows=all.filter(x=>{var d=String(x.fecha||'').slice(0,10);var casetas=x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''));return(includeCasetas||!casetas)&&(!de||d>=de)&&(!ha||d<=ha)&&(!oi||String(x.operadorId)===String(oi))&&(!window.ccAntOperatorQuery||String(x.operador||'').toLocaleLowerCase('es-MX').includes(String(window.ccAntOperatorQuery).trim().toLocaleLowerCase('es-MX')))&&(!es||ccAntEstadoVisible(x)===es)}).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))||String(b.folio||'').localeCompare(String(a.folio||'')));window.ccAntFiltered=rows;
+ // NUEVO LISTADO ANT: un único predicado puro para filtros, sin versiones de viaje.
+ var onlyAnt=all.filter(x=>/^ANT-/i.test(String(x.folio||'')));
+ var normalizedStatus=String(es||'').trim().toUpperCase();
+ var search=String(window.ccAntOperatorQuery||'').trim().toLocaleLowerCase('es-MX');
+ var rows=onlyAnt.filter(x=>{
+   var date=String(x.fecha||'').slice(0,10);
+   var status=String(x.estatus||'').trim().toUpperCase();
+   return (!de||date>=de)&&(!ha||date<=ha)
+     &&(!oi||String(x.operadorId||'')===String(oi))
+     &&(!search||String(x.operador||'').toLocaleLowerCase('es-MX').includes(search))
+     &&(!normalizedStatus||status===normalizedStatus);
+ }).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))||String(b.folio||'').localeCompare(String(a.folio||'')));
+ window.ccAntFiltered=rows;
  // El contador y la tabla usan exactamente el mismo array, sin paginar ni modificar las filas.
  window.__ccAntFilterTest={allAnt:all.filter(x=>/^ANT-/i.test(String(x.folio||''))).length,
    visibleAnt:rows.filter(x=>/^ANT-/i.test(String(x.folio||''))).length,
    status:es||'TODOS',filters:{de,ha,operador:oi,busqueda:window.ccAntOperatorQuery||''}};
 
  var countLabel=document.getElementById('ccAntListCount');if(!countLabel&&body){countLabel=document.createElement('div');countLabel.id='ccAntListCount';countLabel.style.cssText='font-size:12px;font-weight:700;color:#475569;padding:8px 0';body.closest('table')?.insertAdjacentElement('beforebegin',countLabel)}
- if(countLabel){var totalAnt=all.filter(x=>/^ANT-/i.test(String(x.folio||''))).length;var filteredAnt=rows.filter(x=>/^ANT-/i.test(String(x.folio||''))).length;var labelText='ANT visibles: '+filteredAnt+' de '+totalAnt+(includeCasetas?' · Total con casetas: '+rows.length:'')+(filteredAnt<totalAnt?' · Hay filtros activos':'');if(countLabel.textContent!==labelText)countLabel.textContent=labelText}
+ if(countLabel){var totalAnt=onlyAnt.length;var filteredAnt=rows.filter(x=>/^ANT-/i.test(String(x.folio||''))).length;var labelText='ANT visibles: '+filteredAnt+' de '+totalAnt+(includeCasetas?' · Total con casetas: '+rows.length:'')+(filteredAnt<totalAnt?' · Hay filtros activos':'');if(countLabel.textContent!==labelText)countLabel.textContent=labelText}
  var body=document.getElementById('ccAntBody');if(body){
    var __listHtml=rows.length?rows.map(x=>{
      var p=Math.max(0,Number(x.pendiente!=null?x.pendiente:Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)));
