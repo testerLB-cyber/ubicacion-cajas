@@ -51,28 +51,24 @@ if(!from||!to||from>to){status.textContent='Selecciona un rango válido';return;
 status.textContent='Consultando hojas CFDI comprobadas del operador…';body.innerHTML='';$('#casCFDICount').textContent='…';
 try{
   const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
-  const ops=normalize(op.nombre),byId=new Map();
-  // Consultar los folios CFDI del operador y cruzar con comprobaciones; no depender de
-  // que hs_comprobaciones.operador_id coincida con el id del catálogo de casetas.
-  const folioQuery=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,estatus').ilike('folio','CFDI-%').in('estatus',['UTILIZADO','COMPROBADO','COMPROBADA']).limit(5000);
-  if(folioQuery.error)throw folioQuery.error;
-  const assigned=(folioQuery.data||[]).filter(x=>String(x.operador_id||'')===String(op.id)||normalize(x.operador_nombre)===ops);
-  assigned.forEach(x=>byId.set(String(x.id),x));
-  const results=[];
-  const ids=[...byId.keys()];
-  for(let i=0;i<ids.length;i+=150){
-    const c=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id').in('folio_id',ids.slice(i,i+150)).limit(500);
-    if(c.error)throw c.error;
-    results.push(...(c.data||[]));
+  const ops=normalize(op.nombre),byId=new Map(),results=[];
+  // Buscar primero las comprobaciones en el rango, sin depender del estado del folio
+  // ni de IDs distintos entre los catálogos de operadores de casetas y hojas.
+  // Paginar para no perder resultados por el límite de 1000 registros de PostgREST.
+  for(let offset=0;offset<20000;offset+=500){
+    const q=await client().from('hs_comprobaciones')
+      .select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id')
+      .gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59')
+      .order('fecha_comprobacion',{ascending:false}).range(offset,offset+499);
+    if(q.error)throw q.error;
+    results.push(...(q.data||[]));
+    if((q.data||[]).length<500)break;
   }
-  // También contemplar hojas comprobadas por beneficiario pero atribuidas al operador.
-  const direct=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id').gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59').or('operador_id.eq.'+op.id+',asignacion_operador_id.eq.'+op.id).limit(1000);
-  if(!direct.error)results.push(...(direct.data||[]));
-  const missing=[...new Set(results.map(x=>String(x.folio_id||'')).filter(id=>id&&!byId.has(id)))];
-  for(let i=0;i<missing.length;i+=150){
-    const v=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,estatus').in('id',missing.slice(i,i+150));
-    if(v.error)throw v.error;
-    (v.data||[]).forEach(x=>byId.set(String(x.id),x));
+  const ids=[...new Set(results.map(x=>String(x.folio_id||'')).filter(Boolean))];
+  for(let i=0;i<ids.length;i+=100){
+    const q=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,estatus').in('id',ids.slice(i,i+100));
+    if(q.error)throw q.error;
+    (q.data||[]).forEach(x=>byId.set(String(x.id),x));
   }
   const found=new Map();
   results.forEach(x=>{
