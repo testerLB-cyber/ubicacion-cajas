@@ -255,8 +255,8 @@
 
   function overrideNuevo(){window.ccAntNuevoAnticipo=function(){nuevoAnticipo(false)}}
   function overrideCajaCatalog(){if(typeof window.ccAntCatalogoForm==='function'&&!window.ccAntCatalogoForm.__ccCajaV1){const o=window.ccAntCatalogoForm;const w=function(tipo){if(tipo==='CUENTA')return cajaForm();return o.apply(this,arguments)};w.__ccCajaV1=true;window.ccAntCatalogoForm=w}}
-  function wrapLoad(){if(typeof window.ccAntLoad!=='function'||window.ccAntLoad.__ccExtraV1)return;const o=window.ccAntLoad;const w=async function(){const r=await o.apply(this,arguments);await refresh();return r};w.__ccExtraV1=true;window.ccAntLoad=w}
-  function installObserver(){const mo=new MutationObserver(()=>patchTipoDocumento(document));mo.observe(document.body,{subtree:true,childList:true})}
+  function wrapLoad(){/* Desactivado: el listado no debe refrescar módulos secundarios tras cada consulta. */}
+  function installObserver(){/* Sin observar todo el DOM: evita repintados y cargas innecesarias. */}
   async function install(){ensureViews();overrideNuevo();overrideCajaCatalog();wrapLoad();installObserver();await refresh()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);
 })();
