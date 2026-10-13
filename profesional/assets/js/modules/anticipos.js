@@ -58,6 +58,18 @@ window.ccAntLoad=async function(force=false){
  finally{__ccAntLoadPromise=null;}})();
  return __ccAntLoadPromise;
 };
+window.ccAntRefreshNow=async function(){
+ const button=document.getElementById('ccAntRefreshButton'),status=document.getElementById('ccAntRefreshStatus');
+ if(button?.disabled)return;
+ if(button)button.disabled=true;
+ if(status)status.textContent='Actualizando…';
+ try{
+   const ok=await window.ccAntLoad(true);
+   if(!ok)throw new Error('No se pudo actualizar anticipos');
+   if(status)status.textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+ }catch(e){if(status)status.textContent='Error al actualizar';console.warn('ANT_REFRESH',e)}
+ finally{if(button)button.disabled=false}
+};
 function saldo(c){var x=Number(c.saldo_inicial||0);(D.movimientos||[]).filter(z=>z.cuenta_id===c.id&&z.estatus==='ACTIVO').forEach(z=>{var n=Number(z.monto||0);if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(z.tipo))x+=n;else if(['ANTICIPO','AJUSTE_SALIDA'].includes(z.tipo))x-=n});return x}
 function detAnt(id){return(D.detalles||[]).filter(x=>x.anticipoId===id&&x.estatus==='ACTIVO')}
 function ccAntTotalComprobado(){
