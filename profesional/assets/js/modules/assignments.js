@@ -1,5 +1,5 @@
 (()=>{'use strict';
-let FSROWS=[];let D={},AV={operadores:[],unidades:[]},W=[],ROWS=[],SNAP={unidades:[],operadores:[]},VIEW='lista',RANGE='day',EDIT_ID=null,FSVIEW='horario';
+let FSROWS=[];let D={},AV={operadores:[],unidades:[]},W=[],ROWS=[],SNAP={unidades:[],operadores:[]},VIEW='lista',RANGE='day',EDIT_ID=null,FSVIEW='horario',FSPERIOD='day';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const sb=()=>window.gmSupabase||null;
 const tz='America/Hermosillo';
@@ -41,7 +41,7 @@ function shell(){css();$('ccAssignmentsMount').innerHTML=`<div class="asgWrap">
 </div>
 <div class="asgCompactBoard"><div class="asgCompactHead"><div><b>Programación</b><span id="asgBoardSub" class="asgSub"></span></div><div class="asgLegend"><span><i class="dot free"></i>Libre</span><span><i class="dot busy"></i>Ocupada</span></div></div><div id="asgList" class="asgCompactList"></div></div>
 <div id="asgAttention" style="display:none"></div><span id="asgAttentionCount" style="display:none"></span><span id="asgBoardTitle" style="display:none"></span>
-<div id="asgFS" class="asgFS"><div class="asgFSHead"><div><h3>Tablero de Despacho</h3><small>Disponibilidad por horario</small></div><div class="asgFSActions"><input id="asgFSHora" type="datetime-local"><select id="asgFSVentana"></select><button id="asgFSRefresh">↻ Actualizar</button><button id="asgFSClose">✕ Cerrar</button></div></div><div class="asgFSBody"><div class="asgFSTabs"><button class="asgFSTab on" data-fsview="horario">Horario</button><button class="asgFSTab" data-fsview="unidades">Unidades</button><button class="asgFSTab" data-fsview="operadores">Operadores</button><button class="asgFSTab" data-fsview="programacion">Programación</button></div><div id="asgFSSummary" class="asgFSSummary"></div><div id="asgFSContent"></div></div></div>
+<div id="asgFS" class="asgFS"><div class="asgFSHead"><div><h3>Tablero de Despacho</h3><small>Disponibilidad por horario</small></div><div class="asgFSActions"><input id="asgFSHora" type="datetime-local"><select id="asgFSVentana"></select><button id="asgFSRefresh">↻ Actualizar</button><button id="asgFSClose">✕ Cerrar</button></div></div><div class="asgFSBody"><div class="asgFSTabs"><button class="asgFSTab on" data-fsview="horario">Horario</button><button class="asgFSTab" data-fsview="unidades">Unidades</button><button class="asgFSTab" data-fsview="operadores">Operadores</button><button class="asgFSTab" data-fsview="programacion">Programación</button></div><div id="asgFSPeriod" style="display:flex;gap:6px;margin-bottom:10px"><button class="asgFSTab on" data-fsperiod="day">Día</button><button class="asgFSTab" data-fsperiod="week">Semana</button><button class="asgFSTab" data-fsperiod="month">Mes</button></div><div id="asgFSSummary" class="asgFSSummary"></div><div id="asgFSContent"></div></div></div>
 <div id="asgModal" class="asgModal"><div class="asgDialog"><div class="asgDlgHead"><div><h3 id="asgModalTitle">Nueva asignación</h3><div class="asgSub">Programa el servicio y confirma disponibilidad real.</div></div><button id="asgClose" class="asgClose">×</button></div><div class="asgDlgBody">
 <div class="asgSection">SERVICIO</div><div class="asgFields">
 ${['Cliente','Tipo de servicio','Clasificación'].map((x,i)=>'<div class="asgField asgPick"><label>'+x.toUpperCase()+'</label><input id="asg'+['Cliente','Tipo','Clas'][i]+'" autocomplete="off" placeholder="Buscar '+x.toLowerCase()+'…"><div id="asg'+['Cliente','Tipo','Clas'][i]+'Drop" class="asgDrop" style="display:none"></div></div>').join('')}
@@ -138,11 +138,15 @@ function openCalendarAssignment(date,hour,unit=null){
  if(unit)setPick('asgUnidad',unit.id,unit.numero);
  availability().then(syncAssignmentTrailer);
 }
-function openFullscreen(){$('asgFSHora').value=localInput();$('asgFSVentana').innerHTML=W.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+' · '+x.duracionMinutos+' min</option>').join('');$('asgFS').classList.add('on');$('asgFSClose').onclick=()=>$('asgFS').classList.remove('on');$('asgFSRefresh').onclick=loadFullscreen;document.querySelectorAll('.asgFSTab').forEach(b=>b.onclick=()=>{FSVIEW=b.dataset.fsview;document.querySelectorAll('.asgFSTab').forEach(x=>x.classList.toggle('on',x===b));renderFullscreen()});$('asgFSHora').onchange=loadFullscreen;$('asgFSVentana').onchange=loadFullscreen;loadFullscreen()}
+function openFullscreen(){FSPERIOD='day';$('asgFSHora').value=localInput();$('asgFSVentana').innerHTML=W.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+' · '+x.duracionMinutos+' min</option>').join('');$('asgFS').classList.add('on');$('asgFSClose').onclick=()=>$('asgFS').classList.remove('on');$('asgFSRefresh').onclick=loadFullscreen;document.querySelectorAll('[data-fsperiod]').forEach(b=>{b.classList.toggle('on',b.dataset.fsperiod===FSPERIOD);b.onclick=()=>{FSPERIOD=b.dataset.fsperiod;document.querySelectorAll('[data-fsperiod]').forEach(x=>x.classList.toggle('on',x===b));loadFullscreen()}});document.querySelectorAll('[data-fsview]').forEach(b=>b.onclick=()=>{FSVIEW=b.dataset.fsview;document.querySelectorAll('[data-fsview]').forEach(x=>x.classList.toggle('on',x===b));$('asgFSPeriod').style.display=FSVIEW==='horario'?'flex':'none';renderFullscreen()});$('asgFSHora').onchange=loadFullscreen;$('asgFSVentana').onchange=loadFullscreen;loadFullscreen()}
 async function loadFullscreen(){const h=$('asgFSHora').value;if(!h)return;const r=await sb().rpc('cc_assignment_availability',{p_servicio_at:new Date(h+'-07:00').toISOString(),p_ventana_id:$('asgFSVentana').value||null});if(r.error){$('asgFSContent').innerHTML='<div class="asgEmpty">Error: '+esc(r.error.message)+'</div>';return}AV=r.data||{operadores:[],unidades:[]};
-const date=h.slice(0,10),anchor=new Date(date+'T12:00:00'),dow=(anchor.getDay()+6)%7,mon=new Date(anchor);mon.setDate(mon.getDate()-dow);const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+const date=h.slice(0,10),anchor=new Date(date+'T12:00:00'),dow=(anchor.getDay()+6)%7;
+const mon=new Date(anchor);mon.setDate(mon.getDate()-dow);const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+const first=new Date(anchor.getFullYear(),anchor.getMonth(),1,12),last=new Date(anchor.getFullYear(),anchor.getMonth()+1,0,12);
 const fmt=d=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
-const qr=await sb().rpc('cc_assignments_list',{p_desde:fmt(mon),p_hasta:fmt(sun)});
+const from=FSPERIOD==='month'?fmt(first):FSPERIOD==='week'?fmt(mon):date;
+const to=FSPERIOD==='month'?fmt(last):FSPERIOD==='week'?fmt(sun):date;
+const qr=await sb().rpc('cc_assignments_list',{p_desde:from,p_hasta:to});
 if(qr.error){$('asgFSContent').innerHTML='<div class="asgEmpty">Error del calendario: '+esc(qr.error.message)+'</div>';return;}
 const allow=new Set((SNAP.unidades||[]).map(x=>String(x.id)));
 FSROWS=(qr.data?.asignaciones||[]).filter(x=>allow.has(String(x.unidad_id)));
@@ -186,14 +190,14 @@ function arrangeCalendarOverlaps(items){
 function renderFSHorario(){
  const base=$('asgFSHora').value||localInput(),date=base.slice(0,10),d=new Date(date+'T12:00:00'),offset=(d.getDay()+6)%7;
  const monday=new Date(d);monday.setDate(d.getDate()-offset);
- const dates=Array.from({length:7},(_,i)=>{const x=new Date(monday);x.setDate(monday.getDate()+i);return x;});
+ const dates=FSPERIOD==='day'?[d]:FSPERIOD==='month'?Array.from({length:new Date(d.getFullYear(),d.getMonth()+1,0).getDate()},(_,i)=>new Date(d.getFullYear(),d.getMonth(),i+1,12)):Array.from({length:7},(_,i)=>{const x=new Date(monday);x.setDate(monday.getDate()+i);return x;});
  const key=x=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(x);
  const keys=dates.map(key),rows=FSROWS.filter(x=>keys.includes(key(new Date(x.servicio_at))));
- const days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],startHour=0,hourHeight=52,totalHeight=24*hourHeight;
- $('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+rows.length+'</b><span>Servicios de la semana</span></div><div class="asgFSSum"><b>'+esc(keys[0])+' — '+esc(keys[6])+'</b><span>Semana del calendario</span></div>';
- let html='<div style="overflow:auto;border:1px solid #dbe3ee;border-radius:13px;background:#fff;max-height:calc(100vh - 230px)"><div style="min-width:1120px;display:grid;grid-template-columns:74px repeat(7,minmax(145px,1fr))">';
+ const days=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],startHour=0,hourHeight=52,totalHeight=24*hourHeight;
+ $('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+rows.length+'</b><span>Servicios del período</span></div><div class="asgFSSum"><b>'+esc(keys[0])+' — '+esc(keys[6])+'</b><span>'+({day:'Día',week:'Semana',month:'Mes'}[FSPERIOD])+'</span></div>';
+ let html='<div style="overflow:auto;border:1px solid #dbe3ee;border-radius:13px;background:#fff;max-height:calc(100vh - 230px)"><div style="min-width:'+(FSPERIOD==='day'?'380':FSPERIOD==='week'?'1120':String(74+dates.length*115))+'px;display:grid;grid-template-columns:74px repeat('+dates.length+',minmax('+(FSPERIOD==='day'?'300':'115')+'px,1fr))">';
  html+='<div style="position:sticky;top:0;z-index:25;background:#0f172a;color:#fff;padding:13px 8px;font-size:11px;font-weight:800">HORA</div>';
- dates.forEach((day,i)=>{html+='<div style="position:sticky;top:0;z-index:25;background:'+(keys[i]===date?'#1d4ed8':'#0f172a')+';color:#fff;padding:11px 8px;text-align:center;font-size:12px;font-weight:800;border-left:1px solid #334155">'+days[i]+' '+day.getDate()+'/'+(day.getMonth()+1)+'</div>'});
+ dates.forEach((day,i)=>{html+='<div style="position:sticky;top:0;z-index:25;background:'+(keys[i]===date?'#1d4ed8':'#0f172a')+';color:#fff;padding:11px 8px;text-align:center;font-size:12px;font-weight:800;border-left:1px solid #334155">'+days[day.getDay()]+' '+day.getDate()+'/'+(day.getMonth()+1)+'</div>'});
  html+='<div style="height:'+totalHeight+'px;position:relative;background:repeating-linear-gradient(to bottom,#f8fafc 0px,#f8fafc 51px,#cbd5e1 51px,#cbd5e1 52px)">';
  for(let h=0;h<24;h++)html+='<div style="position:absolute;top:'+(h*hourHeight+3)+'px;left:8px;color:#475569;font-size:11px;font-weight:700">'+String(h).padStart(2,'0')+':00</div>';
  html+='</div>';
