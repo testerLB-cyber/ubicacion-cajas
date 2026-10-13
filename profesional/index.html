@@ -9,7 +9,7 @@
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261013-ant-listado-nuevo-v46"/>
+<meta name="trafico-app-build" content="profesional-20261013-ant-listado-estilo-v47"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -93,7 +93,27 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <style id="ccAntCasetasRetiradas20261010">#ccPanelAnticipos [data-antv="casetas"],#ccPanelAnticipos [onclick*="ccCasLoad"],#ccAntViewCasetas{display:none!important}</style>
 
-<style id="ccOplLoginBrandStyle">#ccLoginGate .cc-login-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%}#ccLoginGate .cc-login-opl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;width:100%;font-size:36px;font-weight:900;letter-spacing:3px;margin:0}#ccLoginGate .cc-login-opl img{display:block;max-width:min(220px,75vw)!important;max-height:145px!important;width:auto;height:auto;object-fit:contain;border-radius:8px;margin:0 auto 12px!important;position:relative;left:24px}#ccLoginGate .cc-login-opl img[style*="display:none"]{display:none!important}#ccLoginGate .cc-login-brand p{width:100%;text-align:center;font-size:15px;font-weight:650;letter-spacing:.1px;line-height:1.5;margin:8px auto 0}</style><style>.cc-ant-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto}.cc-ant-table th{position:sticky;top:0;z-index:2;background:#f8fafc;white-space:nowrap}.cc-ant-table td{vertical-align:middle;white-space:nowrap}.cc-ant-table tr.cc-ant-selected td{background:#eff6ff!important}.cc-ant-table tr:hover td{background:#f8fafc}#ccAntViewAnticipos .cc-inv-wrap{overflow:auto;overflow-anchor:none;scrollbar-gutter:stable}#ccAntSelectedLabel{overflow-wrap:anywhere;line-height:1.6}</style><style id="ccAntRowVisibilityFix">#ccAntBody tr[data-ant-folio^="ANT-"]{display:table-row!important}</style></head>
+<style id="ccOplLoginBrandStyle">#ccLoginGate .cc-login-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%}#ccLoginGate .cc-login-opl{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;width:100%;font-size:36px;font-weight:900;letter-spacing:3px;margin:0}#ccLoginGate .cc-login-opl img{display:block;max-width:min(220px,75vw)!important;max-height:145px!important;width:auto;height:auto;object-fit:contain;border-radius:8px;margin:0 auto 12px!important;position:relative;left:24px}#ccLoginGate .cc-login-opl img[style*="display:none"]{display:none!important}#ccLoginGate .cc-login-brand p{width:100%;text-align:center;font-size:15px;font-weight:650;letter-spacing:.1px;line-height:1.5;margin:8px auto 0}</style><style>.cc-ant-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto}.cc-ant-table th{position:sticky;top:0;z-index:2;background:#f8fafc;white-space:nowrap}.cc-ant-table td{vertical-align:middle;white-space:nowrap}.cc-ant-table tr.cc-ant-selected td{background:#eff6ff!important}.cc-ant-table tr:hover td{background:#f8fafc}#ccAntViewAnticipos .cc-inv-wrap{overflow:auto;overflow-anchor:none;scrollbar-gutter:stable}#ccAntSelectedLabel{overflow-wrap:anywhere;line-height:1.6}</style><style id="ccAntRowVisibilityFix">#ccAntBody tr[data-ant-folio^="ANT-"]{display:table-row!important}</style><style id="ccAntListingModernV47">
+#ccPanelAnticipos #ccAntViewAnticipos{width:100%;max-width:none}
+#ccPanelAnticipos #ccAntViewAnticipos>.cc-inv-wrap{width:100%;max-width:none;max-height:calc(100vh - 280px)!important;min-height:310px;overflow:auto;scrollbar-gutter:stable}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table{width:100%;min-width:1250px;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th{text-align:left;background:#eef3f9;color:#42526b;font-size:10px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;padding:13px 12px;border-bottom:1px solid #dbe3ef}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td{padding:13px 12px;border-bottom:1px solid #ebf0f6;color:#263549;background:#fff}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table tbody tr:nth-child(even) td{background:#fafcff}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table tbody tr:hover td{background:#edf6ff!important}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table tbody tr.cc-ant-selected td{background:#e8f2ff!important}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(8),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(9),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(10){text-align:right;font-weight:650}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(8),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(9),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(10){text-align:right}
+#ccPanelAnticipos .cc-ant-status{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 11px;font-size:10px;font-weight:800;line-height:1.3;white-space:nowrap}
+#ccPanelAnticipos .cc-ant-status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px currentColor;opacity:.75}
+#ccPanelAnticipos .cc-ant-status-open{background:#e8f8ef;color:#167344}
+#ccPanelAnticipos .cc-ant-status-partial{background:#fff3dc;color:#956000}
+#ccPanelAnticipos .cc-ant-status-closed{background:#e7f0ff;color:#285fa8}
+#ccPanelAnticipos .cc-ant-status-cancelled{background:#fce9eb;color:#af3444}
+#ccPanelAnticipos .cc-ant-comp-count{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:9px;background:#edf2fa;color:#30466c;font-weight:800;font-size:12px}
+#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(11),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(11){text-align:center}
+@media(max-width:750px){#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table{min-width:1150px}}
+</style></head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccBootSplash"><div class="box"><b>Tráfico App</b><span id="ccBootSplashText">Abriendo Control Logístico…</span></div></div>
 <script>
@@ -292,7 +312,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
 
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
-<div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option value="ABIERTO">ABIERTO</option><option value="PARCIALMENTE COMPROBADO">PARCIALMENTE COMPROBADO</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option value="CERRADO">CERRADO</option><option value="CANCELADO">CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>MÉTODO</th><th>VIAJE</th><th>ANTICIPO ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
+<div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option value="ABIERTO">ABIERTO</option><option value="PARCIALMENTE COMPROBADO">PARCIALMENTE COMPROBADO</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option value="CERRADO">CERRADO</option><option value="CANCELADO">CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>MÉTODO</th><th>VIAJE</th><th>ANTICIPO ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>COMPROBACIONES</th><th>ESTATUS</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
 
 <style id="casFullScreen2026">
 #ccAntViewCasetasNuevo.cas-fullscreen{position:fixed!important;inset:0!important;z-index:99999!important;background:#f1f5f9!important;overflow-y:auto!important;overflow-x:hidden!important;padding:22px clamp(12px,2vw,34px)!important;display:block!important;max-width:none!important;width:100vw!important;height:100dvh!important;box-sizing:border-box!important}
@@ -1474,7 +1494,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-listado-nuevo-v46"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-estilo-v47"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
