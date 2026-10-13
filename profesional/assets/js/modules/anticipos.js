@@ -23,7 +23,7 @@ window.ccAntLoad=async function(force=false){
    var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');
    D=r.data;
    try{var tm=await sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre');D.tiposMovCaja=tm&&tm.data?tm.data:[]}catch(e){D.tiposMovCaja=[]}
-   __ccAntLastLoad=Date.now();ccAntRender();ccAntScheduleFix();
+   __ccAntLastLoad=Date.now();ccAntRender();
    try{document.dispatchEvent(new CustomEvent('ccAnt:data-refreshed',{detail:{at:__ccAntLastLoad}}))}catch(_){}
    return true;
  }catch(err){var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
@@ -36,28 +36,10 @@ function ccAntTotalComprobado(){
  var activos=new Set((D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO').map(x=>String(x.id)));
  return (D.comprobaciones||[]).reduce(function(total,x){return total+(x.estatus==='ACTIVO'&&activos.has(String(x.anticipo_id||x.anticipoId))?Math.max(0,Number(x.monto||0)):0)},0);
 }
-function ccAntFixComprobadoCard(){
- var panel=document.getElementById('ccPanelAnticipos');if(!panel)return;
- var general=(D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO'&&!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));
- var total=ccAntTotalComprobado();
- panel.querySelectorAll('small,span,div').forEach(function(el){
-  if(el.children.length||!/^operadores con pendiente$/i.test((el.textContent||'').trim()))return;
-  var card=el.closest('.cc-ant-kpi,.cc-kpi,.cc-ant-summary-card,.cc-ant-stat,.stat-card')||el.parentElement;
-  if(!card)return;
-  el.textContent='TOTAL COMPROBADO';
-  var val=card.querySelector('strong,[class*="value"],[class*="amount"]');
-  if(!val){var siblings=Array.from(card.children).filter(x=>x!==el);val=siblings.find(x=>/^[\\d\\s,.]+$/.test((x.textContent||'').trim()))}
-  if(val)val.textContent=m(total);
- });
-}
-var __ccAntFixTimer;
-function ccAntScheduleFix(){clearTimeout(__ccAntFixTimer);__ccAntFixTimer=setTimeout(ccAntFixComprobadoCard,40)}
-function ccAntInstallFix(){var p=document.getElementById('ccPanelAnticipos');if(!p||p.__ccAntFixInstalled)return;p.__ccAntFixInstalled=true;new MutationObserver(ccAntScheduleFix).observe(p,{childList:true,subtree:true,characterData:true});ccAntScheduleFix()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccAntInstallFix);else ccAntInstallFix();
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
  var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0),late=active.filter(x=>x.estatus==='PENDIENTE'&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;
- var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=ccAntTotalComprobado();var generalLate=general.filter(x=>Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0))>0&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div><div class="cc-ant-kpi"><small>+7 días</small><strong>'+generalLate+'</strong></div>';
+ var R=D.resumen||{};var general=active.filter(x=>!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));var generalPending=general.reduce((n,x)=>n+Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)),0);var generalComprobado=ccAntTotalComprobado();var generalConfirm=general.filter(x=>x.estatus==='PENDIENTE_CONFIRMAR').length;var k=document.getElementById('ccAntKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Saldo disponible en cajas</small><strong>'+m(R.saldoCaja||0)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+generalConfirm+'</strong></div><div class="cc-ant-kpi"><small>Por comprobar · Anticipos generales</small><strong>'+m(generalPending)+'</strong></div><div class="cc-ant-kpi"><small>Total comprobado</small><strong>'+m(generalComprobado)+'</strong></div>';
  var op=document.getElementById('ccAntOperadorFiltro');if(op){var cur=op.value;op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=cur}
  var de=document.getElementById('ccAntDesde')?.value||'',ha=document.getElementById('ccAntHasta')?.value||'',oi=op?.value||'',es=document.getElementById('ccAntEstatusFiltro')?.value||'';
  var rows=all.filter(x=>{var d=String(x.fecha||'').slice(0,10);return(!de||d>=de)&&(!ha||d<=ha)&&(!oi||x.operadorId===oi)&&(!es||x.estatus===es)});window.ccAntFiltered=rows;
