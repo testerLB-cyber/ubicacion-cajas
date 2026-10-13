@@ -41,56 +41,88 @@ async function ocrWorker(){
  return workerPromise;
 }
 
-let stream=null,watchTimer=null,consecutive=0,lastCandidate='',recognized=false,scanCount=0;
-function stopCamera(){clearInterval(watchTimer);watchTimer=null;stream?.getTracks()?.forEach(t=>t.stop());stream=null;$('video').srcObject=null;}
-async function processFrame(){
- if(!stream||busy||recognized||document.hidden)return;
- const video=$('video');if(!video.videoWidth||!video.videoHeight)return;
- busy=true;scanCount++;
+let stream=null,watchTimer=null,stableAt=0,lastFrame=null,capturing=false,lastResult='';
+function stopCamera(){clearInterval(watchTimer);watchTimer=null;stream?.getTracks()?.forEach(t=>t.stop());stream=null;}
+function detectStableTicket(){
+ if(!stream||busy||capturing||document.hidden)return;
+ const v=$('video');if(!v.videoWidth||!v.videoHeight)return;
+ const canvas=$('probe');canvas.width=120;canvas.height=160;
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
+ ctx.drawImage(v,v.videoWidth*.14,v.videoHeight*.1,v.videoWidth*.72,v.videoHeight*.8,0,0,120,160);
+ const d=ctx.getImageData(0,0,120,160).data,gray=new Uint8Array(120*160);
+ let light=0,sharpness=0,diff=0,edges=0,n=0;
+ for(let i=0;i<gray.length;i++){gray[i]=Math.round((d[i*4]*.299)+(d[i*4+1]*.587)+(d[i*4+2]*.114));light+=gray[i]}
+ light/=gray.length;
+ for(let y=2;y<158;y+=2)for(let x=2;x<118;x+=2){
+  const i=y*120+x,v0=gray[i];sharpness+=Math.abs(4*v0-gray[i-1]-gray[i+1]-gray[i-120]-gray[i+120]);
+  if(Math.abs(v0-gray[i-1])>25)edges++;
+  if(lastFrame)diff+=Math.abs(v0-lastFrame[i]);n++;
+ }
+ lastFrame=gray;
+ const sharp=sharpness/n,motion=lastFrame&&n?diff/n:99;
+ const plausible=light>50&&light<240&&sharp>26&&edges/n>.055&&motion<16;
+ if(!plausible){stableAt=0;$('countdown').textContent='Encuadra el ticket con buena luz y mantén el teléfono firme';return}
+ if(!stableAt)stableAt=performance.now();
+ const elapsed=performance.now()-stableAt;
+ $('countdown').textContent='Ticket estable · Captura automática en '+Math.max(1,Math.ceil((1250-elapsed)/1000))+' s';
+ if(elapsed>=1250)void captureTicket();
+}
+async function captureTicket(){
+ if(capturing||busy||!stream)return;
+ capturing=true;
+ const v=$('video'),shot=document.createElement('canvas');
+ shot.width=v.videoWidth;shot.height=v.videoHeight;
+ shot.getContext('2d').drawImage(v,0,0,shot.width,shot.height);
+ stopCamera();
+ $('countdown').textContent='Foto capturada automáticamente · Reconociendo TOTAL…';
+ $('capturePreview').src=shot.toDataURL('image/jpeg',.9);
+ $('capturePreview').hidden=false;$('videoWrap').hidden=true;
+ busy=true;const started=performance.now();
  try{
-  const engine=await ocrWorker();
-  const c=document.createElement('canvas');
-  const scale=Math.min(1,1400/Math.max(video.videoWidth,video.videoHeight));
-  c.width=Math.round(video.videoWidth*scale);c.height=Math.round(video.videoHeight*scale);
-  c.getContext('2d',{willReadFrequently:true}).drawImage(video,0,0,c.width,c.height);
-  status('Cámara en vivo · OCR lectura '+scanCount+' · Buscando TOTAL:');
-  const result=await engine.recognize(c);
-  const txt=String(result?.data?.text||''),match=extractTotal(txt);
-  $('ocrResult').hidden=false;
-  $('ocrResultText').textContent=txt.trim()||'No se reconoció texto en este cuadro.';
-  $('ocrResultLine').textContent=match?'Renglón detectado: '+match.line:'Apunta al renglón TOTAL: y mantén el ticket enfocado.';
-  if(match){
-   if(lastCandidate===match.value)consecutive++;else{lastCandidate=match.value;consecutive=1}
-   $('ocrResultTotal').textContent='TOTAL: $'+match.value+' · '+consecutive+'/2 lecturas';
-   $('ocrResultTotal').style.color='#15803d';
-   $('totalValue').textContent='$'+match.value;
-   if(consecutive>=2){
-    recognized=true;selectedTotal=match.value;
-    $('send').disabled=!channel;
-    status('✓ TOTAL $'+match.value+' confirmado en 2 lecturas. Revisa y envía a Observaciones.');
-    try{const audio=new (window.AudioContext||window.webkitAudioContext)();await audio.resume();const o=audio.createOscillator();o.connect(audio.destination);o.start();o.stop(audio.currentTime+.15);o.onended=()=>audio.close()}catch{}
-   }else status('TOTAL posible: $'+match.value+' · Falta segunda lectura coincidente');
-  }else{
-   consecutive=0;lastCandidate='';
-   $('ocrResultTotal').textContent='TOTAL aún no identificado';
-   $('ocrResultTotal').style.color='#b45309';
+  const engine=await ocrWorker();let best='',match=null;
+  const scale=Math.min(1,1750/Math.max(shot.width,shot.height)),w=Math.max(1,Math.round(shot.width*scale)),h=Math.max(1,Math.round(shot.height*scale));
+  for(const rotation of [0,90,270]){
+   const canvas=document.createElement('canvas'),side=rotation!==0;
+   canvas.width=side?h:w;canvas.height=side?w:h;
+   const ctx=canvas.getContext('2d',{willReadFrequently:true});
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(rotation*Math.PI/180);ctx.drawImage(shot,-w/2,-h/2,w,h);
+   status('OCR: buscando TOTAL'+(rotation?' · giro '+rotation+'°':'')+'…');
+   const result=await engine.recognize(canvas),txt=String(result?.data?.text||'');
+   if(txt.length>best.length)best=txt;
+   match=extractTotal(txt);if(match){best=txt;break}
   }
- }catch(e){status('Error OCR: '+e.message)}
+  $('ocrResult').hidden=false;
+  $('ocrResultText').textContent=best||'No se logró leer texto legible.';
+  $('ocrResultLine').textContent=match?'Renglón: '+match.line:'No se encontró el campo TOTAL. Puedes reintentar.';
+  if(!match){status('No se pudo identificar TOTAL. Prueba mejor iluminación y reintenta.');$('ocrResultTotal').textContent='TOTAL no detectado';return}
+  selectedTotal=match.value;
+  $('totalValue').textContent='$'+selectedTotal;
+  $('ocrResultTotal').textContent='TOTAL: $'+selectedTotal;
+  $('ocrResultTotal').style.color='#15803d';
+  status('✓ TOTAL $'+selectedTotal+' detectado en '+((performance.now()-started)/1000).toFixed(1)+' s · Enviando…');
+  try{
+   const ac=new (window.AudioContext||window.webkitAudioContext)();await ac.resume();
+   for(const [delay,hz] of [[0,900],[.18,1300],[.36,900]]){const osc=ac.createOscillator(),gain=ac.createGain();osc.frequency.value=hz;gain.gain.value=.16;osc.connect(gain);gain.connect(ac.destination);osc.start(ac.currentTime+delay);osc.stop(ac.currentTime+delay+.13)}
+   setTimeout(()=>ac.close(),1000);
+  }catch{}
+  try{navigator.vibrate?.([130,80,130])}catch{}
+  await send();
+ }catch(e){status('Error al reconocer el ticket: '+e.message)}
  finally{busy=false}
 }
 async function openCamera(){
  if(busy)return;
- stopCamera();recognized=false;consecutive=0;lastCandidate='';selectedTotal='';scanCount=0;
- $('send').disabled=true;$('ocrResult').hidden=true;$('totalValue').textContent='Buscando…';
- $('countdown').textContent='Video en vivo · OCR cada 2 segundos · Sin capturar fotos';
- status('Activando cámara…');
+ stopCamera();capturing=false;stableAt=0;lastFrame=null;selectedTotal='';
+ $('ocrResult').hidden=true;$('capturePreview').hidden=true;$('videoWrap').hidden=false;
+ $('totalValue').textContent='Buscando…';$('countdown').textContent='Encuadra el ticket; captura automática al estabilizarse';
+ status('Abriendo cámara automáticamente…');
  try{
-  if(!navigator.mediaDevices?.getUserMedia)throw Error('Se requiere HTTPS y permiso para usar la cámara.');
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('Permite el uso de la cámara en un sitio HTTPS.');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
   const video=$('video');video.srcObject=stream;await video.play();
-  status('Cámara activa · Encuadra TOTAL:');
-  watchTimer=setInterval(()=>{void processFrame()},2000);
-  void processFrame();
+  status('Cámara activa · Esperando imagen estable y enfocada');
+  watchTimer=setInterval(detectStableTicket,250);
  }catch(e){status('No se pudo abrir la cámara: '+e.message);stopCamera()}
 }
 async function send(){
