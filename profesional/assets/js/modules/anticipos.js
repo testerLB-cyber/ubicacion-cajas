@@ -77,7 +77,7 @@ window.ccAntRender=function(){
  if(antView&&antBody&&!document.getElementById('ccAntGlobalActions')){
    var wrap=antBody.closest('.cc-inv-wrap');var bar=document.createElement('div');bar.id='ccAntGlobalActions';
    bar.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 14px;margin:8px 0 14px;border:1px solid #dbe3ed;border-radius:14px;background:linear-gradient(135deg,#fff,#f8fafc);box-shadow:0 3px 14px rgba(15,23,42,.05)';
-   bar.innerHTML='<div style="width:100%;flex-basis:100%"><strong style="font-size:12px;color:#0f172a">Anticipo seleccionado</strong><div id="ccAntSelectedLabel" style="font-size:11px;color:#64748b;margin-top:3px">Selecciona un registro de la tabla</div></div><button type="button" class="cc-btn" data-ant-global="edit" style="background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-pen-to-square" style="margin-right:7px"></i>Modificar</button><button type="button" class="cc-btn" data-ant-global="comp" style="background:#ecfdf5;border:1px solid #6ee7b7;color:#047857;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-clipboard-check" style="margin-right:7px"></i>Comprobar</button><button type="button" class="cc-btn" data-ant-global="extra" style="background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-circle-plus" style="margin-right:7px"></i>Añadir extra</button>';
+   bar.innerHTML='<div style="width:100%;flex-basis:100%"><strong style="font-size:12px;color:#0f172a">Anticipo seleccionado</strong><div id="ccAntSelectedLabel" style="font-size:11px;color:#64748b;margin-top:3px">Selecciona un registro de la tabla</div></div><button type="button" class="cc-btn" data-ant-global="edit" style="background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-pen-to-square" style="margin-right:7px"></i>Modificar</button><button type="button" class="cc-btn" data-ant-global="comp" style="background:#ecfdf5;border:1px solid #6ee7b7;color:#047857;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-clipboard-check" style="margin-right:7px"></i>Comprobar</button><button type="button" class="cc-btn" data-ant-global="extra" style="background:#fff7ed;border:1px solid #fdba74;color:#c2410c;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-circle-plus" style="margin-right:7px"></i>Añadir extra</button><button type="button" class="cc-btn" data-ant-global="close" style="background:#0f766e;border:1px solid #0d9488;color:#fff;font-weight:800;border-radius:11px;padding:10px 14px"><i class="fa-solid fa-lock" style="margin-right:7px"></i>Cerrar anticipo</button>';
    var casetasToggle=document.getElementById('ccAntMostrarCasetasWrap');if(casetasToggle)casetasToggle.insertAdjacentElement('afterend',bar);else wrap?.parentElement?.insertBefore(bar,wrap);
    bar.onclick=function(ev){var bt=ev.target.closest('[data-ant-global]');if(!bt)return;var item=(D.anticipos||[]).find(z=>String(z.id)===String(window.ccAntSelectedId||''));if(!item){alert('Selecciona primero un anticipo del listado.');return}if(item.esCasetas||item.es_casetas||/^CAS-/i.test(String(item.folio||''))){alert('Los anticipos de casetas se gestionan desde Casetas.');return}
      var action=bt.dataset.antGlobal;
@@ -85,6 +85,7 @@ window.ccAntRender=function(){
      if(item.estatus==='CERRADO'||item.estatus==='CANCELADO'){alert('Este anticipo no está abierto.');return}
      if(action==='comp'){if(!ccPerm('anticipos.comprobar'))return alert('Sin permiso para comprobar.');return window.ccAntComprobarConQR(item.id)}
      if(action==='extra'){if(!ccPerm('anticipos.editar'))return alert('Sin permiso para agregar extras.');return ccAntExtra(item.id)}
+     if(action==='close'){if(!ccPerm('anticipos.comprobar')&&!ccPerm('anticipos.editar'))return alert('Sin permiso para cerrar.');return window.ccAntCerrar(item.id)}
      
    };
    var filters=antView.querySelector('.cc-dot-filters');if(filters&&!document.getElementById('ccAntOperatorSearch')){
@@ -138,12 +139,14 @@ window.ccAntRender=function(){
  var body=document.getElementById('ccAntBody');if(body){
    var __antCompCounts=new Map();
    (D.comprobaciones||[]).forEach(co=>{if(String(co.estatus||'ACTIVO').trim().toUpperCase()!=='ACTIVO')return;var id=String(co.anticipo_id||co.anticipoId||'');if(id)__antCompCounts.set(id,(__antCompCounts.get(id)||0)+1)});
+   var __cierresMap=new Map((D.cierres||[]).filter(x=>!x.reabierto_at).map(x=>[String(x.anticipo_id),x]));
    var __listHtml=rows.length?rows.map(x=>{
      var p=Math.max(0,Number(x.pendiente!=null?x.pendiente:Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0)));
+     var cierre=__cierresMap.get(String(x.id)),comprobacionReal=cierre?Number(cierre.monto_comprobado_real??cierre.monto_comprobado??x.comprobado||0):Number(x.comprobado||0),comprobacionDinero=cierre?Number(cierre.monto_comprobado_dinero??cierre.monto_comprobado??0):Math.min(Number(x.comprobado||0),Math.max(0,Number(x.montoEntregado||0)-Number(x.devuelto||0)));
      var status=ccAntEstadoVisible(x),compCount=__antCompCounts.get(String(x.id))||0,statusClass=status==='ABIERTO'?'open':status==='CERRADO'?'closed':status==='CANCELADO'?'cancelled':'partial',selected=String(window.ccAntSelectedId||'')===String(x.id);
      var numberOrDash=z=>z==null||String(z).trim()===''?'—':h(z);
-     return '<tr data-ant-folio="'+h(x.folio)+'" data-ant-select="'+h(x.id)+'" class="'+(selected?'cc-ant-selected':'')+'" style="cursor:pointer;border-bottom:1px solid #e2e8f0"><td><strong style="color:#1e40af;font-size:12px">'+h(x.folio)+'</strong></td><td>'+f(x.fecha)+'</td><td>'+numberOrDash(x.operador)+'</td><td>'+numberOrDash(x.destino)+'</td><td>'+numberOrDash(x.unidad||x.unidadDescripcion)+'</td><td>'+numberOrDash(x.metodoDeposito)+'</td><td>'+numberOrDash(x.viaje)+'</td><td>'+m(x.montoEntregado!=null?x.montoEntregado:x.monto)+'</td><td>'+m(x.comprobado||0)+'</td><td><strong>'+m(p)+'</strong></td><td><span class="cc-ant-comp-count" title="Comprobaciones activas">'+compCount+'</span></td><td><span class="cc-ant-status cc-ant-status-'+statusClass+'"><span class="cc-ant-status-dot"></span>'+h(status)+'</span></td></tr>';
-   }).join(''):'<tr><td colspan="12" style="padding:25px;text-align:center;color:#94a3b8">Sin anticipos para estos filtros. Usa «Limpiar filtros · mostrar todos».</td></tr>';
+     return '<tr data-ant-folio="'+h(x.folio)+'" data-ant-select="'+h(x.id)+'" class="'+(selected?'cc-ant-selected':'')+'" style="cursor:pointer;border-bottom:1px solid #e2e8f0"><td><strong style="color:#1e40af;font-size:12px">'+h(x.folio)+'</strong></td><td>'+f(x.fecha)+'</td><td>'+numberOrDash(x.operador)+'</td><td>'+numberOrDash(x.destino)+'</td><td>'+numberOrDash(x.unidad||x.unidadDescripcion)+'</td><td>'+numberOrDash(x.metodoDeposito)+'</td><td>'+numberOrDash(x.viaje)+'</td><td>'+m(x.montoEntregado!=null?x.montoEntregado:x.monto)+'</td><td>'+m(comprobacionReal)+'</td><td>'+m(comprobacionDinero)+'</td><td><strong>'+m(p)+'</strong></td><td><span class="cc-ant-comp-count" title="Comprobaciones activas">'+compCount+'</span></td><td><span class="cc-ant-status cc-ant-status-'+statusClass+'"><span class="cc-ant-status-dot"></span>'+h(status)+'</span></td></tr>';
+   }).join(''):'<tr><td colspan="13" style="padding:25px;text-align:center;color:#94a3b8">Sin anticipos para estos filtros. Usa «Limpiar filtros · mostrar todos».</td></tr>';
    if(body.__lastAntRowsHtml!==__listHtml){var scrollHost=body.closest('.cc-inv-wrap'),lastScroll=scrollHost?.scrollTop||0;body.innerHTML=__listHtml;body.__lastAntRowsHtml=__listHtml;if(scrollHost)scrollHost.scrollTop=lastScroll}
    if(!body.__antClickBound){body.__antClickBound=true;body.addEventListener('click',function(ev){var selectedRow=ev.target.closest('[data-ant-select]');if(!selectedRow)return;window.ccAntSelectedId=selectedRow.dataset.antSelect;var item=(D.anticipos||[]).find(z=>String(z.id)===String(window.ccAntSelectedId));var label=document.getElementById('ccAntSelectedLabel');if(label)label.textContent=item?(item.folio+' · '+(item.operador||'Sin operador')+' · '+ccAntEstadoVisible(item)+' · Cuenta: '+(item.cuenta||'Sin cuenta')+' · Referencia: '+(item.referencia||'—')+' · Autorizado: '+m(item.montoAutorizado||item.monto||0)+' · Entregado: '+m(item.montoEntregado||0)+' · Firma: '+(item.firmaEstatus||'PENDIENTE')+' · Observaciones: '+(item.observaciones||'—')):'Selecciona un registro';body.querySelectorAll('tr[data-ant-select]').forEach(tr=>tr.classList.toggle('cc-ant-selected',tr===selectedRow))})}
  }
@@ -214,12 +217,27 @@ window.ccAntModificarSeleccionado=function(item){
  document.body.appendChild(ov);ov.querySelectorAll('[data-x]').forEach(x=>x.onclick=()=>ov.remove());
 };
 window.ccAntCerrar=function(id){
- var a=(D.anticipos||[]).find(x=>x.id===id);if(!a)return;
- var diff=Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0),opts='';
- if(Math.abs(diff)<0.01)opts='<option value="SIN_DIFERENCIA">Sin diferencia</option>';
- else if(diff>0)opts='<option value="REGRESAR_CAMBIO">Regresar cambio a caja</option><option value="CARGAR_FALTANTE">Cargar faltante al operador</option>';
- else opts='<option value="SALDO_A_FAVOR">Registrar saldo a favor del operador</option>';
- modal('Cerrar anticipo · '+a.folio,'<div class="cc-config-alert"><strong>Entregado:</strong> '+m(a.montoEntregado||0)+' · <strong>Comprobado:</strong> '+m(a.comprobado||0)+' · <strong>Devuelto:</strong> '+m(a.devuelto||0)+'<br><strong>Diferencia:</strong> '+m(diff)+'</div><div class="cc-field" style="margin-top:12px"><label>Resolución *</label><select name="resolucion" required>'+opts+'</select></div><div class="cc-field" style="margin-top:10px"><label>Observaciones de cierre</label><textarea name="observaciones"></textarea></div>',async fd=>{var item={anticipoId:id,resolucion:String(fd.get('resolucion')||''),observaciones:String(fd.get('observaciones')||'')};var r=await sb().rpc('cc_ant_close',{p_item:item});if(r.error)throw r.error;if(!r.data?.ok)throw new Error(r.data?.error||'No se pudo cerrar')});
+ var a=(D.anticipos||[]).find(x=>x.id===id);if(!a||!/^ANT-/i.test(String(a.folio||'')))return;
+ if(a.estatus==='CERRADO'||a.estatus==='CANCELADO')return alert('Este anticipo ya está cerrado o cancelado.');
+ var entregado=Number(a.montoEntregado||0),real=Number(a.comprobado||0),dev=Number(a.devuelto||0),
+     disponible=Math.max(0,entregado-dev),exceso=Math.max(0,real-disponible),faltante=Math.max(0,disponible-real);
+ var options=exceso>0.009
+   ?'<option value="">Selecciona una respuesta</option><option value="SALDO_A_FAVOR">Sí, reconocer saldo a favor del operador</option><option value="NO_RECONOCER_EXCEDENTE">No, solo registrar excedente como comprobación real</option>'
+   :faltante>0.009
+   ?'<option value="">Selecciona una resolución</option><option value="CARGAR_FALTANTE">Registrar faltante a cargo del operador</option><option value="REGRESAR_CAMBIO">Dinero devuelto a caja (solo si se recibió físicamente)</option>'
+   :'<option value="SIN_DIFERENCIA">Sin diferencia</option>';
+ var info='<div class="cc-config-alert"><strong>Entregado:</strong> '+m(entregado)+' · <strong>Comprobación real:</strong> '+m(real)+' · <strong>Devoluciones previas:</strong> '+m(dev)+
+   '<br><strong>Comprobación dinero:</strong> '+m(Math.min(real,disponible))+
+   (exceso>0.009?'<br><strong>Excedente documentado:</strong> '+m(exceso):faltante>0.009?'<br><strong>Pendiente:</strong> '+m(faltante):'<br><strong>Sin diferencia</strong>')+'</div>';
+ modal('Cerrar anticipo · '+a.folio,info+
+   '<div class="cc-field" style="margin-top:12px"><label>'+(exceso>0.009?'¿Reconocer el excedente como saldo real a favor del operador?':'Resolución de cierre')+' *</label><select name="resolucion" required>'+options+'</select></div>'+
+   '<div class="cc-note" style="margin:10px 0">La comprobación real se conserva íntegra. Si no reconoces el excedente, la comprobación dinero queda limitada al anticipo disponible, sin generar saldo a favor.</div>'+
+   '<div class="cc-field"><label>Observaciones de cierre</label><textarea name="observaciones" placeholder="Motivo y detalle de la conciliación"></textarea></div>',
+   async fd=>{
+     var item={anticipoId:id,resolucion:String(fd.get('resolucion')||''),observaciones:String(fd.get('observaciones')||'')};
+     if(!item.resolucion)throw new Error('Selecciona una resolución de cierre.');
+     var rr=await sb().rpc('cc_ant_close',{p_item:item});if(rr.error)throw rr.error;if(!rr.data?.ok)throw new Error(rr.data?.error||'No se pudo cerrar');
+   });
 };
 window.ccAntRenderSaldos=function(){
  var op=document.getElementById('ccAntSaldoOperador'),tp=document.getElementById('ccAntSaldoTipo');if(!op||!tp)return;
