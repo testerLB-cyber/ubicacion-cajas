@@ -38,7 +38,8 @@ function ccAntTotalComprobado(){
  var activos=new Set((D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO').map(x=>String(x.id)));
  return (D.comprobaciones||[]).reduce(function(total,x){return total+(x.estatus==='ACTIVO'&&activos.has(String(x.anticipo_id||x.anticipoId))?Math.max(0,Number(x.monto||0)):0)},0);
 }
-function ccAntEstadoVisible(x){var e=String(x.estatus||'').toUpperCase();if(e==='CERRADO'||e==='CANCELADO'||e==='PENDIENTE_CONFIRMAR')return e;return Number(x.comprobado||0)>0?'PARCIALMENTE COMPROBADO':'ABIERTO'}
+var __antBaseline20261013={'ANT-20261013-019C7C':7,'ANT-20261013-24F936':10,'ANT-20261013-460680':0,'ANT-20261013-7A8BF2':0,'ANT-20261013-88B1D3':2,'ANT-20261013-A74D9C':0,'ANT-20261013-B2B486':0,'ANT-20261013-C1ED41':6};
+function ccAntEstadoVisible(x){var e=String(x.estatus||'').toUpperCase();if(e==='CERRADO'||e==='CANCELADO')return e;var folio=String(x.folio||'');if(Object.prototype.hasOwnProperty.call(__antBaseline20261013,folio)){var actual=(D.comprobaciones||[]).filter(z=>String(z.anticipo_id||z.anticipoId)===String(x.id)&&z.estatus==='ACTIVO').length;if(actual<=__antBaseline20261013[folio])return 'ABIERTO';return 'PARCIALMENTE COMPROBADO'}if(e==='PENDIENTE_CONFIRMAR'&&Number(x.comprobado||0)===0)return 'ABIERTO';return Number(x.comprobado||0)>0?'PARCIALMENTE COMPROBADO':'ABIERTO'}
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
  var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0);
