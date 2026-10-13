@@ -16,7 +16,7 @@ function modal(title,html,save){
 let __ccAntLoadPromise=null,__ccAntLastLoad=0,__ccAntPendingForce=false;
 window.ccAntLoad=async function(force=false){
  if(!canAntView()||!antPanelActive())return false;
- if(__ccAntLoadPromise){if(force)__ccAntPendingForce=true;return __ccAntLoadPromise}
+ if(__ccAntLoadPromise)return __ccAntLoadPromise;
  if(!force&&Date.now()-__ccAntLastLoad<8000)return true;
  var k=document.getElementById('ccAntKpis');if(k)k.setAttribute('aria-busy','true');
  if(force)window.gmInvalidateRpcCache?.(['cc_ant_list']);
@@ -55,7 +55,7 @@ window.ccAntLoad=async function(force=false){
    sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre').then(function(tm){D.tiposMovCaja=tm&&tm.data?tm.data:[]}).catch(function(){D.tiposMovCaja=[]});
    return true;
  }catch(err){if(k)k.removeAttribute('aria-busy');var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
- finally{__ccAntLoadPromise=null;if(__ccAntPendingForce){__ccAntPendingForce=false;setTimeout(function(){ccAntLoad(true)},0)}}})();
+ finally{__ccAntLoadPromise=null;}})();
  return __ccAntLoadPromise;
 };
 function saldo(c){var x=Number(c.saldo_inicial||0);(D.movimientos||[]).filter(z=>z.cuenta_id===c.id&&z.estatus==='ACTIVO').forEach(z=>{var n=Number(z.monto||0);if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(z.tipo))x+=n;else if(['ANTICIPO','AJUSTE_SALIDA'].includes(z.tipo))x-=n});return x}
@@ -116,6 +116,11 @@ window.ccAntRender=function(){
  var tab=body?.closest('table');if(tab)tab.classList.add('cc-ant-list-clean');
  var includeCasetas=!!document.getElementById('ccAntMostrarCasetas')?.checked;
  var rows=all.filter(x=>{var d=String(x.fecha||'').slice(0,10);var casetas=x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''));return(includeCasetas||!casetas)&&(!de||d>=de)&&(!ha||d<=ha)&&(!oi||String(x.operadorId)===String(oi))&&(!window.ccAntOperatorQuery||String(x.operador||'').toLocaleLowerCase('es-MX').includes(String(window.ccAntOperatorQuery).trim().toLocaleLowerCase('es-MX')))&&(!es||ccAntEstadoVisible(x)===es)}).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))||String(b.folio||'').localeCompare(String(a.folio||'')));window.ccAntFiltered=rows;
+ // El contador y la tabla usan exactamente el mismo array, sin paginar ni modificar las filas.
+ window.__ccAntFilterTest={allAnt:all.filter(x=>/^ANT-/i.test(String(x.folio||''))).length,
+   visibleAnt:rows.filter(x=>/^ANT-/i.test(String(x.folio||''))).length,
+   status:es||'TODOS',filters:{de,ha,operador:oi,busqueda:window.ccAntOperatorQuery||''}};
+
  var countLabel=document.getElementById('ccAntListCount');if(!countLabel&&body){countLabel=document.createElement('div');countLabel.id='ccAntListCount';countLabel.style.cssText='font-size:12px;font-weight:700;color:#475569;padding:8px 0';body.closest('table')?.insertAdjacentElement('beforebegin',countLabel)}
  if(countLabel){var totalAnt=all.filter(x=>/^ANT-/i.test(String(x.folio||''))).length;var filteredAnt=rows.filter(x=>/^ANT-/i.test(String(x.folio||''))).length;var labelText='ANT visibles: '+filteredAnt+' de '+totalAnt+(includeCasetas?' · Total con casetas: '+rows.length:'')+(filteredAnt<totalAnt?' · Hay filtros activos':'');if(countLabel.textContent!==labelText)countLabel.textContent=labelText}
  var body=document.getElementById('ccAntBody');if(body){
