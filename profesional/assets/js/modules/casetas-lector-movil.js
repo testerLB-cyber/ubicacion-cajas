@@ -41,7 +41,7 @@ async function ocrWorker(){
  return workerPromise;
 }
 
-let stream=null,watchTimer=null,stableAt=0,lastFrame=null,capturing=false,lastResult='';
+let stream=null,watchTimer=null,stableAt=0,lastFrame=null,capturing=false,lastResult='',awaitingNext=false,previousTicketFrame=null,changedFrames=0;
 function stopCamera(){clearInterval(watchTimer);watchTimer=null;stream?.getTracks()?.forEach(t=>t.stop());stream=null;}
 function detectStableTicket(){
  if(!stream||busy||capturing||document.hidden)return;
@@ -58,14 +58,21 @@ function detectStableTicket(){
   if(Math.abs(v0-gray[i-1])>25)edges++;
   if(lastFrame)diff+=Math.abs(v0-lastFrame[i]);n++;
  }
+ const motion=lastFrame&&n?diff/n:99;
  lastFrame=gray;
- const sharp=sharpness/n,motion=lastFrame&&n?diff/n:99;
+ if(awaitingNext){
+  let delta=0,samples=0;
+  if(previousTicketFrame)for(let i=0;i<gray.length;i+=8){delta+=Math.abs(gray[i]-previousTicketFrame[i]);samples++}
+  changedFrames=(samples&&delta/samples>23)?changedFrames+1:0;
+  if(changedFrames>=2){awaitingNext=false;previousTicketFrame=null;changedFrames=0;stableAt=0;status('Nuevo ticket · Enfocando…')}
+  else{$('countdown').textContent='✓ Registrado · Retira el ticket y coloca el siguiente';return}
+ }
  const plausible=light>50&&light<240&&sharp>26&&edges/n>.055&&motion<16;
  if(!plausible){stableAt=0;$('countdown').textContent='Encuadra el ticket con buena luz y mantén el teléfono firme';return}
  if(!stableAt)stableAt=performance.now();
  const elapsed=performance.now()-stableAt;
- $('countdown').textContent='Ticket estable · Captura automática en '+Math.max(1,Math.ceil((650-elapsed)/1000))+' s';
- if(elapsed>=650)void captureTicket();
+ $('countdown').textContent='Ticket estable · Captura automática en '+Math.max(1,Math.ceil((500-elapsed)/1000))+' s';
+ if(elapsed>=500)void captureTicket();
 }
 async function captureTicket(){
  if(capturing||busy||!stream)return;
@@ -73,10 +80,9 @@ async function captureTicket(){
  const v=$('video'),shot=document.createElement('canvas');
  shot.width=v.videoWidth;shot.height=v.videoHeight;
  shot.getContext('2d').drawImage(v,0,0,shot.width,shot.height);
- stopCamera();
- $('countdown').textContent='Foto capturada automáticamente · Reconociendo TOTAL…';
- $('capturePreview').src=shot.toDataURL('image/jpeg',.9);
- $('capturePreview').hidden=false;$('videoWrap').hidden=true;
+ previousTicketFrame=lastFrame?.slice()||null;
+ $('countdown').textContent='Foto capturada · Leyendo TOTAL…';
+ // Keep the camera open to scan the next ticket immediately.
  busy=true;const started=performance.now();
  try{
   const engine=await ocrWorker();let best='',match=null;
@@ -108,13 +114,14 @@ async function captureTicket(){
    setTimeout(()=>ac.close(),1000);
   }catch{}
   try{navigator.vibrate?.([130,80,130])}catch{}
-  await send();
+  const delivered=await send();
+  if(delivered){awaitingNext=true;changedFrames=0;$('countdown').textContent='✓ Guardado en Observaciones · Retira el ticket y coloca el siguiente'}
  }catch(e){status('Error al reconocer el ticket: '+e.message)}
- finally{busy=false}
+ finally{busy=false;capturing=false;stableAt=0}
 }
 async function openCamera(){
  if(busy)return;
- stopCamera();capturing=false;stableAt=0;lastFrame=null;selectedTotal='';
+ stopCamera();capturing=false;stableAt=0;lastFrame=null;selectedTotal='';awaitingNext=false;previousTicketFrame=null;changedFrames=0;
  $('ocrResult').hidden=true;$('capturePreview').hidden=true;$('videoWrap').hidden=false;
  $('totalValue').textContent='Buscando…';$('countdown').textContent='Encuadra el ticket; captura automática al estabilizarse';
  status('Abriendo cámara automáticamente…');
@@ -128,13 +135,30 @@ async function openCamera(){
  }catch(e){status('No se pudo abrir la cámara: '+e.message);stopCamera()}
 }
 async function send(){
- if(!selectedTotal||!channel)return status('No hay un TOTAL confirmado o falta vincular con la computadora.');
+ if(!selectedTotal||!channel){status('No hay un TOTAL confirmado o falta vincular con la computadora.');return false;}
  $('send').disabled=true;
  try{
-  const result=await channel.send({type:'broadcast',event:'total',payload:{total:selectedTotal,at:Date.now()}});
+  const result=await channel.send({type:'broadcast',event:'total',payload:{total:selectedTotal,at:Date.now(),scanId:crypto.randomUUID?.()||String(Date.now())}});
   if(result!=='ok')throw Error('Sin confirmación: '+result);
-  status('✓ TOTAL $'+selectedTotal+' enviado a Observaciones');
- }catch(e){status('No se pudo enviar: '+e.message);$('send').disabled=false}
+  status('✓ TOTAL 
+}
+function init(){
+ $('retry').onclick=()=>void openCamera();
+ $('send').onclick=send;
+ window.addEventListener('pagehide',()=>{stopCamera();worker?.terminate?.()});
+ void openCamera();
+ if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Encuadra el ticket. Para enviar el TOTAL a Observaciones, abre desde Casetas → Comprobación.');return}
+ if(!window.supabase?.createClient)return;
+ try{
+  const sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  channel=sb.channel('casetas-lector-'+token,{config:{broadcast:{ack:true}}});
+  channel.on('broadcast',{event:'stop'},()=>{$('send').disabled=true;channel=null;status('La computadora desconectó el lector.')});
+  channel.subscribe(state=>{if(state==='SUBSCRIBED'){$('send').disabled=!selectedTotal} });
+ }catch(e){console.warn('Conexión para envío no disponible',e)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();+selectedTotal+' enviado a Observaciones');return true;
+ }catch(e){status('No se pudo enviar: '+e.message);$('send').disabled=false;return false}
 }
 function init(){
  $('retry').onclick=()=>void openCamera();
