@@ -462,27 +462,6 @@
   }
 
   function saldoCuenta(q){return Number(q?.saldo||0)}
-  function renderFilter(){
-    const k=document.getElementById('ccAntKpis');if(!k)return;
-    let box=document.getElementById('ccAntCuentaKpiFilter');
-    if(!box){box=document.createElement('div');box.id='ccAntCuentaKpiFilter';box.style='display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:0 0 10px 0;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px';k.parentNode.insertBefore(box,k)}
-    const qs=active(cache.extra?.cuentas||[]);
-    box.innerHTML='<div class="cc-field" style="min-width:260px;margin:0"><label>Indicadores por cuenta</label><select id="ccAntCuentaKpiSel"><option value="">Todas las cuentas</option>'+qs.map(q=>'<option value="'+esc(q.id)+'" '+(q.id===selected?'selected':'')+'>'+esc(q.nombre)+'</option>').join('')+'</select></div><div class="cc-note" style="padding-bottom:7px">Los indicadores superiores cambian según la cuenta seleccionada.</div>';
-    box.querySelector('#ccAntCuentaKpiSel').onchange=e=>{selected=e.target.value||'';renderKpis()};
-  }
-
-  function renderKpis(){
-    const k=document.getElementById('ccAntKpis');if(!k)return;
-    const all=cache.base?.anticipos||[], rows=selected?all.filter(a=>a.cuentaId===selected):all;
-    const open=rows.filter(a=>!['CANCELADO','CERRADO'].includes(String(a.estatus||'').toUpperCase()));
-    const pending=open.reduce((s,a)=>s+Number(a.pendiente||0),0);
-    const confirm=open.filter(a=>String(a.estatus||'').toUpperCase()==='PENDIENTE_CONFIRMAR').length;
-    const people=new Set(open.filter(a=>Number(a.pendiente||0)>0).map(a=>a.operadorId||a.responsableId||a.id)).size;
-    const late=open.filter(a=>Number(a.pendiente||0)>0&&a.fecha&&(Date.now()-new Date(a.fecha).getTime())/86400000>7).length;
-    const qs=active(cache.extra?.cuentas||[]), balance=selected?saldoCuenta(qs.find(q=>q.id===selected)):qs.reduce((s,q)=>s+saldoCuenta(q),0);
-    k.innerHTML='<div class="cc-ant-kpi"><small>Saldo '+(selected?'de cuenta':'total cuentas')+'</small><strong>'+money(balance)+'</strong></div><div class="cc-ant-kpi"><small>Pendientes confirmar</small><strong>'+confirm+'</strong></div><div class="cc-ant-kpi"><small>Total por comprobar</small><strong>'+money(pending)+'</strong></div><div class="cc-ant-kpi"><small>Personas con pendiente</small><strong>'+people+'</strong></div><div class="cc-ant-kpi"><small>+7 días</small><strong>'+late+'</strong></div>';
-  }
-
   function modal(title,html,onSubmit){
     const ov=document.createElement('div');ov.style='position:fixed;inset:0;background:rgba(15,23,42,.76);z-index:100080;display:flex;align-items:center;justify-content:center;padding:16px';
     ov.innerHTML='<div style="background:#fff;width:min(700px,97vw);max-height:94vh;overflow:auto;border-radius:16px"><div style="background:#0f172a;color:#fff;padding:15px 18px;display:flex;justify-content:space-between"><strong>'+esc(title)+'</strong><button data-x style="border:0;background:none;color:#fff;font-size:22px">×</button></div><form style="padding:18px">'+html+'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button type="button" class="cc-btn cc-btn-light" data-cancel>Cancelar</button><button type="submit" class="cc-btn cc-btn-primary">Guardar</button></div></form></div>';
@@ -508,8 +487,8 @@
     card.querySelector('[data-new]').onclick=()=>editAccount();card.querySelector('[data-trans]').onclick=transfer;card.querySelector('[data-mov]').onclick=()=>window.ccAntMovimientoCaja?.();card.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editAccount(qs.find(q=>q.id===b.dataset.edit)||{}));
   }
 
-  async function refresh(){try{await load();cleanNav();renderFilter();renderKpis();renderAccountCatalog()}catch(e){console.warn('Cuentas/KPIs anticipos',e)}}
-  function install(){cleanNav();refresh();if(typeof window.ccAntRender==='function'&&!window.ccAntRender.__cuentaKpis){const o=window.ccAntRender,w=function(){const r=o.apply(this,arguments);setTimeout(refresh,0);return r};w.__cuentaKpis=true;window.ccAntRender=w}if(typeof window.ccAntView==='function'&&!window.ccAntView.__cuentaCatalog){const o=window.ccAntView,w=function(v,b){const r=o.apply(this,arguments);if(v==='catalogos')setTimeout(refresh,0);cleanNav();return r};w.__cuentaCatalog=true;window.ccAntView=w}}
+  async function refresh(){try{await load();cleanNav();renderAccountCatalog()}catch(e){console.warn('Catálogo de cuentas anticipos',e)}}
+  function install(){cleanNav();refresh();if(typeof window.ccAntView==='function'&&!window.ccAntView.__cuentaCatalog){const original=window.ccAntView;const wrapped=function(v,b){const result=original.apply(this,arguments);if(v==='catalogos')setTimeout(refresh,0);cleanNav();return result};wrapped.__cuentaCatalog=true;window.ccAntView=wrapped}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,0));else setTimeout(install,0);
 })();
 
