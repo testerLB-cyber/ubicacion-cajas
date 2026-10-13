@@ -194,7 +194,24 @@ function renderFSHorario(){
  const key=x=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(x);
  const keys=dates.map(key),rows=FSROWS.filter(x=>keys.includes(key(new Date(x.servicio_at))));
  const days=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],startHour=0,hourHeight=52,totalHeight=24*hourHeight;
- $('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+rows.length+'</b><span>Servicios del período</span></div><div class="asgFSSum"><b>'+esc(keys[0])+' — '+esc(keys[6])+'</b><span>'+({day:'Día',week:'Semana',month:'Mes'}[FSPERIOD])+'</span></div>';
+ $('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+rows.length+'</b><span>Servicios del período</span></div><div class="asgFSSum"><b>'+esc(keys[0])+(keys.length>1?' — '+esc(keys[keys.length-1]):'')+'</b><span>'+({day:'Día',week:'Semana',month:'Mes'}[FSPERIOD])+'</span></div>';
+ if(FSPERIOD==='month'){
+   const shift=(dates[0].getDay()+6)%7,weekday=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+   let month='<div style="display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:5px;overflow:auto">';
+   weekday.forEach(w=>month+='<div style="padding:9px;text-align:center;font-size:11px;font-weight:850;background:#0f172a;color:#fff;border-radius:7px">'+w+'</div>');
+   for(let n=0;n<shift;n++)month+='<div style="background:#f1f5f9;border-radius:8px;min-height:105px"></div>';
+   dates.forEach((day,i)=>{
+     const list=rows.filter(x=>key(new Date(x.servicio_at))===keys[i]).sort((a,b)=>new Date(a.servicio_at)-new Date(b.servicio_at));
+     month+='<div data-month-date="'+keys[i]+'" style="border:1px solid #dbe3ee;border-radius:9px;background:'+(keys[i]===date?'#eff6ff':'#fff')+';min-height:110px;padding:7px"><b style="font-size:12px">'+day.getDate()+'</b> <small style="color:#64748b">'+list.length+' servicio(s)</small>';
+     list.forEach(x=>month+='<button type="button" data-fsedit="'+esc(x.id)+'" style="display:block;width:100%;text-align:left;cursor:pointer;background:'+creatorColor(x.created_by)+';color:white;border:0;border-radius:5px;margin:4px 0;padding:5px;overflow:hidden"><b>'+esc(x.unidad_numero)+'</b><div style="font-size:10px">'+dt(x.servicio_at)+' · '+esc(x.cliente_nombre)+'</div></button>');
+     month+='</div>';
+   });
+   month+='</div>';
+   $('asgFSContent').innerHTML=month;
+   $('asgFSContent').querySelectorAll('[data-month-date]').forEach(el=>el.addEventListener('dblclick',ev=>{if(!ev.target.closest('[data-fsedit]'))openCalendarAssignment(el.dataset.monthDate,Number(base.slice(11,13))||8)}));
+   $('asgFSContent').querySelectorAll('[data-fsedit]').forEach(el=>el.onclick=()=>openModal(FSROWS.find(x=>String(x.id)===String(el.dataset.fsedit))));
+   return;
+ }
  let html='<div style="overflow:auto;border:1px solid #dbe3ee;border-radius:13px;background:#fff;max-height:calc(100vh - 230px)"><div style="min-width:'+(FSPERIOD==='day'?'380':FSPERIOD==='week'?'1120':String(74+dates.length*115))+'px;display:grid;grid-template-columns:74px repeat('+dates.length+',minmax('+(FSPERIOD==='day'?'300':'115')+'px,1fr))">';
  html+='<div style="position:sticky;top:0;z-index:25;background:#0f172a;color:#fff;padding:13px 8px;font-size:11px;font-weight:800">HORA</div>';
  dates.forEach((day,i)=>{html+='<div style="position:sticky;top:0;z-index:25;background:'+(keys[i]===date?'#1d4ed8':'#0f172a')+';color:#fff;padding:11px 8px;text-align:center;font-size:12px;font-weight:800;border-left:1px solid #334155">'+days[day.getDay()]+' '+day.getDate()+'/'+(day.getMonth()+1)+'</div>'});
