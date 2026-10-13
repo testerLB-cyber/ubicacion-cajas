@@ -285,7 +285,11 @@ window.ccAntComprobar=async function(id){
   function getPhotoRef(x){return String(x?.evidencia_url||x?.evidenciaUrl||'').trim()}
   async function showPhoto(x){
     var raw=getPhotoRef(x);if(!raw)return;
+    var popup=window.open('about:blank','_blank');
+    if(!popup)throw Error('Permite ventanas emergentes para visualizar la foto.');
+    try{popup.document.title='Cargando fotografía…';popup.document.body.textContent='Preparando fotografía…'}catch(_){}
     var link=raw;
+    try{
     if(!/^https:\/\//i.test(raw)){
       var path=raw.replace(/^\/+/, '').replace(/^cc-anticipos\//,'');
       var signed=await sb().storage.from('cc-anticipos').createSignedUrl(path,300);
@@ -293,8 +297,8 @@ window.ccAntComprobar=async function(id){
       link=signed.data?.signedUrl||'';
     }
     if(!/^https:\/\//i.test(link))throw Error('No se pudo obtener un enlace válido de la fotografía.');
-    var windowPhoto=window.open(link,'_blank','noopener,noreferrer');
-    if(!windowPhoto)throw Error('El navegador bloqueó la foto. Permite ventanas emergentes para este sitio.');
+    popup.location.replace(link);
+    }catch(error){try{popup.close()}catch(_){}throw error}
   }
   async function refresh(){
     await ccAntLoad(true);a=(D.anticipos||[]).find(function(x){return x.id===id})||a;
