@@ -425,5 +425,22 @@ window.ccAntPostCreate=function(a,links){document.getElementById('ccAntPostCreat
 window.ccAntShowLinks=function(a,links,firmaOnly){document.getElementById('ccAntLinksModal')?.remove();var ov=document.createElement('div');ov.id='ccAntLinksModal';ov.style='position:fixed;inset:0;background:rgba(15,23,42,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';ov.innerHTML='<div style="background:#fff;width:min(680px,96vw);border-radius:16px;overflow:hidden"><div style="padding:15px 18px;background:#0f172a;color:#fff"><strong>Anticipo '+h(a.folio)+'</strong></div><div style="padding:18px"><div class="cc-config-alert" style="margin-bottom:12px">Enlace temporal listo para compartir.</div><div class="cc-field"><label>Firma de enterado · 72 horas</label><input id="ccAntLinkFirma" readonly value="'+h(links.firma)+'"></div><button class="cc-btn cc-btn-light" id="ccCopyFirma" style="margin-top:6px">Copiar enlace de firma</button>'+(firmaOnly?'':'<div class="cc-field" style="margin-top:12px"><label>Comprobación completa para operador · 7 días</label><input id="ccAntLinkComp" readonly value="'+h(links.comprobacion)+'"></div><button class="cc-btn cc-btn-primary" id="ccCopyComp" style="margin-top:6px">Copiar enlace de comprobación completa</button><div class="cc-note" style="margin-top:6px">Este enlace permite capturar concepto, importe, tipo de documento, folio, descripción y adjuntar foto/PDF opcional.</div>')+'<div style="text-align:right;margin-top:15px"><button class="cc-btn cc-btn-primary" id="ccAntLinksClose">Cerrar</button></div></div></div>';document.body.appendChild(ov);ov.querySelector('#ccCopyFirma').onclick=function(){ccAntCopy(links.firma,'Enlace de firma copiado')};var cp=ov.querySelector('#ccCopyComp');if(cp)cp.onclick=function(){ccAntCopy(links.comprobacion,'Enlace de comprobación copiado')};ov.querySelector('#ccAntLinksClose').onclick=function(){ov.remove()}}
 window.ccAntLinks=async function(id){var a=(D.anticipos||[]).find(function(x){return x.id===id});if(!a)return;if(a.estatus==='CERRADO'){alert('Este anticipo está cerrado. Debe abrirse antes de generar enlaces.');return}try{var r1=await sb().rpc('cc_ant_generate_link',{p_anticipo_id:id,p_tipo:'FIRMA',p_hours:72});if(r1.error)throw r1.error;var r2=await sb().rpc('cc_ant_generate_link',{p_anticipo_id:id,p_tipo:'COMPROBACION',p_hours:168});if(r2.error)throw r2.error;ccAntShowLinks(a,{firma:ccAntPublicUrl('anticipo-operador.html',r1.data.token),comprobacion:ccAntPublicUrl('comprobacion-anticipo-completa.html?v=2',r2.data.token)})}catch(err){alert(err.message||err)}}
 
+
+/* Ruta única de comprobación para Anticipos > Operadores > Listado.
+   Se conserva el formulario original con QR; el modal antUnifiedComp no se utiliza. */
+(function(){
+  var abrirConQR=window.ccAntComprobar;
+  if(typeof abrirConQR!=='function')return;
+  window.ccAntComprobarConQR=abrirConQR;
+  document.addEventListener('click',function(ev){
+    var btn=ev.target&&ev.target.closest&&ev.target.closest('#ccAntBody [data-aa="comp"]');
+    if(!btn)return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    document.getElementById('antUnifiedComp')?.remove();
+    abrirConQR(btn.dataset.id);
+  },true);
+})();
+
 window.ccAntExportarPDF=function(){if(!ccPerm('anticipos.reportes'))return;var rows=window.ccAntFiltered||[];if(!rows.length||!window.jspdf?.jsPDF){alert('No hay datos para exportar');return}var d=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'letter'});d.setFontSize(15);d.text('REPORTE HISTÓRICO DE ANTICIPOS',14,14);d.autoTable({startY:20,head:[['Folio','Fecha','Operador','Destino','Unidad','Tipo anticipo','Método','Viaje','Anticipo','Comprobado','Pendiente','Estatus']],body:rows.map(x=>[x.folio,f(x.fecha),x.operador||'',x.destino||'',x.unidad||'',x.tipoUnidadAnticipo||'',x.metodoDeposito||'',x.viaje||'',m(x.monto),m(x.comprobado),m(Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto))),x.estatus]),styles:{fontSize:7}});d.save('Reporte_Anticipos_'+new Date().toISOString().slice(0,10)+'.pdf')};
 })();
