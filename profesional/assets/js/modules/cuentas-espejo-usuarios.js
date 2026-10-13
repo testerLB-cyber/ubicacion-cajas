@@ -55,10 +55,33 @@ async function editGeofences(clientId){
  boxes.forEach(x=>x.addEventListener('change',count));count();
  ov.querySelector('[data-all]').addEventListener('click',count);
  ov.querySelector('[data-none]').addEventListener('click',count);
- ov.querySelector('[data-geo-search]').oninput=e=>{
-  const q=String(e.target.value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  boxes.forEach(x=>{const label=x.closest('label');const name=String(label?.textContent||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(label)label.style.display=name.includes(q)?'flex':'none';});
+ const search=ov.querySelector('[data-geo-search]');
+ const normal=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').trim();
+ const list=boxes[0]?.closest('label')?.parentElement;
+ const empty=document.createElement('div');
+ empty.style.cssText='display:none;padding:12px;color:#64748b;font-size:12px;text-align:center';
+ empty.textContent='No hay coincidencias. Prueba otro nombre o borra la búsqueda.';
+ list?.appendChild(empty);
+ const filterGeo=()=>{
+  const q=normal(search.value);
+  let shown=0;
+  boxes.forEach(x=>{
+   const label=x.closest('label');
+   if(!label)return;
+   const visible=!q||normal(label.textContent).includes(q);
+   label.hidden=!visible;
+   label.style.setProperty('display',visible?'flex':'none','important');
+   if(visible)shown++;
+  });
+  empty.style.display=shown?'none':'block';
+  const status=ov.querySelector('[data-search-count]');
+  if(status)status.textContent=q?shown+' coincidencia'+(shown===1?'':'s')+' · Las selecciones se conservan':'Todas las geocercas disponibles';
  };
+ const result=document.createElement('div');result.dataset.searchCount='1';result.style.cssText='font-size:11px;color:#64748b;margin:-4px 0 9px';
+ list?.before(result);
+ search.addEventListener('input',filterGeo);
+ search.addEventListener('search',filterGeo);
+ filterGeo();
  ov.querySelector('[data-copy]').onclick=async()=>{
   const source=ov.querySelector('[data-copy-client]').value;
   if(!source)return alert('Selecciona de qué cliente copiar las geocercas.');
