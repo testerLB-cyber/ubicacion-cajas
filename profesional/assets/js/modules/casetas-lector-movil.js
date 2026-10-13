@@ -6,23 +6,31 @@ const status=message=>{const e=$('status');if(e)e.textContent=message;};
 let channel=null,stream=null,detector=null,zxingControls=null,worker=null,workerPromise=null;
 let running=false,starting=false,ocrBusy=false,lastQr='',qrAt=0,lastTotal='',totalAt=0,lastRead='',lastReadAt=0,count=0,ocrStart=0,scanStart=0,torch=false,loopTimer=null;
 let frames=0,ocrAttempts=0,qrEngine='Sin iniciar',connectionState='Conectando',lastOcrError='',lastOcrText='';
-function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (1/s): '+frames+' · Modo: OCR TOTAL'+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
+function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Ciclos (2 s): '+frames+' · Modo: OCR TOTAL'+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
 
 const amounts=text=>{
- const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').trim()).filter(Boolean);
+ const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').replace(/\s+/g,' ').trim()).filter(Boolean);
+ const amountFrom=s=>{
+  const values=String(s||'').match(/\$?\s*\d{1,5}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g)||[];
+  for(const raw of values){let n=raw.replace(/[$\s]/g,'');if(/[,.]\d{3}[,.]\d{2}$/.test(n))n=n.replace(/[,.](?=\d{3}[,.])/g,'');if(/,\d{1,2}$/.test(n))n=n.replace(',','.');const v=Number(n);if(Number.isFinite(v)&&v>0&&v<=10000)return v.toFixed(2)}
+  return '';
+ };
  for(let i=0;i<lines.length;i++){
-  const m=lines[i].match(/\bTOTAL\b\s*[:=$-]?\s*(.*)/);
-  if(!m)continue;
-  const target=(m[1]||'').trim()||lines[i+1]||'';
-  const n=target.match(/\$?\s*(\d{1,5}(?:[.,]\d{3})*[.,]\d{2}|\d{1,5}[.,]\d{2})\b/);
-  if(n){
-   let v=n[1].replace(/\s/g,'');
-   if(v.includes(',')&&v.includes('.'))v=v.replace(/,/g,'');else if(v.includes(','))v=v.replace(',','.');
-   const amount=Number(v);if(amount>0&&amount<=10000)return amount.toFixed(2);
-  }
+  const l=lines[i];const match=l.match(/\bTOTAL\b\s*[:=$-]?\s*(.*)/);
+  if(!match||/\bSUBTOTAL\b/.test(l))continue;
+  const value=amountFrom(match[1])||amountFrom(lines[i+1]||'');
+  if(value)return value;
  }
  return '';
 };
+function showOcrResult(text,total){
+ const modal=$('ocrResult');if(!modal)return;
+ $('ocrResultTotal').textContent=total?'TOTAL: $'+total:'TOTAL no identificado';
+ $('ocrResultTotal').style.color=total?'#16a34a':'#b45309';
+ const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ $('ocrResultText').textContent=lines.length?lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'No se obtuvo texto legible.';
+ modal.hidden=false;
+}
 let audio=null;
 function feedback(){
  try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume?.();const t=audio.currentTime;for(const [d,f] of [[0,1000],[.17,1350]]){const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audio.destination);o.start(t+d);o.stop(t+d+.13);}}catch{}
@@ -69,7 +77,7 @@ async function readTotal(){
    const c=document.createElement('canvas'),rotated=angle!==0;
    c.width=rotated?base.height:base.width;c.height=rotated?base.width:base.height;
    const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(angle*Math.PI/180);ctx.drawImage(base,-base.width/2,-base.height/2);
-   const res=await w.recognize(c);lastOcrText=String(res?.data?.text||'').replace(/\s+/g,' ').slice(0,130);diagnostic();const total=amounts(res?.data?.text);
+   const res=await w.recognize(c);const recognized=String(res?.data?.text||'');lastOcrText=recognized.replace(/\s+/g,' ').slice(0,130);diagnostic();const total=amounts(recognized);showOcrResult(recognized,total);
    if(total){lastTotal=total;totalAt=Date.now();feedback();$('totalValue').textContent='$'+total;await sendPair();break;}
   }
   if(!lastTotal)status('Enfoca la palabra TOTAL: y el importe');
@@ -86,7 +94,7 @@ function scanLoop(){
  if(!running)return;
  frames++;if(frames%5===0)diagnostic();
  if(!ocrBusy&&!lastTotal)void readTotal();
- if(running)loopTimer=setTimeout(scanLoop,1000);
+ if(running)loopTimer=setTimeout(scanLoop,2000);
 }
 async function start(){
  if(running||starting)return;
@@ -97,12 +105,13 @@ async function start(){
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
   const video=$('video');video.srcObject=stream;await video.play();
   running=true;scanStart=performance.now();lastTotal='';
-  status('Cámara activa · Leyendo TOTAL: cada segundo');diagnostic();scanLoop();
+  status('Cámara activa · Leyendo TOTAL: cada 2 segundos');diagnostic();scanLoop();
  }catch(e){running=false;status('Error de cámara: '+e.message);try{stream?.getTracks()?.forEach(t=>t.stop())}catch{}stream=null;}
  finally{starting=false;}
 }
 async function init(){
- $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);$('next').addEventListener('click',()=>{lastTotal='';$('totalValue').textContent='Esperando TOTAL…';status('Leyendo siguiente ticket · Enfoca TOTAL:');});
+ $('ocrResultClose')?.addEventListener('click',()=>{$('ocrResult').hidden=true});
+ $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);$('next').addEventListener('click',()=>{lastTotal='';$('totalValue').textContent='Esperando TOTAL…';$('ocrResult').hidden=true;status('Leyendo siguiente ticket · Enfoca TOTAL:');});
  $('torch').addEventListener('click',async()=>{try{const t=stream?.getVideoTracks()?.[0];if(!t)throw new Error('Primero enciende cámara');torch=!torch;await t.applyConstraints({advanced:[{torch}]});}catch(e){status('Linterna: '+e.message);}});
  window.addEventListener('pagehide',stop);
  if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Vínculo inválido. Genera otro QR en la computadora.');return;}
