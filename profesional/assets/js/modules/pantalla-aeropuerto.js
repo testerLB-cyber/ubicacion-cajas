@@ -986,12 +986,25 @@ function airportMapRows(){
 function syncAirportAllControl(){const wrap=$('airMapShowAllWrap');if(!wrap)return;const allowed=!selectedClient()&&window.ccPerm?.('pantalla_aeropuerto.ver_todas_unidades')===true;wrap.style.display=allowed?'inline-flex':'none';if(!allowed&&$('airMapShowAll'))$('airMapShowAll').checked=false}
 function airportBaseLayer(mode){
   const satUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-  const streetUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  return L.tileLayer(mode==='SATELITE'?satUrl:streetUrl,{
-    maxZoom:19,
-    maxNativeZoom:19,
-    attribution:mode==='SATELITE'?'Tiles &copy; Esri':'&copy; OpenStreetMap contributors'
+  const streetUrl=AIR_EXTERNAL
+    ?'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    :'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const tiles=L.tileLayer(mode==='SATELITE'?satUrl:streetUrl,{
+    maxZoom:19,maxNativeZoom:19,
+    attribution:mode==='SATELITE'?'Tiles &copy; Esri':AIR_EXTERNAL?'&copy; OpenStreetMap contributors &copy; CARTO':'&copy; OpenStreetMap contributors'
   });
+  let failed=0,switched=false;
+  tiles.on('tileerror',()=>{
+    if(++failed<3||switched||!AIR_MAP_INSTANCE)return;
+    switched=true;
+    const fallbackUrl=mode==='SATELITE'
+      ?'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      :'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const fallback=L.tileLayer(fallbackUrl,{maxZoom:19,maxNativeZoom:19,attribution:'&copy; OpenStreetMap contributors &copy; CARTO'});
+    if(AIR_MAP_INSTANCE.hasLayer(tiles)){AIR_MAP_INSTANCE.removeLayer(tiles);fallback.addTo(AIR_MAP_INSTANCE);AIR_MAP_BASE=fallback;fallback.bringToBack?.();}
+    const meta=$('airFleetMapMeta');if(meta)meta.textContent+=' · Mapa alternativo activo';
+  });
+  return tiles;
 }
 function syncAirportMapControls(){
   $('airMapSatellite')?.classList.toggle('on',AIR_MAP_MODE==='SATELITE');
