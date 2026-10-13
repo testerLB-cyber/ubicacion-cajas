@@ -1613,30 +1613,110 @@ window.ccEditarGeocerca=function(id){const g=(configuracion.geocercas||[]).find(
 window.ccEliminarGeocerca=async function(id){const g=(configuracion.geocercas||[]).find(x=>x.id===id);if(!g||!confirm(`¿Eliminar la geocerca ${g.nombre}?`))return;const prev=[...(configuracion.geocercas||[])];configuracion.geocercas=prev.filter(x=>x.id!==id);const r=await ccCloudSave('ELIMINAR_GEOCERCA');if(!r?.ok){configuracion.geocercas=prev;alert('No se pudo eliminar en Supabase.');return;}ccRenderGeocercasMapa();};
 window.ccAbrirAdministradorGeocercas=function(){const arr=configuracion.geocercas||[];modal('Administrar geocercas',`<div style="display:grid;gap:8px">${arr.length?arr.map((g,i)=>`<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b>${esc(g.nombre)}</b><div style="font-size:10px;color:#64748b">${esc(g.tipo)} · ${g.activa===false?'OCULTA':'ACTIVA'}</div></div><div style="display:flex;gap:6px"><button type="button" class="cc-btn cc-btn-light" onclick="document.getElementById('ccFormModal').remove();ccEnfocarGeocerca('${g.id}')">Ver</button><button type="button" class="cc-btn cc-btn-light" onclick="document.getElementById('ccFormModal').remove();ccEditarGeocerca('${g.id}')">Editar</button></div></div>`).join(''):'<div class="cc-geo-empty">No hay geocercas registradas.</div>'}</div>`,()=>({skipCloudSave:true}));};
 function ccGeoJSONFeaturesToGeocercas(obj){
-  const feats=obj?.type==='FeatureCollection'?obj.features:obj?.type==='Feature'?[obj]:[];const out=[];
-  const addPoly=(coords,props={})=>{if(!Array.isArray(coords?.[0]))return;out.push({id:uid(),nombre:String(props.name||props.nombre||props.Name||'Geocerca importada').trim(),tipo:'polygon',coordenadas:coords.map(r=>r.map(p=>[Number(p[1]),Number(p[0])])),activa:true,color:ccGeoColor((configuracion.geocercas||[]).length+out.length),importadaEn:new Date().toISOString()});};
-  feats.forEach(f=>{const g=f.geometry||{},p=f.properties||{};if(g.type==='Polygon')addPoly(g.coordinates,p);else if(g.type==='MultiPolygon')g.coordinates.forEach((poly,j)=>addPoly(poly,{...p,name:(p.name||p.nombre||'Geocerca')+(g.coordinates.length>1?' '+(j+1):'')}));});return out;
+ const features=obj?.type==='FeatureCollection'?obj.features:obj?.type==='Feature'?[obj]:obj?.type==='Polygon'||obj?.type==='MultiPolygon'?[{geometry:obj,properties:{}}]:[];
+ if(!Array.isArray(features))throw Error('GeoJSON inválido: no contiene una lista de zonas.');
+ const out=[];
+ const rings=poly=>{
+  if(!Array.isArray(poly)||!poly.length)return null;
+  const converted=poly.map(r=>Array.isArray(r)?r.map(pt=>[Number(pt?.[1]),Number(pt?.[0])]):[]);
+  if(converted.some(r=>r.length<4||r.some(p=>p.some(n=>!Number.isFinite(n))||Math.abs(p[0])>90||Math.abs(p[1])>180)))return null;
+  return converted;
+ };
+ features.forEach((f,i)=>{
+  const g=f?.geometry||{},p=f.properties||{};
+  const polygons=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
+  polygons.forEach((poly,j)=>{
+   const coords=rings(poly);if(!coords)return;
+   const suffix=polygons.length>1?' '+(j+1):'';
+   out.push({id:uid(),nombre:String(p.name||p.nombre||p.Name||'Geocerca '+(i+1)).trim().slice(0,150)+suffix,tipo:'polygon',coordenadas:coords,activa:true,color:ccGeoColor((configuracion.geocercas||[]).length+out.length),importadaEn:new Date().toISOString()});
+  });
+ });
+ return out;
 }
 window.ccGeoListForProfesional=()=>Array.isArray(configuracion.geocercas)?configuracion.geocercas:[];
+async function ccGeoVerifySaved(ids,deletedId){
+ const {data,error}=await gmSupabase.rpc('cc_load_all');
+ if(error||data?.ok===false)throw Error('No se pudo verificar el guardado en Supabase: '+(error?.message||data?.error||'Sin respuesta'));
+ const stored=Array.isArray(data?.state?.configuracion?.geocercas)?data.state.configuracion.geocercas:[];
+ if(ids.some(id=>!stored.some(g=>String(g.id)===String(id)))||(deletedId&&stored.some(g=>String(g.id)===String(deletedId))))throw Error('Supabase no confirmó la persistencia de todas las geocercas.');
+ return stored;
+}
 window.ccAirportGeoCRUD=async function(action,payload){
  if(window.CC_MIRROR_EXTERNAL)throw Error('Acceso no autorizado');
- const arr=configuracion.geocercas||(configuracion.geocercas=[]);
- const backup=JSON.stringify(arr);
- if(action==='remove'){const n=arr.findIndex(g=>g.id===payload.id);if(n<0)throw Error('Geocerca no encontrada');arr.splice(n,1);}
- else if(action==='save'){const n=arr.findIndex(g=>g.id===payload.id);if(n<0)arr.push({...payload,id:payload.id||uid()});else Object.assign(arr[n],payload);}
- else throw Error('Acción inválida');
- const result=await ccCloudSave('AEROPUERTO_GEOCERCAS');if(!result?.ok){configuracion.geocercas=JSON.parse(backup);throw Error(result?.error||'Error al guardar');}
- ccRenderGeocercasMapa();return true;
+ if(!window.CC_ACCESS?.superAdmin&&!window.ccPerm?.('mapa.geocercas'))throw Error('No tienes permiso para modificar geocercas.');
+ if(!['save','remove'].includes(action))throw Error('Acción inválida');
+ const arr=configuracion.geocercas||(configuracion.geocercas=[]),backup=JSON.stringify(arr);
+ const id=String(payload?.id||uid());
+ try{
+  if(action==='remove'){
+   const index=arr.findIndex(g=>String(g.id)===id);if(index<0)throw Error('Geocerca no encontrada');arr.splice(index,1);
+  }else{
+   const name=String(payload?.nombre||'').trim();
+   if(!name||name.length>150)throw Error('Escribe un nombre válido para la geocerca.');
+   if(payload.tipo==='polygon'){
+    const ring=payload?.coordenadas?.[0];
+    if(!Array.isArray(ring)||ring.length<4||ring.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||!Number.isFinite(p[1])||Math.abs(p[0])>90||Math.abs(p[1])>180))throw Error('El polígono requiere al menos tres puntos geográficos válidos.');
+   }
+   const updated={...payload,id,nombre:name};
+   const index=arr.findIndex(g=>String(g.id)===id);
+   if(index<0)arr.push(updated);else arr[index]={...arr[index],...updated};
+  }
+  const result=await ccCloudSave('AEROPUERTO_GEOCERCAS');
+  if(!result?.ok)throw Error(result?.error||'No se guardó en Supabase');
+  await ccGeoVerifySaved(action==='save'?[id]:[],action==='remove'?id:null);
+  ccRenderGeocercasMapa();return {ok:true,id};
+ }catch(e){configuracion.geocercas=JSON.parse(backup);throw e}
 };
 window.ccImportarGeocercasArchivo=async function(file){
-  if(!file)return;try{showStatus?.('Leyendo geocercas...','info');await ccEnsureGeoLibraries();const ext=(file.name.split('.').pop()||'').toLowerCase();let obj;
-    if(ext==='geojson'||ext==='json'){obj=JSON.parse(await file.text());}
-    else if(ext==='kml'){const xml=new DOMParser().parseFromString(await file.text(),'text/xml');obj=window.toGeoJSON.kml(xml);}
-    else if(ext==='kmz'){const bytes=await file.arrayBuffer();const head=new TextDecoder().decode(bytes.slice(0,200)).trimStart();let kml;if(head.startsWith('<?xml')||head.startsWith('<kml'))kml=new TextDecoder().decode(bytes);else{const zip=await JSZip.loadAsync(bytes);const entry=zip.file(/\.kml$/i)[0];if(!entry)throw new Error('El KMZ no contiene un archivo KML');kml=await entry.async('text');}const xml=new DOMParser().parseFromString(kml,'text/xml');obj=window.toGeoJSON.kml(xml);}
-    else throw new Error('Formato no compatible. Usa KML, KMZ, GeoJSON o JSON.');
-    const nuevas=ccGeoJSONFeaturesToGeocercas(obj);if(!nuevas.length)throw new Error('No se encontraron polígonos válidos en el archivo.');
-    if(!confirm(`Se encontraron ${nuevas.length} geocercas. ¿Importarlas a Supabase?`))return;const prev=[...(configuracion.geocercas||[])];const keys=new Set(prev.map(g=>String(g.nombre||'').trim().toUpperCase()+'|'+JSON.stringify(g.coordenadas||[])));const unicas=nuevas.filter(g=>{const key=String(g.nombre||'').trim().toUpperCase()+'|'+JSON.stringify(g.coordenadas||[]);if(keys.has(key))return false;keys.add(key);return true});if(!unicas.length){alert('Estas geocercas ya están importadas. No se crearon duplicados.');return {ok:true,added:0,duplicates:nuevas.length};}configuracion.geocercas=[...prev,...unicas];const r=await ccCloudSave('IMPORTAR_GEOCERCAS');if(!r?.ok){configuracion.geocercas=prev;throw new Error(r?.error||'Supabase rechazó la importación');}ccRenderGeocercasMapa();if(ccMapaUnidadesInstance&&nuevas.length){const layers=nuevas.map((g,i)=>ccGeocercaToLayer(g,i)).filter(Boolean);const group=L.featureGroup(layers);if(group.getBounds().isValid())ccMapaUnidadesInstance.fitBounds(group.getBounds(),{padding:[25,25]});}showStatus?.(`${unicas.length} GEOCERCAS IMPORTADAS`,'success');return {ok:true,added:unicas.length,duplicates:nuevas.length-unicas.length};
-  }catch(e){console.error('IMPORTAR GEOCERCAS:',e);alert('No se pudieron importar las geocercas.\n\n'+(e.message||e));showStatus?.('ERROR IMPORTANDO GEOCERCAS','error');return {ok:false,error:String(e.message||e)};}
+ if(!file)return {ok:false,error:'Selecciona un archivo.'};
+ if(window.CC_MIRROR_EXTERNAL||(!window.CC_ACCESS?.superAdmin&&!window.ccPerm?.('mapa.geocercas')))return {ok:false,error:'Sin permiso para importar geocercas'};
+ const ext=(file.name.split('.').pop()||'').toLowerCase();
+ const allowed=['kmz','kml','geojson','json'];
+ if(!allowed.includes(ext))return {ok:false,error:'Formato no compatible. Usa KMZ, KML o GeoJSON.'};
+ if(file.size>15*1024*1024)return {ok:false,error:'Archivo demasiado grande (máximo 15 MB).'};
+ try{
+  showStatus?.('Leyendo archivo de geocercas…','info');
+  let obj;
+  const loadScript=async(src,ready)=>{
+   if(ready())return;
+   await new Promise((resolve,reject)=>{
+    const existing=[...document.scripts].find(x=>x.src===src);
+    if(existing){if(ready())return resolve();existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',()=>reject(Error('No pudo descargarse el lector de archivos')),{once:true});return}
+    const el=document.createElement('script');el.src=src;el.onload=resolve;el.onerror=()=>reject(Error('No pudo cargarse '+src));document.head.appendChild(el);
+   });
+   if(!ready())throw Error('No se pudo activar el lector de este formato');
+  };
+  if(ext==='geojson'||ext==='json')obj=JSON.parse(await file.text());
+  else{
+   let kml;
+   if(ext==='kml')kml=await file.text();
+   else{
+    await loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',()=>!!window.JSZip);
+    const zip=await window.JSZip.loadAsync(await file.arrayBuffer());
+    const kmlFiles=zip.file(/\.kml$/i);if(!kmlFiles.length)throw Error('El KMZ no contiene archivos KML.');
+    kml=await kmlFiles[0].async('text');
+   }
+   const xml=new DOMParser().parseFromString(kml,'application/xml');
+   if(xml.querySelector('parsererror'))throw Error('El KML contiene XML inválido.');
+   await loadScript('https://cdn.jsdelivr.net/npm/@tmcw/togeojson@6.0.1/dist/togeojson.umd.js',()=>!!window.toGeoJSON?.kml);
+   obj=window.toGeoJSON.kml(xml);
+  }
+  const nuevas=ccGeoJSONFeaturesToGeocercas(obj);
+  if(!nuevas.length)throw Error('No se encontraron polígonos válidos en el archivo.');
+  if(!confirm('Se detectaron '+nuevas.length+' geocercas. ¿Guardarlas en Supabase sin eliminar las existentes?'))return {ok:false,cancelled:true,error:'Importación cancelada'};
+  const prev=[...(configuracion.geocercas||[])],keys=new Set(prev.map(g=>String(g.nombre||'').trim().toUpperCase()+'|'+JSON.stringify(g.coordenadas||[])));
+  const unicas=nuevas.filter(g=>{const k=String(g.nombre||'').trim().toUpperCase()+'|'+JSON.stringify(g.coordenadas||[]);if(keys.has(k))return false;keys.add(k);return true});
+  if(!unicas.length)return {ok:true,added:0,duplicates:nuevas.length};
+  configuracion.geocercas=[...prev,...unicas];
+  try{
+   const result=await ccCloudSave('IMPORTAR_GEOCERCAS');
+   if(!result?.ok)throw Error(result?.error||'Supabase rechazó la importación');
+   await ccGeoVerifySaved(unicas.map(x=>x.id),null);
+   ccRenderGeocercasMapa();
+   showStatus?.(unicas.length+' geocercas guardadas en Supabase','success');
+   return {ok:true,added:unicas.length,duplicates:nuevas.length-unicas.length};
+  }catch(e){configuracion.geocercas=prev;throw e}
+ }catch(e){console.error('IMPORTAR GEOCERCAS:',e);return {ok:false,error:e.message||String(e)}}
 };
 window.ccExportarGeocercas=function(){const arr=configuracion.geocercas||[];if(!arr.length){alert('No hay geocercas para exportar.');return;}const features=[];arr.forEach(g=>{if(g.tipo==='circle'){const steps=64,coords=[];const lat=Number(g.centro?.[0]),lng=Number(g.centro?.[1]),rad=Number(g.radio||0),R=6378137;for(let i=0;i<=steps;i++){const a=2*Math.PI*i/steps;const dLat=(rad*Math.cos(a)/R)*180/Math.PI;const dLng=(rad*Math.sin(a)/(R*Math.cos(lat*Math.PI/180)))*180/Math.PI;coords.push([lng+dLng,lat+dLat]);}features.push({type:'Feature',properties:{name:g.nombre,tipo:'circle',radio:g.radio},geometry:{type:'Polygon',coordinates:[coords]}});}else{features.push({type:'Feature',properties:{name:g.nombre,tipo:g.tipo},geometry:{type:'Polygon',coordinates:(g.coordenadas||[]).map(r=>r.map(p=>[p[1],p[0]]))}});}});const blob=new Blob([JSON.stringify({type:'FeatureCollection',features},null,2)],{type:'application/geo+json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='geocercas_control_cajas.geojson';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);};
 
