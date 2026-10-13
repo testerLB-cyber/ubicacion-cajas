@@ -23,7 +23,7 @@ window.ccAntLoad=async function(force=false){
    var r=await sb().rpc('cc_ant_list');if(r&&r.error)throw r.error;if(!r||!r.data||!r.data.ok)throw new Error('No se pudo cargar anticipos');
    D=r.data;
    try{var tm=await sb().from('cc_ant_tipos_movimiento_caja').select('*').order('nombre');D.tiposMovCaja=tm&&tm.data?tm.data:[]}catch(e){D.tiposMovCaja=[]}
-   __ccAntLastLoad=Date.now();ccAntRender();
+   __ccAntLastLoad=Date.now();ccAntRender();ccAntScheduleFix();
    try{document.dispatchEvent(new CustomEvent('ccAnt:data-refreshed',{detail:{at:__ccAntLastLoad}}))}catch(_){}
    return true;
  }catch(err){var b=document.getElementById('ccAntBody');if(b)b.innerHTML='<tr><td colspan="12" style="color:#b91c1c;padding:20px">'+h((err&&err.message)?err.message:err)+'</td></tr>';return false}
@@ -32,6 +32,24 @@ window.ccAntLoad=async function(force=false){
 };
 function saldo(c){var x=Number(c.saldo_inicial||0);(D.movimientos||[]).filter(z=>z.cuenta_id===c.id&&z.estatus==='ACTIVO').forEach(z=>{var n=Number(z.monto||0);if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(z.tipo))x+=n;else if(['ANTICIPO','AJUSTE_SALIDA'].includes(z.tipo))x-=n});return x}
 function detAnt(id){return(D.detalles||[]).filter(x=>x.anticipoId===id&&x.estatus==='ACTIVO')}
+function ccAntFixComprobadoCard(){
+ var panel=document.getElementById('ccPanelAnticipos');if(!panel)return;
+ var general=(D.anticipos||[]).filter(x=>x.estatus!=='CANCELADO'&&!(x.esCasetas===true||x.es_casetas===true||/^CAS-/i.test(String(x.folio||''))));
+ var total=general.reduce((n,x)=>n+Math.max(0,Number(x.comprobado||0)),0);
+ panel.querySelectorAll('small,span,div').forEach(function(el){
+  if(el.children.length||!/^operadores con pendiente$/i.test((el.textContent||'').trim()))return;
+  var card=el.closest('.cc-ant-kpi,.cc-kpi,.cc-ant-summary-card,.cc-ant-stat,.stat-card')||el.parentElement;
+  if(!card)return;
+  el.textContent='TOTAL COMPROBADO';
+  var val=card.querySelector('strong,[class*="value"],[class*="amount"]');
+  if(!val){var siblings=Array.from(card.children).filter(x=>x!==el);val=siblings.find(x=>/^[\\d\\s,.]+$/.test((x.textContent||'').trim()))}
+  if(val)val.textContent=m(total);
+ });
+}
+var __ccAntFixTimer;
+function ccAntScheduleFix(){clearTimeout(__ccAntFixTimer);__ccAntFixTimer=setTimeout(ccAntFixComprobadoCard,40)}
+function ccAntInstallFix(){var p=document.getElementById('ccPanelAnticipos');if(!p||p.__ccAntFixInstalled)return;p.__ccAntFixInstalled=true;new MutationObserver(ccAntScheduleFix).observe(p,{childList:true,subtree:true,characterData:true});ccAntScheduleFix()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ccAntInstallFix);else ccAntInstallFix();
 window.ccAntRender=function(){
  var all=D.anticipos||[],active=all.filter(x=>x.estatus!=='CANCELADO'),pend=0,comp=0;active.forEach(x=>{pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado)-Number(x.devuelto));comp+=Number(x.comprobado||0)});
  var cash=(D.cuentas||[]).reduce((a,c)=>a+saldo(c),0),late=active.filter(x=>x.estatus==='PENDIENTE'&&(Date.now()-new Date(x.fecha).getTime())/86400000>7).length;
