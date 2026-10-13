@@ -46,19 +46,50 @@ else{payload={anticipoId:f,cuentaId:pending.cuentaId,tipo:'DEVOLUCION',monto:amo
 note('Movimiento registrado correctamente');for(let id of ['#casTicketAmount','#casReturnAmount','#casNewAmount'])$(id).value='';}catch(e){note(e.message||String(e),true)}finally{state.busy=false;}await load();}
 async function loadCFDI(){
 const op=current(),status=$('#casCFDIStatus'),body=$('#casCFDIBody');if(!op)return;
-const from=$('#casCFDIFrom').value,to=$('#casCFDITo').value;if(!from||!to||from>to){status.textContent='Selecciona un rango válido';return;}
-status.textContent='Consultando hojas CFDI comprobadas…';body.innerHTML='';$('#casCFDICount').textContent='…';
+const from=$('#casCFDIFrom').value,to=$('#casCFDITo').value;
+if(!from||!to||from>to){status.textContent='Selecciona un rango válido';return;}
+status.textContent='Consultando hojas CFDI comprobadas del operador…';body.innerHTML='';$('#casCFDICount').textContent='…';
 try{
-const {data,error}=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,cliente_nombre,servicio,operador_id,operador_nombre').gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59').or('operador_id.eq.'+op.id+',operador_nombre.eq.'+encodeURIComponent(op.nombre)).limit(500);
-if(error)throw error;
-let items=(data||[]).filter(x=>x.folio_id);let unique=[...new Map(items.map(x=>[x.folio_id,x])).values()];
-let ids=unique.map(x=>x.folio_id);let folios=[];for(let i=0;i<ids.length;i+=100){let v=await client().from('hs_folios').select('id,folio').in('id',ids.slice(i,i+100));if(v.error)throw v.error;folios.push(...(v.data||[]));}
-let map=new Map(folios.map(f=>[f.id,f.folio]));unique=unique.filter(x=>/^CFDI-/i.test(map.get(x.folio_id)||''));
-$('#casCFDICount').textContent=String(unique.length);
-body.innerHTML=unique.map(x=>'<tr><td><b>'+esc(map.get(x.folio_id))+'</b></td><td>'+esc((x.fecha_comprobacion||x.fecha||'').slice(0,10))+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'</td></tr>').join('')||'<tr><td colspan="4">No se encontraron hojas CFDI comprobadas.</td></tr>';
-status.textContent=unique.length+' hojas CFDI únicas · rango '+from+' a '+to+(items.length===500?' · Consulta limitada a 500 registros':'');
+  const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
+  const ops=normalize(op.nombre),byId=new Map();
+  // Consultar los folios CFDI del operador y cruzar con comprobaciones; no depender de
+  // que hs_comprobaciones.operador_id coincida con el id del catálogo de casetas.
+  const folioQuery=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,estatus').ilike('folio','CFDI-%').in('estatus',['UTILIZADO','COMPROBADO','COMPROBADA']).limit(5000);
+  if(folioQuery.error)throw folioQuery.error;
+  const assigned=(folioQuery.data||[]).filter(x=>String(x.operador_id||'')===String(op.id)||normalize(x.operador_nombre)===ops);
+  assigned.forEach(x=>byId.set(String(x.id),x));
+  const results=[];
+  const ids=[...byId.keys()];
+  for(let i=0;i<ids.length;i+=150){
+    const c=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id').in('folio_id',ids.slice(i,i+150)).limit(500);
+    if(c.error)throw c.error;
+    results.push(...(c.data||[]));
+  }
+  // También contemplar hojas comprobadas por beneficiario pero atribuidas al operador.
+  const direct=await client().from('hs_comprobaciones').select('folio_id,fecha_comprobacion,fecha,fecha_uso,cliente_nombre,servicio,operador_id,operador_nombre,asignacion_operador_id').gte('fecha_comprobacion',from+'T00:00:00').lte('fecha_comprobacion',to+'T23:59:59').or('operador_id.eq.'+op.id+',asignacion_operador_id.eq.'+op.id).limit(1000);
+  if(!direct.error)results.push(...(direct.data||[]));
+  const missing=[...new Set(results.map(x=>String(x.folio_id||'')).filter(id=>id&&!byId.has(id)))];
+  for(let i=0;i<missing.length;i+=150){
+    const v=await client().from('hs_folios').select('id,folio,operador_id,operador_nombre,estatus').in('id',missing.slice(i,i+150));
+    if(v.error)throw v.error;
+    (v.data||[]).forEach(x=>byId.set(String(x.id),x));
+  }
+  const found=new Map();
+  results.forEach(x=>{
+    const folio=byId.get(String(x.folio_id));if(!folio||!/^CFDI-/i.test(folio.folio||''))return;
+    const date=String(x.fecha_comprobacion||x.fecha_uso||x.fecha||'').slice(0,10);
+    if(date<from||date>to)return;
+    const linked=String(folio.operador_id||'')===String(op.id)||normalize(folio.operador_nombre)===ops||String(x.operador_id||'')===String(op.id)||String(x.asignacion_operador_id||'')===String(op.id)||normalize(x.operador_nombre)===ops;
+    if(!linked)return;
+    found.set(String(x.folio_id),{...x,folio:folio.folio,date});
+  });
+  const rows=[...found.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.folio.localeCompare(b.folio));
+  $('#casCFDICount').textContent=String(rows.length);
+  body.innerHTML=rows.map(x=>'<tr><td><b>'+esc(x.folio)+'</b></td><td>'+esc(x.date)+'</td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.servicio||'—')+'</td></tr>').join('')||'<tr><td colspan="4">No se encontraron CFDI comprobados de este operador dentro del rango. Puedes ampliar las fechas.</td></tr>';
+  status.textContent=rows.length+' hojas CFDI comprobadas de '+op.nombre+' · '+from+' a '+to;
 }catch(e){status.textContent='No fue posible consultar CFDI: '+(e.message||e);$('#casCFDICount').textContent='—';}
 }
+
 const batch=[];
 function batchRender(){
  const list=$('#casBatchItems');if(!list)return;
