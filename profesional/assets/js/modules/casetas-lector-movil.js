@@ -9,11 +9,11 @@ let frames=0,ocrAttempts=0,qrEngine='Sin iniciar',connectionState='Conectando',l
 function diagnostic(){const el=$('diagnostic');if(!el)return;el.textContent='Cámara: '+(running?'ACTIVA':'PAUSADA')+' · Cuadros: '+frames+' · QR: '+qrEngine+' · OCR: '+(ocrBusy?'leyendo…':ocrAttempts+' intentos')+' · Conexión: '+connectionState+(lastOcrError?' · Error OCR: '+lastOcrError:'')+(lastOcrText?' · Texto OCR: '+lastOcrText:'');}
 
 const amounts=text=>{
- const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T0TAL/g,'TOTAL').trim()).filter(Boolean);
+ const lines=String(text||'').split(/\r?\n/).map(x=>x.toUpperCase().replace(/T[O0]T[A4][L1I]/g,'TOTAL').trim()).filter(Boolean);
  for(let i=0;i<lines.length;i++){
   const m=lines[i].match(/\bTOTAL\b\s*[:=$-]?\s*(.*)/);
   if(!m)continue;
-  const target=m[1]||lines[i+1]||'';
+  const target=(m[1]||'').trim()||lines[i+1]||'';
   const n=target.match(/\$?\s*(\d{1,5}(?:[.,]\d{3})*[.,]\d{2}|\d{1,5}[.,]\d{2})\b/);
   if(n){
    let v=n[1].replace(/\s/g,'');
@@ -45,7 +45,7 @@ async function onScan(value){
  value=String(value||'').trim().slice(0,400);const now=Date.now();
  if(!value||value===lastRead&&now-lastReadAt<12000||lastQr)return;
  lastRead=value;lastReadAt=now;lastQr=value;qrAt=now;scanStart=performance.now();ocrStart=0;
- $('qrValue').textContent=value;status(lastTotal?'✓ QR y TOTAL reconocidos':'✓ QR detectado · Enfoca ahora el campo TOTAL');await sendPair();
+ $('qrValue').textContent=value;feedback();status(lastTotal?'✓ QR y TOTAL reconocidos':'✓ QR detectado · Enfoca ahora el campo TOTAL');await sendPair();
 }
 async function getWorker(){
  if(worker)return worker;
@@ -72,7 +72,7 @@ async function readTotal(){
    c.width=rotated?base.height:base.width;c.height=rotated?base.width:base.height;
    const ctx=c.getContext('2d');ctx.translate(c.width/2,c.height/2);ctx.rotate(angle*Math.PI/180);ctx.drawImage(base,-base.width/2,-base.height/2);
    const res=await w.recognize(c);lastOcrText=String(res?.data?.text||'').replace(/\s+/g,' ').slice(0,130);diagnostic();const total=amounts(res?.data?.text);
-   if(total){lastTotal=total;totalAt=Date.now();$('totalValue').textContent='$'+total;await sendPair();break;}
+   if(total){lastTotal=total;totalAt=Date.now();feedback();$('totalValue').textContent='$'+total;await sendPair();break;}
   }
   if(!lastTotal&&lastQr)status('QR leído · Acerca y enfoca el renglón TOTAL');
  }catch(e){lastOcrError=String(e.message||e);status('Error OCR: '+lastOcrError);}finally{ocrBusy=false;diagnostic();}
@@ -98,7 +98,7 @@ async function start(){
   if(!navigator.mediaDevices?.getUserMedia)throw new Error('No hay acceso a cámara. Abre la página HTTPS en Chrome o Safari.');
   status('Solicitando permiso de cámara…');
   detector=null;
-  if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});qrEngine='Nativo BarcodeDetector';}catch{}}
+  if(!window.ZXingBrowser?.BrowserMultiFormatReader&&'BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']});qrEngine='Nativo BarcodeDetector';}catch{}}
   if(!detector)qrEngine='ZXing';
   if(detector){
    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
