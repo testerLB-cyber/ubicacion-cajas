@@ -70,6 +70,8 @@ window.ccAntRender=function(){
  var operatorInput=document.getElementById('ccAntOperatorSearch'),suggestions=document.getElementById('ccAntOperatorSuggestions');
  if(suggestions){var suggestHtml=(D.operadores||[]).map(z=>'<option value="'+h(z.nombre)+'"></option>').join('');if(suggestions.innerHTML!==suggestHtml)suggestions.innerHTML=suggestHtml}
  if(antView&&!document.getElementById('ccAntClearFilters')){var filterHolder=antView.querySelector('.cc-dot-filters');if(filterHolder){var resetButton=document.createElement('button');resetButton.id='ccAntClearFilters';resetButton.type='button';resetButton.className='cc-btn cc-btn-light';resetButton.textContent='Limpiar filtros · mostrar todos';resetButton.style.cssText='align-self:end;min-height:38px';filterHolder.appendChild(resetButton);resetButton.onclick=function(){['ccAntDesde','ccAntHasta','ccAntOperadorFiltro','ccAntEstatusFiltro','ccAntOperatorSearch'].forEach(function(id){var field=document.getElementById(id);if(field)field.value=''});window.ccAntOperatorQuery='';ccAntRender()}}}
+ // Iniciar listado ANT sin rango heredado: mostrar todos los registros reales.
+ if(!window.__ccAntInitialFiltersReady){window.__ccAntInitialFiltersReady=true;['ccAntDesde','ccAntHasta'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});}
  var de=document.getElementById('ccAntDesde')?.value||'',ha=document.getElementById('ccAntHasta')?.value||'',oi=op?.value||'',es=document.getElementById('ccAntEstatusFiltro')?.value||'';
  var body=document.getElementById('ccAntBody');
  if(body&&!document.getElementById('ccAntMostrarCasetasWrap')){
