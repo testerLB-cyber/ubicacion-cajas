@@ -337,9 +337,9 @@ async function casSimpleCFDI(){
    if(date<from||date>to)return false;
    const linked=String(f.operador_id||'')===String(op.id)||String(x.operador_id||'')===String(op.id)||String(x.asignacion_operador_id||'')===String(op.id)||sameName(f.operador_nombre)||sameName(x.operador_nombre);
    const service=norm([x.tipo_viaje,x.servicio,x.clasificacion,f.servicio].filter(Boolean).join(' '));
-   return linked&&/(EXPORT|IMPORT|FORAN|EXPO|IMPO)/.test(service);
+   return linked; // CFDI comprobado: no excluir por clasificaciones opcionales vacías
   }).map(x=>[x.folio_id,x])).values()].sort((x,y)=>String(y.fecha||'').localeCompare(String(x.fecha||'')));
-  body.innerHTML=rows.map(x=>{const f=folioMap.get(String(x.folio_id));return '<tr><td>'+esc(String(x.fecha||x.fecha_uso||x.fecha_comprobacion||'').slice(0,10))+'</td><td><b>'+esc(f.folio)+'</b></td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.tipo_viaje||x.servicio||f.servicio||'—')+'</td></tr>';}).join('')||'<tr><td colspan="4">Sin CFDI de exportación, importación o foráneos comprobados en este periodo.</td></tr>';
+  body.innerHTML=rows.map(x=>{const f=folioMap.get(String(x.folio_id));return '<tr><td>'+esc(String(x.fecha||x.fecha_uso||x.fecha_comprobacion||'').slice(0,10))+'</td><td><b>'+esc(f.folio)+'</b></td><td>'+esc(x.cliente_nombre||'—')+'</td><td>'+esc(x.tipo_viaje||x.servicio||f.servicio||'—')+'</td></tr>';}).join('')||'<tr><td colspan="4">Sin hojas CFDI comprobadas para este operador en el periodo.</td></tr>';
   status.textContent=rows.length+' hojas CFDI · '+from+' a '+to;
  }catch(e){if(request===casCFDIRequest)status.textContent='Error al consultar CFDI: '+(e.message||e);}
 }
