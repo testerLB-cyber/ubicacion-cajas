@@ -46,10 +46,36 @@ async function editGeofences(clientId){
  $('esGeofenceModal')?.remove();
  const ov=document.createElement('div');ov.id='esGeofenceModal';ov.style.cssText='position:fixed;inset:0;z-index:2147483450;background:#0f172acc;display:flex;align-items:center;justify-content:center;padding:14px';
  const areas=Array.isArray(d.areas)?d.areas:[],selected=new Set(d.selected||[]);
- ov.innerHTML='<div style="width:min(620px,96vw);max-height:88vh;overflow:auto;border-radius:16px;background:#fff;box-shadow:0 24px 60px #0004"><div style="padding:18px 20px;background:#0f172a;color:#fff"><strong>Geocercas visibles · '+esc(c.nombre)+'</strong><div style="font-size:12px;margin-top:5px;opacity:.85">Selecciona cuáles podrá consultar este cliente en Cuenta Espejo.</div></div><div style="padding:18px"><div style="display:flex;gap:8px;margin-bottom:12px"><button class="cc-btn cc-btn-light" data-all>Seleccionar todas</button><button class="cc-btn cc-btn-light" data-none>Quitar todas</button></div><div style="display:grid;gap:7px;max-height:48vh;overflow:auto">'+(areas.length?areas.map(g=>'<label style="display:flex;gap:10px;align-items:center;padding:11px;border:1px solid #e2e8f0;border-radius:9px"><input type="checkbox" data-geo-id="'+esc(g.id)+'" '+(selected.has(g.id)?'checked':'')+'><span>'+esc(g.nombre)+'</span>'+(g.activa?'':' <span style="font-size:11px;color:#b45309">Inactiva</span>')+'</label>').join(''):'<p style="color:#64748b">No hay geocercas configuradas. Créalas primero desde Administrar geocercas en Pantalla Aeropuerto.</p>')+'</div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="cc-btn cc-btn-light" data-close>Cancelar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Guardar geocercas</button></div><p data-status style="font-size:12px;color:#b91c1c"></p></div></div>';
+ ov.innerHTML='<div style="width:min(620px,96vw);max-height:88vh;overflow:auto;border-radius:16px;background:#fff;box-shadow:0 24px 60px #0004"><div style="padding:18px 20px;background:#0f172a;color:#fff"><strong>Geocercas visibles · '+esc(c.nombre)+'</strong><div style="font-size:12px;margin-top:5px;opacity:.85">Selecciona cuáles podrá consultar este cliente en Cuenta Espejo.</div></div><div style="padding:18px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px"><label style="font-size:12px;font-weight:700">Buscar geocerca<input type="search" data-geo-search placeholder="Nombre de la geocerca…" style="display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #cbd5e1;border-radius:9px"></label><label style="font-size:12px;font-weight:700">Copiar de otro cliente<select data-copy-client style="display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #cbd5e1;border-radius:9px"><option value="">Selecciona un cliente…</option>'+clients.filter(x=>String(x.id)!==String(clientId)).sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es')).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join('')+'</select></label></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><button class="cc-btn cc-btn-light" data-copy type="button">Copiar geocercas</button><small data-selection-count style="color:#64748b"></small></div><div style="display:flex;gap:8px;margin-bottom:12px"><button class="cc-btn cc-btn-light" data-all>Seleccionar todas</button><button class="cc-btn cc-btn-light" data-none>Quitar todas</button></div><div style="display:grid;gap:7px;max-height:48vh;overflow:auto">'+(areas.length?areas.map(g=>'<label style="display:flex;gap:10px;align-items:center;padding:11px;border:1px solid #e2e8f0;border-radius:9px"><input type="checkbox" data-geo-id="'+esc(g.id)+'" '+(selected.has(g.id)?'checked':'')+'><span>'+esc(g.nombre)+'</span>'+(g.activa?'':' <span style="font-size:11px;color:#b45309">Inactiva</span>')+'</label>').join(''):'<p style="color:#64748b">No hay geocercas configuradas. Créalas primero desde Administrar geocercas en Pantalla Aeropuerto.</p>')+'</div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="cc-btn cc-btn-light" data-close>Cancelar</button><button type="button" class="cc-btn cc-btn-primary" data-save>Guardar geocercas</button></div><p data-status style="font-size:12px;color:#b91c1c"></p></div></div>';
  document.body.appendChild(ov);const close=()=>ov.remove();ov.querySelector('[data-close]').onclick=close;
  ov.querySelector('[data-all]').onclick=()=>ov.querySelectorAll('[data-geo-id]').forEach(x=>x.checked=true);
  ov.querySelector('[data-none]').onclick=()=>ov.querySelectorAll('[data-geo-id]').forEach(x=>x.checked=false);
+ const boxes=[...ov.querySelectorAll('[data-geo-id]')];
+ const count=()=>{const el=ov.querySelector('[data-selection-count]');if(el)el.textContent=boxes.filter(x=>x.checked).length+' de '+boxes.length+' seleccionadas';};
+ boxes.forEach(x=>x.addEventListener('change',count));count();
+ ov.querySelector('[data-all]').addEventListener('click',count);
+ ov.querySelector('[data-none]').addEventListener('click',count);
+ ov.querySelector('[data-geo-search]').oninput=e=>{
+  const q=String(e.target.value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
+  boxes.forEach(x=>{const label=x.closest('label');const name=String(label?.textContent||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();if(label)label.style.display=name.includes(q)?'flex':'none';});
+ };
+ ov.querySelector('[data-copy]').onclick=async()=>{
+  const source=ov.querySelector('[data-copy-client]').value;
+  if(!source)return alert('Selecciona de qué cliente copiar las geocercas.');
+  const dest=clients.find(x=>String(x.id)===String(source));
+  const btn=ov.querySelector('[data-copy]');btn.disabled=true;
+  try{
+   const r=await db().functions.invoke('cc-portal-brand',{body:{action:'geofence_catalog',cliente_id:source}});
+   if(r.error||!r.data?.ok)throw Error(r.data?.error||r.error?.message||'Error al leer el cliente de origen');
+   const ids=new Set(Array.isArray(r.data.selected)?r.data.selected:[]);
+   if(!ids.size){alert('El cliente seleccionado no tiene geocercas asignadas.');return}
+   if(!confirm('¿Copiar '+ids.size+' geocercas de '+(dest?.nombre||'otro cliente')+' a '+c.nombre+'? Se sumarán a las ya marcadas, sin modificar al cliente de origen.'))return;
+   boxes.forEach(x=>{if(ids.has(x.dataset.geoId))x.checked=true});
+   count();
+   ov.querySelector('[data-status]').textContent='Selección copiada al formulario. Presiona Guardar geocercas para confirmarla.';
+  }catch(e){ov.querySelector('[data-status]').textContent='Error al copiar: '+e.message}
+  finally{btn.disabled=false}
+ };
  ov.querySelector('[data-save]').onclick=async()=>{
   const btn=ov.querySelector('[data-save]'),ids=[...ov.querySelectorAll('[data-geo-id]:checked')].map(x=>x.dataset.geoId);
   btn.disabled=true;ov.querySelector('[data-status]').textContent='Guardando selección…';
