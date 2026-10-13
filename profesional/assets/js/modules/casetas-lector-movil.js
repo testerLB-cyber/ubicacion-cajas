@@ -40,22 +40,59 @@ async function ocrWorker(){
  })().catch(e=>{workerPromise=null;throw e});
  return workerPromise;
 }
-async function analyze(){
- const file=$('photo').files?.[0];if(!file)return status('Selecciona una fotografía del ticket.');
- if(!file.type.startsWith('image/')&&!/\.(jpg|jpeg|png|webp)$/i.test(file.name))return status('Elige una imagen JPG, PNG o WebP.');
- if(file.size>15*1024*1024)return status('La foto supera el máximo de 15 MB.');
- if(busy)return;busy=true;selectedTotal='';$('send').disabled=true;$('totalValue').textContent='Analizando…';$('ocrResult').hidden=true;
- $('analyze').disabled=true;const started=performance.now();let img=null;
+
+let stream=null,watchTimer=null,stableSince=0,previous=null,captured=false;
+function stopCamera(){
+ clearInterval(watchTimer);watchTimer=null;stableSince=0;previous=null;
+ stream?.getTracks().forEach(t=>t.stop());stream=null;
+}
+function sample(){
+ if(!stream||busy||captured)return;
+ const video=$('video');if(!video.videoWidth)return;
+ const c=$('probe'),ctx=c.getContext('2d',{willReadFrequently:true});
+ c.width=100;c.height=140;
+ // Analyse the central guide where the user must position the paper.
+ ctx.drawImage(video,video.videoWidth*.13,video.videoHeight*.1,video.videoWidth*.74,video.videoHeight*.8,0,0,100,140);
+ const pix=ctx.getImageData(0,0,100,140).data,grey=new Uint8Array(14000);
+ let brightness=0,contrast=0,edges=0,difference=0;
+ for(let i=0;i<grey.length;i++){const j=i*4;const v=Math.round(.299*pix[j]+.587*pix[j+1]+.114*pix[j+2]);grey[i]=v;brightness+=v}
+ brightness/=grey.length;
+ for(let y=2;y<138;y+=2)for(let x=2;x<98;x+=2){
+  const i=y*100+x,v=grey[i];
+  contrast+=Math.abs(4*v-grey[i-1]-grey[i+1]-grey[i-100]-grey[i+100]);
+  if(Math.abs(v-grey[i-1])>28)edges++;
+  if(previous)difference+=Math.abs(v-previous[i]);
+ }
+ previous=grey;
+ const sharp=contrast/((136/2)*(96/2)),edgeRatio=edges/((136/2)*(96/2));
+ const motion=difference/((136/2)*(96/2));
+ const ok=brightness>55&&brightness<237&&sharp>18&&edgeRatio>.045&&motion<14;
+ const now=performance.now();
+ if(!ok){stableSince=0;$('countdown').textContent='Acomoda el ticket dentro del recuadro y mantén firme el teléfono';return}
+ if(!stableSince)stableSince=now;
+ const remaining=Math.max(0,Math.ceil((5000-(now-stableSince))/1000));
+ $('countdown').textContent=remaining?'Ticket enfocado · Fotografía automática en '+remaining+' s':'Capturando ticket…';
+ if(now-stableSince>=5000){captured=true;void capture();}
+}
+async function capture(){
+ const video=$('video'),canvas=document.createElement('canvas');
+ canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+ canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+ stopCamera();$('videoWrap').hidden=true;$('capturePreview').src=canvas.toDataURL('image/jpeg',.94);$('capturePreview').hidden=false;
+ await analyzeCanvas(canvas);
+}
+async function analyzeCanvas(source){
+ if(busy)return;busy=true;selectedTotal='';$('send').disabled=true;$('ocrResult').hidden=true;
+ const started=performance.now();
  try{
-  img=await createImageBitmap(file);
-  const scale=Math.min(2,1800/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
-  const worker=await ocrWorker();let bestText='',match=null;
+  const scale=Math.min(1,1800/Math.max(source.width,source.height)),w=Math.max(1,Math.round(source.width*scale)),h=Math.max(1,Math.round(source.height*scale));
+  const engine=await ocrWorker();let bestText='',match=null;
   for(const deg of [0,90,270]){
    const c=document.createElement('canvas'),side=deg!==0;c.width=side?h:w;c.height=side?w:h;
-   const ctx=c.getContext('2d',{willReadFrequently:true});
-   ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.translate(c.width/2,c.height/2);ctx.rotate(deg*Math.PI/180);ctx.drawImage(img,-w/2,-h/2,w,h);
-   status('Leyendo fotografía'+(deg?' (rotación '+deg+'°)':'')+'…');
-   const res=await worker.recognize(c),txt=String(res?.data?.text||'');
+   const ctx=c.getContext('2d',{willReadFrequently:true});ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
+   ctx.translate(c.width/2,c.height/2);ctx.rotate(deg*Math.PI/180);ctx.drawImage(source,-w/2,-h/2,w,h);
+   status('Analizando ticket capturado'+(deg?' · girado '+deg+'°':'')+'…');
+   const res=await engine.recognize(c),txt=String(res?.data?.text||'');
    if(txt.trim().length>bestText.trim().length)bestText=txt;
    match=extractTotal(txt);if(match){bestText=txt;break}
   }
@@ -63,14 +100,24 @@ async function analyze(){
   $('totalValue').textContent=match?'$'+match.value:'No identificado';
   $('ocrResultTotal').textContent=match?'TOTAL: $'+match.value:'TOTAL no identificado';
   $('ocrResultTotal').style.color=match?'#15803d':'#b45309';
-  $('ocrResultLine').textContent=match?'Renglón: '+match.line+(match.next?' | Siguiente: '+match.next:''):'Busca una línea que diga TOTAL: seguida del importe.';
-  $('ocrResultText').textContent=bestText.trim()||'No se reconoció texto en la imagen.';
-  $('ocrResult').hidden=false;
-  $('send').disabled=!match||!channel;
-  const seconds=((performance.now()-started)/1000).toFixed(1);
-  status(match?'✓ TOTAL $'+match.value+' identificado en '+seconds+' s. Revisa el resultado antes de enviarlo.':'No se identificó TOTAL con confianza ('+seconds+' s). Revisa el texto reconocido.');
- }catch(e){status('No se pudo leer la foto: '+e.message);$('totalValue').textContent='Error';}
- finally{img?.close?.();busy=false;$('analyze').disabled=false}
+  $('ocrResultLine').textContent=match?'Renglón: '+match.line:'El OCR no identificó con confianza un importe junto a TOTAL:';
+  $('ocrResultText').textContent=bestText.trim()||'No se reconoció texto en el ticket.';
+  $('ocrResult').hidden=false;$('send').disabled=!match||!channel;
+  const secs=((performance.now()-started)/1000).toFixed(1);
+  status(match?'TOTAL encontrado en '+secs+' s. Verifica el resultado antes de enviarlo.':'No se encontró TOTAL ('+secs+' s). Puedes repetir la captura.');
+ }catch(e){status('No se pudo analizar el ticket: '+e.message)}
+ finally{busy=false}
+}
+async function openCamera(){
+ if(busy)return;stopCamera();captured=false;$('ocrResult').hidden=true;$('capturePreview').hidden=true;$('videoWrap').hidden=false;
+ $('countdown').textContent='Coloca el ticket dentro del recuadro';status('Activando cámara…');
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error('La cámara requiere HTTPS y permiso del navegador.');
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
+  $('video').srcObject=stream;await $('video').play();
+  watchTimer=setInterval(sample,250);
+  status('Encuadra el ticket; al quedar enfocado y estable se capturará en 5 segundos.');
+ }catch(e){status('Error al abrir cámara: '+e.message);$('countdown').textContent='Presiona Reintentar para dar permiso a la cámara.'}
 }
 async function send(){
  if(!selectedTotal||!channel)return status('No hay un TOTAL confirmado o falta vincular con la computadora.');
@@ -82,24 +129,18 @@ async function send(){
  }catch(e){status('No se pudo enviar: '+e.message);$('send').disabled=false}
 }
 function init(){
- $('analyze').onclick=analyze;$('send').onclick=send;
- $('photo').onchange=()=>{
-  selectedTotal='';$('send').disabled=true;$('ocrResult').hidden=true;$('totalValue').textContent='Pendiente de leer';
-  const file=$('photo').files?.[0];if(!file)return;
-  const preview=$('preview');if(preview.dataset.url)URL.revokeObjectURL(preview.dataset.url);
-  preview.dataset.url=URL.createObjectURL(file);preview.src=preview.dataset.url;preview.hidden=false;
-  status('Foto seleccionada: '+file.name+' · Presiona Leer TOTAL.');
- };
- window.addEventListener('pagehide',()=>{if($('preview').dataset.url)URL.revokeObjectURL($('preview').dataset.url);worker?.terminate?.()});
- if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Modo de prueba: puedes leer fotos. Para enviar a Observaciones, abre este lector desde Casetas → Comprobación.');return}
- if(!window.supabase?.createClient)return status('Modo de prueba sin conexión: OCR disponible; Supabase no cargó.');
+ $('retry').onclick=()=>void openCamera();
+ $('send').onclick=send;
+ window.addEventListener('pagehide',()=>{stopCamera();worker?.terminate?.()});
+ void openCamera();
+ if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Encuadra el ticket. Para enviar el TOTAL a Observaciones, abre desde Casetas → Comprobación.');return}
+ if(!window.supabase?.createClient)return;
  try{
   const sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   channel=sb.channel('casetas-lector-'+token,{config:{broadcast:{ack:true}}});
-  channel.on('broadcast',{event:'stop'},()=>{channel=null;$('send').disabled=true;status('La computadora desconectó el lector.')});
-  channel.subscribe(state=>{if(state==='SUBSCRIBED'){status('Conectado con Casetas. Selecciona una fotografía.');$('send').disabled=!selectedTotal}
-    else if(state==='TIMED_OUT'||state==='CHANNEL_ERROR')status('Sin conexión con la computadora; puedes probar OCR localmente.')});
- }catch(e){status('OCR disponible sin envío: '+e.message)}
+  channel.on('broadcast',{event:'stop'},()=>{$('send').disabled=true;channel=null;status('La computadora desconectó el lector.')});
+  channel.subscribe(state=>{if(state==='SUBSCRIBED'){$('send').disabled=!selectedTotal} });
+ }catch(e){console.warn('Conexión para envío no disponible',e)}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
