@@ -70,7 +70,8 @@ window.ccAntEditarMovimientoCaja=function(id){
 window.ccAntRenderReportes=function(){
  var op=document.getElementById('ccAntRepFiltroOperador');if(!op)return;var cur=op.value;op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=cur;
  var de=document.getElementById('ccAntRepDesde')?.value||'',ha=document.getElementById('ccAntRepHasta')?.value||'',oi=op.value||'';
- var rows=(D.anticipos||[]).filter(x=>{var d=String(x.fecha||'').slice(0,10);return(!de||d>=de)&&(!ha||d<=ha)&&(!oi||x.operadorId===oi)});
+ var localReportDate=function(value){if(!value)return '';var d=new Date(value);if(isNaN(d.getTime()))return String(value).slice(0,10);var p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),v=t=>p.find(z=>z.type===t)?.value||'';return v('year')+'-'+v('month')+'-'+v('day')};
+ var rows=(D.anticipos||[]).filter(x=>{var d=localReportDate(x.fecha);return(!de||d>=de)&&(!ha||d<=ha)&&(!oi||String(x.operadorId||'')===String(oi))});
  window.ccAntRepRows=rows;
  var totals={ent:0,comp:0,dev:0,pend:0};rows.forEach(x=>{totals.ent+=Number(x.montoEntregado||0);totals.comp+=Number(x.comprobado||0);totals.dev+=Number(x.devuelto||0);totals.pend+=Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0))});
  var k=document.getElementById('ccAntRepKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Anticipos</small><strong>'+rows.length+'</strong></div><div class="cc-ant-kpi"><small>Entregado</small><strong>'+m(totals.ent)+'</strong></div><div class="cc-ant-kpi"><small>Comprobado</small><strong>'+m(totals.comp)+'</strong></div><div class="cc-ant-kpi"><small>Devuelto</small><strong>'+m(totals.dev)+'</strong></div><div class="cc-ant-kpi"><small>Pendiente</small><strong>'+m(totals.pend)+'</strong></div>';
