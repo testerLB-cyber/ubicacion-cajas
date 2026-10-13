@@ -56,8 +56,8 @@ async function editGeofences(clientId){
  ov.querySelector('[data-all]').addEventListener('click',count);
  ov.querySelector('[data-none]').addEventListener('click',count);
  ov.querySelector('[data-geo-search]').oninput=e=>{
-  const q=String(e.target.value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();
-  boxes.forEach(x=>{const label=x.closest('label');const name=String(label?.textContent||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();if(label)label.style.display=name.includes(q)?'flex':'none';});
+  const q=String(e.target.value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  boxes.forEach(x=>{const label=x.closest('label');const name=String(label?.textContent||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(label)label.style.display=name.includes(q)?'flex':'none';});
  };
  ov.querySelector('[data-copy]').onclick=async()=>{
   const source=ov.querySelector('[data-copy-client]').value;
