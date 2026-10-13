@@ -64,8 +64,8 @@ function detectStableTicket(){
  if(!plausible){stableAt=0;$('countdown').textContent='Encuadra el ticket con buena luz y mantén el teléfono firme';return}
  if(!stableAt)stableAt=performance.now();
  const elapsed=performance.now()-stableAt;
- $('countdown').textContent='Ticket estable · Captura automática en '+Math.max(1,Math.ceil((1250-elapsed)/1000))+' s';
- if(elapsed>=1250)void captureTicket();
+ $('countdown').textContent='Ticket estable · Captura automática en '+Math.max(1,Math.ceil((650-elapsed)/1000))+' s';
+ if(elapsed>=650)void captureTicket();
 }
 async function captureTicket(){
  if(capturing||busy||!stream)return;
@@ -80,7 +80,8 @@ async function captureTicket(){
  busy=true;const started=performance.now();
  try{
   const engine=await ocrWorker();let best='',match=null;
-  const scale=Math.min(1,1750/Math.max(shot.width,shot.height)),w=Math.max(1,Math.round(shot.width*scale)),h=Math.max(1,Math.round(shot.height*scale));
+  const scale=Math.min(1,1280/Math.max(shot.width,shot.height)),w=Math.max(1,Math.round(shot.width*scale)),h=Math.max(1,Math.round(shot.height*scale));
+  // Quick pass: upright ticket at reduced resolution. Only retry other orientations if TOTAL is missing.
   for(const rotation of [0,90,270]){
    const canvas=document.createElement('canvas'),side=rotation!==0;
    canvas.width=side?h:w;canvas.height=side?w:h;
@@ -119,8 +120,9 @@ async function openCamera(){
  status('Abriendo cámara automáticamente…');
  try{
   if(!navigator.mediaDevices?.getUserMedia)throw Error('Permite el uso de la cámara en un sitio HTTPS.');
-  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}});
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
   const video=$('video');video.srcObject=stream;await video.play();
+  void ocrWorker().catch(e=>console.warn('OCR_PRELOAD',e));
   status('Cámara activa · Esperando imagen estable y enfocada');
   watchTimer=setInterval(detectStableTicket,250);
  }catch(e){status('No se pudo abrir la cámara: '+e.message);stopCamera()}
