@@ -290,6 +290,30 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 </script>
 
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
+<script id="ccAntRemoveObsoleteOperatorKpi">
+/* El indicador "Operadores con pendiente" fue retirado del panel.
+   Evita que renderizadores antiguos lo vuelvan a insertar. */
+(function(){
+  const panelId='ccAntKpis';
+  const obsolete=/^operadores\s+con\s+pendiente$/i;
+  function clean(){
+    const panel=document.getElementById(panelId);
+    if(!panel)return;
+    for(const card of panel.querySelectorAll('.cc-ant-kpi')){
+      const label=card.querySelector('small');
+      if(label&&obsolete.test((label.textContent||'').trim()))card.remove();
+    }
+  }
+  function attach(){
+    const panel=document.getElementById(panelId);
+    if(!panel)return;
+    clean();
+    new MutationObserver(clean).observe(panel,{childList:true,subtree:true,characterData:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});
+  else attach();
+})();
+</script>
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
 <div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>TIPO ANTICIPO</th><th>MÉTODO</th><th>VIAJE</th><th>AUTORIZADO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
 
@@ -1473,7 +1497,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261012-kpis-eliminados-v12"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261012-kpi-operadores-retirado-v13"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
@@ -1485,7 +1509,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
     if(!p?.classList.contains('active'))return;
     loading=true;
     const s=document.createElement('script');
-    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261012-single-source-v11';
+    s.src='assets/js/modules/anticipos-profesional-flow.js?v=20261012-kpi-operadores-retirado-v13';
     s.onload=()=>{loaded=true;loading=false;setTimeout(()=>window.ccAntLoad?.(true),50)};
     s.onerror=()=>{loading=false;console.warn('No se pudo cargar flujo profesional de Anticipos')};
     document.body.appendChild(s);
