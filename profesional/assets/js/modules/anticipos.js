@@ -128,8 +128,8 @@ window.ccAntRenderSaldos=function(){
  var vals=Object.values(groups);
  if(tv==='CON_PENDIENTE')vals=vals.filter(g=>g.pendiente>0);
  if(tv==='SIN_PENDIENTE')vals=vals.filter(g=>g.pendiente<=0);
- var totalPend=vals.reduce((z,g)=>z+g.pendiente,0),opsPend=vals.filter(g=>g.pendiente>0).length,antsPend=vals.reduce((z,g)=>z+g.anticipos.filter(a=>Math.max(0,Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0))>0).length,0);
- var k=document.getElementById('ccAntSaldoKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Operadores con pendiente</small><strong>'+opsPend+'</strong></div><div class="cc-ant-kpi"><small>Anticipos pendientes</small><strong>'+antsPend+'</strong></div><div class="cc-ant-kpi"><small>Total pendiente</small><strong>'+m(totalPend)+'</strong></div>';
+ var totalPend=vals.reduce((z,g)=>z+g.pendiente,0),antsPend=vals.reduce((z,g)=>z+g.anticipos.filter(a=>Math.max(0,Number(a.montoEntregado||0)-Number(a.comprobado||0)-Number(a.devuelto||0))>0).length,0);
+ var k=document.getElementById('ccAntSaldoKpis');if(k)k.innerHTML='<div class="cc-ant-kpi"><small>Anticipos pendientes</small><strong>'+antsPend+'</strong></div><div class="cc-ant-kpi"><small>Total pendiente</small><strong>'+m(totalPend)+'</strong></div>';
  var b=document.getElementById('ccAntSaldoBody');if(b){
    b.innerHTML=vals.map(g=>'<tr data-op-pend="'+h(g.id||'')+'" style="cursor:pointer"><td><strong>'+h(g.operador||'—')+'</strong><div style="font-size:9px;color:#64748b">Presiona para ver anticipos</div></td><td>'+g.anticipos.length+'</td><td>'+m(g.entregado)+'</td><td>'+m(g.aplicado)+'</td><td><strong style="color:'+(g.pendiente>0?'#b45309':'#166534')+'">'+m(g.pendiente)+'</strong></td></tr>').join('')||'<tr><td colspan="5" style="padding:25px;text-align:center;color:#94a3b8">Sin operadores registrados.</td></tr>';
    b.onclick=function(ev){var tr=ev.target.closest('[data-op-pend]');if(tr)ccAntAbrirPendientesOperador(tr.dataset.opPend)};
