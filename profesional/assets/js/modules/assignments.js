@@ -216,7 +216,7 @@ function renderFSHorario(){
  html+='<div style="position:sticky;top:0;z-index:25;background:#0f172a;color:#fff;padding:13px 8px;font-size:11px;font-weight:800">HORA</div>';
  dates.forEach((day,i)=>{html+='<div style="position:sticky;top:0;z-index:25;background:'+(keys[i]===date?'#1d4ed8':'#0f172a')+';color:#fff;padding:11px 8px;text-align:center;font-size:12px;font-weight:800;border-left:1px solid #334155">'+days[day.getDay()]+' '+day.getDate()+'/'+(day.getMonth()+1)+'</div>'});
  html+='<div style="height:'+totalHeight+'px;position:relative;background:repeating-linear-gradient(to bottom,#f8fafc 0px,#f8fafc 51px,#cbd5e1 51px,#cbd5e1 52px)">';
- for(let h=0;h<24;h++)html+='<div style="position:absolute;top:'+(h*hourHeight+3)+'px;left:8px;color:#475569;font-size:11px;font-weight:700">'+String(h).padStart(2,'0')+':00</div>';
+ for(let h=0;h<24;h++)html+='<button type="button" data-hour-axis="'+h+'" title="Clic para seleccionar · doble clic para asignar" style="position:absolute;top:'+(h*hourHeight)+'px;left:0;right:0;height:'+hourHeight+'px;width:100%;border:0;border-bottom:1px solid #cbd5e1;background:transparent;text-align:left;padding:5px 8px;color:#475569;font-size:11px;font-weight:800;cursor:pointer">'+String(h).padStart(2,'0')+':00</button>';
  html+='</div>';
  dates.forEach((day,i)=>{
   html+='<div data-calendar-day="'+keys[i]+'" title="Doble clic en una hora para programar un viaje" style="height:'+totalHeight+'px;position:relative;min-width:0;border-left:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,'+(i%2?'#f8fafc':'#fff')+' 0px,'+(i%2?'#f8fafc':'#fff')+' 51px,#e2e8f0 51px,#e2e8f0 52px)">';
@@ -239,6 +239,18 @@ function renderFSHorario(){
    col.appendChild(mark);
    return hour;
  };
+ $('asgFSContent').querySelectorAll('[data-hour-axis]').forEach(btn=>{
+   const selectAxis=()=>{
+     $('asgFSContent').querySelectorAll('[data-hour-axis]').forEach(x=>{x.style.background='transparent';x.style.color='#475569';});
+     btn.style.background='#dbeafe';btn.style.color='#1d4ed8';
+     $('asgFSContent').querySelectorAll('.asgSelectedHour').forEach(el=>el.remove());
+     const cols=$('asgFSContent').querySelectorAll('[data-calendar-day]');
+     const col=[...cols].find(x=>x.dataset.calendarDay===date)||cols[0];
+     if(col){const mark=document.createElement('div');mark.className='asgSelectedHour';mark.style.cssText='position:absolute;top:'+(Number(btn.dataset.hourAxis)*hourHeight)+'px;left:0;right:0;height:'+hourHeight+'px;pointer-events:none;z-index:1;background:#2563eb22;box-shadow:inset 0 0 0 2px #2563eb;';col.appendChild(mark);}
+   };
+   btn.addEventListener('click',selectAxis);
+   btn.addEventListener('dblclick',()=>{selectAxis();openCalendarAssignment(date,Number(btn.dataset.hourAxis));});
+ });
  $('asgFSContent').querySelectorAll('[data-calendar-day]').forEach(col=>{
    col.style.cursor='pointer';
    col.addEventListener('click',e=>selectSlot(col,e));
