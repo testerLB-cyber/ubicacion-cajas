@@ -21,7 +21,23 @@ async function run(){
  button.disabled=true;
  try{
   status('Preparando PaddleOCR… La primera ejecución descarga modelos y puede tardar.');
-  if(!paddlePromise)paddlePromise=import('https://esm.sh/@paddleocr/paddleocr-js@0.4.2?bundle').then(async m=>m.PaddleOCR.create({lang:'en',ocrVersion:'PP-OCRv5',ortOptions:{backend:'wasm'}})).catch(e=>{paddlePromise=null;throw e;});
+  if(!paddlePromise)paddlePromise=(async()=>{
+   const urls=[
+    'https://cdn.jsdelivr.net/npm/@paddleocr/paddleocr-js@0.4.2/+esm',
+    'https://esm.sh/@paddleocr/paddleocr-js@0.4.2?bundle'
+   ];
+   let error=null;
+   for(const url of urls){
+    try{
+     const mod=await import(url);
+     const PaddleOCR=mod.PaddleOCR||mod.default?.PaddleOCR||(typeof mod.default?.create==='function'?mod.default:null);
+     if(typeof PaddleOCR?.create!=='function')throw new Error('La biblioteca cargó sin exportar PaddleOCR.create');
+     status('Inicializando modelos PP-OCRv5…');
+     return await PaddleOCR.create({lang:'en',ocrVersion:'PP-OCRv5',ortOptions:{backend:'wasm'}});
+    }catch(e){error=e;console.warn('[Casetas OCR] No se pudo inicializar desde',url,e);}
+   }
+   throw error||new Error('No se pudo inicializar PaddleOCR');
+  })().catch(e=>{paddlePromise=null;throw e;});
   const ocr=await paddlePromise;
   status('Reconociendo texto de la fotografía…');
   const [result]=await ocr.predict(file);
