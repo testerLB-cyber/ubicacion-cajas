@@ -103,7 +103,7 @@
   }
 
   function decorateRow(row){
-    if(!row||row.dataset.hsUnitTrailer==='1'||!UNITS.length)return;
+    if(!row||row.dataset.hsUnitTrailer==='1')return;if(!UNITS.length){loadData();return;}
     const grid=row.querySelector('.hs104-grid');if(!grid)return;
     row.dataset.hsUnitTrailer='1';
     const unitField=document.createElement('div');unitField.className='cc-field';
@@ -178,6 +178,20 @@
     }
   }
   function decorateAll(){document.querySelectorAll('#hs104CompList [data-row]').forEach(decorateRow);}
+  window.hsEnsureUnitTrailerForm=async function(row){
+    if(!row||!row.isConnected)return;
+    if(!UNITS.length){await loadData();}
+    if(row.isConnected)decorateRow(row);
+    if(!row.querySelector('[data-hs-unidad]')){
+      const grid=row.querySelector('.hs104-grid');
+      if(grid&&!grid.querySelector('[data-hs-catalog-warning]')){
+        const msg=document.createElement('div');msg.dataset.hsCatalogWarning='1';msg.className='hs104-note';
+        msg.style.cssText='grid-column:1/-1;color:#b45309;font-weight:700';
+        msg.textContent='Cargando catálogo de operador y unidad. Usa Actualizar si persiste un error de conexión.';
+        grid.appendChild(msg);
+      }
+    }else row.querySelector('[data-hs-catalog-warning]')?.remove();
+  };
 
   async function save(row){
     const val=s=>String(row.querySelector(s)?.value||'').trim();
@@ -243,7 +257,7 @@
         if(session?.user && (event==='SIGNED_IN'||event==='INITIAL_SESSION')) setTimeout(loadData,0);
       });
     }
-    document.addEventListener('hs104:data-refreshed',()=>{observeCompList();decorateAll();});
+    document.addEventListener('hs104:data-refreshed',()=>{observeCompList();decorateAll();});document.addEventListener('click',e=>{const btn=e.target.closest?.('#hs104CompList [data-hs-edit]');if(btn)window.hsEnsureUnitTrailerForm?.(btn.closest('[data-row]'));},true);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
