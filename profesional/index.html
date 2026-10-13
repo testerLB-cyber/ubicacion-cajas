@@ -9,7 +9,7 @@
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261013-admin-menu-immediate-v53"/>
+<meta name="trafico-app-build" content="profesional-20261013-ant-kpis-compactos-v54"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -113,7 +113,22 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 #ccPanelAnticipos .cc-ant-comp-count{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:9px;background:#edf2fa;color:#30466c;font-weight:800;font-size:12px}
 #ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(11),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(11){text-align:center}
 @media(max-width:750px){#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table{min-width:1150px}}
-</style><style id="ccAntClosureColumnsV48">#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table{min-width:1460px}#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(11),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(11){text-align:right}#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(12),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(12){text-align:center}#ccPanelAnticipos #ccAntGlobalActions [data-ant-global="close"]{display:inline-flex;align-items:center;justify-content:center;gap:5px}</style></head>
+</style><style id="ccAntClosureColumnsV48">#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table{min-width:1460px}#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(11),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(11){text-align:right}#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table td:nth-child(12),#ccPanelAnticipos #ccAntViewAnticipos .cc-ant-table th:nth-child(12){text-align:center}#ccPanelAnticipos #ccAntGlobalActions [data-ant-global="close"]{display:inline-flex;align-items:center;justify-content:center;gap:5px}</style><style id="ccAntCompactKpisV54">
+#ccPanelAnticipos .cc-ant-kpi-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 9px}
+#ccPanelAnticipos .cc-ant-kpi-toolbar-title{display:flex;flex-direction:column;gap:2px}
+#ccPanelAnticipos .cc-ant-kpi-toolbar-title strong{font-size:13px;color:#1f2937;font-weight:750}
+#ccPanelAnticipos .cc-ant-kpi-toolbar-title span{font-size:10px;color:#64748b}
+#ccPanelAnticipos .cc-ant-refresh-actions{display:flex;align-items:center;gap:10px}
+#ccPanelAnticipos #ccAntRefreshStatus{color:#64748b;font-size:10px}
+#ccPanelAnticipos #ccAntRefreshButton{font-size:11px;font-weight:700;padding:8px 12px;border:1px solid #cbd5e1;border-radius:9px;display:inline-flex;align-items:center;gap:7px}
+#ccPanelAnticipos #ccAntRefreshButton:disabled{opacity:.65;cursor:wait}
+#ccPanelAnticipos .cc-ant-kpis-compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:0 0 13px}
+#ccPanelAnticipos .cc-ant-kpis-compact .cc-ant-kpi{min-width:0;min-height:0;padding:11px 13px;border-radius:10px;box-shadow:none;border:1px solid #e2e8f0;background:#fff;display:flex;flex-direction:column;gap:5px}
+#ccPanelAnticipos .cc-ant-kpis-compact .cc-ant-kpi small{font-size:10px;font-weight:650;color:#64748b;line-height:1.35}
+#ccPanelAnticipos .cc-ant-kpis-compact .cc-ant-kpi strong{font-size:19px;font-weight:800;letter-spacing:-.025em;color:#1e293b;line-height:1.15}
+#ccPanelAnticipos .cc-ant-kpis-compact .cc-ant-kpi span{font-size:10px;color:#64748b}
+@media(max-width:680px){#ccPanelAnticipos .cc-ant-kpis-compact{grid-template-columns:repeat(2,minmax(0,1fr))}#ccPanelAnticipos .cc-ant-kpis-compact .cc-ant-kpi strong{font-size:16px}}
+</style></head>
 <body class="text-slate-700 antialiased cc-auth-locked">
 <div id="ccBootSplash"><div class="box"><b>Tráfico App</b><span id="ccBootSplashText">Abriendo Control Logístico…</span></div></div>
 <script>
@@ -309,7 +324,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 })();
 </script>
 
-<div id="ccAntKpis" class="cc-ant-kpis"></div>
+<div class="cc-ant-kpi-toolbar"><div class="cc-ant-kpi-toolbar-title"><strong>Resumen de anticipos</strong><span>Indicadores del módulo</span></div><div class="cc-ant-refresh-actions"><small id="ccAntRefreshStatus" aria-live="polite">Datos cargados</small><button type="button" id="ccAntRefreshButton" class="cc-btn cc-btn-light" onclick="ccAntRefreshNow()"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualizar datos</button></div></div><div id="ccAntKpis" class="cc-ant-kpis cc-ant-kpis-compact"></div>
 
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
 <div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option value="ABIERTO">ABIERTO</option><option value="PARCIALMENTE COMPROBADO">PARCIALMENTE COMPROBADO</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option value="CERRADO">CERRADO</option><option value="CANCELADO">CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>MÉTODO</th><th>VIAJE</th><th>ANTICIPO ENTREGADO</th><th>COMPROBACIÓN REAL</th><th>COMPROBACIÓN DINERO</th><th>PENDIENTE</th><th>COMPROBACIONES</th><th>ESTATUS</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
@@ -1494,7 +1509,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-balance-filtro-v52"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-kpis-v54"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
