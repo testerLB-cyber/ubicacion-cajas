@@ -302,14 +302,27 @@ window.ccAntComprobar=async function(id){
         var deleted=await sb().rpc('cc_ant_delete_comprobacion',{p_id:proofId,p_motivo:'Eliminada desde comprobación manual'});
         if(deleted.error)throw deleted.error;
       }else{
-        var amount=prompt('Importe de la comprobación',String(proof.monto||''));
-        if(amount===null)return;
-        var amountNumber=Number(amount);
-        if(!(amountNumber>0))throw Error('Importe inválido.');
-        var folio=prompt('Folio del documento',String(proof.folioDocumento||proof.folio_documento||''));
-        if(folio===null)return;
-        var edited=await sb().rpc('cc_ant_update_comprobacion',{p_item:{id:proofId,monto:amountNumber,concepto:proof.concepto,conceptoId:proof.conceptoId||proof.concepto_id,tipoDocumento:proof.tipoDocumento||proof.tipo_documento||'TICKET',folioDocumento:folio,observaciones:proof.observaciones||''}});
-        if(edited.error)throw edited.error;
+        var editModal=document.createElement('div');editModal.id='ccAntProofEditModal';editModal.style='position:fixed;inset:0;z-index:120800;background:rgba(15,23,42,.75);display:flex;align-items:center;justify-content:center;padding:12px';
+        var conceptOptions=(D.conceptos||[]).map(function(x){return '<option value="'+h(x.id)+'"'+(String(x.id)===String(proof.conceptoId||proof.concepto_id)?' selected':'')+'>'+h(x.nombre)+'</option>'}).join('');
+        var proofDate=String(proof.fecha||'').slice(0,10);
+        var proofFile=proof.evidencia_url||proof.evidenciaUrl||'';
+        editModal.innerHTML='<div style="background:white;width:min(720px,97vw);max-height:95vh;overflow:auto;border-radius:14px"><div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;color:white;padding:13px 16px"><b>Editar comprobación · '+h(a.folio)+'</b><button type="button" data-edit-close style="color:white;border:0;background:transparent;font-size:24px">×</button></div><form id="ccAntProofEditForm" style="padding:16px"><div class="cc-grid"><div class="cc-field"><label>Fecha de comprobación</label><input type="date" value="'+h(proofDate)+'" disabled title="La fecha original se conserva"></div><div class="cc-field"><label>Concepto *</label><select name="conceptoId" required>'+conceptOptions+'</select></div><div class="cc-field"><label>Tipo de documento *</label><select name="tipoDocumento"><option>TICKET</option><option>FACTURA</option><option>RECIBO</option><option>OTRO</option></select></div><div class="cc-field"><label>Folio de documento</label><input name="folioDocumento" value="'+h(proof.folioDocumento||proof.folio_documento||'')+'"></div><div class="cc-field"><label>Importe *</label><input name="monto" type="number" min="0.01" step="0.01" required value="'+h(proof.monto||'')+'"></div></div><div class="cc-field"><label>Observaciones</label><textarea name="observaciones" rows="3">'+h(proof.observaciones||'')+'</textarea></div><div id="ccAntProofPhotoView" style="margin:10px 0;font-size:12px">'+(proofFile?'<a href="'+h(proofFile)+'" target="_blank" rel="noopener">Ver fotografía / archivo actual</a>':'Sin fotografía adjunta')+'</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="cc-btn cc-btn-light" type="button" data-edit-close>Cancelar</button><button class="cc-btn cc-btn-primary" type="submit">Guardar cambios</button></div><div data-edit-error style="margin-top:9px;color:#b91c1c"></div></form></div>';
+        document.body.appendChild(editModal);
+        editModal.querySelector('[name="tipoDocumento"]').value=String(proof.tipoDocumento||proof.tipo_documento||'TICKET').toUpperCase();
+        editModal.querySelectorAll('[data-edit-close]').forEach(function(x){x.onclick=function(){editModal.remove()}});
+        editModal.querySelector('#ccAntProofEditForm').onsubmit=async function(evt){
+          evt.preventDefault();var form=evt.currentTarget,fd=new FormData(form),btn=form.querySelector('[type="submit"]');
+          try{
+            var monto=Number(fd.get('monto')),conceptoId=String(fd.get('conceptoId')||''),conceptoObj=(D.conceptos||[]).find(function(x){return String(x.id)===conceptoId});
+            if(!conceptoObj||!(monto>0))throw Error('Selecciona un concepto e importe válidos.');
+            btn.disabled=true;
+            var edited=await sb().rpc('cc_ant_update_comprobacion',{p_item:{id:proofId,monto:monto,concepto:conceptoObj.nombre,conceptoId:conceptoId,tipoDocumento:String(fd.get('tipoDocumento')||'TICKET'),folioDocumento:String(fd.get('folioDocumento')||''),observaciones:String(fd.get('observaciones')||'')}});
+            if(edited.error)throw edited.error;
+            if(edited.data?.ok===false)throw Error(edited.data.error||'No se pudo guardar');
+            editModal.remove();await refresh();
+          }catch(error){btn.disabled=false;form.querySelector('[data-edit-error]').textContent=error.message||String(error)}
+        };
+        return;
       }
       await refresh();
     }catch(e){alert('No se pudo modificar la comprobación: '+(e.message||e))}
