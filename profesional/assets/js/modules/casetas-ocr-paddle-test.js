@@ -3,27 +3,28 @@ let paddlePromise=null;
 const $=id=>document.getElementById(id);
 const status=t=>{$('casOcrStatus').textContent=t;};
 function parse(lines){
- const text=lines.join('\n');
- const normalized=text.replace(/[ＯO](?=\d)/g,'0').replace(/[lI](?=\d)/g,'1');
- const candidates=[];
- const regex=/(?:\$\s*)?\d{1,5}(?:[.,]\d{3})*[.,]\d{2}\b|(?:\$\s*)?\d{1,5}\b/g;
- for(const line of normalized.split('\n')){
-  const upper=line.toUpperCase();
-  const priority=/\b(TOTAL|IMPORTE|PAGADO|PAGO|CUOTA|TARIFA|EFECTIVO|COSTO|MONTO)\b/.test(upper)?4:0;
-  const penalty=/\b(FOLIO|TICKET|OPERACION|OPERACIÓN|TRANSACCION|TRANSACCIÓN|FECHA|HORA|RFC|IVA|CAMBIO|RECIBIDO)\b/.test(upper)?-4:0;
-  for(const match of line.matchAll(regex)){
-   const raw=match[0].replace(/\$/g,'').replace(/\s/g,'');
-   const decimals=/[.,]\d{2}$/.test(raw);
-   if(!decimals&&!priority)continue;
-   const clean=raw.includes(',')&&raw.includes('.')?raw.replace(/,/g,''):raw.replace(',','.');
-   const value=Number(clean);
-   if(!Number.isFinite(value)||value<=0||value>10000)continue;
-   candidates.push({value,score:priority+penalty+(decimals?2:0),line:line.trim()});
+ const clean=lines.map(x=>x.trim()).filter(Boolean);
+ const normalize=s=>s.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+ const number=s=>{
+  const m=s.match(/(?:\$\s*)?(\d{1,5}(?:[.,]\d{3})*[.,]\d{2}|\d{1,5})\b/g)||[];
+  return m.map(raw=>{let x=raw.replace(/[$\s]/g,'');if(x.includes(',')&&x.includes('.'))x=x.replace(/,/g,'');else if(/,\d{2}$/.test(x))x=x.replace(',','.');return Number(x)}).filter(v=>Number.isFinite(v)&&v>0&&v<=10000);
+ };
+ let best=null;
+ for(let i=0;i<clean.length;i++){
+  const line=normalize(clean[i]);
+  const total=/\bT[O0]TAL\b/.test(line);
+  const amount=/\b(IMPORTE|CUOTA|TARIFA|PAGADO|MONTO)\b/.test(line);
+  const exclude=/\b(IVA|SUBTOTAL|CAMBIO|RECIBIDO|FOLIO|FECHA|HORA|CARRIL|CLASE)\b/.test(line);
+  const values=number(clean[i]);
+  if((total||amount)&&!values.length&&i+1<clean.length)values.push(...number(clean[i+1]));
+  for(const value of values){
+   const score=(total?100:amount?55:0)+(exclude?-100:0)+(/\d[.,]\d{2}/.test(clean[i])?5:0);
+   if(score<1)continue;
+   if(!best||score>best.score)best={value,score,line:clean[i]};
   }
  }
- candidates.sort((x,y)=>y.score-x.score);
- const best=candidates[0];
- return best?'IMPORTE DETECTADO (OCR · VERIFICAR): $'+best.value.toFixed(2)+'\nTexto origen: '+best.line:'IMPORTE NO IDENTIFICADO\nRevisa la foto y el texto OCR reconocido.';
+ if(!best)return {found:false,summary:'IMPORTE NO IDENTIFICADO',detail:'No se detectó una línea TOTAL o IMPORTE confiable.'};
+ return {found:true,summary:'TICKET DE CASETA\nImporte total (verificar): $'+best.value.toFixed(2),detail:'Línea reconocida: '+best.line};
 }
 let tesseractLoader=null;
 function loadScript(src){
@@ -33,15 +34,15 @@ function loadScript(src){
   document.head.appendChild(s);
  });
 }
-async function prepareImage(file){
+async function prepareImage(file,rotation=0){
  const img=await createImageBitmap(file);
- const scale=Math.min(1,1600/Math.max(img.width,img.height));
+ const scale=Math.min(1,1800/Math.max(img.width,img.height));
  const canvas=document.createElement('canvas');
  canvas.width=Math.max(1,Math.round(img.width*scale));
  canvas.height=Math.max(1,Math.round(img.height*scale));
  const ctx=canvas.getContext('2d',{willReadFrequently:true});
  ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);
- ctx.drawImage(img,0,0,canvas.width,canvas.height);
+ ctx.translate(canvas.width/2,canvas.height/2);ctx.rotate(rotation*Math.PI/180);ctx.drawImage(img,-w/2,-h/2,w,h);
  img.close?.();
  return canvas;
 }
@@ -54,29 +55,31 @@ async function run(){
  let worker=null;
  try{
   status('Preparando imagen…');
-  const image=await prepareImage(file);
-  status('Cargando motor OCR ligero…');
+  status('Cargando motor OCR…');
   if(!tesseractLoader)tesseractLoader=loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').catch(e=>{tesseractLoader=null;throw e;});
   await tesseractLoader;
   if(!window.Tesseract?.createWorker)throw new Error('El motor OCR no se cargó correctamente.');
-  status('Preparando reconocimiento de texto…');
-  const task=(async()=>{
-   worker=await window.Tesseract.createWorker('spa+eng',1,{logger:m=>{
-    if(m.status==='recognizing text')status('Leyendo ticket… '+Math.round((m.progress||0)*100)+'%');
-   }});
+  status('Preparando reconocimiento…');
+  worker=await window.Tesseract.createWorker('spa+eng',1,{logger:m=>{if(m.status==='recognizing text')status('Leyendo ticket… '+Math.round((m.progress||0)*100)+'%');}});
+  let best=null,allText='';
+  for(const angle of [0,90,270]){
+   status('Buscando TOTAL en foto'+(angle?' (girada '+angle+'°)':'')+'…');
+   const image=await prepareImage(file,angle);
    const result=await worker.recognize(image);
-   return result?.data?.text||'';
-  })();
-  const text=await Promise.race([task,new Promise((_,reject)=>setTimeout(()=>reject(new Error('El reconocimiento tardó demasiado. Prueba con una foto más clara o de menor tamaño.')),60000))]);
-  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  if(!lines.length){status('No se reconoció texto. Prueba otra foto con buena luz.');return;}
-  const summary=parse(lines);
-  const preview=$('casOcrPreview');preview.textContent=summary+'\n\nTexto completo detectado:\n'+lines.join('\n');preview.style.display='block';
+   const text=result?.data?.text||'';
+   allText+='\n--- Orientación '+angle+'° ---\n'+text;
+   const found=parse(text.split(/\r?\n/));
+   if(found.found&&(!best||found.summary.length>best.summary.length))best=found;
+   if(found.found)break;
+  }
+  const summary=best?.summary||'IMPORTE NO IDENTIFICADO';
+  const preview=$('casOcrPreview');preview.textContent=summary+'\n\n'+(best?.detail||'')+'\n\nTexto OCR:\n'+allText;preview.style.display='block';
+  if(!best){status('No se identificó TOTAL en ninguna orientación. Revisa el texto detectado.');return;}
   const comments=$('casComprobarComentarios');if(!comments){status('No se encontró el campo Comentarios.');return;}
   const current=comments.value.trimEnd(),next=current+(current?'\n\n':'')+summary;
-  if(comments.maxLength>0&&next.length>comments.maxLength){status('Se reconoció el ticket, pero Observaciones está lleno. Revisa el resultado abajo y libera espacio.');return;}
+  if(comments.maxLength>0&&next.length>comments.maxLength){status('Observaciones está lleno; el resultado aparece abajo.');return;}
   comments.value=next;comments.dispatchEvent(new Event('input',{bubbles:true}));
-  status(summary.startsWith('IMPORTE DETECTADO')?'✓ Importe posible agregado a Observaciones. Verifica antes de guardar.':'No se pudo identificar un importe. Revisa el texto OCR debajo.');
+  status('✓ Importe total agregado a Observaciones. Verifica antes de guardar.');
  }catch(e){status('No se pudo leer la fotografía: '+(e?.message||String(e)));}
  finally{button.disabled=false;try{await worker?.terminate()}catch{}}
 }
