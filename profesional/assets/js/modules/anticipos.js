@@ -40,7 +40,7 @@ function ccAntTotalComprobado(){
 function ccAntNormalizeIndicators(){
  var k=document.getElementById('ccAntKpis');if(!k)return;
  var cards=Array.from(k.children);
- cards.forEach(function(card){var label=card.querySelector('small');if(label&&/\\+\\s*7\\s*d[ií]as/i.test(label.textContent||''))card.remove()});
+ cards.forEach(function(card){var label=card.querySelector('small');if(label&&/[+][ ]*7[ ]*d[ií]as/i.test(label.textContent||''))card.remove()});
  var comprobado=ccAntTotalComprobado();
  var card=Array.from(k.children).find(function(el){return /total comprobado/i.test(el.querySelector('small')?.textContent||'')});
  if(!card){card=document.createElement('div');card.className='cc-ant-kpi';card.innerHTML='<small>Total comprobado</small><strong></strong>';k.appendChild(card)}
