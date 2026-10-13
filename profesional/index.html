@@ -290,36 +290,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 </script>
 
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
-<script id="ccAntRemoveObsoleteOperatorKpi">
-/* Elimina el KPI obsoleto del panel real "Saldos de cajas / cuentas"
-   y de cualquier vista de anticipos, incluso si lo crea un módulo tardío. */
-(function(){
-  const unwanted=/^operadores\\s+con\\s+pendiente$/i;
-  let cleaning=false;
-  function clean(){
-    if(cleaning)return;
-    cleaning=true;
-    try{
-      const panel=document.getElementById('ccPanelAnticipos')||document;
-      for(const node of panel.querySelectorAll('small,label,span,p,div,h3,h4')){
-        if(node.children.length||!unwanted.test((node.textContent||'').trim()))continue;
-        const card=node.closest('.cc-ant-kpi,.cc-kpi,.kpi-card,.stat-card,.metric-card,.cc-stat,.cc-caja-kpi');
-        if(card){card.remove();continue}
-        let candidate=node.parentElement;
-        for(let depth=0;candidate&&depth<3;depth++,candidate=candidate.parentElement){
-          if(candidate.querySelectorAll('strong,b').length===1&&candidate.textContent.trim().length<95){candidate.remove();break}
-        }
-      }
-    }finally{cleaning=false}
-  }
-  function attach(){
-    clean();
-    const panel=document.getElementById('ccPanelAnticipos')||document.body;
-    new MutationObserver(clean).observe(panel,{childList:true,subtree:true,characterData:true});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
-})();
-</script>
+
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
 <div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>TIPO ANTICIPO</th><th>MÉTODO</th><th>VIAJE</th><th>AUTORIZADO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
 
