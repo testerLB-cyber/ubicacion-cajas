@@ -1,16 +1,29 @@
-// Prueba opcional PaddleOCR PP-OCRv5 en navegador. No persiste fotos.
+// Prueba OCR de importes de casetas con Tesseract.js; no persiste fotos.
 let paddlePromise=null;
 const $=id=>document.getElementById(id);
 const status=t=>{$('casOcrStatus').textContent=t;};
 function parse(lines){
  const text=lines.join('\n');
- const pick=(re)=>{const m=text.match(re);return m?.[1]?.trim()||'No identificado';};
- const money=[...text.matchAll(/(?:TOTAL|IMPORTE|PAGADO|PAGO|COSTO)\s*[:$ ]*\s*(\$?\s*[\d,]+\.\d{2})/gi)].map(m=>m[1]);
- const plaza=pick(/(?:PLAZA|CASETA|TRAMO)\s*[:#-]?\s*([^\n]{3,45})/i);
- const folio=pick(/(?:FOLIO|TICKET|OPERACI[ÓO]N|TRANSACCI[ÓO]N)\s*(?:N[°O.]*)?\s*[:#-]?\s*([A-Z0-9-]{4,})/i);
- const fecha=pick(/\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})\b/);
- const hora=pick(/\b(\d{1,2}:\d{2}(?::\d{2})?)\b/);
- return ['TICKET DE CASETA · LECTURA OCR','Caseta: '+plaza,'Folio: '+folio,'Fecha: '+fecha,'Hora: '+hora,'Importe detectado: '+(money.at(-1)||'No identificado'),'Revisar contra fotografía original.'].join('\n');
+ const normalized=text.replace(/[ＯO](?=\d)/g,'0').replace(/[lI](?=\d)/g,'1');
+ const candidates=[];
+ const regex=/(?:\$\s*)?\d{1,5}(?:[.,]\d{3})*[.,]\d{2}\b|(?:\$\s*)?\d{1,5}\b/g;
+ for(const line of normalized.split('\n')){
+  const upper=line.toUpperCase();
+  const priority=/\b(TOTAL|IMPORTE|PAGADO|PAGO|CUOTA|TARIFA|EFECTIVO|COSTO|MONTO)\b/.test(upper)?4:0;
+  const penalty=/\b(FOLIO|TICKET|OPERACION|OPERACIÓN|TRANSACCION|TRANSACCIÓN|FECHA|HORA|RFC|IVA|CAMBIO|RECIBIDO)\b/.test(upper)?-4:0;
+  for(const match of line.matchAll(regex)){
+   const raw=match[0].replace(/\$/g,'').replace(/\s/g,'');
+   const decimals=/[.,]\d{2}$/.test(raw);
+   if(!decimals&&!priority)continue;
+   const clean=raw.includes(',')&&raw.includes('.')?raw.replace(/,/g,''):raw.replace(',','.');
+   const value=Number(clean);
+   if(!Number.isFinite(value)||value<=0||value>10000)continue;
+   candidates.push({value,score:priority+penalty+(decimals?2:0),line:line.trim()});
+  }
+ }
+ candidates.sort((x,y)=>y.score-x.score);
+ const best=candidates[0];
+ return best?'IMPORTE DETECTADO (OCR · VERIFICAR): $'+best.value.toFixed(2)+'\nTexto origen: '+best.line:'IMPORTE NO IDENTIFICADO\nRevisa la foto y el texto OCR reconocido.';
 }
 let tesseractLoader=null;
 function loadScript(src){
@@ -63,7 +76,7 @@ async function run(){
   const current=comments.value.trimEnd(),next=current+(current?'\n\n':'')+summary;
   if(comments.maxLength>0&&next.length>comments.maxLength){status('Se reconoció el ticket, pero Observaciones está lleno. Revisa el resultado abajo y libera espacio.');return;}
   comments.value=next;comments.dispatchEvent(new Event('input',{bubbles:true}));
-  status('✓ Ticket leído y datos organizados en Observaciones. Verifica antes de guardar.');
+  status(summary.startsWith('IMPORTE DETECTADO')?'✓ Importe posible agregado a Observaciones. Verifica antes de guardar.':'No se pudo identificar un importe. Revisa el texto OCR debajo.');
  }catch(e){status('No se pudo leer la fotografía: '+(e?.message||String(e)));}
  finally{button.disabled=false;try{await worker?.terminate()}catch{}}
 }
