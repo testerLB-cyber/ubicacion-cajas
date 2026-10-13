@@ -80,5 +80,5 @@ async function run(){
  }catch(e){status('No se pudo leer la fotografía: '+(e?.message||String(e)));}
  finally{button.disabled=false;try{await worker?.terminate()}catch{}}
 }
-function init(){$('casOcrRun')?.addEventListener('click',run);}
+function init(){$('casOcrRun')?.addEventListener('click',run);$('casOcrFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];const el=$('casOcrFileName');if(el)el.textContent=f?'✓ '+f.name+' ('+Math.round(f.size/1024)+' KB)':'Ninguna foto seleccionada';status(f?'Foto seleccionada. Presiona Leer información de la foto.':'Selecciona una foto para continuar.');});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
