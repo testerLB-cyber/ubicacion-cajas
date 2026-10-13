@@ -149,6 +149,28 @@ FSROWS=(qr.data?.asignaciones||[]).filter(x=>allow.has(String(x.unidad_id)));
 renderFullscreen()}
 function fsBusyRow(kind,id,h){const t=new Date(h+'-07:00').getTime();return ROWS.find(x=>{const s=new Date(x.servicio_at).getTime(),e=s+Number(x.duracion_minutos||180)*60000;return (kind==='unidad'?x.unidad_id===id:x.operador_user_id===id)&&s<=t&&e>t})}
 function renderFullscreen(){const h=$('asgFSHora').value,freeUnits=new Set((AV.unidades||[]).map(x=>x.id)),freeOps=new Set((AV.operadores||[]).map(x=>x.userId));if(FSVIEW==='horario'){renderFSHorario();return}if(FSVIEW==='unidades'){const items=SNAP.unidades||[],free=items.filter(u=>freeUnits.has(u.id)&&!u.mantenimiento).length,maint=items.filter(u=>u.mantenimiento).length;$('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+items.length+'</b><span>Total</span></div><div class="asgFSSum"><b>'+free+'</b><span>Libres</span></div><div class="asgFSSum"><b>'+Math.max(0,items.length-free-maint)+'</b><span>Ocupadas</span></div><div class="asgFSSum"><b>'+maint+'</b><span>Mantenimiento</span></div>';$('asgFSContent').innerHTML='<div class="asgFSGrid">'+items.map(u=>{const m=u.mantenimiento,b=fsBusyRow('unidad',u.id,h),state=m?'maint':freeUnits.has(u.id)?'free':'busy';return '<div class="asgResCard '+state+'"><b>'+esc(u.numero)+'</b><small>'+esc(u.tipo||u.descripcion||'Unidad')+'</small>'+(b?'<small>'+esc(b.cliente_nombre)+' · '+esc(b.operador_nombre)+'</small>':'')+(m?'<small>'+esc(m.motivo||m.estatus)+'</small>':'')+'<span class="asgResStatus '+state+'">'+(state==='free'?'LIBRE':state==='maint'?'MANTENIMIENTO':'OCUPADA')+'</span></div>'}).join('')+'</div>'}else if(FSVIEW==='operadores'){const items=SNAP.operadores||[],free=items.filter(o=>freeOps.has(o.userId)).length;$('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+items.length+'</b><span>Total</span></div><div class="asgFSSum"><b>'+free+'</b><span>Libres</span></div><div class="asgFSSum"><b>'+Math.max(0,items.length-free)+'</b><span>Ocupados</span></div>';$('asgFSContent').innerHTML='<div class="asgFSGrid">'+items.map(o=>{const b=fsBusyRow('operador',o.userId,h),state=freeOps.has(o.userId)?'free':'busy';return '<div class="asgResCard '+state+'"><b>'+esc(o.nombre)+'</b>'+(b?'<small>'+esc(b.unidad_numero)+' · '+esc(b.cliente_nombre)+'</small>':'<small>Sin servicio en este horario</small>')+'<span class="asgResStatus '+state+'">'+(state==='free'?'LIBRE':'OCUPADO')+'</span></div>'}).join('')+'</div>'}else{$('asgFSSummary').innerHTML='<div class="asgFSSum"><b>'+ROWS.length+'</b><span>Servicios cargados</span></div>';$('asgFSContent').innerHTML='<div class="asgCompactBoard">'+(ROWS.length?ROWS.map(x=>'<div class="asgCompactRow"><div><b>'+dt(x.servicio_at)+'</b></div><div><b>'+esc(x.cliente_nombre)+'</b><div class="muted">'+esc(x.tipo_servicio_nombre)+'</div></div><div><b>'+esc(x.operador_nombre)+'</b><div class="muted">'+esc(x.unidad_numero)+(x.remolque_numero?' · Remolque '+esc(x.remolque_numero):'')+'</div></div><div><span class="asgBadge asgP-'+esc(x.prioridad||'NORMAL')+'">'+esc(x.prioridad||'NORMAL')+'</span></div><div><button class="asgEdit" data-fsedit="'+esc(x.id)+'">Editar</button></div></div>').join(''):'<div class="asgEmpty">Sin programación.</div>')+'</div>';$('asgFSContent').querySelectorAll('[data-fsedit]').forEach(b=>b.onclick=()=>{const row=ROWS.find(x=>x.id===b.dataset.fsedit);$('asgFS').classList.remove('on');openModal(row)})}}
+function creatorColor(id){
+ const str=String(id||'sin-usuario');let hash=0;
+ for(let i=0;i<str.length;i++)hash=((hash*31)+str.charCodeAt(i))>>>0;
+ const hue=(hash%12)*30;
+ return 'hsl('+hue+' 65% 34%)';
+}
+function arrangeCalendarOverlaps(items){
+ const sorted=items.map(x=>{
+  const start=new Date(x.servicio_at).getTime(),end=start+Math.max(1,Number(x.duracion_minutos||180))*60000;
+  return {...x,__start:start,__end:end,__lane:0,__lanes:1};
+ }).sort((a,b)=>a.__start-b.__start||b.__end-a.__end);
+ let group=[],active=[],groupEnd=0;
+ const finalize=()=>{const lanes=Math.max(1,...group.map(x=>x.__lane+1));group.forEach(x=>x.__lanes=lanes);group=[];active=[];};
+ for(const item of sorted){
+  if(group.length&&item.__start>=groupEnd)finalize();
+  active=active.filter(x=>x.__end>item.__start);
+  let lane=0;while(active.some(x=>x.__lane===lane))lane++;
+  item.__lane=lane;group.push(item);active.push(item);groupEnd=Math.max(groupEnd,item.__end);
+ }
+ if(group.length)finalize();
+ return sorted;
+}
 function renderFSHorario(){
  const base=$('asgFSHora').value||localInput(),date=base.slice(0,10),d=new Date(date+'T12:00:00'),offset=(d.getDay()+6)%7;
  const monday=new Date(d);monday.setDate(d.getDate()-offset);
@@ -165,10 +187,10 @@ function renderFSHorario(){
  html+='</div>';
  dates.forEach((day,i)=>{
   html+='<div data-calendar-day="'+keys[i]+'" title="Doble clic en una hora para programar un viaje" style="height:'+totalHeight+'px;position:relative;min-width:0;border-left:1px solid #cbd5e1;background:repeating-linear-gradient(to bottom,'+(i%2?'#f8fafc':'#fff')+' 0px,'+(i%2?'#f8fafc':'#fff')+' 51px,#e2e8f0 51px,#e2e8f0 52px)">';
-  const list=rows.filter(x=>key(new Date(x.servicio_at))===keys[i]);
+  const list=arrangeCalendarOverlaps(rows.filter(x=>key(new Date(x.servicio_at))===keys[i]));
   list.forEach(x=>{const bits=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(x.servicio_at)).split(':'),minutes=Number(bits[0])*60+Number(bits[1]),top=minutes/60*hourHeight,height=Math.max(34,Number(x.duracion_minutos||180)/60*hourHeight);
-   const clr=x.prioridad==='CRITICA'?'#991b1b':x.prioridad==='URGENTE'?'#c2410c':'#1d4ed8';
-   html+='<button type="button" data-fsedit="'+esc(x.id)+'" title="'+esc(x.cliente_nombre)+'" style="cursor:pointer;text-align:left;position:absolute;top:'+top+'px;left:3px;right:3px;min-height:34px;height:'+Math.min(height,totalHeight-top-2)+'px;z-index:2;border:1px solid #ffffff88;border-left:4px solid #93c5fd;border-radius:7px;padding:5px 6px;background:'+clr+';color:#fff;overflow:hidden;box-shadow:0 2px 8px #0002;font-size:10px"><b>'+dt(x.servicio_at)+' '+esc(x.cliente_nombre)+'</b><div>'+esc(x.unidad_numero)+(x.remolque_numero?' / '+esc(x.remolque_numero):'')+'</div><div>'+esc(x.operador_nombre)+'</div></button>';
+   const clr=creatorColor(x.created_by),width=100/x.__lanes,left=x.__lane*width;
+   html+='<button type="button" data-fsedit="'+esc(x.id)+'" title="'+esc(x.cliente_nombre)+' · Registró: '+esc(x.creado_por_nombre||'Usuario')+'" style="cursor:pointer;text-align:left;position:absolute;top:'+top+'px;left:calc('+left+'% + 2px);width:calc('+width+'% - 4px);min-height:30px;height:'+Math.min(height,totalHeight-top-2)+'px;z-index:2;border:1px solid #ffffff88;border-left:3px solid #fff;border-radius:5px;padding:3px 4px;background:'+clr+';color:#fff;overflow:hidden;box-shadow:0 2px 8px #0002;font-size:9px;line-height:1.3"><b>'+dt(x.servicio_at)+' '+esc(x.cliente_nombre)+'</b><div>'+esc(x.unidad_numero)+(x.remolque_numero?' / '+esc(x.remolque_numero):'')+'</div><div>'+esc(x.operador_nombre)+'</div><small style="display:block;opacity:.9">Por: '+esc(x.creado_por_nombre||'Usuario')+'</small></button>';
   });html+='</div>';
  });
  html+='</div></div>';
