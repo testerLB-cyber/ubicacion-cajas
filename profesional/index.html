@@ -9,7 +9,7 @@
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261013-botones-colores-v29"/>
+<meta name="trafico-app-build" content="profesional-20261013-tabla-sin-acciones-v30"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -292,7 +292,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div id="ccAntKpis" class="cc-ant-kpis"></div>
 
 <div class="cc-ant-nav"><button class="cc-btn cc-btn-primary" data-antv="anticipos" onclick="ccAntView('anticipos',this)">Anticipos</button><button class="cc-btn cc-btn-light" data-antv="saldos" onclick="ccAntView('saldos',this)">Pendiente operadores</button><button class="cc-btn cc-btn-light" data-antv="reportes" onclick="ccAntView('reportes',this)">Reportes</button><button class="cc-btn cc-btn-light" data-antv="catalogos" onclick="ccAntView('catalogos',this)">Catálogos</button></div>
-<div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>TIPO ANTICIPO</th><th>MÉTODO</th><th>VIAJE</th><th>AUTORIZADO</th><th>ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th><th>ACCIONES</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
+<div id="ccAntViewAnticipos" class="cc-ant-view"><div class="cc-dot-filters" style="grid-template-columns:repeat(4,minmax(150px,1fr))"><div><label>Desde</label><input id="ccAntDesde" type="date" oninput="ccAntRender()"></div><div><label>Hasta</label><input id="ccAntHasta" type="date" oninput="ccAntRender()"></div><div><label>Operador</label><select id="ccAntOperadorFiltro" onchange="ccAntRender()"><option value="">Todos</option></select></div><div><label>Estatus</label><select id="ccAntEstatusFiltro" onchange="ccAntRender()"><option value="">Todos</option><option>PENDIENTE</option><option value="PENDIENTE_CONFIRMAR">PENDIENTE CONFIRMAR</option><option>CERRADO</option><option>CANCELADO</option></select></div></div><div class="cc-inv-wrap" style="max-height:62vh;overflow:auto"><table class="cc-ant-table"><thead><tr><th>FOLIO</th><th>FECHA</th><th>OPERADOR</th><th>DESTINO</th><th>UNIDAD</th><th>MÉTODO</th><th>VIAJE</th><th>ANTICIPO ENTREGADO</th><th>COMPROBADO</th><th>PENDIENTE</th><th>ESTATUS</th></tr></thead><tbody id="ccAntBody"></tbody></table></div></div>
 
 <style id="casFullScreen2026">
 #ccAntViewCasetasNuevo.cas-fullscreen{position:fixed!important;inset:0!important;z-index:99999!important;background:#f1f5f9!important;overflow-y:auto!important;overflow-x:hidden!important;padding:22px clamp(12px,2vw,34px)!important;display:block!important;max-width:none!important;width:100vw!important;height:100dvh!important;box-sizing:border-box!important}
@@ -1474,7 +1474,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-botones-colores-v29"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-tabla-sin-acciones-v30"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
