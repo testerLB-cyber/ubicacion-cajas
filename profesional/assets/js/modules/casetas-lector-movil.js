@@ -102,7 +102,7 @@ async function start(){
  finally{starting=false;}
 }
 async function init(){
- $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);
+ $('start').addEventListener('click',start);$('pause').addEventListener('click',stop);$('next').addEventListener('click',()=>{lastTotal='';$('totalValue').textContent='Esperando TOTAL…';status('Leyendo siguiente ticket · Enfoca TOTAL:');});
  $('torch').addEventListener('click',async()=>{try{const t=stream?.getVideoTracks()?.[0];if(!t)throw new Error('Primero enciende cámara');torch=!torch;await t.applyConstraints({advanced:[{torch}]});}catch(e){status('Linterna: '+e.message);}});
  window.addEventListener('pagehide',stop);
  if(!token||!/^[a-f0-9]{32}$/.test(token)){status('Vínculo inválido. Genera otro QR en la computadora.');return;}
