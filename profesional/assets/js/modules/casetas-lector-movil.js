@@ -65,7 +65,8 @@ async function scanTotal(){
  ocrBusy=true;
  try{
   const worker=await initOCR();
-  if(!ocrStarted)ocrStarted=performance.now();\n  const canvas=document.createElement('canvas');
+  if(!ocrStarted)ocrStarted=performance.now();
+  const canvas=document.createElement('canvas');
   const scale=Math.min(1,960/Math.max(video.videoWidth,video.videoHeight));
   canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);
   canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
