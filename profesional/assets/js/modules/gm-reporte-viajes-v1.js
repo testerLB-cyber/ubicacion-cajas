@@ -127,7 +127,7 @@ async function matchRoads(points){
    const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),7000);
    let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
    if(!response.ok)return null;const data=await response.json();
-   if(data.code!=='Ok'||!Array.isArray(data.matchings)||!data.matchings.length)return null;
+   if(data.code!=='Ok'||!Array.isArray(data.matchings)||data.matchings.length!==1)return null;
    const coords=data.matchings.flatMap(m=>m.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
    if(coords.length<2)return null;
    if(matched.length&&distanceMeters(matched[matched.length-1],coords[0])<80)coords.shift();
@@ -192,7 +192,7 @@ async function showTrace(data,version){
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
   map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
-  const km=gps.slice(1).reduce((sum,p,i)=>sum+(distanceMeters(gps[i],p)/1000),0);
+  const km=segments.reduce((total,seg)=>total+seg.slice(1).reduce((sum,p,i)=>sum+distanceMeters(seg[i],p)/1000,0),0);
   const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0 12px">'+
