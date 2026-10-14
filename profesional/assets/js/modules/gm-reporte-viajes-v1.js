@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let map=null,markers=null,rows=[];
+let map=null,markers=null,rows=[],playTimer=null,playPath=[],playIndex=0,playMarker=null,playLine=null,traceVersion=0;
 const date=d=>{const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
 function inject(){
  const bar=$('airHistoryBtn')?.parentElement;if(!bar||bar.querySelector('#gmTripReportButton'))return;
@@ -16,10 +16,10 @@ function open(){
  '<header style="position:sticky;top:-18px;z-index:900;background:#fff;padding:12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e2e8f0"><div><h2 style="font-size:20px;font-weight:800;margin:0">Reporte de viajes</h2><p style="margin:4px 0 0;color:#64748b;font-size:12px">Viajes registrados, eventos y posiciones GPS verificadas</p></div><button id="gmTripsClose" type="button" aria-label="Cerrar reporte de viajes" style="display:inline-flex;align-items:center;gap:7px;border:0;border-radius:10px;background:#dc2626;color:white;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0">✕ Cerrar</button></header>'+
  '<div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:15px 0"><label>Desde <input id="gmTripsFrom" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Hasta <input id="gmTripsTo" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><button id="gmTripsSearch" type="button" class="airFullBtn" style="background:#0f766e;color:#fff">Consultar viajes</button></div>'+
  '<p id="gmTripsStatus" style="font-size:12px;color:#475569"></p><div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,1.6fr);gap:12px" id="gmTripsLayout"><div id="gmTripsResults" style="overflow:auto;max-height:470px;border:1px solid #e2e8f0;border-radius:10px"></div><div><div id="gmTripsMap" style="height:360px;border-radius:10px;background:#e2e8f0"></div><div id="gmTripsEvents" style="margin-top:10px;font-size:12px;color:#475569"></div></div></div>'+
- '<footer style="position:sticky;bottom:-18px;background:#fff;border-top:1px solid #e2e8f0;padding:12px 0;margin-top:14px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>@media(max-width:740px){#gmTripsLayout{grid-template-columns:1fr!important}#gmTripsMap{height:300px!important}}</style></section>';
+ '<div id="gmTripsPlayback" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0"><button type="button" id="gmTripsPlay" style="border:0;border-radius:8px;background:#0f766e;color:white;padding:9px 15px;font-weight:700;cursor:pointer">▶ Reproducir</button><button type="button" id="gmTripsPause" class="airFullBtn">⏸ Pausar</button><button type="button" id="gmTripsReset" class="airFullBtn">↺ Reiniciar</button><label style="font-size:12px">Velocidad <select id="gmTripsSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option></select></label><input type="range" id="gmTripsProgress" value="0" min="0" max="100" style="flex:1;min-width:120px" aria-label="Posición del recorrido"><span id="gmTripsTime" style="font-size:11px;color:#475569"></span></div>'+ '<footer style="position:sticky;bottom:-18px;background:#fff;border-top:1px solid #e2e8f0;padding:12px 0;margin-top:14px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>@media(max-width:740px){#gmTripsLayout{grid-template-columns:1fr!important}#gmTripsMap{height:300px!important}}</style></section>';
  document.body.appendChild(m);
- const closeReport=()=>{if(map){map.remove();map=null}markers=null;m.remove()};$('gmTripsClose').onclick=closeReport;$('gmTripsCloseBottom').onclick=closeReport;m.addEventListener('click',e=>{if(e.target===m)closeReport()});
- $('gmTripsSearch').onclick=search;
+ const closeReport=()=>{stopPlayback();traceVersion++;if(map){map.remove();map=null}markers=null;m.remove()};$('gmTripsClose').onclick=closeReport;$('gmTripsCloseBottom').onclick=closeReport;m.addEventListener('click',e=>{if(e.target===m)closeReport()});
+ $('gmTripsSearch').onclick=search;$('gmTripsPlay').onclick=startPlayback;$('gmTripsPause').onclick=stopPlayback;$('gmTripsReset').onclick=()=>{stopPlayback();seekPlayback(0)};$('gmTripsProgress').oninput=e=>{stopPlayback();seekPlayback(Number(e.target.value)/100)};
  const end=new Date(),start=new Date(end);start.setDate(start.getDate()-6);$('gmTripsTo').value=date(end);$('gmTripsFrom').value=date(start);
  }
  search();
@@ -63,18 +63,63 @@ async function ensureTripsLeaflet(){
  }
  await window.__gmTripsLeafletPromise;
 }
-async function trace(id){
- $('gmTripsEvents').textContent='Consultando posiciones y eventos…';
- try{
- const data=await rpc('gm_reporte_trayecto',{p_viaje_id:id}),points=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)),events=data.geocercas||[];
- await ensureTripsLeaflet();
- if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
- if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);
- points.forEach((p,i)=>L.circleMarker([p.lat,p.lon],{radius:i===0||i===points.length-1?6:3,color:i===0?'#16a34a':i===points.length-1?'#dc2626':'#0f766e',fillOpacity:.8}).bindPopup(esc(String(p.fecha||''))).addTo(markers));
- if(points.length)map.fitBounds(markers.getBounds().pad(.15));setTimeout(()=>map.invalidateSize(),70);
- $('gmTripsEvents').innerHTML='<b>'+points.length+' posiciones GPS almacenadas.</b> '+(points.length<2?'Aún no hay datos suficientes para reconstruir un recorrido.':'Se muestran puntos confirmados; la ruta por calles requiere validación mediante Map Matching.')+(events.length?'<div style="margin-top:8px"><b>Eventos de geocercas:</b>'+events.map(g=>'<div>'+esc(g.nombre)+' · '+esc(g.evento)+' · '+esc(g.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:8px">Sin eventos de geocerca visibles para este acceso.</div>');
- }catch(e){$('gmTripsEvents').textContent='Error al consultar trayecto: '+(e.message||e)}
+function stopPlayback(){if(playTimer){clearInterval(playTimer);playTimer=null}}
+function seekPlayback(fraction){
+ if(!playPath.length||!map)return;
+ playIndex=Math.min(playPath.length-1,Math.max(0,Math.round(fraction*(playPath.length-1))));
+ const p=playPath[playIndex];if(playMarker)playMarker.setLatLng(p);if(playLine)playLine.setLatLngs(playPath.slice(0,playIndex+1));
+ if($('gmTripsProgress'))$('gmTripsProgress').value=String(Math.round(100*playIndex/Math.max(1,playPath.length-1)));
+ if($('gmTripsTime'))$('gmTripsTime').textContent=(p.time?new Date(p.time).toLocaleString('es-MX'):'')+' · '+(playIndex+1)+'/'+playPath.length;
 }
+function startPlayback(){stopPlayback();if(playPath.length<2)return;if(playIndex>=playPath.length-1)seekPlayback(0);playTimer=setInterval(()=>{if(!map||!$('gmTripReportModal')){stopPlayback();return}if(playIndex>=playPath.length-1){stopPlayback();return}const speed=Number($('gmTripsSpeed')?.value||5);seekPlayback((Math.min(playPath.length-1,playIndex+speed))/(playPath.length-1))},180)}
+function distanceMeters(a,b){const d=Math.PI/180,R=6371000,dlat=(b.lat-a.lat)*d,dlon=(b.lng-a.lng)*d;const x=Math.sin(dlat/2)**2+Math.cos(a.lat*d)*Math.cos(b.lat*d)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
+async function matchRoads(points){
+ // Map Matching is an optional visual estimate only; do not connect large GPS gaps.
+ if(points.length<2||points.length>100)return null;
+ const maxGap=300;for(let i=1;i<points.length;i++){let dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;if(dt>180||dt<0||distanceMeters(points[i-1],points[i])>maxGap)return null}
+ try{
+  const coordinates=points.map(p=>p.lng+','+p.lat).join(';');
+  const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split';
+  const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),6500);
+  let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
+  if(!response.ok)return null;const data=await response.json();
+  if(data.code!=='Ok'||!Array.isArray(data.matchings)||data.matchings.length!==1)return null;
+  const coords=data.matchings[0].geometry?.coordinates||[];
+  if(coords.length<2)return null;return coords.map(x=>({lat:x[1],lng:x[0]}));
+ }catch(e){console.warn('Map Matching no disponible:',e);return null}
+}
+async function trace(id){
+ stopPlayback();const version=++traceVersion;
+ $('gmTripsEvents').textContent='Consultando trayectoria del viaje…';$('gmTripsPlayback').style.display='none';
+ try{
+ const data=await rpc('gm_reporte_trayecto',{p_viaje_id:id});
+ const gps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time)),events=data.geocercas||[];
+ await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
+ if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
+ if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);playPath=[];playIndex=0;playLine=null;playMarker=null;
+ if(gps.length){
+  const segments=[];let current=[gps[0]];
+  for(let i=1;i<gps.length;i++){
+   let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
+   if(gap>180||distanceMeters(gps[i-1],gps[i])>1000){if(current.length>1)segments.push(current);current=[gps[i]]}
+   else current.push(gps[i]);
+  }if(current.length>1)segments.push(current);
+  let displaySegments=[],matched=0;
+  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push(adjusted);matched++}else displaySegments.push(seg)}
+  for(const segment of displaySegments)L.polyline(segment,{color:'#0f766e',weight:5,opacity:.9,lineJoin:'round'}).addTo(markers);
+  L.circleMarker(gps[0],{radius:8,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindPopup('Inicio registrado '+esc(gps[0].time)).addTo(markers);
+  L.circleMarker(gps[gps.length-1],{radius:8,color:'#fff',weight:3,fillColor:'#dc2626',fillOpacity:1}).bindPopup('Última posición registrada '+esc(gps[gps.length-1].time)).addTo(markers);
+  if(gps.length>1){
+   playPath=gps;playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
+   playMarker=L.circleMarker(gps[0],{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(markers);
+   $('gmTripsPlayback').style.display='flex';seekPlayback(0);
+  }
+  map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
+  $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+(events.length?'<div style="margin-top:8px"><b>Geocercas:</b>'+events.map(e=>'<div>'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'');
+ }else{$('gmTripsEvents').textContent='Este viaje todavía no tiene posiciones históricas disponibles para dibujar su recorrido.'}
+ }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
+}
+
 window.gmTripReportOpen=open;
 new MutationObserver(inject).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inject);else inject();
 })();
