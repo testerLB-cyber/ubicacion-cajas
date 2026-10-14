@@ -9,7 +9,7 @@
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261013-ant-cuentas-compactas-v55"/>
+<meta name="trafico-app-build" content="profesional-20261013-ant-excel-libros-v56"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -543,7 +543,20 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div><label>Hasta</label><input id="ccAntRepHasta" type="date" oninput="ccAntRenderReportes()"></div>
 <div><label>Operador</label><select id="ccAntRepFiltroOperador" onchange="ccAntRenderReportes()"><option value="">Todos</option></select></div>
 </div>
-<div id="ccAntRepKpis" class="cc-ant-kpis"></div>
+<div class="cc-config-card" style="margin:12px 0">
+<div class="cc-toolbar"><div><strong>Libros de movimientos y comprobaciones · Excel</strong><div class="cc-note">Consultas independientes por fecha de registro. Solo caja modifica el saldo acumulado; las comprobaciones no representan entrada de dinero.</div></div></div>
+<div class="cc-dot-filters" style="grid-template-columns:repeat(auto-fit,minmax(155px,1fr))">
+<div><label>Desde</label><input type="date" id="ccAntLibroDesde"></div>
+<div><label>Hasta</label><input type="date" id="ccAntLibroHasta"></div>
+<div><label>Cuenta (movimientos)</label><select id="ccAntLibroCuenta"><option value="">Todas las cuentas</option></select></div>
+<div><label>Saldo al inicio del rango ($)</label><input type="number" id="ccAntLibroSaldoInicial" min="0" step="0.01" placeholder="Capturar saldo del cierre"></div>
+</div>
+<div class="cc-note" style="margin:8px 0">El saldo inicial se captura a partir del cierre real del día anterior. No se vuelve a contar ese cierre como depósito. Las comprobaciones se exportan según su fecha de registro, aunque correspondan a anticipos anteriores.</div>
+<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:10px"><button type="button" class="cc-btn cc-btn-primary" id="ccAntExportCajaExcel" onclick="ccAntExportLibroExcel('caja')"><i class="fa-solid fa-file-excel"></i> Excel · movimientos de caja</button><button type="button" class="cc-btn cc-btn-light" id="ccAntExportCompExcel" onclick="ccAntExportLibroExcel('comprobaciones')"><i class="fa-solid fa-file-excel"></i> Excel · comprobaciones</button></div>
+</div>
+<script>
+(function(){function init(){const start=document.getElementById('ccAntLibroDesde'),end=document.getElementById('ccAntLibroHasta');if(!start||!end)return;const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());start.value=today;end.value=today;const opts=document.getElementById('ccAntLibroCuenta');function update(){if(!opts||!window.gmSupabase)return;const cuentas=window.__ccAntReportAccounts||[];if(cuentas.length){const selected=opts.value;opts.innerHTML='<option value="">Todas las cuentas</option>'+cuentas.map(c=>'<option value="'+c.id+'">'+c.nombre+'</option>').join('');opts.value=selected}}window.ccAntRefreshReportAccounts=update;update()}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();
+</script><div id="ccAntRepKpis" class="cc-ant-kpis"></div>
 
 <div class="cc-config-card" style="margin-top:12px">
 <div class="cc-toolbar"><div><strong>Histórico por operador</strong><div class="cc-note">Totales de anticipos entregados, comprobados, devueltos y pendientes dentro del rango.</div></div><button class="cc-btn cc-btn-dark" onclick="ccAntExportReporteOperadoresPDF()">Exportar este reporte</button></div>
@@ -1517,7 +1530,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-kpis-v54"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-libros-v56"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
