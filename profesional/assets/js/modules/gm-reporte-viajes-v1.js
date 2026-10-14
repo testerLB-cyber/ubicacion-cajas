@@ -115,6 +115,7 @@ async function trace(id){
 }
 async function showTrace(data,version){
  try{
+ const geosHtml=events.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Geocercas registradas por GM ('+events.length+'):</b>'+events.map(e=>'<div style="padding:5px 0;border-bottom:1px solid #f1f5f9">'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">No hay eventos de geocercas registrados para este intervalo.</div>';
  const gps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time)),events=data.geocercas||[];
  await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
  if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
@@ -136,7 +137,7 @@ async function showTrace(data,version){
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
   map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
-  $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+(events.length?'<div style="margin-top:8px"><b>Geocercas:</b>'+events.map(e=>'<div>'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'');
+  $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+geosHtml;
  }else{
  const lastPos=data.ultima_posicion;
  if(lastPos&&Number.isFinite(Number(lastPos.lat))&&Number.isFinite(Number(lastPos.lon))){
@@ -148,7 +149,7 @@ async function showTrace(data,version){
  const start=data.inicio_viaje?new Date(data.inicio_viaje):null;
  const hh=d=>d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true});
  const before=last&&start&&last<start;
- $('gmTripsEvents').innerHTML='<b>Ubicación GPS más reciente disponible de la unidad.</b> El recorrido aún no tiene posiciones GPS posteriores a su inicio. '+(last?'Última posición conocida de la unidad: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+'). GM todavía no entrega coordenadas nuevas para reconstruir su trayecto.':'Se requieren nuevas coordenadas GPS del viaje para dibujar el recorrido.')+'<div style="margin-top:8px;color:#64748b">Las actualizaciones de pantalla no equivalen a posiciones GPS nuevas: no se crea una trayectoria con lecturas repetidas.</div>';
+ $('gmTripsEvents').innerHTML='<b>Ubicación GPS más reciente disponible de la unidad.</b> El recorrido aún no tiene posiciones GPS posteriores a su inicio. '+(last?'Última posición conocida de la unidad: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+'). GM todavía no entrega coordenadas nuevas para reconstruir su trayecto.':'Se requieren nuevas coordenadas GPS del viaje para dibujar el recorrido.')+'<div style="margin-top:8px;color:#64748b">Las actualizaciones de pantalla no equivalen a posiciones GPS nuevas: no se crea una trayectoria con lecturas repetidas.</div>'+geosHtml;
 }
  }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
