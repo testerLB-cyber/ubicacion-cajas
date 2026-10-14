@@ -135,8 +135,8 @@ async function trace(id){
 }
 async function showTrace(data,version){
  try{
- const geosHtml=events.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Geocercas registradas por GM ('+events.length+'):</b>'+events.map(e=>'<div style="padding:5px 0;border-bottom:1px solid #f1f5f9">'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">No hay eventos de geocercas registrados para este intervalo.</div>';
  const gps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time)),events=data.geocercas||[];
+ const geosHtml=events.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Geocercas registradas por GM ('+events.length+'):</b>'+events.map(e=>'<div style="padding:5px 0;border-bottom:1px solid #f1f5f9">'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">No hay eventos de geocercas registrados para este intervalo.</div>';
  await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
  if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
  if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);playPath=[];playIndex=0;playLine=null;playMarker=null;
