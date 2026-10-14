@@ -35,11 +35,21 @@ async function search(){
  $('gmTripsResults').onclick=e=>{const b=e.target.closest('[data-trip]');if(b)trace(Number(b.dataset.trip))};
  }catch(e){$('gmTripsStatus').textContent='No fue posible consultar: '+(e.message||e)}
 }
+async function ensureTripsLeaflet(){
+ if(window.L&&window.L.map)return;
+ if(typeof window.ccEnsureLeaflet==='function'){try{await window.ccEnsureLeaflet()}catch(e){console.warn('Leaflet compartido:',e)}if(window.L&&window.L.map)return}
+ if(!document.querySelector('link[data-gm-trips-leaflet]')){const l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';l.dataset.gmTripsLeaflet='1';document.head.appendChild(l)}
+ if(!window.__gmTripsLeafletPromise){window.__gmTripsLeafletPromise=new Promise((resolve,reject)=>{
+ const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.async=true;script.onload=resolve;script.onerror=()=>reject(Error('No se pudo descargar Leaflet'));document.head.appendChild(script);
+ }).catch(e=>{window.__gmTripsLeafletPromise=null;throw e})}
+ await window.__gmTripsLeafletPromise;
+ if(!window.L||!window.L.map)throw Error('Leaflet no se inicializó');
+}
 async function trace(id){
  $('gmTripsEvents').textContent='Consultando posiciones y eventos…';
  try{
  const data=await rpc('gm_reporte_trayecto',{p_viaje_id:id}),points=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)),events=data.geocercas||[];
- if(typeof window.L==='undefined'){$('gmTripsEvents').textContent='Leaflet no está disponible para abrir el mapa.';return}
+ await ensureTripsLeaflet();
  if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
  if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);
  points.forEach((p,i)=>L.circleMarker([p.lat,p.lon],{radius:i===0||i===points.length-1?6:3,color:i===0?'#16a34a':i===points.length-1?'#dc2626':'#0f766e',fillOpacity:.8}).bindPopup(esc(String(p.fecha||''))).addTo(markers));
