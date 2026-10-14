@@ -63,6 +63,11 @@ async function ensureTripsLeaflet(){
  }
  await window.__gmTripsLeafletPromise;
 }
+function vehicleIcon(data){
+ const x={unidad:data.unidad||'Unidad',remolque:data.remolque||'',numeroViaje:data.numero_viaje||'',cliente:data.cliente||'',operador:'',destino:''};
+ const html=typeof window.gmAirportVehicleMarkerHtml==='function'?window.gmAirportVehicleMarkerHtml(x,'#0f766e'):'<div style="background:#0f766e;color:#fff;padding:7px 11px;border-radius:10px;white-space:nowrap;font-weight:800;box-shadow:0 3px 12px #0003"><i class="fa-solid fa-truck-front"></i> '+esc(x.unidad)+(x.remolque?' <i class="fa-solid fa-trailer"></i> '+esc(x.remolque):'')+'</div>';
+ return L.divIcon({className:'',html,iconSize:null,iconAnchor:[28,15]});
+}
 function stopPlayback(){if(playTimer){clearInterval(playTimer);playTimer=null}}
 function seekPlayback(fraction){
  if(!playPath.length||!map)return;
@@ -107,21 +112,26 @@ async function trace(id){
   let displaySegments=[],matched=0;
   for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push(adjusted);matched++}else displaySegments.push(seg)}
   for(const segment of displaySegments)L.polyline(segment,{color:'#0f766e',weight:5,opacity:.9,lineJoin:'round'}).addTo(markers);
-  L.circleMarker(gps[0],{radius:8,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindPopup('Inicio registrado '+esc(gps[0].time)).addTo(markers);
-  L.circleMarker(gps[gps.length-1],{radius:8,color:'#fff',weight:3,fillColor:'#dc2626',fillOpacity:1}).bindPopup('Última posición registrada '+esc(gps[gps.length-1].time)).addTo(markers);
+  L.marker(gps[0],{icon:vehicleIcon(data)}).bindPopup('Inicio del recorrido registrado: '+esc(gps[0].time)).addTo(markers);
   if(gps.length>1){
    playPath=(displaySegments.length===1&&matched===1?displaySegments[0].map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
-   playMarker=L.circleMarker(gps[0],{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(markers);
+   playMarker=L.marker(gps[0],{icon:vehicleIcon(data),zIndexOffset:1000}).addTo(markers);
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
   map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
   $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+(events.length?'<div style="margin-top:8px"><b>Geocercas:</b>'+events.map(e=>'<div>'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'');
  }else{
+ const lastPos=data.ultima_posicion;
+ if(lastPos&&Number.isFinite(Number(lastPos.lat))&&Number.isFinite(Number(lastPos.lon))){
+ const loc=[Number(lastPos.lat),Number(lastPos.lon)];
+ L.marker(loc,{icon:vehicleIcon(data)}).bindPopup('Última ubicación GPS disponible: '+esc(lastPos.fecha)).addTo(markers);
+ map.setView(loc,14);setTimeout(()=>map?.invalidateSize(),80);
+ }
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
  const start=data.inicio_viaje?new Date(data.inicio_viaje):null;
  const hh=d=>d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true});
  const before=last&&start&&last<start;
- $('gmTripsEvents').innerHTML='<b>Este viaje no tiene posiciones GPS posteriores a su inicio detectado.</b> '+(last?'Última posición conocida de la unidad: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+'). GM todavía no entrega coordenadas nuevas para reconstruir su trayecto.':'Se requieren nuevas coordenadas GPS del viaje para dibujar el recorrido.')+'<div style="margin-top:8px;color:#64748b">Las actualizaciones de pantalla no equivalen a posiciones GPS nuevas: no se crea una trayectoria con lecturas repetidas.</div>';
+ $('gmTripsEvents').innerHTML='<b>Ubicación GPS más reciente disponible de la unidad.</b> El recorrido aún no tiene posiciones GPS posteriores a su inicio. '+(last?'Última posición conocida de la unidad: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+'). GM todavía no entrega coordenadas nuevas para reconstruir su trayecto.':'Se requieren nuevas coordenadas GPS del viaje para dibujar el recorrido.')+'<div style="margin-top:8px;color:#64748b">Las actualizaciones de pantalla no equivalen a posiciones GPS nuevas: no se crea una trayectoria con lecturas repetidas.</div>';
 }
  }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
