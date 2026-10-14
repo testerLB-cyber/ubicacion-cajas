@@ -481,7 +481,7 @@ async function casAuditEdit(id){
   if(!Number.isFinite(amount)||amount<0){error.textContent='Escribe un importe válido.';return;}
   if(reason.length<5){error.textContent='Indica un motivo de al menos 5 caracteres.';return;}
   if(Math.abs(amount-x.monto)<0.001){error.textContent='El importe nuevo debe ser diferente al actual.';return;}
-  if(!window.confirm('Confirmar corrección de '+money(x.monto)+' a '+money(amount)+'? Ajuste de caja: '+money(x.monto-amount))return;
+  if(!window.confirm('Confirmar corrección de '+money(x.monto)+' a '+money(amount)+'? Ajuste de caja: '+money(x.monto-amount)))return;
   btn.disabled=true;btn.textContent='Guardando…';error.textContent='';
   try{await rpc('cc_ant_casetas_editar_entrega',{id,monto:amount,motivo:reason});close();await load();await casAuditLoad();note('Entrega corregida. El historial de auditoría conserva el cambio.');}
   catch(err){error.textContent=String(err.message||err).replace('MONTO_MENOR_A_LO_YA_COMPROBADO_O_DEVUELTO','El importe no puede ser menor que lo ya comprobado o devuelto.').replace('ENTREGA_CERRADA','No se puede editar una entrega cerrada.').replace('SIN_PERMISO_EDITAR_CASETAS','Tu sesión no tiene autorización para corregir entregas.');}
