@@ -277,11 +277,35 @@ window.ccAntExportLibroExcel=async function(tipo){
    }
    summary=[{'Concepto':'Comprobantes activos','Importe':rows.length},{'Concepto':'Monto comprobado','Importe':total},{'Concepto':'Anticipos distintos','Importe':Object.keys(by).length},{'Concepto':'Rango de registro','Importe':desde+' a '+hasta}];
   }
+
+  // Resumen diario continuo: incluye días sin movimientos y saldo inicial/final por fecha.
+  var localDay=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+  var days=[],cursor=new Date(desde+'T12:00:00Z'),last=new Date(hasta+'T12:00:00Z');
+  for(var guard=0;cursor<=last&&guard<3660;guard++,cursor.setUTCDate(cursor.getUTCDate()+1))days.push(cursor.toISOString().slice(0,10));
+  if(days.length>=3660)throw Error('El rango de fechas es demasiado grande.');
+  var daily=[],running=tipo==='caja'?initial:0;
+  var bucket=new Map(days.map(d=>[d,{fecha:d,entradas:0,salidas:0,comprobado:0,cantidad:0}]));
+  for(var x of rows){
+   var day=localDay(x.created_at),z=bucket.get(day);if(!z)continue;
+   if(tipo==='caja'){
+    var value=Number(x.monto||0);
+    if(['DEPOSITO','DEVOLUCION','AJUSTE_ENTRADA'].includes(x.tipo))z.entradas+=value;
+    if(['ANTICIPO','AJUSTE_SALIDA'].includes(x.tipo))z.salidas+=value;
+   }else{z.comprobado+=Number(x.monto||0);z.cantidad++}
+  }
+  for(var d of days){
+   var z=bucket.get(d),opening=running;
+   running+=tipo==='caja'?z.entradas-z.salidas:z.comprobado;
+   if(tipo==='caja')daily.push({'Fecha':d,'Saldo inicial del día':opening,'Entradas':z.entradas,'Salidas':z.salidas,'Saldo final del día':running});
+   else daily.push({'Fecha':d,'Comprobado acumulado al iniciar':opening,'Comprobaciones del día':z.cantidad,'Importe comprobado del día':z.comprobado,'Comprobado acumulado al terminar':running});
+  }
+  if(tipo==='caja')summary.push({'Concepto':'Saldo inicial del primer día','Importe':initial},{'Concepto':'Saldo final del último día','Importe':running});
+  else summary.push({'Concepto':'Comprobado acumulado al iniciar el rango','Importe':0},{'Concepto':'Comprobado acumulado al terminar el rango','Importe':running},{'Concepto':'Nota','Importe':'Acumulado de comprobaciones del rango; NO es efectivo en caja'});
   if(!data.length)throw Error('No hay movimientos activos en el rango seleccionado.');
   if(!window.XLSX){await new Promise((resolve,reject)=>{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=()=>reject(Error('No se pudo cargar el exportador Excel'));document.head.appendChild(s)})}
   var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(data),sm=XLSX.utils.json_to_sheet(summary);
   ws['!cols']=Object.keys(data[0]).map(key=>({wch:Math.max(16,Math.min(38,key.length+7))}));
-  XLSX.utils.book_append_sheet(wb,ws,tipo==='caja'?'Movimientos caja':'Comprobaciones');XLSX.utils.book_append_sheet(wb,sm,'Resumen');
+  XLSX.utils.book_append_sheet(wb,ws,tipo==='caja'?'Movimientos caja':'Comprobaciones');var diario=XLSX.utils.json_to_sheet(daily);diario['!cols']=Object.keys(daily[0]||{}).map(k=>({wch:Math.max(k.length+4,20)}));XLSX.utils.book_append_sheet(wb,diario,'Saldos por día');XLSX.utils.book_append_sheet(wb,sm,'Resumen');
   XLSX.writeFile(wb,(tipo==='caja'?'Movimientos_caja_':'Comprobaciones_')+formatDate()+'.xlsx');
  }catch(e){console.error('ANT_LIBRO_EXCEL',e);alert('No se pudo generar el Excel: '+(e.message||e))}
  finally{if(b){b.disabled=false;b.innerHTML=old}}
