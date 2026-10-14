@@ -845,7 +845,8 @@ function airCatalogName(x){const c=AIR_CLIENTS.find(a=>airClientKey(a.nombre)===
 function airUnitKey(x){return String(x||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'')}
 function airManualActive(a){const n=Date.now();return a.estado==='ACTIVA'&&Date.parse(a.inicio)<=n&&(a.modo==='HASTA_VIAJE'||!a.fin||n<Date.parse(a.fin))}
 function airApplyManual(vehicles){
- const base=vehicles.map(v=>{const cliente=airCatalogName(v.cliente);return cliente?{...v,cliente}:null}).filter(Boolean);
+ // Conserva todas las unidades GPS; si GM no reporta cliente, no debe desaparecer del mapa global.
+ const base=vehicles.map(v=>{const cliente=airCatalogName(v.cliente);return {...v,cliente:cliente||String(v.cliente||'').trim()};});
  const active=AIR_MANUAL.filter(airManualActive),mirrors=[];
  for(const a of active){
   const v=vehicles.find(v=>airUnitKey(v.unidad)===airUnitKey(a.unidad));if(!v)continue;
