@@ -246,14 +246,10 @@ window.ccAntExportLibroExcel=async function(tipo){
   if(hasta<desde)throw Error('La fecha final no puede ser anterior a la inicial.');
   var start=new Date(desde+'T00:00:00-07:00').toISOString(),end=new Date(new Date(hasta+'T00:00:00-07:00').getTime()+86400000).toISOString();
   var cuenta=document.getElementById('ccAntLibroCuenta')?.value||'';
-  var rows=[],offset=0,table=tipo==='caja'?'cc_ant_movimientos_caja':'cc_ant_comprobaciones';
-  while(true){
-   var query=sb().from(table).select('*').gte('created_at',start).lt('created_at',end).order('created_at',{ascending:true}).range(offset,offset+999);
-   if(tipo==='caja'&&cuenta)query=query.eq('cuenta_id',cuenta);
-   var result=await query;if(result.error)throw result.error;
-   rows.push(...(result.data||[]));if((result.data||[]).length<1000)break;offset+=1000;if(offset>20000)throw Error('Demasiados movimientos; reduce el rango.');
-  }
-  rows=rows.filter(x=>x.estatus==='ACTIVO');
+  var response=await sb().rpc('cc_ant_export_report',{p_tipo:tipo,p_desde:start,p_hasta:end,p_cuenta:tipo==='caja'?cuenta:null});
+  if(response.error)throw response.error;
+  if(!response.data?.ok)throw Error(response.data?.error||'El reporte no respondió correctamente.');
+  var rows=response.data.rows||[];
   var ants=new Map((D.anticipos||[]).map(a=>[String(a.id),a])),ops=new Map((D.operadores||[]).map(o=>[String(o.id),o.nombre])),dest=new Map((D.destinos||[]).map(d=>[String(d.id),d.nombre])),accounts=new Map((D.cuentas||[]).map(a=>[String(a.id),a.nombre]));
   var ids=[...new Set(rows.map(x=>String(x.anticipo_id||'')).filter(Boolean))].filter(id=>!ants.has(id));
   for(var k=0;k<ids.length;k+=100){var ares=await sb().from('cc_anticipos').select('id,folio,operador_id,destino_id,estatus').in('id',ids.slice(k,k+100));if(ares.error)throw ares.error;(ares.data||[]).forEach(a=>ants.set(String(a.id),{...a,operadorId:a.operador_id,destino:dest.get(String(a.destino_id))||'',operador:ops.get(String(a.operador_id))||''}))}
