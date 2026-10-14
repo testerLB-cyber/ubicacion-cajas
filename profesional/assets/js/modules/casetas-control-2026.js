@@ -12,7 +12,7 @@ const active=$('#ccAntViewCasetasNuevo [data-cas-panel="comprobar"]')?.style.dis
 if(active)statusBox('#casComprobarEstado',t,bad);else statusBox('#casEntregaEstado',t,bad);
 }
 async function refreshBalances(){const d=await rpc('cc_ant_casetas_list');state.data=d;state.loaded=true;render();entregaOptions();comprobarUpdate();return d;}
-function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;const search=$('#casSearch');if(search){search.value='';delete search.dataset.expanded;}const list=$('#casOperators');if(list)list.hidden=true;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('saldos');casAuditTab('operar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';if(!state.loaded)load();else render();}
+function open(){const el=$('#ccAntViewCasetasNuevo');if(!el)return;const search=$('#casSearch');if(search){search.value='';delete search.dataset.expanded;}const list=$('#casOperators');if(list)list.hidden=true;document.querySelectorAll('#ccPanelAnticipos .cc-ant-view').forEach(x=>x.style.display='none');el.style.display='block';el.classList.add('cas-fullscreen');showWorkspaceTab('saldos');casAuditTab('operar');document.body.style.overflow='hidden';document.querySelectorAll('#ccPanelAnticipos [data-antv]').forEach(x=>x.className='cc-btn cc-btn-light');const b=$('#ccAntNavCasetasNuevo');if(b)b.className='cc-btn cc-btn-primary';casBalancesLoad();if(!state.loaded)load();else render();}
 function active(){return (state.data?.anticipos||[]).filter(a=>Number(a.pendiente)>0);}
 function funds(op){return active().filter(a=>a.operadorId===op);}
 function ops(){return state.data?.operadores||[];}
@@ -227,7 +227,7 @@ function showWorkspaceTab(id){
  const root=$('#ccAntViewCasetasNuevo');if(!root)return;
  root.querySelectorAll('[data-cas-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.casTab===id);b.setAttribute('aria-selected',String(b.dataset.casTab===id));});
  root.querySelectorAll('[data-cas-panel]').forEach(p=>{p.hidden=p.dataset.casPanel!==id;p.style.display=p.hidden?'none':'block';});
- if(id==='saldos'&&state.loaded){const refresh=root.querySelector('#casBalancesRefresh');if(refresh&&!refresh.disabled)refresh.click();}
+ if(id==='saldos'){const refresh=root.querySelector('#casBalancesRefresh');if(refresh&&!refresh.disabled)refresh.click();}
 }
 window.ccCasetasShowTab=showWorkspaceTab;
 let entregaSelectedId=null;
@@ -469,18 +469,19 @@ async function casAuditEdit(id){
  '<div style="display:flex;align-items:start;justify-content:space-between;gap:12px"><div><div style="font-size:12px;color:#64748b;font-weight:650">CONTROL DE CASETAS</div><h2 id="casEditTitle" style="font-size:21px;font-weight:750;margin:5px 0">Corregir entrega</h2></div><button type="button" data-close aria-label="Cerrar" style="border:0;background:#f1f5f9;border-radius:9px;width:34px;height:34px;cursor:pointer">✕</button></div>'+
  '<p style="color:#64748b;font-size:13px;margin:5px 0 18px">El cambio quedará registrado con usuario, fecha y motivo.</p>'+
  '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:13px;margin-bottom:16px"><div style="font-size:12px;color:#64748b">Operador · Folio</div><strong style="font-size:14px">'+esc(x.operador)+'</strong><div style="font-size:12px;color:#475569;margin-top:3px">'+esc(x.referencia)+'</div><div style="margin-top:10px;font-size:12px;color:#64748b">Importe registrado</div><strong style="font-size:22px">'+money(x.monto)+'</strong></div>'+
- '<form id="casEditForm"><label for="casEditAmount" style="display:block;font-size:13px;font-weight:650;margin-bottom:5px">Importe correcto (MXN)</label><input id="casEditAmount" type="number" step="0.01" min="0" required value="'+esc(x.monto)+'" style="box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font-size:17px;margin-bottom:14px">'+
+ '<form id="casEditForm"><label for="casEditAmount" style="display:block;font-size:13px;font-weight:650;margin-bottom:5px">Importe correcto (MXN)</label><input id="casEditAmount" type="number" step="0.01" min="0" required value="0" style="box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font-size:17px;margin-bottom:14px">'+
  '<label for="casEditReason" style="display:block;font-size:13px;font-weight:650;margin-bottom:5px">Motivo de corrección</label><textarea id="casEditReason" required minlength="5" rows="3" placeholder="Explica por qué se corrige la cantidad..." style="box-sizing:border-box;width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit"></textarea>'+
  '<div id="casEditError" role="alert" style="color:#b91c1c;font-size:12px;min-height:18px;margin-top:8px"></div><div style="display:flex;justify-content:end;gap:9px;margin-top:12px"><button type="button" data-close style="border:1px solid #cbd5e1;border-radius:9px;padding:11px 15px;background:#fff;cursor:pointer">Cancelar</button><button id="casEditSave" type="submit" style="border:0;border-radius:9px;padding:11px 19px;background:#0f766e;color:#fff;font-weight:700;cursor:pointer">Guardar corrección</button></div></form></div>';
  document.body.appendChild(cover);
  const close=()=>cover.remove();cover.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
- cover.addEventListener('click',e=>{if(e.target===cover)close()});
+ cover.querySelector('#casEditAmount').addEventListener('input',e=>{const n=Number(e.target.value||0);cover.querySelector('#casEditPreview').textContent=money(Number.isFinite(n)?n:0);const difference=x.monto-(Number.isFinite(n)?n:0);cover.querySelector('#casEditDifference').textContent='Ajuste al saldo de caja: '+(difference>=0?'+':'')+money(difference);});
  cover.querySelector('#casEditAmount').focus();
  cover.querySelector('#casEditForm').onsubmit=async e=>{
   e.preventDefault();const amount=Number(cover.querySelector('#casEditAmount').value),reason=cover.querySelector('#casEditReason').value.trim(),error=cover.querySelector('#casEditError'),btn=cover.querySelector('#casEditSave');
   if(!Number.isFinite(amount)||amount<0){error.textContent='Escribe un importe válido.';return;}
   if(reason.length<5){error.textContent='Indica un motivo de al menos 5 caracteres.';return;}
   if(Math.abs(amount-x.monto)<0.001){error.textContent='El importe nuevo debe ser diferente al actual.';return;}
+  if(!window.confirm('Confirmar corrección de '+money(x.monto)+' a '+money(amount)+'? Ajuste de caja: '+money(x.monto-amount))return;
   btn.disabled=true;btn.textContent='Guardando…';error.textContent='';
   try{await rpc('cc_ant_casetas_editar_entrega',{id,monto:amount,motivo:reason});close();await load();await casAuditLoad();note('Entrega corregida. El historial de auditoría conserva el cambio.');}
   catch(err){error.textContent=String(err.message||err).replace('MONTO_MENOR_A_LO_YA_COMPROBADO_O_DEVUELTO','El importe no puede ser menor que lo ya comprobado o devuelto.').replace('ENTREGA_CERRADA','No se puede editar una entrega cerrada.').replace('SIN_PERMISO_EDITAR_CASETAS','Tu sesión no tiene autorización para corregir entregas.');}
