@@ -116,7 +116,13 @@ async function trace(id){
   }
   map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
   $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+(events.length?'<div style="margin-top:8px"><b>Geocercas:</b>'+events.map(e=>'<div>'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'');
- }else{$('gmTripsEvents').textContent='Este viaje todavía no tiene posiciones históricas disponibles para dibujar su recorrido.'}
+ }else{
+ const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
+ const start=data.inicio_viaje?new Date(data.inicio_viaje):null;
+ const hh=d=>d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true});
+ const before=last&&start&&last<start;
+ $('gmTripsEvents').innerHTML='<b>Este viaje no tiene posiciones GPS posteriores a su inicio detectado.</b> '+(last?'Última posición conocida de la unidad: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+'). GM todavía no entrega coordenadas nuevas para reconstruir su trayecto.':'Se requieren nuevas coordenadas GPS del viaje para dibujar el recorrido.')+'<div style="margin-top:8px;color:#64748b">Las actualizaciones de pantalla no equivalen a posiciones GPS nuevas: no se crea una trayectoria con lecturas repetidas.</div>';
+}
  }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
 
