@@ -47,5 +47,6 @@ async function trace(id){
  $('gmTripsEvents').innerHTML='<b>'+points.length+' posiciones GPS almacenadas.</b> '+(points.length<2?'Aún no hay datos suficientes para reconstruir un recorrido.':'Se muestran puntos confirmados; la ruta por calles requiere validación mediante Map Matching.')+(events.length?'<div style="margin-top:8px"><b>Eventos de geocercas:</b>'+events.map(g=>'<div>'+esc(g.nombre)+' · '+esc(g.evento)+' · '+esc(g.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:8px">Sin eventos de geocerca visibles para este acceso.</div>');
  }catch(e){$('gmTripsEvents').textContent='Error al consultar trayecto: '+(e.message||e)}
 }
+window.gmTripReportOpen=open;
 new MutationObserver(inject).observe(document.documentElement,{childList:true,subtree:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inject);else inject();
 })();
