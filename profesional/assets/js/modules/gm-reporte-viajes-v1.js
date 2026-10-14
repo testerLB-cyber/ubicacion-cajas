@@ -107,6 +107,7 @@ function seekPlayback(fraction){
  playIndex=Math.min(playPath.length-1,Math.max(0,Math.round(fraction*(playPath.length-1))));
  const p=playPath[playIndex];if(playMarker)playMarker.setLatLng(p);if(playLine)playLine.setLatLngs(playPath.slice(0,playIndex+1));
  if($('gmTripsProgress'))$('gmTripsProgress').value=String(Math.round(100*playIndex/Math.max(1,playPath.length-1)));
+ if(playMarker)playMarker.setLatLng(p);if(playIndex===0)map.setView(p,Math.max(map.getZoom(),12),{animate:false});
  if($('gmTripsTime'))$('gmTripsTime').textContent=(p.time?new Date(p.time).toLocaleString('es-MX'):'')+' · '+(playIndex+1)+'/'+playPath.length;
 }
 function startPlayback(){stopPlayback();if(playPath.length<2)return;if(playIndex>=playPath.length-1)seekPlayback(0);playTimer=setInterval(()=>{if(!map||!$('gmTripReportModal')){stopPlayback();return}if(playIndex>=playPath.length-1){stopPlayback();return}const speed=Number($('gmTripsSpeed')?.value||5);seekPlayback((Math.min(playPath.length-1,playIndex+speed))/(playPath.length-1))},180)}
@@ -188,10 +189,11 @@ async function showTrace(data,version){
   if(gps.length>1)L.marker(gps[gps.length-1],{icon:endIcon}).bindPopup('Última posición GPS del intervalo: '+esc(gps[gps.length-1].time)).addTo(markers);
   if(gps.length>1){
    playPath=(displaySegments.length===1&&displaySegments[0].matched?displaySegments[0].points.map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
-   playMarker=L.marker(gps[0],{icon:vehicleIcon(data),zIndexOffset:1000}).addTo(markers);
+   playMarker=L.marker(playPath[0]||gps[0],{icon:vehicleIcon(data),zIndexOffset:1000}).addTo(markers);
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
-  map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
+  // El reporte abre en el punto inicial del intervalo, no en la última ubicación actual.
+  map.setView(gps[0],13,{animate:false});setTimeout(()=>map?.invalidateSize(),80);
   const km=segments.reduce((total,seg)=>total+seg.slice(1).reduce((sum,p,i)=>sum+distanceMeters(seg[i],p)/1000,0),0);
   const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
@@ -202,12 +204,7 @@ async function showTrace(data,version){
   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:4px solid #0f766e;margin-right:5px"></i>Ruta ajustada a calles</span><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Tramo GPS sin ajuste de calles</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
   '<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(rawSegments?'Tramos sin ajuste de calles: '+rawSegments+'. ':'')+'Flechas orientadas según el sentido de avance. Distancia calculada entre puntos GPS, no es odómetro.'+geosHtml;
  }else{
- const lastPos=data.ultima_posicion;
- if(lastPos&&Number.isFinite(Number(lastPos.lat))&&Number.isFinite(Number(lastPos.lon))){
- const loc=[Number(lastPos.lat),Number(lastPos.lon)];
- L.marker(loc,{icon:vehicleIcon(data)}).bindPopup('Última ubicación GPS disponible: '+esc(lastPos.fecha)).addTo(markers);
- map.setView(loc,14);setTimeout(()=>map?.invalidateSize(),80);
- }
+ // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
  const start=data.inicio_viaje?new Date(data.inicio_viaje):null;
  const hh=d=>d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true});
