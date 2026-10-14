@@ -118,7 +118,7 @@ async function matchRoads(points){
   const dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;
   if(dt>300||dt<0||distanceMeters(points[i-1],points[i])>5000)return null;
  }
- const chunks=[];for(let start=0;start<points.length-1;start+=65){const end=Math.min(points.length,start+70);chunks.push(points.slice(start,end));if(end===points.length)break;start=end-2}
+ const chunks=[];let start=0;while(start<points.length-1){const end=Math.min(points.length,start+70);chunks.push(points.slice(start,end));if(end===points.length)break;start=end-2}
  const matched=[];
  for(const chunk of chunks){
   try{
@@ -176,16 +176,18 @@ async function showTrace(data,version){
    else current.push(gps[i]);
   }if(current.length>1)segments.push(current);
   let displaySegments=[],matched=0,rawSegments=0;
-  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push(adjusted);matched++}else{displaySegments.push(seg);rawSegments++}}
-  let arrowCount=0;
-  for(const segment of displaySegments){
-   const isMatched=matched>0&&segment.length>gps.length/Math.max(1,displaySegments.length)*1.3;
-   L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?.92:.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
-   arrowCount+=addDirectionArrows(segment);
+  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push({points:adjusted,matched:true});matched++}else{displaySegments.push({points:seg,matched:false});rawSegments++}}
+  for(const item of displaySegments){
+   const segment=item.points,isMatched=item.matched;
+   L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?0.92:0.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
+   addDirectionArrows(segment);
   }
-  L.marker(gps[0],{icon:vehicleIcon(data)}).bindPopup('Inicio del recorrido registrado: '+esc(gps[0].time)).addTo(markers);
+  const startIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#16a34a;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">S</div>',iconSize:[28,28],iconAnchor:[14,14]});
+  const endIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">F</div>',iconSize:[28,28],iconAnchor:[14,14]});
+  L.marker(gps[0],{icon:startIcon}).bindPopup('Inicio GPS del recorrido: '+esc(gps[0].time)).addTo(markers);
+  if(gps.length>1)L.marker(gps[gps.length-1],{icon:endIcon}).bindPopup('Última posición GPS del intervalo: '+esc(gps[gps.length-1].time)).addTo(markers);
   if(gps.length>1){
-   playPath=(displaySegments.length===1&&matched===1?displaySegments[0].map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
+   playPath=(displaySegments.length===1&&displaySegments[0].matched?displaySegments[0].points.map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
    playMarker=L.marker(gps[0],{icon:vehicleIcon(data),zIndexOffset:1000}).addTo(markers);
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
