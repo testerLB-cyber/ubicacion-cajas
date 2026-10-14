@@ -218,6 +218,7 @@ window.ccAntEditarMovimientoCaja=function(id){
 };
 
 window.ccAntRenderReportes=function(){
+ var acc=document.getElementById('ccAntLibroCuenta');if(acc){var previous=acc.value;acc.innerHTML='<option value="">Todas las cuentas</option>'+(D.cuentas||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');acc.value=previous;}
  var op=document.getElementById('ccAntRepFiltroOperador');if(!op)return;var cur=op.value;op.innerHTML='<option value="">Todos</option>'+(D.operadores||[]).map(x=>'<option value="'+h(x.id)+'">'+h(x.nombre)+'</option>').join('');op.value=cur;
  var de=document.getElementById('ccAntRepDesde')?.value||'',ha=document.getElementById('ccAntRepHasta')?.value||'',oi=op.value||'';
  var localReportDate=function(value){if(!value)return '';var d=new Date(value);if(isNaN(d.getTime()))return String(value).slice(0,10);var p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),v=t=>p.find(z=>z.type===t)?.value||'';return v('year')+'-'+v('month')+'-'+v('day')};
