@@ -112,19 +112,46 @@ function seekPlayback(fraction){
 function startPlayback(){stopPlayback();if(playPath.length<2)return;if(playIndex>=playPath.length-1)seekPlayback(0);playTimer=setInterval(()=>{if(!map||!$('gmTripReportModal')){stopPlayback();return}if(playIndex>=playPath.length-1){stopPlayback();return}const speed=Number($('gmTripsSpeed')?.value||5);seekPlayback((Math.min(playPath.length-1,playIndex+speed))/(playPath.length-1))},180)}
 function distanceMeters(a,b){const d=Math.PI/180,R=6371000,dlat=(b.lat-a.lat)*d,dlon=(b.lng-a.lng)*d;const x=Math.sin(dlat/2)**2+Math.cos(a.lat*d)*Math.cos(b.lat*d)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
 async function matchRoads(points){
- // Map Matching is an optional visual estimate only; do not connect large GPS gaps.
- if(points.length<2||points.length>100)return null;
- const maxGap=1000;for(let i=1;i<points.length;i++){let dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;if(dt>180||dt<0||distanceMeters(points[i-1],points[i])>maxGap)return null}
- try{
-  const coordinates=points.map(p=>p.lng+','+p.lat).join(';');
-  const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split';
-  const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),6500);
-  let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
-  if(!response.ok)return null;const data=await response.json();
-  if(data.code!=='Ok'||!Array.isArray(data.matchings)||data.matchings.length!==1)return null;
-  const coords=data.matchings[0].geometry?.coordinates||[];
-  if(coords.length<2)return null;return coords.map(x=>({lat:x[1],lng:x[0]}));
- }catch(e){console.warn('Map Matching no disponible:',e);return null}
+ // Ajusta GPS a calles por bloques: OSRM tiene límites de coordenadas por solicitud.
+ if(points.length<2)return null;
+ for(let i=1;i<points.length;i++){
+  const dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;
+  if(dt>300||dt<0||distanceMeters(points[i-1],points[i])>5000)return null;
+ }
+ const chunks=[];for(let start=0;start<points.length-1;start+=65){const end=Math.min(points.length,start+70);chunks.push(points.slice(start,end));if(end===points.length)break;start=end-2}
+ const matched=[];
+ for(const chunk of chunks){
+  try{
+   const coordinates=chunk.map(p=>p.lng+','+p.lat).join(';');
+   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split&tidy=true';
+   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),7000);
+   let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
+   if(!response.ok)return null;const data=await response.json();
+   if(data.code!=='Ok'||!Array.isArray(data.matchings)||!data.matchings.length)return null;
+   const coords=data.matchings.flatMap(m=>m.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
+   if(coords.length<2)return null;
+   if(matched.length&&distanceMeters(matched[matched.length-1],coords[0])<80)coords.shift();
+   matched.push(...coords);
+  }catch(e){console.warn('Ajuste a calles no disponible:',e);return null}
+ }
+ return matched.length>1?matched:null;
+}
+function bearingDegrees(a,b){
+ const rad=Math.PI/180,lat1=a.lat*rad,lat2=b.lat*rad,dlon=(b.lng-a.lng)*rad;
+ const y=Math.sin(dlon)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dlon);
+ return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function addDirectionArrows(path){
+ if(!markers||path.length<3)return 0;
+ let placed=0,last=path[0],acc=0;
+ for(let i=1;i<path.length-1;i++){
+  acc+=distanceMeters(path[i-1],path[i]);
+  if(acc<1800)continue;
+  const angle=bearingDegrees(path[i],path[i+1]);
+  const icon=L.divIcon({className:'gm-trip-direction-wrap',html:'<span style="display:flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:#fff;border:2px solid #0f766e;color:#0f766e;box-shadow:0 2px 7px #0f172a55;font-size:16px;font-weight:900;transform:rotate('+(angle-90)+'deg)">➤</span>',iconSize:[23,23],iconAnchor:[11,11]});
+  L.marker(path[i],{icon,interactive:false,zIndexOffset:500}).addTo(markers);placed++;acc=0;last=path[i];
+ }
+ return placed;
 }
 async function trace(id){
  stopPlayback();const version=++traceVersion;
@@ -145,12 +172,17 @@ async function showTrace(data,version){
   const segments=[];let current=[gps[0]];
   for(let i=1;i<gps.length;i++){
    let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
-   if(gap>180||distanceMeters(gps[i-1],gps[i])>1000){if(current.length>1)segments.push(current);current=[gps[i]]}
+   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length>1)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
   }if(current.length>1)segments.push(current);
-  let displaySegments=[],matched=0;
-  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push(adjusted);matched++}else displaySegments.push(seg)}
-  for(const segment of displaySegments)L.polyline(segment,{color:'#0f766e',weight:5,opacity:.9,lineJoin:'round'}).addTo(markers);
+  let displaySegments=[],matched=0,rawSegments=0;
+  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push(adjusted);matched++}else{displaySegments.push(seg);rawSegments++}}
+  let arrowCount=0;
+  for(const segment of displaySegments){
+   const isMatched=matched>0&&segment.length>gps.length/Math.max(1,displaySegments.length)*1.3;
+   L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?.92:.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
+   arrowCount+=addDirectionArrows(segment);
+  }
   L.marker(gps[0],{icon:vehicleIcon(data)}).bindPopup('Inicio del recorrido registrado: '+esc(gps[0].time)).addTo(markers);
   if(gps.length>1){
    playPath=(displaySegments.length===1&&matched===1?displaySegments[0].map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
@@ -158,7 +190,15 @@ async function showTrace(data,version){
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
   map.fitBounds(markers.getBounds().pad(.16));setTimeout(()=>map?.invalidateSize(),80);
-  $('gmTripsEvents').innerHTML='<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(segments.length>matched?'Los demás tramos muestran el trayecto entre lecturas cercanas; ':'')+'Los intervalos sin GPS no se dibujan como recorrido confirmado.'+geosHtml;
+  const km=gps.slice(1).reduce((sum,p,i)=>sum+(distanceMeters(gps[i],p)/1000),0);
+  const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
+  const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
+  $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0 12px">'+
+  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Posiciones GPS</div><b style="font-size:20px">'+gps.length+'</b></div>'+
+  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div>'+
+  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Inicio / fin GPS</div><b style="font-size:11px">'+esc(startTime)+'<br>↓<br>'+esc(endTime)+'</b></div></div>'+
+  '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:4px solid #0f766e;margin-right:5px"></i>Ruta ajustada a calles</span><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Tramo GPS sin ajuste de calles</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
+  '<b>'+gps.length+' posiciones GPS disponibles.</b> '+(matched?'Tramos ajustados a calles: '+matched+'. ':'')+(rawSegments?'Tramos sin ajuste de calles: '+rawSegments+'. ':'')+'Flechas orientadas según el sentido de avance. Distancia calculada entre puntos GPS, no es odómetro.'+geosHtml;
  }else{
  const lastPos=data.ultima_posicion;
  if(lastPos&&Number.isFinite(Number(lastPos.lat))&&Number.isFinite(Number(lastPos.lon))){
