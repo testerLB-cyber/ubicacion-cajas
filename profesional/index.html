@@ -9,7 +9,7 @@
   }
 })();
 </script>
-<meta name="trafico-app-build" content="profesional-20261013-ant-excel-libros-v56"/>
+<meta name="trafico-app-build" content="profesional-20261013-ant-cortes-diarios-v57"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dashboard de Control Logístico Tráfico App</title>
@@ -551,7 +551,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <div><label>Cuenta (movimientos)</label><select id="ccAntLibroCuenta"><option value="">Todas las cuentas</option></select></div>
 <div><label>Saldo al inicio del rango ($)</label><input type="number" id="ccAntLibroSaldoInicial" min="0" step="0.01" placeholder="Capturar saldo del cierre"></div>
 </div>
-<div class="cc-note" style="margin:8px 0">El saldo inicial se captura a partir del cierre real del día anterior. No se vuelve a contar ese cierre como depósito. Las comprobaciones se exportan según su fecha de registro, aunque correspondan a anticipos anteriores.</div>
+<div class="cc-note" style="margin:8px 0">Cada Excel incluye una hoja Saldos por día con apertura, movimientos y cierre diario, incluso en días sin movimientos. En caja, captura el saldo real al inicio del primer día del rango; no lo dupliques como depósito. En comprobaciones, los saldos son acumulados de comprobantes dentro del rango, no efectivo en caja.</div>
 <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:10px"><button type="button" class="cc-btn cc-btn-primary" id="ccAntExportCajaExcel" onclick="ccAntExportLibroExcel('caja')"><i class="fa-solid fa-file-excel"></i> Excel · movimientos de caja</button><button type="button" class="cc-btn cc-btn-light" id="ccAntExportCompExcel" onclick="ccAntExportLibroExcel('comprobaciones')"><i class="fa-solid fa-file-excel"></i> Excel · comprobaciones</button></div>
 </div>
 <script>
@@ -1530,7 +1530,7 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 <script id="gm-sidebar-cajas-js" src="assets/js/ui/app-navigation.js"></script>
 
 
-<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-libros-v56"></script>
+<script id="cc-anticipos-js" src="assets/js/modules/anticipos.js?v=20261013-ant-cortes-diarios-v57"></script>
 
 <script id="ccAnticiposLazyFlow">
 (function(){
