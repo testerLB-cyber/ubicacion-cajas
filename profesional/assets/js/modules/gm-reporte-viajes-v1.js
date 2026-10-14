@@ -162,10 +162,12 @@ async function trace(id){
  await showTrace(data,version);
  }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
-function parseGMDate(v){if(!v)return null;const s=String(v).trim();const d=/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$/.test(s)?new Date(s+'Z'):new Date(s);return Number.isNaN(d.getTime())?null:d}\nfunction fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);return !d?String(v):d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}
+function parseGMDate(v){if(!v)return null;const s=String(v).trim();const d=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(s)?new Date(s+'Z'):new Date(s);return Number.isNaN(d.getTime())?null:d}
+function fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);return !d?String(v):d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}
 function buildChronology(data,gps,events,statusRows){
  const trip=selectedTrip||{};
- const originIsFreig=String(trip.origen||data.origen||'').toUpperCase().includes('FREIG CARRILLO');\n const departure=(originIsFreig&&gps[0]?.time)||trip.first_seen||data.inicio_viaje||(gps[0]&&gps[0].time)||null;
+ const originIsFreig=String(trip.origen||data.origen||'').toUpperCase().includes('FREIG CARRILLO');
+ const departure=(originIsFreig&&gps[0]?.time)||trip.first_seen||data.inicio_viaje||(gps[0]&&gps[0].time)||null;
  const arrival=trip.ended_at||data.fin_viaje||(gps.length>1?gps[gps.length-1].time:null);
  const startDate=departure?parseGMDate(departure):null,endDate=arrival?parseGMDate(arrival):null;
  const within=(e)=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
