@@ -197,8 +197,9 @@ async function showTrace(data,version){
    if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length>1)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
   }if(current.length>1)segments.push(current);
-  let displaySegments=[],matched=0,rawSegments=0;
-  for(const seg of segments.slice(0,30)){const adjusted=await matchRoads(seg);if(version!==traceVersion||!$('gmTripsMap'))return;if(adjusted){displaySegments.push({points:adjusted,matched:true});matched++}else{displaySegments.push({points:seg,matched:false});rawSegments++}}
+  // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
+  // al seleccionar varios viajes, las solicitudes OSRM acumuladas dejaban el mapa sin pintar durante demasiado tiempo.
+  const displaySegments=segments.slice(0,30).map(seg=>({points:seg,matched:false}));
   for(const item of displaySegments){
    const segment=item.points,isMatched=item.matched;
    L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?0.92:0.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
@@ -214,16 +215,14 @@ async function showTrace(data,version){
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
   // El reporte abre en el punto inicial del intervalo, no en la última ubicación actual.
-  map.setView(gps[0],13,{animate:false});setTimeout(()=>map?.invalidateSize(),80);
+  map.invalidateSize({animate:false});map.setView(gps[0],13,{animate:false});setTimeout(()=>{if(map&&$('gmTripsMap'))map.invalidateSize({animate:false})},80);
   const km=segments.reduce((total,seg)=>total+seg.slice(1).reduce((sum,p,i)=>sum+distanceMeters(seg[i],p)/1000,0),0);
   const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
-  $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0 12px">'+
-  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Posiciones GPS</div><b style="font-size:20px">'+gps.length+'</b></div>'+
-  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div>'+
-  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Inicio / fin GPS</div><b style="font-size:11px">'+esc(startTime)+'<br>↓<br>'+esc(endTime)+'</b></div></div>'+
-  '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:4px solid #0f766e;margin-right:5px"></i>Ruta ajustada a calles</span><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Tramo GPS sin ajuste de calles</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Ruta GPS · '+gps.length+' posiciones · '+km.toFixed(1)+' km aprox.</div>'+buildChronology(data,gps,events,statusRows);
+  $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
+  '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
+  '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
+  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+buildChronology(data,gps,events,statusRows);
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
