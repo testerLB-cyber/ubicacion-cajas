@@ -233,6 +233,59 @@ window.ccAntRenderReportes=function(){
  var bc=document.getElementById('ccAntRepConcepto');if(bc)bc.innerHTML=window.ccAntRepConceptosData.length?window.ccAntRepConceptosData.map(z=>'<tr><td>'+h(z.nombre)+'</td><td>'+z.n+'</td><td>'+m(z.monto)+'</td></tr>').join(''):'<tr><td colspan="3">Sin datos.</td></tr>';
 };
 
+
+/* Reportes independientes de caja y comprobaciones, siempre bajo consulta manual. */
+window.ccAntExportLibroExcel=async function(tipo){
+ if(!(ccPerm('anticipos.reportes')||window.CC_ACCESS?.rol==='ADMIN'))return alert('Sin permiso para reportes.');
+ var b=document.getElementById(tipo==='caja'?'ccAntExportCajaExcel':'ccAntExportCompExcel'),old=b?.innerHTML;
+ if(b){b.disabled=true;b.textContent='Generando Excel…'}
+ try{
+  var desde=document.getElementById('ccAntLibroDesde')?.value||new Date().toLocaleDateString('en-CA',{timeZone:'America/Hermosillo'});
+  var hasta=document.getElementById('ccAntLibroHasta')?.value||desde;
+  if(hasta<desde)throw Error('La fecha final no puede ser anterior a la inicial.');
+  var start=new Date(desde+'T00:00:00-07:00').toISOString(),end=new Date(new Date(hasta+'T00:00:00-07:00').getTime()+86400000).toISOString();
+  var cuenta=document.getElementById('ccAntLibroCuenta')?.value||'';
+  var rows=[],offset=0,table=tipo==='caja'?'cc_ant_movimientos_caja':'cc_ant_comprobaciones';
+  while(true){
+   var query=sb().from(table).select('*').gte('created_at',start).lt('created_at',end).order('created_at',{ascending:true}).range(offset,offset+999);
+   if(tipo==='caja'&&cuenta)query=query.eq('cuenta_id',cuenta);
+   var result=await query;if(result.error)throw result.error;
+   rows.push(...(result.data||[]));if((result.data||[]).length<1000)break;offset+=1000;if(offset>20000)throw Error('Demasiados movimientos; reduce el rango.');
+  }
+  rows=rows.filter(x=>x.estatus==='ACTIVO');
+  var ants=new Map((D.anticipos||[]).map(a=>[String(a.id),a])),ops=new Map((D.operadores||[]).map(o=>[String(o.id),o.nombre])),dest=new Map((D.destinos||[]).map(d=>[String(d.id),d.nombre])),accounts=new Map((D.cuentas||[]).map(a=>[String(a.id),a.nombre]));
+  var ids=[...new Set(rows.map(x=>String(x.anticipo_id||'')).filter(Boolean))].filter(id=>!ants.has(id));
+  for(var k=0;k<ids.length;k+=100){var ares=await sb().from('cc_anticipos').select('id,folio,operador_id,destino_id,estatus').in('id',ids.slice(k,k+100));if(ares.error)throw ares.error;(ares.data||[]).forEach(a=>ants.set(String(a.id),{...a,operadorId:a.operador_id,destino:dest.get(String(a.destino_id))||'',operador:ops.get(String(a.operador_id))||''}))}
+  var dateTime=x=>new Date(x).toLocaleString('es-MX',{timeZone:'America/Hermosillo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  var data=[],summary=[],formatDate=()=>desde.replace(/-/g,'')+'_'+hasta.replace(/-/g,'');
+  if(tipo==='caja'){
+   var initial=Number(document.getElementById('ccAntLibroSaldoInicial')?.value);
+   if(!Number.isFinite(initial)||initial<0)throw Error('Captura el saldo real al inicio del día/rango.');
+   var balance=initial,entradas=0,salidas=0;
+   data.push({'Fecha y hora':'SALDO INICIAL','Referencia':'Corte al inicio del rango','Entrada':0,'Salida':0,'Saldo acumulado':balance});
+   for(var x of rows){
+    var ant=ants.get(String(x.anticipo_id))||{},natural=x.tipo==='DEPOSITO'||x.tipo==='DEVOLUCION'||x.tipo==='AJUSTE_ENTRADA'?'ENTRADA':x.tipo==='ANTICIPO'||x.tipo==='AJUSTE_SALIDA'?'SALIDA':'OTRO',amount=Number(x.monto||0);
+    if(natural==='ENTRADA'){balance+=amount;entradas+=amount}else if(natural==='SALIDA'){balance-=amount;salidas+=amount}
+    data.push({'Fecha y hora':dateTime(x.created_at),'Cuenta':accounts.get(String(x.cuenta_id))||x.cuenta_id||'','Referencia':x.referencia||ant.folio||'','Tipo':x.tipo,'Operador':ant.operador||ops.get(String(ant.operadorId))||'','Destino':ant.destino||'', 'Entrada':natural==='ENTRADA'?amount:0,'Salida':natural==='SALIDA'?amount:0,'Saldo acumulado':balance,'Observaciones':x.observaciones||''});
+   }
+   summary=[{'Concepto':'Saldo inicial ingresado','Importe':initial},{'Concepto':'Entradas reales','Importe':entradas},{'Concepto':'Salidas reales','Importe':salidas},{'Concepto':'Saldo final calculado','Importe':balance},{'Concepto':'Rango','Importe':desde+' a '+hasta}];
+  }else{
+   var total=0,by={};
+   for(var x of rows){var ant=ants.get(String(x.anticipo_id))||{},amount=Number(x.monto||0);total+=amount;var name=ant.operador||ops.get(String(ant.operadorId))||'Sin operador',key=ant.folio||String(x.anticipo_id||'');by[key]=(by[key]||0)+amount;
+    data.push({'Fecha y hora registro':dateTime(x.created_at),'Fecha de comprobante':x.fecha?dateTime(x.fecha):'','Folio anticipo':key,'Operador':name,'Destino':ant.destino||'','Concepto':x.concepto||'','Tipo documento':x.tipo_documento||'','Folio documento':x.folio_documento||'','Importe comprobado':amount,'Observaciones':x.observaciones||'','Estatus':x.estatus});
+   }
+   summary=[{'Concepto':'Comprobantes activos','Importe':rows.length},{'Concepto':'Monto comprobado','Importe':total},{'Concepto':'Anticipos distintos','Importe':Object.keys(by).length},{'Concepto':'Rango de registro','Importe':desde+' a '+hasta}];
+  }
+  if(!data.length)throw Error('No hay movimientos activos en el rango seleccionado.');
+  if(!window.XLSX){await new Promise((resolve,reject)=>{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=()=>reject(Error('No se pudo cargar el exportador Excel'));document.head.appendChild(s)})}
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(data),sm=XLSX.utils.json_to_sheet(summary);
+  ws['!cols']=Object.keys(data[0]).map(key=>({wch:Math.max(16,Math.min(38,key.length+7))}));
+  XLSX.utils.book_append_sheet(wb,ws,tipo==='caja'?'Movimientos caja':'Comprobaciones');XLSX.utils.book_append_sheet(wb,sm,'Resumen');
+  XLSX.writeFile(wb,(tipo==='caja'?'Movimientos_caja_':'Comprobaciones_')+formatDate()+'.xlsx');
+ }catch(e){console.error('ANT_LIBRO_EXCEL',e);alert('No se pudo generar el Excel: '+(e.message||e))}
+ finally{if(b){b.disabled=false;b.innerHTML=old}}
+};
+
 function ccAntPdfBase(title){if(!window.jspdf?.jsPDF){alert('PDF no disponible');return null}var d=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'letter'});d.setFontSize(14);d.text(title,14,14);d.setFontSize(8);var de=document.getElementById('ccAntRepDesde')?.value||'Inicio',ha=document.getElementById('ccAntRepHasta')?.value||'Hoy',op=document.getElementById('ccAntRepFiltroOperador')?.selectedOptions?.[0]?.textContent||'Todos';d.text('Rango: '+de+' a '+ha+' · Operador: '+op,14,20);return d}
 window.ccAntExportReporteOperadoresPDF=function(){if(!ccPerm('anticipos.reportes'))return;var data=window.ccAntRepOperadoresData||[];if(!data.length){alert('No hay datos para exportar');return}var d=ccAntPdfBase('HISTÓRICO DE ANTICIPOS POR OPERADOR');if(!d)return;d.autoTable({startY:25,head:[['Operador','Anticipos','Entregado','Comprobado','Devuelto','Pendiente','% comprobado']],body:data.map(z=>[z.nombre,z.n,m(z.ent),m(z.comp),m(z.dev),m(z.pend),(z.ent>0?z.comp/z.ent*100:0).toFixed(1)+'%']),styles:{fontSize:8}});d.save('Anticipos_por_operador.pdf')};
 window.ccAntExportReporteDetallePDF=function(){if(!ccPerm('anticipos.reportes'))return;var rows=window.ccAntRepRows||[];if(!rows.length){alert('No hay datos para exportar');return}var d=ccAntPdfBase('DETALLE HISTÓRICO DE ANTICIPOS');if(!d)return;d.autoTable({startY:25,head:[['Fecha','Folio','Operador','Destino','Entregado','Comprobado','Devuelto','Pendiente','Estatus']],body:rows.map(x=>[f(x.fecha),x.folio,x.operador||'',x.destino||'',m(x.montoEntregado||0),m(x.comprobado||0),m(x.devuelto||0),m(Math.max(0,Number(x.montoEntregado||0)-Number(x.comprobado||0)-Number(x.devuelto||0))),x.estatus]),styles:{fontSize:7}});d.save('Detalle_anticipos.pdf')};
