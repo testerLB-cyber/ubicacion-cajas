@@ -76,7 +76,7 @@ function distanceMeters(a,b){const d=Math.PI/180,R=6371000,dlat=(b.lat-a.lat)*d,
 async function matchRoads(points){
  // Map Matching is an optional visual estimate only; do not connect large GPS gaps.
  if(points.length<2||points.length>100)return null;
- const maxGap=300;for(let i=1;i<points.length;i++){let dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;if(dt>180||dt<0||distanceMeters(points[i-1],points[i])>maxGap)return null}
+ const maxGap=1000;for(let i=1;i<points.length;i++){let dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;if(dt>180||dt<0||distanceMeters(points[i-1],points[i])>maxGap)return null}
  try{
   const coordinates=points.map(p=>p.lng+','+p.lat).join(';');
   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split';
@@ -110,7 +110,7 @@ async function trace(id){
   L.circleMarker(gps[0],{radius:8,color:'#fff',weight:3,fillColor:'#16a34a',fillOpacity:1}).bindPopup('Inicio registrado '+esc(gps[0].time)).addTo(markers);
   L.circleMarker(gps[gps.length-1],{radius:8,color:'#fff',weight:3,fillColor:'#dc2626',fillOpacity:1}).bindPopup('Última posición registrada '+esc(gps[gps.length-1].time)).addTo(markers);
   if(gps.length>1){
-   playPath=gps;playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
+   playPath=(displaySegments.length===1&&matched===1?displaySegments[0].map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
    playMarker=L.circleMarker(gps[0],{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(markers);
    $('gmTripsPlayback').style.display='flex';seekPlayback(0);
   }
