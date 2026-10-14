@@ -438,14 +438,30 @@ async function casAuditLoad(){
 async function casAuditEdit(id){
  if(!canEditCasetas()){alert('No tienes permiso para editar entregas de casetas.');return;}
  const x=casAuditRows.find(y=>y.id===id&&y.tipo==='ENTREGA');if(!x)return;
- const amountText=prompt('Corregir dinero entregado a '+x.operador+'.\\nImporte actual: '+money(x.monto)+'\\nNuevo importe en pesos:',String(x.monto));
- if(amountText===null)return;const amount=Number(amountText.trim().replace(/,/g,''));
- if(!Number.isFinite(amount)||amount<0){alert('Captura un importe válido.');return;}
- if(amount===x.monto)return;
- const reason=prompt('Motivo de la corrección (obligatorio):');if(!reason||!reason.trim())return;
- if(!confirm('¿Cambiar entrega de '+money(x.monto)+' a '+money(amount)+'? Se actualizará el saldo de caja.'))return;
- try{await rpc('cc_ant_casetas_editar_entrega',{id,monto:amount,motivo:reason.trim()});await load();await casAuditLoad();alert('Importe corregido correctamente.');}
- catch(e){alert('No se pudo editar: '+(e.message||e));}
+ document.getElementById('casEditModal')?.remove();
+ const cover=document.createElement('div');cover.id='casEditModal';
+ cover.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)';
+ cover.innerHTML='<div role="dialog" aria-modal="true" aria-labelledby="casEditTitle" style="width:min(100%,465px);background:#fff;border-radius:18px;box-shadow:0 24px 65px #0004;padding:26px;color:#172033;font-family:inherit">'+
+ '<div style="display:flex;align-items:start;justify-content:space-between;gap:12px"><div><div style="font-size:12px;color:#64748b;font-weight:650">CONTROL DE CASETAS</div><h2 id="casEditTitle" style="font-size:21px;font-weight:750;margin:5px 0">Corregir entrega</h2></div><button type="button" data-close aria-label="Cerrar" style="border:0;background:#f1f5f9;border-radius:9px;width:34px;height:34px;cursor:pointer">✕</button></div>'+
+ '<p style="color:#64748b;font-size:13px;margin:5px 0 18px">El cambio quedará registrado con usuario, fecha y motivo.</p>'+
+ '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:13px;margin-bottom:16px"><div style="font-size:12px;color:#64748b">Operador · Folio</div><strong style="font-size:14px">'+esc(x.operador)+'</strong><div style="font-size:12px;color:#475569;margin-top:3px">'+esc(x.referencia)+'</div><div style="margin-top:10px;font-size:12px;color:#64748b">Importe registrado</div><strong style="font-size:22px">'+money(x.monto)+'</strong></div>'+
+ '<form id="casEditForm"><label for="casEditAmount" style="display:block;font-size:13px;font-weight:650;margin-bottom:5px">Importe correcto (MXN)</label><input id="casEditAmount" type="number" step="0.01" min="0" required value="'+esc(x.monto)+'" style="box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font-size:17px;margin-bottom:14px">'+
+ '<label for="casEditReason" style="display:block;font-size:13px;font-weight:650;margin-bottom:5px">Motivo de corrección</label><textarea id="casEditReason" required minlength="5" rows="3" placeholder="Explica por qué se corrige la cantidad..." style="box-sizing:border-box;width:100%;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:inherit"></textarea>'+
+ '<div id="casEditError" role="alert" style="color:#b91c1c;font-size:12px;min-height:18px;margin-top:8px"></div><div style="display:flex;justify-content:end;gap:9px;margin-top:12px"><button type="button" data-close style="border:1px solid #cbd5e1;border-radius:9px;padding:11px 15px;background:#fff;cursor:pointer">Cancelar</button><button id="casEditSave" type="submit" style="border:0;border-radius:9px;padding:11px 19px;background:#0f766e;color:#fff;font-weight:700;cursor:pointer">Guardar corrección</button></div></form></div>';
+ document.body.appendChild(cover);
+ const close=()=>cover.remove();cover.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
+ cover.addEventListener('click',e=>{if(e.target===cover)close()});
+ cover.querySelector('#casEditAmount').focus();
+ cover.querySelector('#casEditForm').onsubmit=async e=>{
+  e.preventDefault();const amount=Number(cover.querySelector('#casEditAmount').value),reason=cover.querySelector('#casEditReason').value.trim(),error=cover.querySelector('#casEditError'),btn=cover.querySelector('#casEditSave');
+  if(!Number.isFinite(amount)||amount<0){error.textContent='Escribe un importe válido.';return;}
+  if(reason.length<5){error.textContent='Indica un motivo de al menos 5 caracteres.';return;}
+  if(Math.abs(amount-x.monto)<0.001){error.textContent='El importe nuevo debe ser diferente al actual.';return;}
+  btn.disabled=true;btn.textContent='Guardando…';error.textContent='';
+  try{await rpc('cc_ant_casetas_editar_entrega',{id,monto:amount,motivo:reason});close();await load();await casAuditLoad();note('Entrega corregida. El historial de auditoría conserva el cambio.');}
+  catch(err){error.textContent=String(err.message||err).replace('MONTO_MENOR_A_LO_YA_COMPROBADO_O_DEVUELTO','El importe no puede ser menor que lo ya comprobado o devuelto.').replace('ENTREGA_CERRADA','No se puede editar una entrega cerrada.').replace('SIN_PERMISO_EDITAR_CASETAS','Tu sesión no tiene autorización para corregir entregas.');}
+  finally{btn.disabled=false;btn.textContent='Guardar corrección';}
+ };
 }
 
 function canEditCasetas(){return window.CC_ACCESS?.rol==='ADMIN'||(typeof window.ccPerm==='function'&&window.ccPerm('anticipos.editar_casetas'));}
