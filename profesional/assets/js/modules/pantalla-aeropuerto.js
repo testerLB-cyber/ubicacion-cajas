@@ -1054,6 +1054,7 @@ function airportMarkerHtml(x,clientColor){
   const tripDot='<span class="'+(hasTrip?'tripBadge':'noTripBadge')+'"></span>';
   return '<div class="airVehicleMarker" style="--client-color:'+esc(clientColor||'#2563eb')+'">'+bubble+tripDot+tractor+trailerHtml+'</div>';
 }
+window.gmAirportVehicleMarkerHtml=(x,color)=>airportMarkerHtml(x,color||'#0f766e');
 function airportPopupHtml(x){
   const hasTrip=!!String(x.numeroViaje||'').trim();
   return '<div style="min-width:180px"><b>'+esc(x.unidad||'—')+'</b>'
