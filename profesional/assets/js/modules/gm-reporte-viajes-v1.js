@@ -13,12 +13,12 @@ function open(){
  if(!$('gmTripReportModal')){
  const m=document.createElement('div');m.id='gmTripReportModal';m.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#0f172acb;display:flex;justify-content:center;align-items:center;padding:12px';
  m.innerHTML='<section role="dialog" aria-modal="true" aria-label="Reporte de viajes" style="width:min(1100px,100%);height:min(90vh,800px);overflow:auto;background:#fff;border-radius:16px;padding:18px;color:#0f172a;box-shadow:0 22px 80px #0005">'+
- '<header style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h2 style="font-size:20px;font-weight:800;margin:0">Reporte de viajes</h2><p style="margin:4px 0 0;color:#64748b;font-size:12px">Viajes registrados, eventos y posiciones GPS verificadas</p></div><button id="gmTripsClose" type="button" class="airFullBtn">✕ Cerrar</button></header>'+
+ '<header style="position:sticky;top:-18px;z-index:900;background:#fff;padding:12px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e2e8f0"><div><h2 style="font-size:20px;font-weight:800;margin:0">Reporte de viajes</h2><p style="margin:4px 0 0;color:#64748b;font-size:12px">Viajes registrados, eventos y posiciones GPS verificadas</p></div><button id="gmTripsClose" type="button" aria-label="Cerrar reporte de viajes" style="display:inline-flex;align-items:center;gap:7px;border:0;border-radius:10px;background:#dc2626;color:white;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0">✕ Cerrar</button></header>'+
  '<div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:15px 0"><label>Desde <input id="gmTripsFrom" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Hasta <input id="gmTripsTo" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><button id="gmTripsSearch" type="button" class="airFullBtn" style="background:#0f766e;color:#fff">Consultar viajes</button></div>'+
  '<p id="gmTripsStatus" style="font-size:12px;color:#475569"></p><div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,1.6fr);gap:12px" id="gmTripsLayout"><div id="gmTripsResults" style="overflow:auto;max-height:470px;border:1px solid #e2e8f0;border-radius:10px"></div><div><div id="gmTripsMap" style="height:360px;border-radius:10px;background:#e2e8f0"></div><div id="gmTripsEvents" style="margin-top:10px;font-size:12px;color:#475569"></div></div></div>'+
- '<style>@media(max-width:740px){#gmTripsLayout{grid-template-columns:1fr!important}#gmTripsMap{height:300px!important}}</style></section>';
+ '<footer style="position:sticky;bottom:-18px;background:#fff;border-top:1px solid #e2e8f0;padding:12px 0;margin-top:14px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>@media(max-width:740px){#gmTripsLayout{grid-template-columns:1fr!important}#gmTripsMap{height:300px!important}}</style></section>';
  document.body.appendChild(m);
- $('gmTripsClose').onclick=()=>{m.remove();if(map){map.remove();map=null}};
+ const closeReport=()=>{if(map){map.remove();map=null}markers=null;m.remove()};$('gmTripsClose').onclick=closeReport;$('gmTripsCloseBottom').onclick=closeReport;m.addEventListener('click',e=>{if(e.target===m)closeReport()});
  $('gmTripsSearch').onclick=search;
  const end=new Date(),start=new Date(end);start.setDate(start.getDate()-6);$('gmTripsTo').value=date(end);$('gmTripsFrom').value=date(start);
  }
@@ -36,14 +36,32 @@ async function search(){
  }catch(e){$('gmTripsStatus').textContent='No fue posible consultar: '+(e.message||e)}
 }
 async function ensureTripsLeaflet(){
- if(window.L&&window.L.map)return;
- if(typeof window.ccEnsureLeaflet==='function'){try{await window.ccEnsureLeaflet()}catch(e){console.warn('Leaflet compartido:',e)}if(window.L&&window.L.map)return}
- if(!document.querySelector('link[data-gm-trips-leaflet]')){const l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';l.dataset.gmTripsLeaflet='1';document.head.appendChild(l)}
- if(!window.__gmTripsLeafletPromise){window.__gmTripsLeafletPromise=new Promise((resolve,reject)=>{
- const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.async=true;script.onload=resolve;script.onerror=()=>reject(Error('No se pudo descargar Leaflet'));document.head.appendChild(script);
- }).catch(e=>{window.__gmTripsLeafletPromise=null;throw e})}
+ if(window.L?.map)return;
+ if(typeof window.ccEnsureLeaflet==='function'){
+  try{await window.ccEnsureLeaflet()}catch(e){console.warn('Carga Leaflet del mapa principal:',e)}
+  if(window.L?.map)return;
+ }
+ const styles=['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'];
+ if(!document.querySelector('link[data-gm-trips-leaflet]')){let css=document.createElement('link');css.rel='stylesheet';css.href=styles[0];css.dataset.gmTripsLeaflet='1';document.head.appendChild(css)}
+ if(!window.__gmTripsLeafletPromise){
+  window.__gmTripsLeafletPromise=(async()=>{
+   const urls=['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
+   for(const url of urls){
+    if(window.L?.map)return;
+    try{
+     await new Promise((resolve,reject)=>{
+      const el=document.createElement('script');el.src=url;el.async=true;
+      el.onload=()=>window.L?.map?resolve():reject(Error('Leaflet sin inicializar'));
+      el.onerror=()=>reject(Error('No se pudo cargar '+url));
+      document.head.appendChild(el);
+     });
+     if(window.L?.map)return;
+    }catch(err){console.warn('Proveedor Leaflet:',err)}
+   }
+   throw Error('No fue posible cargar el mapa Leaflet. Revisa la conexión o el bloqueo de CDN.');
+  })().catch(err=>{window.__gmTripsLeafletPromise=null;throw err});
+ }
  await window.__gmTripsLeafletPromise;
- if(!window.L||!window.L.map)throw Error('Leaflet no se inicializó');
 }
 async function trace(id){
  $('gmTripsEvents').textContent='Consultando posiciones y eventos…';
