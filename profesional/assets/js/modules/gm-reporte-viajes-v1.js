@@ -540,7 +540,7 @@ async function showTrace(data,version){
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+buildChronology(data,gps,events,statusRows);
+  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+geosHtml+buildChronology(data,gps,events,statusRows);
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
