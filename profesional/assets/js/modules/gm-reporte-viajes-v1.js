@@ -58,7 +58,7 @@ function renderTrips(){
  const q=String($('gmTripsFind')?.value||'').trim().toLowerCase();
  const showTransit=!!$('gmTripsShowTransit')?.checked;
  const filtered=rows.filter(x=>{const finished=!!x.ended_at;const inTransit=!x.ended_at;return (finished||(showTransit&&inTransit))&&(!client||String(x.cliente||'').trim()===client)&&(!q||[x.numero_viaje,x.identificador_viaje,x.unidad,x.cliente].some(v=>String(v||'').toLowerCase().includes(q)))});
- $('gmTripsResults').innerHTML=filtered.map(x=>'<button type="button" data-trip="'+x.id+'" style="display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #e2e8f0;padding:12px;cursor:pointer"><b>'+esc(x.unidad)+'</b> · '+esc(x.numero_viaje||x.identificador_viaje||'Sin folio')+'<br><span style="font-size:11px;color:#64748b">'+esc(x.cliente||'')+'</span><br><span style="font-size:11px">'+esc(x.origen||'—')+' → '+esc(x.destino||'—')+'</span><br><span style="font-size:11px;color:#475569">Inicio: '+esc(String(x.salida||x.first_seen||'').slice(0,16).replace('T',' '))+'</span></button>').join('')||'<p style="padding:14px;color:#64748b">No se encontraron viajes para este período.</p>';
+ $('gmTripsResults').innerHTML=filtered.map(x=>'<button type="button" data-trip="'+x.id+'" style="display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #e2e8f0;padding:12px;cursor:pointer"><b>'+esc(x.unidad)+'</b> · '+esc(x.numero_viaje||x.identificador_viaje||'Sin folio')+'<br><span style="font-size:11px;color:#64748b">'+esc(x.cliente||'')+'</span><br><span style="font-size:11px">'+esc(x.origen||'—')+' → '+esc(x.destino||'—')+'</span><br><span style="font-size:11px;color:#475569">Estado: '+(x.ended_at?'FINALIZADO':'EN SEGUIMIENTO')+' · Inicio: '+esc(String(x.salida||x.first_seen||'').slice(0,16).replace('T',' '))+'</span></button>').join('')||'<p style="padding:14px;color:#64748b">No se encontraron viajes para este período.</p>';
  $('gmTripsStatus').textContent=filtered.length+' viajes '+(showTransit?'(finalizados y en tránsito)':'finalizados con cierre registrado');
 }
 async function traceHours(){
@@ -347,7 +347,7 @@ function buildChronology(data,gps,events,statusRows){
  const items=[];
  if(departure)items.push({time:departure,kind:'SALIDA',name:'Salida',detail:trip.origen||data.origen||''});
  ordered.forEach(e=>items.push({time:e.fecha,kind:'GEOCERCA',name:e.nombre||e.geocerca||'Geocerca registrada',detail:e.evento||e.tipo_evento||'Paso registrado'}));
- if(arrival)items.push({time:arrival,kind:data.perdido_api?'API_FIN':'ULTIMO_GPS',name:data.perdido_api?'Fin del registro en API':'Última posición GPS',detail:data.perdido_api?'El viaje dejó de aparecer en la respuesta de la API de GM': 'Última posición disponible; todavía no se confirma que haya desaparecido de la API'});
+ if(arrival)items.push({time:arrival,kind:data.perdido_api?'API_FIN':'ULTIMO_GPS',name:'Finalización / último registro del viaje',detail:'Cierre del ciclo de seguimiento; la hora de llegada real solo se considera confirmada si GM la proporcionó'});
  items.sort((a,b)=>(parseGMDate(a.time)?.getTime()||0)-(parseGMDate(b.time)?.getTime()||0));
  if(!items.length)return '<div style="padding:8px;color:#64748b">No hay horas ni geocercas registradas para este viaje.</div>';
  const elapsed=startDate&&endDate?Math.max(0,Math.round((endDate-startDate)/60000)):null;
