@@ -10,6 +10,7 @@ function inject(){
  btn.onclick=open;
 }
 function open(){
+ if(window.CC_MIRROR_EXTERNAL&&!window.CC_MIRROR_PERMISSIONS?.reporte_viajes)return;
  if(!$('gmTripReportModal')){
  const m=document.createElement('div');m.id='gmTripReportModal';m.style.cssText='position:fixed;inset:0;z-index:2147483000;background:#0f172acb;display:flex;justify-content:center;align-items:center;padding:12px';
  m.innerHTML='<section id="gmTripsModalPanel" role="dialog" aria-modal="true" aria-label="Reporte de viajes" style="width:min(1800px,99vw);height:96vh;overflow:hidden;background:#fff;border-radius:16px;padding:12px 14px;color:#0f172a;box-shadow:0 22px 80px #0005;display:flex;flex-direction:column;min-height:0">'+
@@ -25,6 +26,7 @@ function open(){
  syncMode();
 }
 function syncMode(){
+ if(window.CC_MIRROR_EXTERNAL){const hoursOption=$('gmTripsMode')?.querySelector('option[value="HORAS"]');hoursOption?.remove();if($('gmTripsMode')?.value==='HORAS')$('gmTripsMode').value='VIAJES';}
  const hourly=$('gmTripsMode')?.value==='HORAS';
  $('gmTripsHours').style.display=hourly?'flex':'none';
  $('gmTripsTripFilters').style.display=hourly?'none':'flex';
