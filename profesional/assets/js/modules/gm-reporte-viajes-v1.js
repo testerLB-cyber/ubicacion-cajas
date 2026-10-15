@@ -125,7 +125,7 @@ let lastTripDownloadUrl=null;
 function sanitizeTripClone(doc){
   doc.querySelectorAll('*').forEach(el=>{
    for(const prop of ['color','backgroundColor','borderColor','outlineColor','fill','stroke','boxShadow','textShadow']){
-    try{const v=doc.defaultView.getComputedStyle(el)[prop];if(v&&/color\\(/i.test(v))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
+    try{const v=doc.defaultView.getComputedStyle(el)[prop];if(v&&v.includes('color('))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
    }
   });
 }
