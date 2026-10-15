@@ -1482,7 +1482,19 @@ if(AIR_EXTERNAL){window.ccMirrorAirportStart=(configuration={})=>{
  for(const id of ['airManualPanel','airDemorasBtn','airHistoryBtn']){const el=$(id);if(el)el.style.display='none'}
  if($('airRentToggle'))$('airRentToggle').style.display=permissions.cajas_renta?'':'none';
  if($('airMapToggle'))$('airMapToggle').style.display=permissions.mapa_unidades?'':'none';
- if($('gmTripReportButton'))$('gmTripReportButton').style.display=permissions.reporte_viajes?'inline-flex':'none';
+ const reportBtn=$('gmTripReportButton');
+  if(reportBtn){
+   reportBtn.style.display=permissions.reporte_viajes?'inline-flex':'none';
+   if(!permissions.aeropuerto&&permissions.mapa_unidades&&permissions.reporte_viajes){
+    const mapControls=$('airFleetMapControls');
+    if(mapControls){
+     reportBtn.className='airFleetMapAction';
+     reportBtn.style.cssText='background:#0f766e;color:#fff;border-color:#0f766e;font-weight:800;white-space:nowrap';
+     reportBtn.innerHTML='<i class="fa-solid fa-route"></i> Reporte de viajes';
+     mapControls.prepend(reportBtn);
+    }
+   }
+  }
  if($('airClient'))$('airClient').disabled=true;
  const defaultView=configuration.defaultView;
  const target=defaultView==='cajas_renta'&&permissions.cajas_renta?'cajas_renta':defaultView==='mapa_unidades'&&permissions.mapa_unidades?'mapa_unidades':permissions.aeropuerto?'aeropuerto':permissions.cajas_renta?'cajas_renta':permissions.mapa_unidades?'mapa_unidades':'aeropuerto';
