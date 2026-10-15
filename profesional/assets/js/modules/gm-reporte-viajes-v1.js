@@ -171,9 +171,10 @@ async function exportTripMp4(){
  const btn=$('gmTripsMp4');if(btn.disabled)return;
  btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando video…';
  const oldIndex=playIndex,oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldProgress=$('gmTripsProgress')?.value,oldFollow=$('gmTripsFollow')?.checked;
- const totalFrames=60,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ // Exportación ligera: menos fotogramas y menor resolución para evitar congelar el reporte.
+ const totalFrames=24,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  try{
-  $('gmTripsStatus').textContent='Cargando herramientas de video. No cierres esta ventana…';
+  $('gmTripsStatus').textContent='Preparando video ligero a 5× (24 fotogramas, resolución optimizada)…';
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
   if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw Error('Este navegador no permite grabar la animación. Usa una versión reciente de Chrome.');
   const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
@@ -182,7 +183,7 @@ async function exportTripMp4(){
   if($('gmTripsFollow'))$('gmTripsFollow').checked=false;
   map.fitBounds(L.latLngBounds(playPath),{padding:[24,24],maxZoom:11,animate:false});
   await wait(500);
-  const canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;
+  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
   const ctx=canvas.getContext('2d');if(!ctx)throw Error('El navegador no permite crear fotogramas de video.');
   const stream=canvas.captureStream(0),videoTrack=stream.getVideoTracks()[0],chunks=[];
   const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:2500000});
@@ -190,14 +191,14 @@ async function exportTripMp4(){
   recorder.start();
   for(let i=0;i<totalFrames;i++){
    const fraction=i/(totalFrames-1);seekPlayback(fraction);
-   map.invalidateSize({animate:false});await wait(160);
+   await wait(15);
    $('gmTripsStatus').textContent='Generando animación: '+Math.round((i+1)/totalFrames*85)+'%';
-   const shot=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:1,logging:false,onclone:sanitizeTripClone});
+   const shot=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:0.65,logging:false,onclone:sanitizeTripClone});
    ctx.fillStyle='#e2e8f0';ctx.fillRect(0,0,canvas.width,canvas.height);
    const ratio=Math.min(canvas.width/shot.width,canvas.height/shot.height),w=shot.width*ratio,h=shot.height*ratio;
    ctx.drawImage(shot,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
    if(typeof videoTrack.requestFrame==='function')videoTrack.requestFrame();
-   await wait(90);
+   await wait(15);
   }
   $('gmTripsStatus').textContent='Finalizando archivo de animación…';
   await wait(250);
@@ -209,7 +210,7 @@ async function exportTripMp4(){
   stream.getTracks().forEach(t=>t.stop());
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
   const file=downloadTripFile(videoBlob,'recorrido-'+trip+'.webm');
-  showTripDownload(file,'video WEBM');
+  showTripDownload(file,'video WEBM acelerado 5×');
  }catch(e){console.error('Exportación de video:',e);$('gmTripsStatus').textContent='FALLÓ la descarga de video: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
  finally{
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
