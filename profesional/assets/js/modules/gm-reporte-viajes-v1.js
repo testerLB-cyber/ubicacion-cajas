@@ -122,6 +122,14 @@ async function loadScriptOnce(src,test){
  if(!test())throw Error('El componente de exportación no se inicializó.');
 }
 let lastTripDownloadUrl=null;
+function sanitizeTripClone(doc){
+  doc.querySelectorAll('style,link[rel="stylesheet"]').forEach(n=>n.remove());
+  doc.querySelectorAll('*').forEach(el=>{
+   for(const prop of ['color','backgroundColor','borderColor','outlineColor','fill','stroke','boxShadow','textShadow']){
+    try{const v=getComputedStyle(el)[prop];if(v&&/\\bcolor\\(/i.test(v))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
+   }
+  });
+}
 function downloadTripFile(blob,filename){
  if(!(blob instanceof Blob)||!blob.size)throw Error('El archivo generado está vacío.');
  // Después de procesar el mapa durante varios segundos, Chrome puede bloquear
@@ -144,40 +152,41 @@ async function exportTripMp4(){
  try{
   $('gmTripsStatus').textContent='Cargando herramientas de video. No cierres esta ventana…';
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
-  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js',()=>!!window.FFmpeg?.createFFmpeg);
-  if(!window.FFmpeg?.createFFmpeg)throw Error('No se pudo cargar el codificador MP4. Revisa si la red bloquea los CDN.');
-  const ffmpeg=window.__gmTripFfmpeg||(window.__gmTripFfmpeg=window.FFmpeg.createFFmpeg({log:false,corePath:'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'}));
-  if(!ffmpeg.isLoaded()){
-   $('gmTripsStatus').textContent='Descargando codificador MP4… puede tardar la primera vez.';
-   await ffmpeg.load();
-  }
+  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw Error('Este navegador no permite grabar la animación. Usa una versión reciente de Chrome.');
+  const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+  if(!mimeType)throw Error('Chrome no ofrece un formato de video compatible para grabar la animación.');
   const target=$('gmTripsMap');if(!target)throw Error('No se encontró el mapa del recorrido.');
   if($('gmTripsFollow'))$('gmTripsFollow').checked=false;
   map.fitBounds(L.latLngBounds(playPath),{padding:[24,24],maxZoom:11,animate:false});
   await wait(500);
   const canvas=document.createElement('canvas');canvas.width=960;canvas.height=540;
   const ctx=canvas.getContext('2d');if(!ctx)throw Error('El navegador no permite crear fotogramas de video.');
+  const stream=canvas.captureStream(0),videoTrack=stream.getVideoTracks()[0],chunks=[];
+  const recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:2500000});
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  recorder.start();
   for(let i=0;i<totalFrames;i++){
    const fraction=i/(totalFrames-1);seekPlayback(fraction);
    map.invalidateSize({animate:false});await wait(160);
-   $('gmTripsStatus').textContent='Generando animación MP4: '+Math.round((i+1)/totalFrames*65)+'%';
-   const shot=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:1,logging:false});
+   $('gmTripsStatus').textContent='Generando animación: '+Math.round((i+1)/totalFrames*85)+'%';
+   const shot=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:1,logging:false,onclone:sanitizeTripClone});
    ctx.fillStyle='#e2e8f0';ctx.fillRect(0,0,canvas.width,canvas.height);
    const ratio=Math.min(canvas.width/shot.width,canvas.height/shot.height),w=shot.width*ratio,h=shot.height*ratio;
    ctx.drawImage(shot,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
-   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.84));
-   if(!blob||!blob.size)throw Error('No se pudo crear el fotograma '+(i+1)+'.');
-   ffmpeg.FS('writeFile','frame-'+String(i).padStart(3,'0')+'.jpg',new Uint8Array(await blob.arrayBuffer()));
+   if(typeof videoTrack.requestFrame==='function')videoTrack.requestFrame();
+   await wait(90);
   }
-  $('gmTripsStatus').textContent='Codificando archivo MP4… 70–99%';
-  await ffmpeg.run('-framerate','10','-i','frame-%03d.jpg','-c:v','libx264','-pix_fmt','yuv420p','-vf','scale=960:540:flags=lanczos','-movflags','+faststart','recorrido.mp4');
-  const output=ffmpeg.FS('readFile','recorrido.mp4');
-  const bytes=output.buffer.slice(output.byteOffset,output.byteOffset+output.byteLength);
+  $('gmTripsStatus').textContent='Finalizando archivo de animación…';
+  await wait(250);
+  const videoBlob=await new Promise((resolve,reject)=>{
+   recorder.onerror=e=>reject(e.error||Error('No se pudo finalizar el video.'));
+   recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||mimeType}));
+   recorder.stop();
+  });
+  stream.getTracks().forEach(t=>t.stop());
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
-  const file=downloadTripFile(new Blob([bytes],{type:'video/mp4'}),'recorrido-'+trip+'.mp4');
-  for(let i=0;i<totalFrames;i++){try{ffmpeg.FS('unlink','frame-'+String(i).padStart(3,'0')+'.jpg')}catch(e){}}
-  try{ffmpeg.FS('unlink','recorrido.mp4')}catch(e){}
-  showTripDownload(file,'MP4');
+  const file=downloadTripFile(videoBlob,'recorrido-'+trip+'.webm');
+  showTripDownload(file,'video WEBM');
  }catch(e){console.error('Exportación MP4:',e);$('gmTripsStatus').textContent='FALLÓ la descarga MP4: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
  finally{
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
@@ -201,7 +210,7 @@ async function exportTripPdf(){
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
   const target=$('gmTripsMap');
-  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:2,logging:false});
+  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:2,logging:false,onclone:sanitizeTripClone});
   if(!canvas.width||!canvas.height)throw Error('La captura del mapa quedó vacía.');
   const image=canvas.toDataURL('image/jpeg',0.92);
   const PDF=window.jspdf.jsPDF,pdf=new PDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
