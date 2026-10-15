@@ -270,7 +270,7 @@ async function matchRoads(points){
  // no sustituirla por una unión recta: se conserva el GPS original en ese caso.
  if(groups.length!==1)return null;
  const source=groups[0],chunks=[];let start=0;
- while(start<source.length-1){const end=Math.min(source.length,start+70);chunks.push(source.slice(start,end));if(end===source.length)break;start=end-1}
+ while(start<source.length-1){const end=Math.min(source.length,start+20);chunks.push(source.slice(start,end));if(end===source.length)break;start=end-1}
  const matched=[];
  for(const chunk of chunks){
   try{
@@ -366,7 +366,7 @@ async function showTrace(data,version){
   const segments=[];let current=[gps[0]];
   for(let i=1;i<gps.length;i++){
    let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
-   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length>1)segments.push(current);current=[gps[i]]}
+   if(gap>90||distanceMeters(gps[i-1],gps[i])>1800){if(current.length>1)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
   }if(current.length>1)segments.push(current);
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
