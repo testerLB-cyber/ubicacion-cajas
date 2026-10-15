@@ -175,13 +175,13 @@ function buildChronology(data,gps,events,statusRows){
  const items=[];
  if(departure)items.push({time:departure,kind:'SALIDA',name:'Salida',detail:trip.origen||data.origen||''});
  ordered.forEach(e=>items.push({time:e.fecha,kind:'GEOCERCA',name:e.nombre||e.geocerca||'Geocerca registrada',detail:e.evento||e.tipo_evento||'Paso registrado'}));
- if(arrival)items.push({time:arrival,kind:'LLEGADA',name:'Llegada',detail:trip.destino||data.destino||''});
+ if(arrival)items.push({time:arrival,kind:data.perdido_api?'API_FIN':'ULTIMO_GPS',name:data.perdido_api?'Fin del registro en API':'Última posición GPS',detail:data.perdido_api?'El viaje dejó de aparecer en la respuesta de la API de GM': 'Última posición disponible; todavía no se confirma que haya desaparecido de la API'});
  items.sort((a,b)=>(parseGMDate(a.time)?.getTime()||0)-(parseGMDate(b.time)?.getTime()||0));
  if(!items.length)return '<div style="padding:8px;color:#64748b">No hay horas ni geocercas registradas para este viaje.</div>';
  const elapsed=startDate&&endDate?Math.max(0,Math.round((endDate-startDate)/60000)):null;
  const duration=elapsed==null?'':(' · '+Math.floor(elapsed/60)+' h '+String(elapsed%60).padStart(2,'0')+' min');
  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin:2px 0 6px"><b style="font-size:13px">Viaje '+esc(trip.numero_viaje||trip.identificador_viaje||'')+'</b><span style="font-size:10px;color:#64748b">'+Math.max(0,items.length-(departure?1:0)-(arrival?1:0))+' geocercas'+esc(duration)+'</span></div>'+
- items.map(e=>'<div style="display:grid;grid-template-columns:65px 7px minmax(0,1fr);gap:6px;align-items:start;padding:4px 0;border-bottom:1px solid #edf2f7"><span style="font-size:10px;font-weight:800;color:'+(e.kind==='SALIDA'?'#15803d':e.kind==='LLEGADA'?'#b91c1c':'#0369a1')+'">'+esc((parseGMDate(e.time)||new Date(e.time)).toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}))+'</span><span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:'+(e.kind==='SALIDA'?'#16a34a':e.kind==='LLEGADA'?'#dc2626':'#0284c7')+'"></span><div><b style="font-size:11px">'+esc(e.name)+'</b>'+(e.detail?'<div style="font-size:10px;color:#64748b">'+esc(e.detail)+'</div>':'')+'</div></div>').join('');
+ items.map(e=>'<div style="display:grid;grid-template-columns:65px 7px minmax(0,1fr);gap:6px;align-items:start;padding:4px 0;border-bottom:1px solid #edf2f7"><span style="font-size:10px;font-weight:800;color:'+(e.kind==='SALIDA'?'#15803d':e.kind==='API_FIN'?'#b91c1c':'#0369a1')+'">'+esc((parseGMDate(e.time)||new Date(e.time)).toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}))+'</span><span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:'+(e.kind==='SALIDA'?'#16a34a':e.kind==='API_FIN'?'#dc2626':'#0284c7')+'"></span><div><b style="font-size:11px">'+esc(e.name)+'</b>'+(e.detail?'<div style="font-size:10px;color:#64748b">'+esc(e.detail)+'</div>':'')+'</div></div>').join('');
 }
 async function showTrace(data,version){
  try{
