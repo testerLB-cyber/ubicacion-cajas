@@ -462,7 +462,7 @@ async function showTrace(data,version){
    L.DomEvent.disableClickPropagation(wrap);L.DomEvent.on(btn,'click',async function(ev){
     L.DomEvent.stop(ev);
     const el=map&&map.getContainer();if(!el)return;
-    try{if(!document.fullscreenElement){if(el.requestFullscreen)await el.requestFullscreen();else {el.style.position='fixed';el.style.inset='0';el.style.width='100vw';el.style.height='100vh';el.style.zIndex='2147483647';el._ccFallbackFullscreen=true;btn.textContent='✕ Salir pantalla completa';}}else if(document.exitFullscreen)await document.exitFullscreen();}
+    try{if(el._ccFallbackFullscreen){el.style.position='';el.style.inset='';el.style.width='';el.style.height='';el.style.zIndex='';el._ccFallbackFullscreen=false;btn.textContent='⛶ Pantalla completa';}else if(!document.fullscreenElement){if(el.requestFullscreen)await el.requestFullscreen();else {el.style.position='fixed';el.style.inset='0';el.style.width='100vw';el.style.height='100vh';el.style.zIndex='2147483647';el._ccFallbackFullscreen=true;btn.textContent='✕ Salir pantalla completa';}}else if(document.exitFullscreen)await document.exitFullscreen();}
     catch(err){console.warn('Pantalla completa del mapa no disponible:',err)}
     setTimeout(()=>{if(map)map.invalidateSize({animate:false})},120);
    });
