@@ -477,11 +477,14 @@ async function showTrace(data,version){
  }
  if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);playPath=[];playIndex=0;playLine=null;playMarker=null;
  if(gps.length){
+  let detectedGaps=0,reconstructedGaps=0;
+  const updateRouteCoverage=()=>{const el=$('gmTripsRouteCoverage');if(!el)return;const complete=reconstructedGaps>=detectedGaps;el.innerHTML=complete?'<b style="color:#166534">Recorrido completo visualmente</b> · '+detectedGaps+' interrupciones revisadas. Los tramos discontinuos se distinguen como estimados.':'<b style="color:#b45309">Recorrido incompleto</b> · '+reconstructedGaps+' de '+detectedGaps+' interrupciones pudieron reconstruirse por calles. No se inventa la parte faltante.';};
   const segments=[];let current=[gps[0]];
   for(let i=1;i<gps.length;i++){
    let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
    // Conservar los saltos razonables para que OSRM pueda reconstruirlos por calles. Separar solo interrupciones largas o saltos GPS grandes.
-   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length)segments.push(current);current=[gps[i]]}
+   const gapDistance=distanceMeters(gps[i-1],gps[i]);
+   if(gap>300||gapDistance>5000){if((gap>300&&gapDistance>=150)||gapDistance>5000)detectedGaps++;if(current.length)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
   }if(current.length)segments.push(current);
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
@@ -502,7 +505,7 @@ async function showTrace(data,version){
   void (async()=>{
    for(let i=1;i<gps.length;i++){
     const a=gps[i-1],b=gps[i],dt=(Date.parse(b.time)-Date.parse(a.time))/1000,dist=distanceMeters(a,b),speed=dt>0?dist/dt*3.6:Infinity;
-    if(!(dt>300&&dist>=150&&dist<=15000&&speed>=2&&speed<=120))continue;
+    if(!((dt>300||dist>5000)&&dist>=150&&dist<=15000&&speed>=2&&speed<=120))continue;
     try{
      const coords=a.lng+','+a.lat+';'+b.lng+','+b.lat;
      const response=await fetch('https://router.project-osrm.org/route/v1/driving/'+coords+'?overview=full&geometries=geojson&steps=false');
@@ -513,6 +516,7 @@ async function showTrace(data,version){
      const road=line.map(p=>[p[1],p[0]]);
      L.polyline(road,{color:'#ffffff',weight:9,opacity:.96,lineJoin:'round',lineCap:'round',dashArray:'7 5'}).bindPopup('Tramo estimado por calles entre dos registros GPS; hubo una interrupción de señal.').addTo(markers);
      L.polyline(road,{color:'#087f8c',weight:6,opacity:.98,lineJoin:'round',lineCap:'round',dashArray:'7 5'}).bindPopup('Tramo estimado por calles entre dos registros GPS; no es una lectura GPS continua.').addTo(markers);
+     if((dt>300&&dist>=150)||dist>5000)reconstructedGaps++;updateRouteCoverage();
     }catch(e){console.warn('No se pudo reconstruir un hueco GPS por calles:',e)}
    }
   })();
@@ -560,7 +564,8 @@ async function showTrace(data,version){
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+geosHtml+buildChronology(data,gps,events,statusRows);
+  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div><div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml+buildChronology(data,gps,events,statusRows);
+  updateRouteCoverage();
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
