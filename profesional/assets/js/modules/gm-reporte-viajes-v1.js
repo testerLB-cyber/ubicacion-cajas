@@ -264,14 +264,20 @@ async function matchRoads(points){
  for(const chunk of chunks){
   try{
    const coordinates=chunk.map(p=>p.lng+','+p.lat).join(';');
-   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split&tidy=true';
-   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),7000);
+   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split&tidy=false';
+   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),12000);
    let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
    if(!response.ok)return null;const data=await response.json();
-   if(data.code!=='Ok'||!Array.isArray(data.matchings)||data.matchings.length!==1)return null;
-   const coords=data.matchings.flatMap(m=>m.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
+   // OSRM puede dividir el resultado en varias coincidencias cuando detecta saltos GPS.
+   // Aceptar solo una coincidencia dominante y no conectar segmentos separados con una recta.
+   if(data.code!=='Ok'||!Array.isArray(data.matchings)||!data.matchings.length)return null;
+   const best=data.matchings.slice().sort((a,b)=>(b.geometry?.coordinates?.length||0)-(a.geometry?.coordinates?.length||0))[0];
+   const coords=(best.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
    if(coords.length<2)return null;
-   if(matched.length&&distanceMeters(matched[matched.length-1],coords[0])<80)coords.shift();
+   // Rechazar ajuste dudoso: los extremos deben quedar cerca de los GPS originales.
+   if(distanceMeters(coords[0],chunk[0])>1200||distanceMeters(coords[coords.length-1],chunk[chunk.length-1])>1200)return null;
+   if(matched.length&&distanceMeters(matched[matched.length-1],coords[0])<100)coords.shift();
+   else if(matched.length) return null;
    matched.push(...coords);
   }catch(e){console.warn('Ajuste a calles no disponible:',e);return null}
  }
