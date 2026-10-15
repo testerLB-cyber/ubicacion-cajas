@@ -283,27 +283,6 @@ async function matchRoads(points){
  }
  return matched.length>1?matched:null;
 }
-async function routeRoads(points){
- if(!Array.isArray(points)||points.length<2)return null;
- const chunks=[];let start=0;
- while(start<points.length-1){const end=Math.min(points.length,start+35);chunks.push(points.slice(start,end));if(end===points.length)break;start=end-1}
- const result=[];
- for(const chunk of chunks){
-  try{
-   const coordinates=chunk.map(p=>p.lng+','+p.lat).join(';');
-   const url='https://router.project-osrm.org/route/v1/driving/'+coordinates+'?overview=full&geometries=geojson&steps=false';
-   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),15000);
-   let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
-   if(!response.ok)return null;
-   const data=await response.json(),coords=(data.routes?.[0]?.geometry?.coordinates||[]).map(p=>({lat:p[1],lng:p[0]}));
-   if(data.code!=='Ok'||coords.length<2)return null;
-   if(result.length&&distanceMeters(result[result.length-1],coords[0])<100)coords.shift();
-   else if(result.length)return null;
-   result.push(...coords);
-  }catch(e){console.warn('Ruta vial de respaldo no disponible:',e);return null}
- }
- return result.length>1?result:null;
-}
 function bearingDegrees(a,b){
  const rad=Math.PI/180,lat1=a.lat*rad,lat2=b.lat*rad,dlon=(b.lng-a.lng)*rad;
  const y=Math.sin(dlon)*Math.cos(lat2),x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dlon);
@@ -371,20 +350,19 @@ async function showTrace(data,version){
   for(const item of displaySegments){
    const segment=item.points;
    // Primero mostramos GPS al instante; luego sustituimos por geometría ajustada a calles reales.
-   const halo=L.polyline([],{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
-   const line=L.polyline([],{color:'#087f8c',weight:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
+   const halo=L.polyline(segment,{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
+   const line=L.polyline(segment,{color:'#087f8c',weight:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
    routeLayers.push({halo,line});
+   addDirectionArrows(segment);
   }
   // Ajustar cada tramo a la red vial en segundo plano, sin bloquear el mapa ni el resto del reporte.
   void (async()=>{
    for(let idx=0;idx<displaySegments.length;idx++){
     const item=displaySegments[idx];
     if(item.points.length<2)continue;
-    let snapped=await matchRoads(item.points);
+    const snapped=await matchRoads(item.points);
     if(version!==traceVersion||!markers)return;
-    if(!snapped||snapped.length<2)snapped=await routeRoads(item.points);
-    if(version!==traceVersion||!markers)return;
-    if(!snapped||snapped.length<2){console.warn('No fue posible calcular ruta vial; no se dibuja una línea recta engañosa.');const layer=routeLayers[idx];if(layer){markers.removeLayer(layer.halo);markers.removeLayer(layer.line);}continue;}
+    if(!snapped||snapped.length<2)continue; // Si no hay coincidencia fiable, conserva el trazado GPS previo.
     item.points=snapped;item.matched=true;
     const layer=routeLayers[idx];
     if(layer){markers.removeLayer(layer.halo);markers.removeLayer(layer.line);}
