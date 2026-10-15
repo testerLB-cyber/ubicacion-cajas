@@ -169,69 +169,52 @@ function showTripDownload(file,kind){
 async function exportTripMp4(){
  if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS.';return}
  const btn=$('gmTripsMp4');if(btn.disabled)return;
- btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Generando video rápido…';
+ if(!navigator.mediaDevices?.getDisplayMedia){$('gmTripsStatus').textContent='Tu navegador no permite grabar la pestaña. Usa Chrome actualizado.';return}
+ btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando grabación…';
  const oldIndex=playIndex,oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldProgress=$('gmTripsProgress')?.value,oldFollow=$('gmTripsFollow')?.checked;
- const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),totalFrames=30;
- let stream=null,videoTrack=null,recorder=null;
+ let stream=null,recorder=null,wasPlaying=false;
+ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  try{
-  $('gmTripsStatus').textContent='Preparando mapa una sola vez…';
-  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
-  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream)throw Error('Este navegador no permite grabar la animación. Usa una versión reciente de Chrome.');
+  $('gmTripsStatus').textContent='Selecciona esta pestaña de Chrome en la ventana de compartir pantalla.';
+  // Captura directamente la pestaña que el usuario ve: el mapa, la unidad,
+  // los marcadores, las calles y la animación real, sin reconstruir fotogramas.
+  stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:30,max:30}},audio:false});
+  const videoTrack=stream.getVideoTracks()[0];
+  if(!videoTrack)throw Error('No se recibió la pestaña para grabar.');
   const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
-  if(!mimeType)throw Error('Chrome no ofrece un formato de video compatible para grabar la animación.');
-  const target=$('gmTripsMap');if(!target)throw Error('No se encontró el mapa del recorrido.');
-  stopPlayback();
-  if($('gmTripsFollow'))$('gmTripsFollow').checked=false;
-  map.fitBounds(L.latLngBounds(playPath),{padding:[24,24],maxZoom:11,animate:false});
-  seekPlayback(0);
-  await wait(120);
-  // La captura pesada del mapa se hace UNA sola vez. Los siguientes fotogramas
-  // se dibujan directamente en canvas, sin html2canvas ni redibujar Leaflet.
-  const savedLine=playLine,savedMarker=playMarker;
-  try{if(savedLine)map.removeLayer(savedLine);if(savedMarker)map.removeLayer(savedMarker)}catch(e){}
-  let shot;
-  try{shot=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:0.55,logging:false,onclone:sanitizeTripClone})}
-  finally{try{if(savedLine)savedLine.addTo(map);if(savedMarker)savedMarker.addTo(map)}catch(e){}}
-  if(!shot?.width||!shot?.height)throw Error('No se pudo capturar el mapa.');
-  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
-  const ctx=canvas.getContext('2d');if(!ctx)throw Error('El navegador no permite crear fotogramas de video.');
-  const ratio=Math.min(canvas.width/shot.width,canvas.height/shot.height),bgW=shot.width*ratio,bgH=shot.height*ratio,offsetX=(canvas.width-bgW)/2,offsetY=(canvas.height-bgH)/2;
-  // Proyectar una sola vez la trayectoria GPS al espacio de la captura.
-  const bounds=target.getBoundingClientRect(),mapPoints=playPath.map(p=>{
-   const q=map.latLngToContainerPoint(p);
-   return {x:offsetX+q.x*(shot.width/Math.max(1,bounds.width))*ratio,y:offsetY+q.y*(shot.height/Math.max(1,bounds.height))*ratio};
-  });
+  if(!mimeType)throw Error('Chrome no ofrece un formato de video compatible.');
   const chunks=[];
-  stream=canvas.captureStream(0);videoTrack=stream.getVideoTracks()[0];
-  recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:1800000});
+  recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:4500000});
   recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
   const stopped=new Promise((resolve,reject)=>{recorder.onerror=e=>reject(e.error||Error('No se pudo finalizar el video.'));recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||mimeType}))});
-  recorder.start();
-  for(let i=0;i<totalFrames;i++){
-   const last=Math.max(1,mapPoints.length-1),at=i/(totalFrames-1)*last,idx=Math.floor(at),mix=at-idx,a=mapPoints[idx],b=mapPoints[Math.min(idx+1,mapPoints.length-1)],head={x:a.x+(b.x-a.x)*mix,y:a.y+(b.y-a.y)*mix};
-   ctx.fillStyle='#e2e8f0';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(shot,offsetX,offsetY,bgW,bgH);
-   ctx.save();ctx.beginPath();ctx.rect(offsetX,offsetY,bgW,bgH);ctx.clip();
-   ctx.beginPath();ctx.moveTo(mapPoints[0].x,mapPoints[0].y);
-   for(let j=1;j<=idx;j++)ctx.lineTo(mapPoints[j].x,mapPoints[j].y);
-   if(idx>0||mix>0)ctx.lineTo(head.x,head.y);
-   ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle='#ffffff';ctx.lineWidth=7;ctx.stroke();ctx.strokeStyle='#0f766e';ctx.lineWidth=4;ctx.stroke();
-   ctx.beginPath();ctx.arc(head.x,head.y,8,0,Math.PI*2);ctx.fillStyle='#0f766e';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='#ffffff';ctx.stroke();
-   ctx.restore();
-   if(typeof videoTrack.requestFrame==='function')videoTrack.requestFrame();
-   $('gmTripsStatus').textContent='Armando animación rápida: '+Math.round((i+1)/totalFrames*90)+'%';
-   await wait(24);
+  if($('gmTripsFollow'))$('gmTripsFollow').checked=true;
+  seekPlayback(0);
+  await wait(350);
+  recorder.start(250);
+  await wait(250);
+  $('gmTripsStatus').textContent='Grabando exactamente lo que ves al reproducir el viaje…';
+  btn.textContent='Grabando reproducción…';
+  startPlayback();wasPlaying=true;
+  while(map&&playIndex<playPath.length-1&&playTimer){
+   if(videoTrack.readyState==='ended')break;
+   await wait(100);
   }
-  $('gmTripsStatus').textContent='Cerrando video…';
-  await wait(120);
-  recorder.stop();
-  const videoBlob=await stopped;
-  if(stream)stream.getTracks().forEach(t=>t.stop());
-  if(!videoBlob.size)throw Error('El video quedó vacío.');
+  stopPlayback();
+  $('gmTripsStatus').textContent='Guardando video…';
+  await wait(250);
+  if(recorder.state!=='inactive')recorder.stop();
+  const blob=await stopped;
+  if(!blob.size)throw Error('El video quedó vacío. Vuelve a intentarlo y selecciona la pestaña actual.');
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
-  const file=downloadTripFile(videoBlob,'recorrido-'+trip+'.webm');
-  showTripDownload(file,'video WEBM rápido');
- }catch(e){console.error('Exportación de video:',e);$('gmTripsStatus').textContent='FALLÓ la descarga de video: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
- finally{
+  const file=downloadTripFile(blob,'recorrido-'+trip+'.webm');
+  showTripDownload(file,'video de la reproducción WEBM');
+ }catch(e){
+  console.error('Grabación de la reproducción:',e);
+  if(e?.name==='NotAllowedError')$('gmTripsStatus').textContent='Grabación cancelada. Para descargar el recorrido, vuelve a pulsar el botón y permite compartir la pestaña actual de Chrome.';
+  else $('gmTripsStatus').textContent='No se pudo grabar la reproducción: '+(e?.message||String(e));
+ }finally{
+  stopPlayback();
+  if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}
   if(stream)stream.getTracks().forEach(t=>t.stop());
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
   if($('gmTripsFollow')&&oldFollow!=null)$('gmTripsFollow').checked=oldFollow;
