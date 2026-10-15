@@ -242,7 +242,7 @@ async function exportTripMp4(){
   btn.textContent='Generando GIF…';
   startPlayback();
   while(map&&playIndex<playPath.length-1&&playTimer){
-   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false});
+   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false,onclone:function(doc){sanitizeTripClone(doc)}});
    if(!canvas.width||!canvas.height)throw Error('No se pudo capturar el mapa.');
    if(frames.length<230)frames.push(tripGifFrame(canvas,width,height));
    captureCount++;
@@ -252,7 +252,7 @@ async function exportTripMp4(){
   }
   stopPlayback();
   if(!frames.length){
-   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false});
+   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false,onclone:function(doc){sanitizeTripClone(doc)}});
    frames.push(tripGifFrame(canvas,width,height));
   }
   $('gmTripsStatus').textContent='Comprimiendo '+frames.length+' fotogramas del mapa en un GIF…';
