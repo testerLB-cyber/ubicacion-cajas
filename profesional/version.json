@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-66",
+  "version": "PRO-20261015-67",
   "mandatory": false,
-  "message": "Recorridos: mostrar en el mapa la siguiente ubicación GPS posterior al viaje y conectar por red vial.",
-  "updated_at": "2026-10-15T11:30:00-07:00"
+  "message": "Recorridos: prolongar en línea recta hasta el punto GPS posterior y marcar F al final.",
+  "updated_at": "2026-10-15T11:35:00-07:00"
 }
