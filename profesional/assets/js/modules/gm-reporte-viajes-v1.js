@@ -232,15 +232,17 @@ async function exportTripPdf(){
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
   const target=$('gmTripsMap');
   if(!target)throw Error('No se encontró el mapa del recorrido.');
-  // Captura a resolución 1x para evitar bloquear la interfaz con un canvas enorme.
-  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:1,logging:false,onclone:function(doc){
+  // Capturar el mapa visible, conservando los mosaicos y la ruta tal como los ve el usuario.
+  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#f3f0e8',scale:1,logging:false,onclone:function(doc){
     sanitizeTripClone(doc);
     const mapClone=doc.getElementById('gmTripsMap');
     if(mapClone){
       mapClone.style.width='1100px';mapClone.style.height='620px';
-      mapClone.querySelectorAll('.leaflet-control-container').forEach(el=>el.style.display='none');
-      // El PDF se centra en la ruta; oculta iconos de unidad y etiquetas emergentes.
-      mapClone.querySelectorAll('.leaflet-marker-icon,.leaflet-popup,.leaflet-tooltip').forEach(el=>el.style.display='none');
+      mapClone.querySelectorAll('.leaflet-control-container,.leaflet-popup,.leaflet-tooltip,.gm-trip-direction-wrap').forEach(el=>el.style.display='none');
+      // Quitar la unidad en movimiento; conservar solo los marcadores S/F de inicio y fin.
+      mapClone.querySelectorAll('.leaflet-marker-icon').forEach(el=>{
+        if(!el.querySelector('div') || !/[SF]/.test(el.textContent||''))el.style.display='none';
+      });
     }
   }});
   if(!canvas.width||!canvas.height)throw Error('La captura del mapa quedó vacía.');
@@ -353,7 +355,9 @@ async function showTrace(data,version){
   const displaySegments=segments.map(seg=>({points:seg,matched:false}));
   for(const item of displaySegments){
    const segment=item.points,isMatched=item.matched;
-   L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?0.92:0.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
+   // Línea continua, gruesa y con borde para destacar claramente las calles recorridas.
+   if(!isMatched)L.polyline(segment,{color:'#ffffff',weight:9,opacity:0.95,lineJoin:'round',lineCap:'round'}).addTo(markers);
+   L.polyline(segment,{color:'#087f8c',weight:isMatched?7:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
    addDirectionArrows(segment);
   }
   const startIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#16a34a;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">S</div>',iconSize:[28,28],iconAnchor:[14,14]});
