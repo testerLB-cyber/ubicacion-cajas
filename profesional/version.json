@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-72",
+  "version": "PRO-20261015-73",
   "mandatory": false,
-  "message": "Recorridos: exportación local de GIF animado capturando únicamente el mapa durante la reproducción.",
-  "updated_at": "2026-10-15T19:11:36.630Z"
+  "message": "Corrige captura del GIF para normalizar colores CSS incompatibles.",
+  "updated_at": "2026-10-15T19:16:17.760Z"
 }
