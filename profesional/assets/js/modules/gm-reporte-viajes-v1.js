@@ -123,10 +123,9 @@ async function loadScriptOnce(src,test){
 }
 let lastTripDownloadUrl=null;
 function sanitizeTripClone(doc){
-  doc.querySelectorAll('style,link[rel="stylesheet"]').forEach(n=>n.remove());
   doc.querySelectorAll('*').forEach(el=>{
    for(const prop of ['color','backgroundColor','borderColor','outlineColor','fill','stroke','boxShadow','textShadow']){
-    try{const v=getComputedStyle(el)[prop];if(v&&/\\bcolor\\(/i.test(v))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
+    try{const v=doc.defaultView.getComputedStyle(el)[prop];if(v&&/color\\(/i.test(v))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
    }
   });
 }
@@ -146,7 +145,7 @@ function showTripDownload(file,kind){
 async function exportTripMp4(){
  if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS.';return}
  const btn=$('gmTripsMp4');if(btn.disabled)return;
- btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando MP4…';
+ btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando video…';
  const oldIndex=playIndex,oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldProgress=$('gmTripsProgress')?.value,oldFollow=$('gmTripsFollow')?.checked;
  const totalFrames=60,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  try{
@@ -187,7 +186,7 @@ async function exportTripMp4(){
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
   const file=downloadTripFile(videoBlob,'recorrido-'+trip+'.webm');
   showTripDownload(file,'video WEBM');
- }catch(e){console.error('Exportación MP4:',e);$('gmTripsStatus').textContent='FALLÓ la descarga MP4: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
+ }catch(e){console.error('Exportación de video:',e);$('gmTripsStatus').textContent='FALLÓ la descarga de video: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
  finally{
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
   if($('gmTripsFollow')&&oldFollow!=null)$('gmTripsFollow').checked=oldFollow;
