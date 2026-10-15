@@ -481,21 +481,41 @@ async function showTrace(data,version){
   for(let i=1;i<gps.length;i++){
    let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
    // Conservar los saltos razonables para que OSRM pueda reconstruirlos por calles. Separar solo interrupciones largas o saltos GPS grandes.
-   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length>1)segments.push(current);current=[gps[i]]}
+   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
-  }if(current.length>1)segments.push(current);
+  }if(current.length)segments.push(current);
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
   // al seleccionar varios viajes, las solicitudes OSRM acumuladas dejaban el mapa sin pintar durante demasiado tiempo.
   const displaySegments=segments.map(seg=>({points:seg,matched:false}));
   const routeLayers=[];
   for(const item of displaySegments){
    const segment=item.points;
-   // Primero mostramos GPS al instante; luego sustituimos por geometría ajustada a calles reales.
+   if(segment.length===1){L.circleMarker(segment[0],{radius:4,color:'#075985',weight:2,fillColor:'#22d3ee',fillOpacity:1}).bindPopup('Posición GPS registrada: '+esc(segment[0].time||'Hora no disponible')).addTo(markers);routeLayers.push(null);continue;}
+   // Dibujar todos los tramos GPS guardados sin esperar a servicios externos.
    const halo=L.polyline(segment,{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
    const line=L.polyline(segment,{color:'#087f8c',weight:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
    routeLayers.push({halo,line});
    addDirectionArrows(segment);
   }
+  // Recuperar visualmente huecos razonables de telemetría mediante la red vial entre los GPS contiguos.
+  // No se dibujan puentes para saltos imposibles o excesivamente largos.
+  void (async()=>{
+   for(let i=1;i<gps.length;i++){
+    const a=gps[i-1],b=gps[i],dt=(Date.parse(b.time)-Date.parse(a.time))/1000,dist=distanceMeters(a,b),speed=dt>0?dist/dt*3.6:Infinity;
+    if(!(dt>300&&dist>=150&&dist<=15000&&speed>=2&&speed<=120))continue;
+    try{
+     const coords=a.lng+','+a.lat+';'+b.lng+','+b.lat;
+     const response=await fetch('https://router.project-osrm.org/route/v1/driving/'+coords+'?overview=full&geometries=geojson&steps=false');
+     if(!response.ok)continue;const result=await response.json();
+     if(version!==traceVersion||!markers)return;
+     const line=result.routes?.[0]?.geometry?.coordinates;
+     if(result.code!=='Ok'||!Array.isArray(line)||line.length<2)continue;
+     const road=line.map(p=>[p[1],p[0]]);
+     L.polyline(road,{color:'#ffffff',weight:9,opacity:.96,lineJoin:'round',lineCap:'round',dashArray:'7 5'}).bindPopup('Tramo estimado por calles entre dos registros GPS; hubo una interrupción de señal.').addTo(markers);
+     L.polyline(road,{color:'#087f8c',weight:6,opacity:.98,lineJoin:'round',lineCap:'round',dashArray:'7 5'}).bindPopup('Tramo estimado por calles entre dos registros GPS; no es una lectura GPS continua.').addTo(markers);
+    }catch(e){console.warn('No se pudo reconstruir un hueco GPS por calles:',e)}
+   }
+  })();
   // Ajustar cada tramo a la red vial en segundo plano, sin bloquear el mapa ni el resto del reporte.
   void (async()=>{
    for(let idx=0;idx<displaySegments.length;idx++){
@@ -533,7 +553,7 @@ async function showTrace(data,version){
   // La ubicación posterior se agrega exclusivamente al mapa, fuera del trayecto GPS del viaje.
   void addPostTripLocation(data,gps,version);
   // El reporte abre en el punto inicial del intervalo, no en la última ubicación actual.
-  map.invalidateSize({animate:false});map.setView(gps[0],13,{animate:false});setTimeout(()=>{if(map&&$('gmTripsMap'))map.invalidateSize({animate:false})},80);
+  map.invalidateSize({animate:false});const routeBounds=L.latLngBounds(gps.map(p=>[p.lat,p.lng]));if(routeBounds.isValid()){if(gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false});else map.setView(gps[0],13,{animate:false})}setTimeout(()=>{if(map&&$('gmTripsMap')){map.invalidateSize({animate:false});if(routeBounds.isValid()&&gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false)}},120);
   const km=segments.reduce((total,seg)=>total+seg.slice(1).reduce((sum,p,i)=>sum+distanceMeters(seg[i],p)/1000,0),0);
   const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
