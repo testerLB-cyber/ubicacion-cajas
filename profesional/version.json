@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-68",
+  "version": "PRO-20261015-69",
   "mandatory": false,
-  "message": "Recorridos: el último evento se integra al trazado normal y marca el fin del recorrido.",
-  "updated_at": "2026-10-15T18:44:36.479Z"
+  "message": "Reporte de recorridos: exportación de animación optimizada a 5× con menos fotogramas y resolución ligera.",
+  "updated_at": "2026-10-15T18:47:39.702Z"
 }
