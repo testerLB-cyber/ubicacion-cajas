@@ -1231,6 +1231,7 @@ function syncAirportMapFullscreenButton(){
 }
 function toggleAirportMap(){
   if(AIR_EXTERNAL&&!window.CC_MIRROR_PERMISSIONS?.mapa_unidades)return;
+  if(AIR_EXTERNAL&&AIR_MAP_OPEN&&window.CC_MIRROR_PERMISSIONS?.mapa_unidades&&!window.CC_MIRROR_PERMISSIONS?.aeropuerto&&!window.CC_MIRROR_PERMISSIONS?.cajas_renta)return;
   AIR_MAP_OPEN=!AIR_MAP_OPEN;
   const panel=$('airFleetMapPanel'),btn=$('airMapToggle');
   panel?.classList.toggle('on',AIR_MAP_OPEN);btn?.classList.toggle('on',AIR_MAP_OPEN);
@@ -1475,13 +1476,16 @@ function shell(){css();$('ccPantallaAeropuertoMount').innerHTML=`<div class="air
 window.ccOpenPantallaAeropuerto=btn=>{document.querySelectorAll('#controlCajasSection .cc-panel').forEach(x=>{x.classList.remove('active');x.style.removeProperty('display')});document.querySelectorAll('#controlCajasSection .cc-tab').forEach(x=>x.classList.remove('active'));$('ccPanelPantallaAeropuerto')?.classList.add('active');btn?.classList.add('active');clearTimeout(TIMER);stopAutoPaging();shell()};
 if(AIR_EXTERNAL){window.ccMirrorAirportStart=(configuration={})=>{
  const panel=$('ccPanelPantallaAeropuerto');if(panel)panel.classList.add('active');
- const permissions=configuration.permissions||{aeropuerto:true,cajas_renta:false,mapa_unidades:false};
+ let permissions=configuration.permissions||{aeropuerto:true,cajas_renta:false,mapa_unidades:false};
+ const mapOnly=!!permissions.mapa_unidades&&!permissions.aeropuerto&&!permissions.cajas_renta;
+ if(mapOnly)permissions={...permissions,reporte_viajes:true};
  window.CC_MIRROR_PERMISSIONS=permissions;
  AIR_GEO_VISIBLE=!!permissions.mapa_unidades;
  shell();
  for(const id of ['airManualPanel','airDemorasBtn','airHistoryBtn']){const el=$(id);if(el)el.style.display='none'}
  if($('airRentToggle'))$('airRentToggle').style.display=permissions.cajas_renta?'':'none';
- if($('airMapToggle'))$('airMapToggle').style.display=permissions.mapa_unidades?'':'none';
+ if($('airMapToggle'))$('airMapToggle').style.display=permissions.mapa_unidades&&!mapOnly?'':'none';
+ if(mapOnly){const closeMap=$('airFleetMapClose');if(closeMap)closeMap.style.display='none';}
  const reportBtn=$('gmTripReportButton');
   if(reportBtn){
    reportBtn.style.display=permissions.reporte_viajes?'inline-flex':'none';
