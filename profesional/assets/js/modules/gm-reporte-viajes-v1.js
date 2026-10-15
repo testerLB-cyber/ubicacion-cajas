@@ -123,11 +123,33 @@ async function loadScriptOnce(src,test){
 }
 let lastTripDownloadUrl=null;
 function sanitizeTripClone(doc){
+  // html2canvas no entiende la función CSS color() (por ejemplo color(srgb ...)).
+  // Normalizamos todos los estilos computados del clon, no solo una lista parcial
+  // de propiedades: el color problemático puede venir de estilos globales o SVG.
+  const win=doc.defaultView;
   doc.querySelectorAll('*').forEach(el=>{
-   for(const prop of ['color','backgroundColor','borderColor','outlineColor','fill','stroke','boxShadow','textShadow']){
-    try{const v=doc.defaultView.getComputedStyle(el)[prop];if(v&&v.includes('color('))el.style[prop]=prop==='color'?'#1f2937':(prop==='backgroundColor'?'#ffffff':'transparent')}catch(e){}
-   }
+    try{
+      const computed=win.getComputedStyle(el);
+      for(let i=0;i<computed.length;i++){
+        const prop=computed[i],value=computed.getPropertyValue(prop);
+        if(!value||!/\\bcolor\\s*\\(/i.test(value))continue;
+        let fallback='transparent';
+        if(prop==='color'||prop.endsWith('-color')||prop==='fill'||prop==='stroke')fallback=prop==='color'?'#1f2937':'transparent';
+        else if(prop.includes('shadow'))fallback='none';
+        else if(prop.includes('background'))fallback='transparent';
+        el.style.setProperty(prop,fallback,'important');
+      }
+      // También sanea estilos escritos directamente en el atributo style.
+      const inline=el.getAttribute('style');
+      if(inline&&/\\bcolor\\s*\\(/i.test(inline)){
+        el.setAttribute('style',inline.replace(/color\\s*\\([^)]*\\)/gi,'rgb(31, 41, 55)'));
+      }
+    }catch(e){}
   });
+  // Pseudo-elementos no se pueden corregir desde JS y también pueden contener color().
+  const style=doc.createElement('style');
+  style.textContent='*::before,*::after{color:#1f2937!important;text-shadow:none!important;box-shadow:none!important}';
+  (doc.head||doc.documentElement).appendChild(style);
 }
 function downloadTripFile(blob,filename){
  if(!(blob instanceof Blob)||!blob.size)throw Error('El archivo generado está vacío.');
