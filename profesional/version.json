@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-67",
+  "version": "PRO-20261015-68",
   "mandatory": false,
-  "message": "Recorridos: prolongar en línea recta hasta el punto GPS posterior y marcar F al final.",
-  "updated_at": "2026-10-15T11:35:00-07:00"
+  "message": "Recorridos: el último evento se integra al trazado normal y marca el fin del recorrido.",
+  "updated_at": "2026-10-15T18:44:36.479Z"
 }
