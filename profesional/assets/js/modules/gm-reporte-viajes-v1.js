@@ -17,7 +17,7 @@ function open(){
  '<header id="gmTripsModalHeader" style="flex-shrink:0;z-index:900;background:#fff;padding:5px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e2e8f0"><div><h2 style="font-size:20px;font-weight:800;margin:0">Reporte de viajes</h2><p style="margin:4px 0 0;color:#64748b;font-size:12px">Viajes registrados, eventos y posiciones GPS verificadas</p></div><button id="gmTripsClose" type="button" aria-label="Cerrar reporte de viajes" style="display:inline-flex;align-items:center;gap:7px;border:0;border-radius:10px;background:#dc2626;color:white;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer;flex-shrink:0">✕ Cerrar</button></header>'+
  '<div id="gmTripsTripFilters" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:15px 0"><label>Desde <input id="gmTripsFrom" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Hasta <input id="gmTripsTo" type="date" style="display:block;padding:8px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Cliente <select id="gmTripsClient" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px;max-width:260px"><option value="">Todos los clientes</option></select></label><button id="gmTripsSearch" type="button" class="airFullBtn" style="background:#0f766e;color:#fff">Consultar viajes</button></div>'+
  '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px"><label style="display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;font-weight:700"><input id="gmTripsShowTransit" type="checkbox" style="accent-color:#0f766e"> Mostrar viajes en tránsito</label><label id="gmTripsFindWrap">Buscar número de viaje <input id="gmTripsFind" type="search" placeholder="Ej. 80564" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:180px"></label><label>Consultar por <select id="gmTripsMode" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"><option value="VIAJES">Viajes</option><option value="HORAS">Unidad y horario</option></select></label><div id="gmTripsHours" style="display:none;gap:7px;flex-wrap:wrap;align-items:end;width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><label>Unidad <input id="gmTripsUnit" placeholder="Ej. LB14" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:110px"></label><label>Desde <input type="datetime-local" id="gmTripsHourFrom" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Hasta <input type="datetime-local" id="gmTripsHourTo" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></label><button id="gmTripsHoursGo" type="button" class="airFullBtn">Ver recorrido por horas</button></div></div>'+ '<p id="gmTripsStatus" style="font-size:12px;color:#475569"></p><div style="display:grid;grid-template-columns:minmax(230px,0.82fr) minmax(360px,1.2fr) minmax(360px,1.15fr);gap:10px;flex:1;min-height:0;overflow:hidden" id="gmTripsLayout"><div id="gmTripsResults" style="overflow:auto;min-height:0;border:1px solid #e2e8f0;border-radius:10px"></div><div id="gmTripsMap" style="height:100%;min-height:0;border-radius:10px;background:#e2e8f0"></div><div id="gmTripsEvents" style="overflow:hidden;min-height:0;border:1px solid #e2e8f0;border-radius:10px;padding:8px;font-size:12px;color:#475569">Selecciona un viaje para ver su cronología completa.</div></div>'+
- '<div id="gmTripsPlayback" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;flex-shrink:0"><button type="button" id="gmTripsPlay" style="border:0;border-radius:8px;background:#0f766e;color:white;padding:9px 15px;font-weight:700;cursor:pointer">▶ Reproducir</button><button type="button" id="gmTripsPause" class="airFullBtn">⏸ Pausar</button><button type="button" id="gmTripsReset" class="airFullBtn">↺ Reiniciar</button><label style="font-size:12px">Velocidad <select id="gmTripsSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option></select></label><label style="font-size:12px;display:inline-flex;align-items:center;gap:5px"><input id="gmTripsFollow" type="checkbox" checked> Seguir unidad</label><button type="button" id="gmTripsMp4" class="airFullBtn">🎬 Descargar animación MP4</button><input type="range" id="gmTripsProgress" value="0" min="0" max="100" style="flex:1;min-width:120px" aria-label="Posición del recorrido"><span id="gmTripsTime" style="font-size:11px;color:#475569"></span></div>'+ '<footer style="flex-shrink:0;border-top:1px solid #e2e8f0;padding:7px 0 0;margin-top:7px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>#gmTripsTripFilters{flex-shrink:0;margin:8px 0!important}#gmTripsLayout{flex:1;min-height:0}#gmTripsMap{height:100%!important}@media(max-width:1000px){#gmTripsLayout{grid-template-columns:minmax(180px,.7fr) minmax(280px,1fr)!important}#gmTripsEvents{grid-column:1/-1;max-height:220px}#gmTripsMap{min-height:360px!important}}@media(max-width:650px){#gmTripsLayout{grid-template-columns:1fr!important;overflow:auto!important}#gmTripsResults{max-height:180px}#gmTripsMap{height:300px!important;min-height:300px!important}#gmTripsEvents{max-height:300px}}</style></section>';
+ '<div id="gmTripsPlayback" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;flex-shrink:0"><button type="button" id="gmTripsPlay" style="border:0;border-radius:8px;background:#0f766e;color:white;padding:9px 15px;font-weight:700;cursor:pointer">▶ Reproducir</button><button type="button" id="gmTripsPause" class="airFullBtn">⏸ Pausar</button><button type="button" id="gmTripsReset" class="airFullBtn">↺ Reiniciar</button><label style="font-size:12px">Velocidad <select id="gmTripsSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option></select></label><label style="font-size:12px;display:inline-flex;align-items:center;gap:5px"><input id="gmTripsFollow" type="checkbox" checked> Seguir unidad</label><button type="button" id="gmTripsMp4" class="airFullBtn">🎞 Descargar animación GIF</button><input type="range" id="gmTripsProgress" value="0" min="0" max="100" style="flex:1;min-width:120px" aria-label="Posición del recorrido"><span id="gmTripsTime" style="font-size:11px;color:#475569"></span></div>'+ '<footer style="flex-shrink:0;border-top:1px solid #e2e8f0;padding:7px 0 0;margin-top:7px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>#gmTripsTripFilters{flex-shrink:0;margin:8px 0!important}#gmTripsLayout{flex:1;min-height:0}#gmTripsMap{height:100%!important}@media(max-width:1000px){#gmTripsLayout{grid-template-columns:minmax(180px,.7fr) minmax(280px,1fr)!important}#gmTripsEvents{grid-column:1/-1;max-height:220px}#gmTripsMap{min-height:360px!important}}@media(max-width:650px){#gmTripsLayout{grid-template-columns:1fr!important;overflow:auto!important}#gmTripsResults{max-height:180px}#gmTripsMap{height:300px!important;min-height:300px!important}#gmTripsEvents{max-height:300px}}</style></section>';
  document.body.appendChild(m);
  const closeReport=()=>{stopPlayback();traceVersion++;if(map){map.remove();map=null}markers=null;m.remove()};$('gmTripsClose').onclick=closeReport;$('gmTripsCloseBottom').onclick=closeReport;m.addEventListener('click',e=>{if(e.target===m)closeReport()});
  $('gmTripsSearch').onclick=search;$('gmTripsFind').oninput=renderTrips;$('gmTripsShowTransit').onchange=renderTrips;$('gmTripsMode').onchange=syncMode;$('gmTripsClient').onchange=renderTrips;$('gmTripsHoursGo').onclick=traceHours;$('gmTripsPlay').onclick=startPlayback;$('gmTripsPause').onclick=stopPlayback;$('gmTripsReset').onclick=()=>{stopPlayback();seekPlayback(0)};$('gmTripsMp4').onclick=exportTripMp4;$('gmTripsProgress').oninput=e=>{stopPlayback();seekPlayback(Number(e.target.value)/100)};
@@ -166,60 +166,106 @@ function showTripDownload(file,kind){
  const status=$('gmTripsStatus');
  status.innerHTML='<b style="color:#166534">Archivo listo ('+Math.ceil(file.size/1024)+' KB).</b> <a href="'+file.url+'" download="'+esc(file.name)+'" style="display:inline-block;margin:6px 0;padding:10px 14px;border-radius:9px;background:#0f766e;color:#fff;font-weight:800;text-decoration:none">⬇ Descargar '+esc(kind)+'</a><div style="font-size:11px;color:#475569">Pulsa el botón verde para guardar el archivo en tu equipo.</div>';
 }
+function tripGifPalette(){
+ const p=new Uint8Array(768);
+ for(let i=0;i<256;i++){p[i*3]=Math.round(((i>>5)&7)*255/7);p[i*3+1]=Math.round(((i>>2)&7)*255/7);p[i*3+2]=Math.round((i&3)*255/3)}
+ return p;
+}
+function tripGifLzw(indices){
+ const CLEAR=256,END=257;let codeSize=9,nextCode=258,dict=new Map(),bits=0,bitCount=0,out=[];
+ const emit=code=>{bits|=code<<bitCount;bitCount+=codeSize;while(bitCount>=8){out.push(bits&255);bits>>>=8;bitCount-=8}};
+ emit(CLEAR);
+ if(indices.length){
+  let prefix=indices[0];
+  for(let i=1;i<indices.length;i++){
+   const k=indices[i],key=prefix*256+k,found=dict.get(key);
+   if(found!==undefined){prefix=found;continue}
+   emit(prefix);
+   if(nextCode<4096){
+    dict.set(key,nextCode++);
+    if(nextCode>(1<<codeSize)&&codeSize<12)codeSize++;
+   }else{emit(CLEAR);dict=new Map();codeSize=9;nextCode=258}
+   prefix=k;
+  }
+  emit(prefix);
+ }
+ emit(END);if(bitCount)out.push(bits&255);
+ const blocks=[];for(let i=0;i<out.length;i+=255){const n=Math.min(255,out.length-i);blocks.push(n,...out.slice(i,i+n))}
+ blocks.push(0);return blocks;
+}
+function tripGifEncode(width,height,frames,delayCs){
+ const bytes=[],push=(...v)=>bytes.push(...v),word=v=>push(v&255,(v>>8)&255);
+ push(71,73,70,56,57,97);word(width);word(height);push(0xF7,0,0);
+ push(...tripGifPalette());
+ for(const frame of frames){
+  push(0x21,0xF9,4,0x04);word(delayCs);push(0,0);
+  push(0x2C);word(0);word(0);word(width);word(height);push(0);
+  push(8);push(...tripGifLzw(frame));
+ }
+ push(0x3B);return new Uint8Array(bytes);
+}
+function tripGifFrame(canvas,width,height){
+ const c=document.createElement('canvas');c.width=width;c.height=height;
+ const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(canvas,0,0,width,height);
+ const rgba=ctx.getImageData(0,0,width,height).data,indices=new Uint8Array(width*height);
+ for(let i=0,j=0;i<rgba.length;i+=4,j++){
+  const r=rgba[i],g=rgba[i+1],b=rgba[i+2];
+  indices[j]=(r>>5)<<5|(g>>5)<<2|(b>>6);
+ }
+ return indices;
+}
 async function exportTripMp4(){
  if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS.';return}
  const btn=$('gmTripsMp4');if(btn.disabled)return;
- if(!navigator.mediaDevices?.getDisplayMedia){$('gmTripsStatus').textContent='Tu navegador no permite grabar la pestaña. Usa Chrome actualizado.';return}
- btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando grabación…';
- const oldIndex=playIndex,oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldProgress=$('gmTripsProgress')?.value,oldFollow=$('gmTripsFollow')?.checked;
- let stream=null,recorder=null,wasPlaying=false;
+ btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando GIF…';
+ const oldIndex=playIndex,oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldFollow=$('gmTripsFollow')?.checked;
+ const frames=[];let captureCount=0;
  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  try{
-  $('gmTripsStatus').textContent='Selecciona esta pestaña de Chrome en la ventana de compartir pantalla.';
-  // Captura directamente la pestaña que el usuario ve: el mapa, la unidad,
-  // los marcadores, las calles y la animación real, sin reconstruir fotogramas.
-  stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:30,max:30}},audio:false});
-  const videoTrack=stream.getVideoTracks()[0];
-  if(!videoTrack)throw Error('No se recibió la pestaña para grabar.');
-  const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
-  if(!mimeType)throw Error('Chrome no ofrece un formato de video compatible.');
-  const chunks=[];
-  recorder=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:4500000});
-  recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-  const stopped=new Promise((resolve,reject)=>{recorder.onerror=e=>reject(e.error||Error('No se pudo finalizar el video.'));recorder.onstop=()=>resolve(new Blob(chunks,{type:recorder.mimeType||mimeType}))});
+  $('gmTripsStatus').textContent='Preparando la captura local del mapa…';
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
+  const target=$('gmTripsMap');if(!target)throw Error('No se encontró el área del mapa.');
+  const rect=target.getBoundingClientRect();
+  const scale=Math.min(1,480/Math.max(1,rect.width),360/Math.max(1,rect.height));
+  const width=Math.max(1,Math.round(rect.width*scale)),height=Math.max(1,Math.round(rect.height*scale));
+  const speed=Math.max(1,Number($('gmTripsSpeed')?.value||5));
+  const estimatedMs=Math.max(180,Math.ceil((playPath.length-1)/speed)*180);
+  const frameInterval=Math.max(180,Math.ceil(estimatedMs/220));
   if($('gmTripsFollow'))$('gmTripsFollow').checked=true;
-  seekPlayback(0);
-  await wait(350);
-  recorder.start(250);
-  await wait(250);
-  $('gmTripsStatus').textContent='Grabando exactamente lo que ves al reproducir el viaje…';
-  btn.textContent='Grabando reproducción…';
-  startPlayback();wasPlaying=true;
+  seekPlayback(0);await wait(250);
+  $('gmTripsStatus').textContent='Reproduciendo y generando GIF del mapa en este navegador…';
+  btn.textContent='Generando GIF…';
+  startPlayback();
   while(map&&playIndex<playPath.length-1&&playTimer){
-   if(videoTrack.readyState==='ended')break;
-   await wait(100);
+   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false});
+   if(!canvas.width||!canvas.height)throw Error('No se pudo capturar el mapa.');
+   if(frames.length<230)frames.push(tripGifFrame(canvas,width,height));
+   captureCount++;
+   if(frames.length%10===0){$('gmTripsStatus').textContent='Generando GIF local… '+frames.length+' fotogramas';}
+   if(frames.length>=230)break;
+   await wait(frameInterval);
   }
   stopPlayback();
-  $('gmTripsStatus').textContent='Guardando video…';
-  await wait(250);
-  if(recorder.state!=='inactive')recorder.stop();
-  const blob=await stopped;
-  if(!blob.size)throw Error('El video quedó vacío. Vuelve a intentarlo y selecciona la pestaña actual.');
+  if(!frames.length){
+   const canvas=await window.html2canvas(target,{backgroundColor:'#e2e8f0',scale:scale,useCORS:true,allowTaint:false,logging:false});
+   frames.push(tripGifFrame(canvas,width,height));
+  }
+  $('gmTripsStatus').textContent='Comprimiendo '+frames.length+' fotogramas del mapa en un GIF…';
+  const delayCs=Math.max(2,Math.round(frameInterval/10));
+  const bytes=tripGifEncode(width,height,frames,delayCs);
+  const blob=new Blob([bytes],{type:'image/gif'});
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
-  const file=downloadTripFile(blob,'recorrido-'+trip+'.webm');
-  showTripDownload(file,'video de la reproducción WEBM');
+  const file=downloadTripFile(blob,'recorrido-'+trip+'.gif');
+  showTripDownload(file,'GIF del mapa');
+  $('gmTripsStatus').innerHTML='<b style="color:#166534">GIF del mapa listo.</b> '+frames.length+' fotogramas · '+width+' × '+height+' px. <a href="'+file.url+'" download="'+esc(file.name)+'" style="display:inline-block;margin:6px 0;padding:10px 14px;border-radius:9px;background:#0f766e;color:#fff;font-weight:800;text-decoration:none">⬇ Descargar GIF</a><div style="font-size:11px;color:#475569">Generado localmente; contiene solamente el área del mapa.</div>';
  }catch(e){
-  console.error('Grabación de la reproducción:',e);
-  if(e?.name==='NotAllowedError')$('gmTripsStatus').textContent='Grabación cancelada. Para descargar el recorrido, vuelve a pulsar el botón y permite compartir la pestaña actual de Chrome.';
-  else $('gmTripsStatus').textContent='No se pudo grabar la reproducción: '+(e?.message||String(e));
+  console.error('Generación local de GIF:',e);
+  $('gmTripsStatus').textContent='No se pudo generar el GIF: '+(e?.message||String(e))+'. El reporte sigue disponible; intenta nuevamente.';
  }finally{
   stopPlayback();
-  if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}
-  if(stream)stream.getTracks().forEach(t=>t.stop());
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
   if($('gmTripsFollow')&&oldFollow!=null)$('gmTripsFollow').checked=oldFollow;
   if(oldIndex>=0)seekPlayback(oldIndex/Math.max(1,playPath.length-1));
-  if($('gmTripsProgress')&&oldProgress!=null)$('gmTripsProgress').value=oldProgress;
   btn.disabled=false;btn.textContent=oldLabel;
  }
 }
