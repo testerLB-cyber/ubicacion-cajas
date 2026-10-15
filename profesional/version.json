@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-63",
+  "version": "PRO-20261015-64",
   "mandatory": false,
-  "message": "Historial de recorridos GPS: consulta por unidad con y sin viaje, geocercas y animación.",
-  "updated_at": "2026-10-15T09:00:00-07:00"
+  "message": "Historial de viajes: cierre unificado con Aeropuerto y mapa, recorrido GPS y geocercas hasta el cierre.",
+  "updated_at": "2026-10-15T10:15:00-07:00"
 }
