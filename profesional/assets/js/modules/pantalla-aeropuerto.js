@@ -1405,7 +1405,52 @@ function render(opts={}){
 let AIR_DOT_ALERT_SEEN=new Set(),AIR_DOT_ALERT_BUSY=false;
 function ensureDotAlertStyle(){if(document.getElementById('airDotAlertStyle'))return;const st=document.createElement('style');st.id='airDotAlertStyle';st.textContent='#airDotEntryAlert{position:fixed;inset:0;z-index:2147483600;background:rgba(8,18,38,.95);display:none;align-items:center;justify-content:center;padding:24px;color:#fff;font-family:Arial,Helvetica,sans-serif}#airDotEntryAlert .airDotCard{width:min(900px,94vw);border:4px solid #facc15;border-radius:28px;background:linear-gradient(145deg,#10264a,#172554);box-shadow:0 0 0 8px #facc1530,0 30px 100px #0009;text-align:center;padding:clamp(24px,5vw,60px)}#airDotEntryAlert .airDotIcon{font-size:clamp(54px,9vw,100px);margin-bottom:22px}#airDotEntryAlert .airDotTitle{font-size:clamp(28px,5vw,58px);font-weight:1000;color:#fde047;text-transform:uppercase}#airDotEntryAlert .airDotUnit{font-size:clamp(34px,7vw,82px);font-weight:1000;margin:22px 0;overflow-wrap:anywhere}#airDotEntryAlert .airDotMeta{font-size:clamp(16px,2vw,24px);color:#dbeafe;line-height:1.5}#airDotEntryAlert button{margin-top:30px;border:0;border-radius:14px;padding:16px 34px;font-size:20px;font-weight:900;background:#facc15;color:#172033;cursor:pointer}';document.head.appendChild(st);}
 function showDotEntryAlert(ev){ensureDotAlertStyle();let el=document.getElementById('airDotEntryAlert');if(!el){el=document.createElement('div');el.id='airDotEntryAlert';el.setAttribute('role','alertdialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);}const unit=String(ev.unidad||'Unidad desconocida'),stamp=ev.gps_at||ev.fecha_hora||ev.recorded_at;let time='Hora no disponible';if(stamp){const d=new Date(stamp);if(!Number.isNaN(d.getTime()))time=d.toLocaleString('es-MX',{timeZone:tz,dateStyle:'medium',timeStyle:'short'});}el.innerHTML='<div class="airDotCard"><div class="airDotIcon">⚠️</div><div class="airDotTitle">¡Entrada a geocerca!</div><div class="airDotUnit">'+esc(unit)+'</div><div class="airDotMeta">La unidad entró a la geocerca <b>DOT USA</b><br>'+esc(time)+'</div><button type="button" id="airDotAlertOk">ENTENDIDO</button></div>';el.style.display='flex';el.querySelector('#airDotAlertOk').onclick=()=>{el.style.display='none';};}
-async function checkDotEntryAlerts(){if(AIR_DOT_ALERT_BUSY||!sb()||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;AIR_DOT_ALERT_BUSY=true;try{const since=new Date(Date.now()-3*60*1000).toISOString();const {data,error}=await sb().from('gm_geofence_event_history').select('id,event_hash,unidad,geocerca,evento,fecha_hora,gps_at,recorded_at').ilike('geocerca','%DOT USA%').gte('recorded_at',since).order('recorded_at',{ascending:true}).limit(100);if(error)throw error;for(const ev of (Array.isArray(data)?data:[])){const event=String(ev.evento||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();if(!/(ENTRADA|ENTRO|ENTER|ARRIVAL|INGRESO)/.test(event))continue;const key=String(ev.event_hash||ev.id||[ev.unidad,ev.geocerca,ev.evento,ev.fecha_hora].join('|'));if(AIR_DOT_ALERT_SEEN.has(key))continue;AIR_DOT_ALERT_SEEN.add(key);showDotEntryAlert(ev);}if(AIR_DOT_ALERT_SEEN.size>500)AIR_DOT_ALERT_SEEN=new Set([...AIR_DOT_ALERT_SEEN].slice(-250));}catch(e){console.warn('Alerta de entrada DOT USA:',e)}finally{AIR_DOT_ALERT_BUSY=false}}
+function airPointInPolygon(lat,lng,ring){
+ if(!Array.isArray(ring)||ring.length<3)return false;
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const yi=Number(ring[i][0]),xi=Number(ring[i][1]),yj=Number(ring[j][0]),xj=Number(ring[j][1]);
+  if(!Number.isFinite(xi+yi+xj+yj))continue;
+  const cross=((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi||1e-15)+xi);
+  if(cross)inside=!inside;
+ }
+ return inside;
+}
+let AIR_DOT_GEOFENCE=null,AIR_DOT_GEO_LOADED=0,AIR_DOT_LAST_INSIDE=new Map();
+async function checkDotEntryAlerts(){
+ if(AIR_DOT_ALERT_BUSY||!sb()||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;
+ AIR_DOT_ALERT_BUSY=true;
+ try{
+  if(!AIR_DOT_GEOFENCE||Date.now()-AIR_DOT_GEO_LOADED>5*60*1000){
+   const {data,error}=await sb().from('cc_configuracion').select('valor').eq('clave','general').maybeSingle();
+   if(error)throw error;
+   let cfg=data?.valor||{};if(typeof cfg==='string'){try{cfg=JSON.parse(cfg)}catch(_){cfg={}}}
+   const geos=Array.isArray(cfg.geocercas)?cfg.geocercas:[];
+   AIR_DOT_GEOFENCE=geos.find(g=>g?.activa!==false&&String(g?.nombre||'').trim().toUpperCase()==='DOT USA')||null;
+   AIR_DOT_GEO_LOADED=Date.now();
+  }
+  const geo=AIR_DOT_GEOFENCE;
+  if(!geo){console.warn('No se encontró la geocerca activa DOT USA en Configuración > Geocercas.');return;}
+  let raw=geo.coordenadas;
+  // El catálogo almacena anillos como [latitud,longitud]; algunos polígonos vienen anidados por nivel.
+  while(Array.isArray(raw)&&raw.length&&Array.isArray(raw[0])&&Array.isArray(raw[0][0]))raw=raw[0];
+  if(!Array.isArray(raw)||raw.length<3)return;
+  for(const v of (Array.isArray(LAST)?LAST:[])){
+   const unit=String(v.unidad||'').trim(),lat=Number(v.latitud),lng=Number(v.longitud);
+   if(!unit||!Number.isFinite(lat)||!Number.isFinite(lng))continue;
+   const inside=airPointInPolygon(lat,lng,raw),key=unit.toUpperCase(),prior=AIR_DOT_LAST_INSIDE.get(key);
+   AIR_DOT_LAST_INSIDE.set(key,inside);
+   // La primera lectura establece referencia; alertar solo al cruzar de fuera hacia dentro.
+   if(prior===false&&inside){
+    const stamp=v.gpsAt||v.gps_at||v.fechaHora||new Date().toISOString();
+    const ev={unidad:unit,gps_at:stamp,recorded_at:new Date().toISOString()};
+    const alertKey=key+'|'+geo.id+'|'+String(stamp);
+    if(!AIR_DOT_ALERT_SEEN.has(alertKey)){AIR_DOT_ALERT_SEEN.add(alertKey);showDotEntryAlert(ev);}
+   }
+  }
+  if(AIR_DOT_LAST_INSIDE.size>1000)AIR_DOT_LAST_INSIDE=new Map([...AIR_DOT_LAST_INSIDE].slice(-500));
+ }catch(e){console.warn('Alerta GPS de entrada DOT USA:',e)}finally{AIR_DOT_ALERT_BUSY=false}
+}
 async function load(){if(LOADING||document.hidden||!$('ccPanelPantallaAeropuerto')?.classList.contains('active'))return;LOADING=true;try{if(AIR_EXTERNAL){const r=await sb().functions.invoke('cc-mirror-airport',{body:{}});if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw Error(data.error||'Cuenta sin autorización');AIR_EXTERNAL_CLIENT=data.cliente;AIR_CLIENTS=[{id:data.cliente_id,nombre:data.cliente}];if(!data.permissions?.aeropuerto){LAST=[];AIR_GPS_VEHICLES=[];AIR_TRIP_CLOCKS=new Map();updateClientFilter();render();$('airUpdated').textContent='Vista de unidades no autorizada';schedule();return}AIR_GPS_VEHICLES=Array.isArray(data.vehicles)?data.vehicles:[];LAST=AIR_GPS_VEHICLES.map(x=>({...x,airManual:x.asignacion==='MANUAL',estatusViaje:x.asignacion==='MANUAL'?'Cuenta espejo':(x.estatusViaje||'En servicio')}));AIR_TRIP_CLOCKS=new Map((Array.isArray(data.tripClocks)?data.tripClocks:[]).map(v=>[String(v.unidad||'')+'|'+String(v.identificadorViaje||v.numeroViaje||''),v]));updateClientFilter();render();void checkDotEntryAlerts();$('airUpdated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{timeZone:tz})+' · Modo consulta';schedule();return}$('airUpdated').textContent='Actualizando…';const r=await sb().functions.invoke('gm-flota');if(r.error)throw r.error;const data=r.data||{};if(!data.ok)throw new Error(data.error||'No se pudo leer Software GM');await airReadManual();if(!AIR_CLIENTS.length)await airReadClients();const vehicles=Array.isArray(data.vehicles)?data.vehicles:[];AIR_GPS_VEHICLES=vehicles;
  if(airIsSuperAdmin()){
   const detected=AIR_MANUAL.filter(a=>a.estado==='ACTIVA'&&a.modo==='HASTA_VIAJE'&&Date.parse(a.inicio)<=Date.now()&&vehicles.some(v=>airUnitKey(v.unidad)===airUnitKey(a.unidad)&&String(v.numeroViaje||'').trim()&&airClientKey(v.cliente)===airClientKey(a.cliente_nombre)));
