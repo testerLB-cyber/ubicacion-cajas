@@ -431,6 +431,23 @@ async function trace(id){
 }
 function parseGMDate(v){if(!v)return null;const s=String(v).trim();const d=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(s)?new Date(s+'Z'):new Date(s);return Number.isNaN(d.getTime())?null:d}
 function fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);return !d?String(v):d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}
+function renderGeofencesPanel(data,gps,events){
+  const trip=selectedTrip||{};
+  const start=data.salida_viaje||trip.salida||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
+  const end=data.fin_viaje||trip.ended_at||(gps.length?gps[gps.length-1].time:null);
+  const startDate=start?parseGMDate(start):null,endDate=end?parseGMDate(end):null;
+  const within=e=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
+  const ordered=(events||[]).filter(within).slice().sort((a,b)=>(parseGMDate(a.fecha||a.gpsAt||a.time)?.getTime()||0)-(parseGMDate(b.fecha||b.gpsAt||b.time)?.getTime()||0));
+  const tripName=trip.numero_viaje||trip.identificador_viaje||data.numero_viaje||data.identificador_viaje||'Viaje seleccionado';
+  const range=startDate&&endDate?fmtChrono(start)+' — '+fmtChrono(end):'Intervalo registrado del recorrido';
+  const cards=ordered.map((e,i)=>{
+   const name=e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada';
+   const event=e.evento||e.tipo_evento||e.tipo||'Registro de historial';
+   const time=e.fecha||e.gpsAt||e.time;
+   return '<article style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:start;padding:11px;border:1px solid #e2e8f0;border-radius:11px;background:#fff;box-shadow:0 1px 2px #0f172a08;margin-top:8px"><div style="width:36px;height:36px;border-radius:10px;background:#e6f4f1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900">'+(i+1)+'</div><div style="min-width:0"><div style="font-size:12px;font-weight:800;color:#0f172a;overflow-wrap:anywhere">'+esc(name)+'</div><div style="margin-top:4px;font-size:11px;color:#0f766e;font-weight:700">'+esc(event)+'</div><div style="margin-top:5px;font-size:10px;color:#64748b">'+esc(fmtChrono(time))+'</div></div></article>';
+  }).join('');
+  return '<section style="height:100%;min-height:0;display:flex;flex-direction:column;background:#f8fafc;border-radius:8px;padding:10px"><header style="padding:12px;border-radius:12px;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;box-shadow:0 4px 12px #0f766e20"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800;opacity:.85">Historial del recorrido</div><div style="font-size:14px;font-weight:800;margin-top:4px">'+esc(tripName)+'</div><div style="display:flex;align-items:baseline;gap:7px;margin-top:10px"><strong style="font-size:34px;line-height:1">'+ordered.length+'</strong><span style="font-size:12px;font-weight:700">geocercas registradas</span></div><div style="font-size:10px;line-height:1.5;opacity:.9;margin-top:8px">'+esc(range)+'</div></header><div style="font-size:11px;color:#64748b;margin:12px 2px 4px">Registros guardados en el historial durante el intervalo del viaje, independientemente de que GM los muestre.</div><div style="overflow:auto;min-height:0;flex:1;padding:0 2px 8px">'+(ordered.length?cards:'<div style="margin-top:10px;padding:18px 12px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;background:#fff"><div style="font-size:22px;color:#94a3b8">◎</div><div style="font-size:12px;font-weight:800;color:#334155;margin-top:6px">Sin geocercas en este intervalo</div><div style="font-size:11px;color:#64748b;margin-top:4px">No se encontraron registros de historial dentro del lapso del viaje.</div></div>')+'</div></section>';
+}
 function buildChronology(data,gps,events,statusRows){
  const trip=selectedTrip||{};
  const originIsFreig=String(trip.origen||data.origen||'').toUpperCase().includes('FREIG CARRILLO');
@@ -453,7 +470,7 @@ function buildChronology(data,gps,events,statusRows){
 async function showTrace(data,version){
  try{
  const allGps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time));const gps=allGps,events=(data.geocercas||[]),statusRows=(data.estatus_unidad||[]);
- const geosHtml=(events.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Geocercas registradas por GM ('+events.length+'):</b>'+events.map(e=>'<div style="padding:5px 0;border-bottom:1px solid #f1f5f9">'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">No hay eventos de geocercas registrados para este intervalo.</div>')+(statusRows.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Historial de estatus de la unidad ('+statusRows.length+'):</b>'+statusRows.slice(-80).reverse().map(e=>'<div style="display:grid;grid-template-columns:150px minmax(90px,1fr) minmax(90px,1fr);gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9"><span>'+esc(String(e.fecha||e.gpsAt||'').slice(0,19).replace('T',' '))+'</span><span>'+esc(e.estatusGps||'Sin estatus GPS')+(e.estatusViaje?' · '+esc(e.estatusViaje):'')+'</span><span>'+esc(e.evento||'Sin evento')+'</span></div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">Aún no hay lecturas de estatus guardadas para este intervalo.</div>');
+  const geosHtml=renderGeofencesPanel(data,gps,events);
  await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
  if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19,crossOrigin:'anonymous'}).addTo(map)}
  if(window.CC_MIRROR_EXTERNAL&&!map._ccMirrorFullscreenControl){
@@ -564,7 +581,7 @@ async function showTrace(data,version){
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div><div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml+buildChronology(data,gps,events,statusRows);
+  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div><div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml;
   updateRouteCoverage();
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
@@ -572,7 +589,7 @@ async function showTrace(data,version){
  const start=data.inicio_viaje?new Date(data.inicio_viaje):null;
  const hh=d=>d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:true});
  const before=last&&start&&last<start;
- $('gmTripsEvents').innerHTML='<b>Cronología del viaje</b><div style="margin-top:8px">El reporte todavía no tiene posiciones GPS suficientes para dibujar el recorrido. '+(last?'Último GPS conocido: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+').':'Se necesitan nuevas coordenadas GPS para reconstruir el trayecto.')+'</div>'+buildChronology(data,gps,events,statusRows);
+ $('gmTripsEvents').innerHTML='<b>Cronología del viaje</b><div style="margin-top:8px">El reporte todavía no tiene posiciones GPS suficientes para dibujar el recorrido. '+(last?'Último GPS conocido: <b>'+esc(hh(last))+'</b>. ':'')+(before?'Esta lectura es anterior al inicio del viaje ('+esc(hh(start))+').':'Se necesitan nuevas coordenadas GPS para reconstruir el trayecto.')+'</div>'+renderGeofencesPanel(data,gps,events);
 }
  }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
