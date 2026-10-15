@@ -167,8 +167,8 @@ function fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);r
 function buildChronology(data,gps,events,statusRows){
  const trip=selectedTrip||{};
  const originIsFreig=String(trip.origen||data.origen||'').toUpperCase().includes('FREIG CARRILLO');
- const departure=(originIsFreig&&gps[0]?.time)||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
- const arrival=trip.ended_at||data.fin_viaje||(gps.length>1?gps[gps.length-1].time:null);
+ const departure=data.salida_viaje||trip.salida||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
+ const arrival=data.fin_viaje||trip.ended_at||(gps.length?gps[gps.length-1].time:null);
  const startDate=departure?parseGMDate(departure):null,endDate=arrival?parseGMDate(arrival):null;
  const within=(e)=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
  const ordered=(events||[]).filter(within).slice().sort((a,b)=>(parseGMDate(a.fecha)?.getTime()||0)-(parseGMDate(b.fecha)?.getTime()||0));
@@ -199,7 +199,7 @@ async function showTrace(data,version){
   }if(current.length>1)segments.push(current);
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
   // al seleccionar varios viajes, las solicitudes OSRM acumuladas dejaban el mapa sin pintar durante demasiado tiempo.
-  const displaySegments=segments.slice(0,30).map(seg=>({points:seg,matched:false}));
+  const displaySegments=segments.map(seg=>({points:seg,matched:false}));
   for(const item of displaySegments){
    const segment=item.points,isMatched=item.matched;
    L.polyline(segment,{color:isMatched?'#0f766e':'#64748b',weight:isMatched?5:3,opacity:isMatched?0.92:0.72,dashArray:isMatched?null:'5 7',lineJoin:'round',lineCap:'round'}).addTo(markers);
@@ -222,7 +222,7 @@ async function showTrace(data,version){
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
   '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+buildChronology(data,gps,events,statusRows);
+  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div>'+buildChronology(data,gps,events,statusRows);
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
  const last=data.ultimo_gps_unidad?new Date(data.ultimo_gps_unidad):null;
