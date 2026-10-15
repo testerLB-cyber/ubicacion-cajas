@@ -557,7 +557,7 @@ async function showTrace(data,version){
   // La ubicación posterior se agrega exclusivamente al mapa, fuera del trayecto GPS del viaje.
   void addPostTripLocation(data,gps,version);
   // El reporte abre en el punto inicial del intervalo, no en la última ubicación actual.
-  map.invalidateSize({animate:false});const routeBounds=L.latLngBounds(gps.map(p=>[p.lat,p.lng]));if(routeBounds.isValid()){if(gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false});else map.setView(gps[0],13,{animate:false})}setTimeout(()=>{if(map&&$('gmTripsMap')){map.invalidateSize({animate:false});if(routeBounds.isValid()&&gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false)}},120);
+  map.invalidateSize({animate:false});const routeBounds=L.latLngBounds(gps.map(p=>[p.lat,p.lng]));if(routeBounds.isValid()){if(gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false});else map.setView(gps[0],13,{animate:false})}setTimeout(()=>{if(map&&$('gmTripsMap')){map.invalidateSize({animate:false});if(routeBounds.isValid()&&gps.length>1)map.fitBounds(routeBounds,{padding:[28,28],maxZoom:13,animate:false})}},120);
   const km=segments.reduce((total,seg)=>total+seg.slice(1).reduce((sum,p,i)=>sum+distanceMeters(seg[i],p)/1000,0),0);
   const startTime=gps[0]?.time?new Date(gps[0].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
