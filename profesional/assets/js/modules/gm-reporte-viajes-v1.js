@@ -153,7 +153,7 @@ async function exportTripMp4(){
   $('gmTripsStatus').textContent='Codificando MP4… 70%';
   await ffmpeg.run('-framerate','10','-i','frame-%03d.jpg','-c:v','libx264','-pix_fmt','yuv420p','-vf','scale=960:540:flags=lanczos','-movflags','+faststart','recorrido.mp4');
   const output=ffmpeg.FS('readFile','recorrido.mp4');
-  const url=URL.createObjectURL(new Blob([output.buffer],{type:'video/mp4'}));
+  const url=URL.createObjectURL(new Blob([output],{type:'video/mp4'}));
   const a=document.createElement('a');a.href=url;a.download='recorrido-'+String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||'unidad').replace(/[^a-z0-9_-]/gi,'_')+'.mp4';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   for(let i=0;i<totalFrames;i++){try{ffmpeg.FS('unlink','frame-'+String(i).padStart(3,'0')+'.jpg')}catch(e){}}
   try{ffmpeg.FS('unlink','recorrido.mp4')}catch(e){}
@@ -166,16 +166,38 @@ async function exportTripMp4(){
   btn.disabled=false;btn.textContent=oldLabel;
  }
 }
-function exportTripPdf(){
- if(!map||!playPath.length){$('gmTripsStatus').textContent='Selecciona un viaje con posiciones GPS antes de exportar.';return}
- const bounds=L.latLngBounds(playPath);
- if(!bounds.isValid())return;
- const oldCenter=map.getCenter(),oldZoom=map.getZoom();
- const style=document.createElement('style');style.id='gmTripsPrintStyle';style.textContent='@media print{@page{size:landscape;margin:10mm}body *{visibility:hidden!important}#gmTripReportModal,#gmTripReportModal *{visibility:visible!important}#gmTripReportModal{position:absolute!important;inset:0!important;display:block!important;padding:0!important;background:#fff!important;z-index:999999!important}#gmTripsModalPanel{width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;border-radius:0!important;padding:0!important}#gmTripsModalHeader{position:static!important}#gmTripsTripFilters,#gmTripsResults,#gmTripsPlayback,#gmTripsStatus,#gmTripsClose,#gmTripsCloseBottom,#gmTripsPdf{display:none!important}#gmTripsLayout{display:grid!important;grid-template-columns:1.25fr 1fr!important;gap:8mm!important;overflow:visible!important;height:auto!important;min-height:0!important;margin-top:8mm!important}#gmTripsMap{height:68vh!important;min-height:0!important;break-inside:avoid}#gmTripsEvents{overflow:visible!important;max-height:none!important;border:0!important}#gmTripsMap .leaflet-control-container{display:none!important}}';
- document.head.appendChild(style);map.invalidateSize({animate:false});map.fitBounds(bounds,{padding:[24,24],maxZoom:10,animate:false});
- const restore=()=>{document.getElementById('gmTripsPrintStyle')?.remove();if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}window.removeEventListener('afterprint',restore)};
- window.addEventListener('afterprint',restore,{once:true});
- setTimeout(()=>{map?.invalidateSize({animate:false});window.print();setTimeout(restore,1500)},250);
+async function exportTripPdf(){
+ if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS antes de exportar.';return}
+ const btn=$('gmTripsPdf');if(btn.disabled)return;
+ btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando PDF…';
+ const oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldFollow=$('gmTripsFollow')?.checked;
+ try{
+  $('gmTripsStatus').textContent='Centrando el recorrido completo y preparando el PDF del mapa…';
+  if($('gmTripsFollow'))$('gmTripsFollow').checked=false;
+  map.invalidateSize({animate:false});
+  map.fitBounds(L.latLngBounds(playPath),{padding:[36,36],maxZoom:11,animate:false});
+  await new Promise(resolve=>setTimeout(resolve,900));
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
+  await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
+  const target=$('gmTripsMap');
+  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:2,logging:false});
+  const image=canvas.toDataURL('image/jpeg',0.92);
+  const PDF=window.jspdf.jsPDF,pdf=new PDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
+  const pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight(),margin=5;
+  const ratio=Math.min((pageW-margin*2)/canvas.width,(pageH-margin*2)/canvas.height);
+  const w=canvas.width*ratio,h=canvas.height*ratio;
+  pdf.addImage(image,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h,undefined,'FAST');
+  const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'recorrido').replace(/[^a-z0-9_-]/gi,'_');
+  pdf.save('mapa-recorrido-'+trip+'.pdf');
+  $('gmTripsStatus').textContent='PDF descargado: únicamente el mapa, centrado para mostrar el recorrido completo.';
+ }catch(e){
+  console.error('Exportación PDF mapa:',e);
+  $('gmTripsStatus').textContent='No se pudo crear el PDF del mapa: '+(e.message||e)+'. Verifica que el navegador permita cargar los mosaicos y vuelve a intentarlo.';
+ }finally{
+  if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
+  if($('gmTripsFollow')&&oldFollow!=null)$('gmTripsFollow').checked=oldFollow;
+  btn.disabled=false;btn.textContent=oldLabel;
+ }
 }
 function distanceMeters(a,b){const d=Math.PI/180,R=6371000,dlat=(b.lat-a.lat)*d,dlon=(b.lng-a.lng)*d;const x=Math.sin(dlat/2)**2+Math.cos(a.lat*d)*Math.cos(b.lat*d)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
 async function matchRoads(points){
@@ -254,7 +276,7 @@ async function showTrace(data,version){
  const allGps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time));const gps=allGps,events=(data.geocercas||[]),statusRows=(data.estatus_unidad||[]);
  const geosHtml=(events.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Geocercas registradas por GM ('+events.length+'):</b>'+events.map(e=>'<div style="padding:5px 0;border-bottom:1px solid #f1f5f9">'+esc(e.nombre)+' · '+esc(e.evento)+' · '+esc(e.fecha)+'</div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">No hay eventos de geocercas registrados para este intervalo.</div>')+(statusRows.length?'<div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:10px"><b>Historial de estatus de la unidad ('+statusRows.length+'):</b>'+statusRows.slice(-80).reverse().map(e=>'<div style="display:grid;grid-template-columns:150px minmax(90px,1fr) minmax(90px,1fr);gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9"><span>'+esc(String(e.fecha||e.gpsAt||'').slice(0,19).replace('T',' '))+'</span><span>'+esc(e.estatusGps||'Sin estatus GPS')+(e.estatusViaje?' · '+esc(e.estatusViaje):'')+'</span><span>'+esc(e.evento||'Sin evento')+'</span></div>').join('')+'</div>':'<div style="margin-top:10px;color:#64748b">Aún no hay lecturas de estatus guardadas para este intervalo.</div>');
  await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
- if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map)}
+ if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19,crossOrigin:'anonymous'}).addTo(map)}
  if(markers)markers.clearLayers();markers=L.featureGroup().addTo(map);playPath=[];playIndex=0;playLine=null;playMarker=null;
  if(gps.length){
   const segments=[];let current=[gps[0]];
