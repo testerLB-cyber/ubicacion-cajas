@@ -167,7 +167,7 @@ function fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);r
 function buildChronology(data,gps,events,statusRows){
  const trip=selectedTrip||{};
  const originIsFreig=String(trip.origen||data.origen||'').toUpperCase().includes('FREIG CARRILLO');
- const departure=(originIsFreig&&gps[0]?.time)||trip.first_seen||data.inicio_viaje||(gps[0]&&gps[0].time)||null;
+ const departure=(originIsFreig&&gps[0]?.time)||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
  const arrival=trip.ended_at||data.fin_viaje||(gps.length>1?gps[gps.length-1].time:null);
  const startDate=departure?parseGMDate(departure):null,endDate=arrival?parseGMDate(arrival):null;
  const within=(e)=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
