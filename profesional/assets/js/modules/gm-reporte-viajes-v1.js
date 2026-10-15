@@ -132,7 +132,7 @@ function sanitizeTripClone(doc){
       const computed=win.getComputedStyle(el);
       for(let i=0;i<computed.length;i++){
         const prop=computed[i],value=computed.getPropertyValue(prop);
-        if(!value||!/\\bcolor\\s*\\(/i.test(value))continue;
+        if(!value||!/\bcolor\s*\(/i.test(value))continue;
         let fallback='transparent';
         if(prop==='color'||prop.endsWith('-color')||prop==='fill'||prop==='stroke')fallback=prop==='color'?'#1f2937':'transparent';
         else if(prop.includes('shadow'))fallback='none';
@@ -141,8 +141,8 @@ function sanitizeTripClone(doc){
       }
       // También sanea estilos escritos directamente en el atributo style.
       const inline=el.getAttribute('style');
-      if(inline&&/\\bcolor\\s*\\(/i.test(inline)){
-        el.setAttribute('style',inline.replace(/color\\s*\\([^)]*\\)/gi,'rgb(31, 41, 55)'));
+      if(inline&&/\bcolor\s*\(/i.test(inline)){
+        el.setAttribute('style',inline.replace(/color\s*\([^)]*\)/gi,'rgb(31, 41, 55)'));
       }
     }catch(e){}
   });
