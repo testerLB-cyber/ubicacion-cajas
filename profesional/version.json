@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-65",
+  "version": "PRO-20261015-66",
   "mandatory": false,
-  "message": "Cuenta Espejo: geocercas activas del cliente por defecto y permiso individual para Reporte de viajes.",
-  "updated_at": "2026-10-15T10:45:00-07:00"
+  "message": "Recorridos: mostrar en el mapa la siguiente ubicación GPS posterior al viaje y conectar por red vial.",
+  "updated_at": "2026-10-15T11:30:00-07:00"
 }
