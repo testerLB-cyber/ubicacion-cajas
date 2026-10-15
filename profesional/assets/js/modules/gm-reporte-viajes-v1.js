@@ -121,12 +121,19 @@ async function loadScriptOnce(src,test){
  });
  if(!test())throw Error('El componente de exportación no se inicializó.');
 }
+let lastTripDownloadUrl=null;
 function downloadTripFile(blob,filename){
  if(!(blob instanceof Blob)||!blob.size)throw Error('El archivo generado está vacío.');
- const url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=filename;a.style.display='none';a.rel='noopener';
- document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),120000);
+ // Después de procesar el mapa durante varios segundos, Chrome puede bloquear
+ // una descarga automática porque ya no existe activación directa del usuario.
+ // Dejamos un enlace visible que el usuario pulsa explícitamente.
+ if(lastTripDownloadUrl){try{URL.revokeObjectURL(lastTripDownloadUrl)}catch(e){}}
+ lastTripDownloadUrl=URL.createObjectURL(blob);
+ return {url:lastTripDownloadUrl,size:blob.size,name:filename};
+}
+function showTripDownload(file,kind){
+ const status=$('gmTripsStatus');
+ status.innerHTML='<b style="color:#166534">Archivo listo ('+Math.ceil(file.size/1024)+' KB).</b> <a href="'+file.url+'" download="'+esc(file.name)+'" style="display:inline-block;margin:6px 0;padding:10px 14px;border-radius:9px;background:#0f766e;color:#fff;font-weight:800;text-decoration:none">⬇ Descargar '+esc(kind)+'</a><div style="font-size:11px;color:#475569">Pulsa el botón verde para guardar el archivo en tu equipo.</div>';
 }
 async function exportTripMp4(){
  if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS.';return}
@@ -167,10 +174,10 @@ async function exportTripMp4(){
   const output=ffmpeg.FS('readFile','recorrido.mp4');
   const bytes=output.buffer.slice(output.byteOffset,output.byteOffset+output.byteLength);
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'unidad').replace(/[^a-z0-9_-]/gi,'_');
-  downloadTripFile(new Blob([bytes],{type:'video/mp4'}),'recorrido-'+trip+'.mp4');
+  const file=downloadTripFile(new Blob([bytes],{type:'video/mp4'}),'recorrido-'+trip+'.mp4');
   for(let i=0;i<totalFrames;i++){try{ffmpeg.FS('unlink','frame-'+String(i).padStart(3,'0')+'.jpg')}catch(e){}}
   try{ffmpeg.FS('unlink','recorrido.mp4')}catch(e){}
-  $('gmTripsStatus').textContent='Descarga iniciada: recorrido-'+trip+'.mp4 ('+Math.round(output.byteLength/1024)+' KB).';
+  showTripDownload(file,'MP4');
  }catch(e){console.error('Exportación MP4:',e);$('gmTripsStatus').textContent='FALLÓ la descarga MP4: '+(e?.message||String(e))+'. Abre el sitio en Chrome y permite descargas; si se repite, comparte este mensaje de error.'}
  finally{
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
@@ -203,9 +210,8 @@ async function exportTripPdf(){
   const w=canvas.width*ratio,h=canvas.height*ratio;
   pdf.addImage(image,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h,undefined,'FAST');
   const trip=String(selectedTrip?.numero_viaje||selectedTrip?.identificador_viaje||selectedTrip?.unidad||'recorrido').replace(/[^a-z0-9_-]/gi,'_');
-  const file=pdf.output('blob');
-  downloadTripFile(file,'mapa-recorrido-'+trip+'.pdf');
-  $('gmTripsStatus').textContent='Descarga iniciada: mapa-recorrido-'+trip+'.pdf ('+Math.round(file.size/1024)+' KB). El PDF contiene solo el mapa.';
+  const file=downloadTripFile(pdf.output('blob'),'mapa-recorrido-'+trip+'.pdf');
+  showTripDownload(file,'PDF del mapa');
  }catch(e){
   console.error('Exportación PDF mapa:',e);
   $('gmTripsStatus').textContent='FALLÓ la descarga PDF: '+(e?.message||String(e))+'. Verifica la conexión y comparte este error si vuelve a ocurrir.';
