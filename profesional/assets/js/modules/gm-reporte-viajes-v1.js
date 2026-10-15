@@ -333,25 +333,15 @@ async function addPostTripLocation(data,gps,version){
  if(!p||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||!markers||version!==traceVersion)return;
  const next={lat:Number(p.lat),lng:Number(p.lon),time:p.fecha};
  const end=gps.length?gps[gps.length-1]:null;
- const icon=L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#f59e0b;border:3px solid #fff;box-shadow:0 2px 10px #0006;display:flex;align-items:center;justify-content:center;color:#111827;font-size:17px;font-weight:900">+</div>',iconSize:[34,34],iconAnchor:[17,17]});
- L.marker(next,{icon,zIndexOffset:1200}).bindPopup('<b>Siguiente ubicación después del viaje</b><br>'+esc(fmtChrono(next.time))+'<br><span style="font-size:11px">Punto GPS posterior; no forma parte del viaje.</span>').addTo(markers);
+ const icon=L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 10px #0006;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:900">F</div>',iconSize:[34,34],iconAnchor:[17,17]});
+ L.marker(next,{icon,zIndexOffset:1200}).bindPopup('<b>F · Punto final después del evento</b><br>'+esc(fmtChrono(next.time))+'<br><span style="font-size:11px">Último punto posterior a la finalización del viaje; se muestra solo como referencia del mapa.</span>').addTo(markers);
  if(!end)return;
- // Solicitar el recorrido por calles; nunca sustituir una falla del servicio por una línea recta.
- try{
-  const coords=end.lng+','+end.lat+';'+next.lng+','+next.lat;
-  const url='https://router.project-osrm.org/route/v1/driving/'+coords+'?overview=full&geometries=geojson&steps=false';
-  const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),12000);
-  let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
-  if(!response.ok)throw Error('Servicio de rutas no disponible');
-  const result=await response.json();
-  if(result.code!=='Ok'||!result.routes?.[0]?.geometry?.coordinates?.length)throw Error('No se encontró una ruta vial');
-  if(version!==traceVersion||!markers)return;
-  const road=result.routes[0].geometry.coordinates.map(c=>({lat:c[1],lng:c[0]}));
-  L.polyline(road,{color:'#fff7ed',weight:10,opacity:.98,lineCap:'round',lineJoin:'round'}).addTo(markers);
-  L.polyline(road,{color:'#f59e0b',weight:6,opacity:.98,dashArray:'10 8',lineCap:'round',lineJoin:'round'}).bindPopup('Conexión vial hacia la siguiente ubicación GPS posterior al viaje').addTo(markers);
-  const bounds=L.latLngBounds([...gps.map(x=>[x.lat,x.lng]),...road.map(x=>[x.lat,x.lng]),[next.lat,next.lng]]);
-  map.fitBounds(bounds,{padding:[28,28],maxZoom:13,animate:false});
- }catch(e){console.warn('No se pudo dibujar la conexión por calles; se conserva el punto posterior sin unirlo con una recta:',e)}
+ // El usuario solicita prolongar visualmente el recorrido en línea recta hasta el último punto posterior y colocar allí la F.
+ if(version!==traceVersion||!markers)return;
+ L.polyline([end,next],{color:'#fff',weight:9,opacity:.98,lineCap:'round',lineJoin:'round'}).addTo(markers);
+ L.polyline([end,next],{color:'#dc2626',weight:5,opacity:.98,dashArray:'9 7',lineCap:'round',lineJoin:'round'}).bindPopup('Prolongación visual en línea recta hasta el punto final posterior').addTo(markers);
+ const bounds=L.latLngBounds([...gps.map(x=>[x.lat,x.lng]),[next.lat,next.lng]]);
+ map.fitBounds(bounds,{padding:[28,28],maxZoom:13,animate:false});
 }
 async function trace(id){
  stopPlayback();const version=++traceVersion;
