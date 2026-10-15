@@ -8,6 +8,10 @@ function inject(){
  const bar=$('airHistoryBtn')?.parentElement;if(!bar||bar.querySelector('#gmTripReportButton'))return;
  const btn=document.createElement('button');btn.type='button';btn.id='gmTripReportButton';btn.className='airFullBtn';btn.innerHTML='<i class="fa-solid fa-route"></i> Reporte de viajes';bar.insertBefore(btn,$('airHistoryBtn'));
  btn.onclick=open;
+ if(window.CC_MIRROR_EXTERNAL&&window.CC_MIRROR_PERMISSIONS?.mapa_unidades&&!window.CC_MIRROR_PERMISSIONS?.aeropuerto&&!window.CC_MIRROR_PERMISSIONS?.cajas_renta){
+  const mapControls=$('airFleetMapControls');
+  if(mapControls){btn.className='airFleetMapAction';btn.style.cssText='background:#0f766e;color:#fff;border-color:#0f766e;font-weight:800;white-space:nowrap';mapControls.prepend(btn)}
+ }
 }
 function open(){
  if(window.CC_MIRROR_EXTERNAL&&!window.CC_MIRROR_PERMISSIONS?.reporte_viajes)return;
