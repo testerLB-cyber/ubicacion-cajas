@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261008-62",
+  "version": "PRO-20261015-63",
   "mandatory": false,
-  "message": "Listado lateral del mapa muestra el remolque junto a la unidad cuando existe.",
-  "updated_at": "2026-10-08T12:21:00-07:00"
+  "message": "Historial de recorridos GPS: consulta por unidad con y sin viaje, geocercas y animación.",
+  "updated_at": "2026-10-15T09:00:00-07:00"
 }
