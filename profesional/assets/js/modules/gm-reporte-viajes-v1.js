@@ -220,22 +220,33 @@ async function exportTripMp4(){
 async function exportTripPdf(){
  if(!map||playPath.length<2){$('gmTripsStatus').textContent='Selecciona un viaje con al menos dos posiciones GPS antes de exportar.';return}
  const btn=$('gmTripsPdf');if(btn.disabled)return;
- btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Preparando PDF…';
+ btn.disabled=true;const oldLabel=btn.textContent;btn.textContent='Generando PDF…';
  const oldCenter=map.getCenter(),oldZoom=map.getZoom(),oldFollow=$('gmTripsFollow')?.checked;
  try{
-  $('gmTripsStatus').textContent='Centrando el recorrido completo y preparando el PDF del mapa…';
+  $('gmTripsStatus').textContent='Ajustando el recorrido completo para el PDF…';
   if($('gmTripsFollow'))$('gmTripsFollow').checked=false;
+  map.fitBounds(L.latLngBounds(playPath),{padding:[58,58],maxZoom:10,animate:false});
   map.invalidateSize({animate:false});
-  map.fitBounds(L.latLngBounds(playPath),{padding:[36,36],maxZoom:11,animate:false});
-  await new Promise(resolve=>setTimeout(resolve,700));
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',()=>typeof window.html2canvas==='function');
   await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',()=>!!window.jspdf?.jsPDF);
   const target=$('gmTripsMap');
-  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:2,logging:false,onclone:sanitizeTripClone});
+  if(!target)throw Error('No se encontró el mapa del recorrido.');
+  // Captura a resolución 1x para evitar bloquear la interfaz con un canvas enorme.
+  const canvas=await window.html2canvas(target,{useCORS:true,allowTaint:false,backgroundColor:'#e2e8f0',scale:1,logging:false,onclone:function(doc){
+    sanitizeTripClone(doc);
+    const mapClone=doc.getElementById('gmTripsMap');
+    if(mapClone){
+      mapClone.style.width='1100px';mapClone.style.height='620px';
+      mapClone.querySelectorAll('.leaflet-control-container').forEach(el=>el.style.display='none');
+      // El PDF se centra en la ruta; oculta iconos de unidad y etiquetas emergentes.
+      mapClone.querySelectorAll('.leaflet-marker-icon,.leaflet-popup,.leaflet-tooltip').forEach(el=>el.style.display='none');
+    }
+  }});
   if(!canvas.width||!canvas.height)throw Error('La captura del mapa quedó vacía.');
-  const image=canvas.toDataURL('image/jpeg',0.92);
+  const image=canvas.toDataURL('image/jpeg',0.84);
   const PDF=window.jspdf.jsPDF,pdf=new PDF({orientation:'landscape',unit:'mm',format:'a4',compress:true});
-  const pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight(),margin=5;
+  const pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight(),margin=7;
   const ratio=Math.min((pageW-margin*2)/canvas.width,(pageH-margin*2)/canvas.height);
   const w=canvas.width*ratio,h=canvas.height*ratio;
   pdf.addImage(image,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h,undefined,'FAST');
@@ -243,8 +254,8 @@ async function exportTripPdf(){
   const file=downloadTripFile(pdf.output('blob'),'mapa-recorrido-'+trip+'.pdf');
   showTripDownload(file,'PDF del mapa');
  }catch(e){
-  console.error('Exportación PDF mapa:',e);
-  $('gmTripsStatus').textContent='FALLÓ la descarga PDF: '+(e?.message||String(e))+'. Verifica la conexión y comparte este error si vuelve a ocurrir.';
+  console.error('Exportación de PDF del recorrido:',e);
+  $('gmTripsStatus').textContent='FALLÓ la descarga PDF: '+(e?.message||String(e))+'. El reporte sigue disponible; intenta nuevamente.';
  }finally{
   if(map){map.setView(oldCenter,oldZoom,{animate:false});map.invalidateSize({animate:false})}
   if($('gmTripsFollow')&&oldFollow!=null)$('gmTripsFollow').checked=oldFollow;
