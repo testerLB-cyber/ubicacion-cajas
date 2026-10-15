@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-73",
+  "version": "PRO-20261015-74",
   "mandatory": false,
-  "message": "Corrige captura del GIF para normalizar colores CSS incompatibles.",
-  "updated_at": "2026-10-15T19:16:17.760Z"
+  "message": "Cuenta espejo: Reporte de viajes con alcance visible al cliente asignado.",
+  "updated_at": "2026-10-15T20:30:54.741Z"
 }
