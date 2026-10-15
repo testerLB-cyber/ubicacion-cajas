@@ -1,6 +1,6 @@
 {
-  "version": "PRO-20261015-70",
+  "version": "PRO-20261015-71",
   "mandatory": false,
-  "message": "Reporte de recorridos: exportación rápida dibujando la animación en canvas con una sola captura del mapa.",
-  "updated_at": "2026-10-15T18:56:00.943Z"
+  "message": "Recorridos: grabar la reproducción real del mapa para descargarla sin reconstruir la animación.",
+  "updated_at": "2026-10-15T19:04:23.967Z"
 }
