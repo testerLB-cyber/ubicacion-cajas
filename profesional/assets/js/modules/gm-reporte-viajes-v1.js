@@ -183,7 +183,7 @@ function tripGifLzw(indices){
    emit(prefix);
    if(nextCode<4096){
     dict.set(key,nextCode++);
-    if(nextCode>(1<<codeSize)&&codeSize<12)codeSize++;
+    if(nextCode>=(1<<codeSize)&&codeSize<12)codeSize++;
    }else{emit(CLEAR);dict=new Map();codeSize=9;nextCode=258}
    prefix=k;
   }
@@ -194,15 +194,20 @@ function tripGifLzw(indices){
  blocks.push(0);return blocks;
 }
 function tripGifEncode(width,height,frames,delayCs){
- const bytes=[],push=(...v)=>bytes.push(...v),word=v=>push(v&255,(v>>8)&255);
- push(71,73,70,56,57,97);word(width);word(height);push(0xF7,0,0);
- push(...tripGifPalette());
+ const parts=[];let total=0;
+ const add=part=>{const u=part instanceof Uint8Array?part:Uint8Array.from(part);parts.push(u);total+=u.length};
+ const word=v=>[v&255,(v>>8)&255];
+ add([71,73,70,56,57,97,...word(width),...word(height),0xF7,0,0]);
+ add(tripGifPalette());
  for(const frame of frames){
-  push(0x21,0xF9,4,0x04);word(delayCs);push(0,0);
-  push(0x2C);word(0);word(0);word(width);word(height);push(0);
-  push(8);push(...tripGifLzw(frame));
+  add([0x21,0xF9,4,0x04,...word(delayCs),0,0]);
+  add([0x2C,...word(0),...word(0),...word(width),...word(height),0,8]);
+  add(Uint8Array.from(tripGifLzw(frame)));
  }
- push(0x3B);return new Uint8Array(bytes);
+ add([0x3B]);
+ const output=new Uint8Array(total);let offset=0;
+ for(const part of parts){output.set(part,offset);offset+=part.length}
+ return output;
 }
 function tripGifFrame(canvas,width,height){
  const c=document.createElement('canvas');c.width=width;c.height=height;
