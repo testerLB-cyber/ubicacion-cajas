@@ -334,7 +334,7 @@ async function addPostTripLocation(data,gps,version){
  const next={lat:Number(p.lat),lng:Number(p.lon),time:p.fecha};
  const end=gps.length?gps[gps.length-1]:null;
  const icon=L.divIcon({className:'',html:'<div style="width:34px;height:34px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 10px #0006;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:900">F</div>',iconSize:[34,34],iconAnchor:[17,17]});
- L.marker(next,{icon,zIndexOffset:1200}).bindPopup('<b>F · Punto final después del evento</b><br>'+esc(fmtChrono(next.time))+'<br><span style="font-size:11px">Último punto posterior a la finalización del viaje; se muestra solo como referencia del mapa.</span>').addTo(markers);
+ L.marker(next,{icon,zIndexOffset:1200}).bindPopup('<b>F · Fin del recorrido</b><br>'+esc(fmtChrono(next.time))+'<br><span style="font-size:11px">Último evento GPS agregado; aquí termina el recorrido mostrado.</span>').addTo(markers);
  if(!end)return;
  // Mantener el trazado por calles hacia la ubicación posterior; no unir los puntos con una recta.
  try{
@@ -347,8 +347,8 @@ async function addPostTripLocation(data,gps,version){
   if(result.code!=='Ok'||!result.routes?.[0]?.geometry?.coordinates?.length)throw Error('No se encontró una ruta vial');
   if(version!==traceVersion||!markers)return;
   const road=result.routes[0].geometry.coordinates.map(c=>({lat:c[1],lng:c[0]}));
-  L.polyline(road,{color:'#fff7ed',weight:10,opacity:.98,lineCap:'round',lineJoin:'round'}).addTo(markers);
-  L.polyline(road,{color:'#f59e0b',weight:6,opacity:.98,dashArray:'10 8',lineCap:'round',lineJoin:'round'}).bindPopup('Continuación por calles hasta la ubicación GPS posterior al viaje').addTo(markers);
+  L.polyline(road,{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
+  L.polyline(road,{color:'#087f8c',weight:6,opacity:0.99,lineJoin:'round',lineCap:'round'}).bindPopup('Recorrido por calles hasta el último evento GPS; fin del recorrido').addTo(markers);
   const bounds=L.latLngBounds([...gps.map(x=>[x.lat,x.lng]),...road.map(x=>[x.lat,x.lng]),[next.lat,next.lng]]);
   map.fitBounds(bounds,{padding:[28,28],maxZoom:13,animate:false});
  }catch(e){console.warn('No se pudo dibujar la continuación por calles; se conserva el marcador F sin dibujar una recta:',e)}
@@ -439,7 +439,7 @@ async function showTrace(data,version){
   const startIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#16a34a;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">S</div>',iconSize:[28,28],iconAnchor:[14,14]});
   const endIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">F</div>',iconSize:[28,28],iconAnchor:[14,14]});
   L.marker(gps[0],{icon:startIcon}).bindPopup('Inicio GPS del recorrido: '+esc(gps[0].time)).addTo(markers);
-  if(gps.length>1)L.marker(gps[gps.length-1],{icon:endIcon}).bindPopup('Última posición GPS del intervalo: '+esc(gps[gps.length-1].time)).addTo(markers);
+  if(gps.length>1&&!data?.ubicacion_posterior)L.marker(gps[gps.length-1],{icon:endIcon}).bindPopup('Última posición GPS del intervalo: '+esc(gps[gps.length-1].time)).addTo(markers);
   if(gps.length>1){
    playPath=(displaySegments.length===1&&displaySegments[0].matched?displaySegments[0].points.map((p,i,arr)=>({...p,time:gps[Math.round(i*(gps.length-1)/Math.max(1,arr.length-1))]?.time})):gps);playLine=L.polyline([],{color:'#eab308',weight:5,opacity:.9}).addTo(markers);
    playMarker=L.marker(playPath[0]||gps[0],{icon:vehicleIcon(data),zIndexOffset:1000}).addTo(markers);
