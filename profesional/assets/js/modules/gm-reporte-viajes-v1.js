@@ -253,31 +253,57 @@ async function exportTripPdf(){
 }
 function distanceMeters(a,b){const d=Math.PI/180,R=6371000,dlat=(b.lat-a.lat)*d,dlon=(b.lng-a.lng)*d;const x=Math.sin(dlat/2)**2+Math.cos(a.lat*d)*Math.cos(b.lat*d)*Math.sin(dlon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(x)))}
 async function matchRoads(points){
- // Ajusta GPS a calles por bloques: OSRM tiene límites de coordenadas por solicitud.
- if(points.length<2)return null;
+ // Ajusta la trayectoria GPS grabada a la red vial; no calcula una ruta nueva origen-destino.
+ if(!Array.isArray(points)||points.length<2)return null;
+ // Separar segmentos con saltos o pausas: nunca unirlos artificialmente con una recta.
+ const groups=[];let group=[points[0]];
  for(let i=1;i<points.length;i++){
-  const dt=(new Date(points[i].time)-new Date(points[i-1].time))/1000;
-  if(dt>300||dt<0||distanceMeters(points[i-1],points[i])>5000)return null;
+  const prev=points[i-1],cur=points[i];
+  const t0=Date.parse(prev.time),t1=Date.parse(cur.time),dt=(t1-t0)/1000;
+  if(!Number.isFinite(dt)||dt<0||dt>300||distanceMeters(prev,cur)>5000){
+   if(group.length>=2)groups.push(group);
+   group=[cur];
+  }else group.push(cur);
  }
- const chunks=[];let start=0;while(start<points.length-1){const end=Math.min(points.length,start+70);chunks.push(points.slice(start,end));if(end===points.length)break;start=end-2}
+ if(group.length>=2)groups.push(group);
+ // La función de dibujo espera una sola línea. Si la trayectoria tiene cortes,
+ // no sustituirla por una unión recta: se conserva el GPS original en ese caso.
+ if(groups.length!==1)return null;
+ const source=groups[0],chunks=[];let start=0;
+ while(start<source.length-1){const end=Math.min(source.length,start+70);chunks.push(source.slice(start,end));if(end===source.length)break;start=end-1}
  const matched=[];
  for(const chunk of chunks){
   try{
    const coordinates=chunk.map(p=>p.lng+','+p.lat).join(';');
-   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+'?overview=full&geometries=geojson&gaps=split&tidy=false';
-   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),12000);
+   const timestamps=chunk.map(p=>Math.floor(Date.parse(p.time)/1000)).join(';');
+   // Radios tolerantes al error GPS, con marcas de tiempo para mejorar la correspondencia.
+   const radiuses=chunk.map(()=> '35').join(';');
+   const url='https://router.project-osrm.org/match/v1/driving/'+coordinates+
+    '?overview=full&geometries=geojson&gaps=split&tidy=false&timestamps='+timestamps+'&radiuses='+radiuses;
+   const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),15000);
    let response;try{response=await fetch(url,{signal:ctrl.signal})}finally{clearTimeout(timeout)}
    if(!response.ok)return null;const data=await response.json();
-   // OSRM puede dividir el resultado en varias coincidencias cuando detecta saltos GPS.
-   // Aceptar solo una coincidencia dominante y no conectar segmentos separados con una recta.
    if(data.code!=='Ok'||!Array.isArray(data.matchings)||!data.matchings.length)return null;
-   const best=data.matchings.slice().sort((a,b)=>(b.geometry?.coordinates?.length||0)-(a.geometry?.coordinates?.length||0))[0];
-   const coords=(best.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
+   // Combinar todas las coincidencias solo si son contiguas; no descartar tramos
+   // válidos por el hecho de que OSRM entregue más de una coincidencia.
+   const ordered=data.matchings.slice().sort((a,b)=>(a.tracepoints?.[0]?.waypoint_index??0)-(b.tracepoints?.[0]?.waypoint_index??0));
+   const coords=[];
+   for(const item of ordered){
+    const part=(item.geometry?.coordinates||[]).map(x=>({lat:x[1],lng:x[0]}));
+    if(part.length<2)continue;
+    if(coords.length){
+     if(distanceMeters(coords[coords.length-1],part[0])>100)return null;
+     part.shift();
+    }
+    coords.push(...part);
+   }
    if(coords.length<2)return null;
-   // Rechazar ajuste dudoso: los extremos deben quedar cerca de los GPS originales.
-   if(distanceMeters(coords[0],chunk[0])>1200||distanceMeters(coords[coords.length-1],chunk[chunk.length-1])>1200)return null;
-   if(matched.length&&distanceMeters(matched[matched.length-1],coords[0])<100)coords.shift();
-   else if(matched.length) return null;
+   // Evitar ajustes que se alejen demasiado del trayecto registrado en sus extremos.
+   if(distanceMeters(coords[0],chunk[0])>800||distanceMeters(coords[coords.length-1],chunk[chunk.length-1])>800)return null;
+   if(matched.length){
+    if(distanceMeters(matched[matched.length-1],coords[0])>100)return null;
+    coords.shift();
+   }
    matched.push(...coords);
   }catch(e){console.warn('Ajuste a calles no disponible:',e);return null}
  }
