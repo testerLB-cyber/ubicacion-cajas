@@ -480,7 +480,8 @@ async function showTrace(data,version){
   const segments=[];let current=[gps[0]];
   for(let i=1;i<gps.length;i++){
    let gap=(new Date(gps[i].time)-new Date(gps[i-1].time))/1000;
-   if(gap>90||distanceMeters(gps[i-1],gps[i])>1800){if(current.length>1)segments.push(current);current=[gps[i]]}
+   // Conservar los saltos razonables para que OSRM pueda reconstruirlos por calles. Separar solo interrupciones largas o saltos GPS grandes.
+   if(gap>300||distanceMeters(gps[i-1],gps[i])>5000){if(current.length>1)segments.push(current);current=[gps[i]]}
    else current.push(gps[i]);
   }if(current.length>1)segments.push(current);
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
