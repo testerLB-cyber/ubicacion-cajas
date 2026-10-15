@@ -24,8 +24,8 @@ begin
    if coalesce(t.salida,'') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T' then v_salida:=t.salida::timestamptz; end if;
  exception when others then v_salida:=null;
  end;
- select max(gps_at),count(*) into v_last,v_count from public.gm_gps_positions where unidad=t.unidad;
- select jsonb_build_object('lat',latitud,'lon',longitud,'fecha',gps_at) into v_pos from public.gm_gps_positions where unidad=t.unidad order by gps_at desc limit 1;
+ select max(gps_at),count(*) into v_last,v_count from public.gm_gps_positions where unidad=t.unidad and (v_interno or lower(trim(cliente))=lower(trim(v_cliente)));
+ select jsonb_build_object('lat',latitud,'lon',longitud,'fecha',gps_at) into v_pos from public.gm_gps_positions where unidad=t.unidad and (v_interno or lower(trim(cliente))=lower(trim(v_cliente))) order by gps_at desc limit 1;
  with gr as (
   select h.* from public.gm_trip_history h where h.unidad=t.unidad
   and coalesce(nullif(upper(trim(h.numero_viaje)),''),nullif(upper(trim(h.identificador_viaje)),''),h.trip_key)=t.report_key
