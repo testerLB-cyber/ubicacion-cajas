@@ -353,13 +353,38 @@ async function showTrace(data,version){
   // Dibujar la trayectoria GPS de inmediato. No esperar al servicio externo de ajuste a calles:
   // al seleccionar varios viajes, las solicitudes OSRM acumuladas dejaban el mapa sin pintar durante demasiado tiempo.
   const displaySegments=segments.map(seg=>({points:seg,matched:false}));
+  const routeLayers=[];
   for(const item of displaySegments){
-   const segment=item.points,isMatched=item.matched;
-   // Línea continua, gruesa y con borde para destacar claramente las calles recorridas.
-   if(!isMatched)L.polyline(segment,{color:'#ffffff',weight:9,opacity:0.95,lineJoin:'round',lineCap:'round'}).addTo(markers);
-   L.polyline(segment,{color:'#087f8c',weight:isMatched?7:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
-   addDirectionArrows(segment);
+   const segment=item.points;
+   // Primero mostramos GPS al instante; luego sustituimos por geometría ajustada a calles reales.
+   const halo=L.polyline(segment,{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
+   const line=L.polyline(segment,{color:'#087f8c',weight:6,opacity:0.98,lineJoin:'round',lineCap:'round'}).addTo(markers);
+   routeLayers.push({halo,line});
   }
+  // Ajustar cada tramo a la red vial en segundo plano, sin bloquear el mapa ni el resto del reporte.
+  void (async()=>{
+   for(let idx=0;idx<displaySegments.length;idx++){
+    const item=displaySegments[idx];
+    if(item.points.length<2)continue;
+    const snapped=await matchRoads(item.points);
+    if(version!==traceVersion||!markers)return;
+    if(!snapped||snapped.length<2)continue; // Si no hay coincidencia fiable, conservar GPS original.
+    item.points=snapped;item.matched=true;
+    const layer=routeLayers[idx];
+    if(layer){markers.removeLayer(layer.halo);markers.removeLayer(layer.line);}
+    const halo=L.polyline(snapped,{color:'#ffffff',weight:9,opacity:0.96,lineJoin:'round',lineCap:'round'}).addTo(markers);
+    const line=L.polyline(snapped,{color:'#087f8c',weight:6,opacity:0.99,lineJoin:'round',lineCap:'round'}).addTo(markers);
+    routeLayers[idx]={halo,line};
+   }
+   if(version!==traceVersion||!displaySegments.length)return;
+   // Mantener la animación sobre la geometría vial cuando solo existe un tramo continuo.
+   if(displaySegments.length===1&&displaySegments[0].matched){
+    playPath=displaySegments[0].points.map((p,i,arr)=>({...p,time:segments[0][Math.round(i*(segments[0].length-1)/Math.max(1,arr.length-1))]?.time}));
+    if(playLine)playLine.setLatLngs([]);
+    if(playMarker&&playPath[0])playMarker.setLatLng(playPath[0]);
+    if($('gmTripsEvents'))$('gmTripsEvents').textContent+=' · Ruta ajustada a calles';
+   }
+  })().catch(e=>console.warn('No se pudo ajustar la ruta a calles; se conserva el GPS:',e));
   const startIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#16a34a;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">S</div>',iconSize:[28,28],iconAnchor:[14,14]});
   const endIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 10px #0005;display:flex;align-items:center;justify-content:center;color:white;font-weight:900">F</div>',iconSize:[28,28],iconAnchor:[14,14]});
   L.marker(gps[0],{icon:startIcon}).bindPopup('Inicio GPS del recorrido: '+esc(gps[0].time)).addTo(markers);
