@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recorridos GPS · Tráfico App</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config/supabase-config.js"></script>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#172033;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1500px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.top h1{font-size:23px;margin:0;font-weight:850}.sub{color:#64748b;font-size:13px;margin-top:4px}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:750;cursor:pointer;background:#e8eef7;color:#1e293b}.primary{background:#155eef;color:white}.filters,.panel{background:white;border:1px solid #dce4ef;border-radius:14px;padding:15px;box-shadow:0 2px 8px #17203308}.filters{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;align-items:end;margin-bottom:14px}.field label{display:block;font-size:11px;font-weight:800;color:#64748b;margin-bottom:6px;text-transform:uppercase}.field input,.field select{width:100%;padding:10px;border:1px solid #ccd6e4;border-radius:8px;background:white;color:#172033}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}.stat{background:white;border:1px solid #dce4ef;border-radius:12px;padding:12px}.stat small{display:block;color:#64748b;font-weight:700;font-size:11px}.stat strong{font-size:21px;display:block;margin-top:4px}.layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,.8fr);gap:14px}.panel h2{font-size:15px;margin:0 0 10px}.mapbox{height:65vh;min-height:400px;border-radius:10px;overflow:hidden}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.events{max-height:65vh;overflow:auto}.event{border-bottom:1px solid #e8edf4;padding:10px 2px;font-size:12px}.event strong{display:block;font-size:13px;margin-bottom:3px}.muted{color:#64748b}.status{font-size:12px;margin:10px 0;color:#475569;min-height:18px}.error{color:#b42318}.pill{display:inline-block;border-radius:99px;padding:3px 7px;background:#e8f2ff;color:#155eef;font-size:10px;font-weight:800}.foot{font-size:11px;color:#64748b;margin-top:12px}@media(max-width:900px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}.mapbox{height:52vh;min-height:340px}.events{max-height:340px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media print{.filters,.actions,.foot,.top .btn{display:none!important}.wrap{max-width:none;padding:0}.layout{display:block}.mapbox{height:65vh}.events{max-height:none}.panel{box-shadow:none;break-inside:avoid}}
+</style></head><body><main class="wrap">
+<header class="top"><div><h1><span style="color:#155eef">●</span> Recorridos GPS e historial de geocercas</h1><div class="sub">Consulta por unidad y periodo, con o sin viaje asignado. Datos históricos recibidos de GM.</div></div><div class="actions"><button class="btn" onclick="location.href='./'">← Regresar a Profesional</button><button class="btn" onclick="window.print()">Imprimir / Guardar PDF</button></div></header>
+<section class="filters">
+<div class="field"><label>Unidad</label><select id="unit"><option value="">Cargando unidades…</option></select></div>
+<div class="field"><label>Desde</label><input id="from" type="datetime-local"></div>
+<div class="field"><label>Hasta</label><input id="to" type="datetime-local"></div>
+<div class="field"><label>Filtro de viaje</label><select id="tripfilter"><option value="all">Con y sin viaje</option><option value="trip">Solo lecturas con viaje</option><option value="none">Solo lecturas sin viaje</option></select></div>
+<div><button class="btn primary" style="width:100%" onclick="loadRoute()">Consultar recorrido</button></div>
+</section><div id="status" class="status">Validando sesión…</div>
+<section class="stats"><div class="stat"><small>POSICIONES GPS</small><strong id="npoints">—</strong></div><div class="stat"><small>EVENTOS DE GEOCERCA</small><strong id="ngeos">—</strong></div><div class="stat"><small>PRIMERA LECTURA</small><strong id="first">—</strong></div><div class="stat"><small>ÚLTIMA LECTURA</small><strong id="last">—</strong></div></section>
+<div class="layout"><section class="panel"><h2>Mapa del recorrido</h2><div class="actions"><button class="btn primary" id="play" onclick="togglePlay()">▶ Reproducir recorrido</button><button class="btn" onclick="fitRoute()">Centrar recorrido completo</button><button class="btn" onclick="exportGeoJSON()">Exportar puntos GeoJSON</button></div><div id="map" class="mapbox"></div><div class="foot">La línea une las posiciones históricas guardadas; la animación recorre los puntos en orden de fecha GPS. Los tramos sin lecturas no se inventan.</div></section>
+<section class="panel"><h2>Cronología de geocercas y eventos</h2><div id="events" class="events"><div class="muted">Selecciona una unidad y consulta un periodo.</div></div></section></div>
+<div class="foot">El reporte permite consultar unidades aunque no tengan número de viaje. El periodo máximo por consulta es de 48 horas.</div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id); let sb,map,line,points=[],geos=[],marker,playing=false,timer=null,idx=0;
+const fmt=v=>v?new Date(v).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'medium'}):'—';
+const status=(m,err=false)=>{$('status').textContent=m;$('status').className='status'+(err?' error':'')};
+const validPoint=p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lon))&&Number(p.lat)>=-90&&Number(p.lat)<=90&&Number(p.lon)>=-180&&Number(p.lon)<=180;
+function localInput(d){const pad=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+async function init(){
+ if(!window.supabase?.createClient||!window.GM_SUPABASE_URL||!window.GM_SUPABASE_ANON_KEY){status('No se pudo iniciar el cliente de datos.',true);return}
+ sb=window.supabase.createClient(window.GM_SUPABASE_URL,window.GM_SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ const {data:{session},error}=await sb.auth.getSession();
+ if(error||!session){status('Inicia sesión primero en Tráfico App Profesional y vuelve a abrir este reporte.',true);return}
+ map=L.map('map',{preferCanvas:true}).setView([29.07,-110.95],6);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+ const now=new Date(),from=new Date(now.getTime()-12*60*60*1000);$('from').value=localInput(from);$('to').value=localInput(now);
+ status('Cargando catálogo de unidades…');
+ const {data,error:e}=await sb.rpc('gm_reporte_unidades');
+ if(e){status('No se pudieron cargar las unidades: '+e.message,true);return}
+ const units=Array.isArray(data?.unidades)?data.unidades:[];
+ $('unit').innerHTML='<option value="">Selecciona unidad…</option>'+units.map(u=>'<option value="'+esc(u.unidad)+'">'+esc(u.unidad)+' · '+Number(u.puntos||0)+' lecturas</option>').join('');
+ status('Listo. Selecciona unidad y periodo; también se consultan recorridos sin viaje.');
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.loadRoute=async function(){
+ stopPlay();const unit=$('unit').value,from=$('from').value,to=$('to').value;
+ if(!unit||!from||!to){status('Selecciona unidad, fecha inicial y fecha final.',true);return}
+ const a=new Date(from),b=new Date(to);if(!(b>a)||b-a>48*60*60*1000){status('El rango debe ser válido y no exceder 48 horas.',true);return}
+ status('Consultando posiciones, estatus y geocercas…');
+ const {data,error}=await sb.rpc('gm_reporte_unidad_horas',{p_unidad:unit,p_desde:a.toISOString(),p_hasta:b.toISOString()});
+ if(error){status('Error al consultar historial: '+error.message,true);return}
+ if(data?.ok===false){status(data.error||'No se pudo consultar el historial.',true);return}
+ const filter=$('tripfilter').value;
+ points=(Array.isArray(data.puntos)?data.puntos:[]).filter(validPoint);
+ if(filter!=='all'){
+   const statusRows=Array.isArray(data.estatus_unidad)?data.estatus_unidad:[];
+   const hasTripAt=(p)=>{const s=statusRows.filter(x=>x.gpsAt&&new Date(x.gpsAt).getTime()===new Date(p.fecha).getTime()).slice(-1)[0];return !!String(s?.numeroViaje||'').trim()};
+   points=points.filter(p=>filter==='trip'?hasTripAt(p):!hasTripAt(p));
+ }
+ geos=Array.isArray(data.geocercas)?data.geocercas:[];
+ $('npoints').textContent=points.length.toLocaleString('es-MX');$('ngeos').textContent=geos.length.toLocaleString('es-MX');
+ $('first').textContent=points.length?fmt(points[0].fecha):'—';$('last').textContent=points.length?fmt(points[points.length-1].fecha):'—';
+ if(line){line.remove();line=null}if(marker){marker.remove();marker=null}
+ map.eachLayer(l=>{if(l instanceof L.CircleMarker)map.removeLayer(l)});
+ if(points.length){
+  const coords=points.map(p=>[Number(p.lat),Number(p.lon)]);
+  line=L.polyline(coords,{color:'#155eef',weight:4,opacity:.85}).addTo(map);
+  points.forEach((p,i)=>{if(i===0||i===points.length-1)L.circleMarker([p.lat,p.lon],{radius:7,color:i===0?'#16a34a':'#dc2626',fillOpacity:1}).addTo(map).bindPopup((i===0?'Inicio':'Última posición')+'<br>'+fmt(p.fecha))});
+  marker=L.circleMarker(coords[0],{radius:8,color:'#fff',weight:3,fillColor:'#155eef',fillOpacity:1}).addTo(map);
+  fitRoute();
+ }else{map.setView([29.07,-110.95],6)}
+ renderEvents();
+ status(points.length+' posiciones GPS y '+geos.length+' eventos de geocerca cargados para '+unit+(String(data.numero_viaje||'').trim()?' · viaje '+data.numero_viaje:'')+'.');
+};
+function renderEvents(){
+ const rows=geos.map(g=>({type:'geo',date:g.gpsAt||g.fecha,title:g.nombre||'Geocerca',detail:[g.evento,g.viaje?'Viaje '+g.viaje:''].filter(Boolean).join(' · ')}))
+ .concat((Array.isArray(window._unused)?window._unused:[])).filter(x=>x.date).sort((a,b)=>new Date(a.date)-new Date(b.date));
+ if(!rows.length){$('events').innerHTML='<div class="muted">No hay eventos de geocerca guardados en este periodo. Las posiciones GPS se muestran independientemente de que exista viaje.</div>';return}
+ $('events').innerHTML=rows.map((e,i)=>'<div class="event"><strong>'+esc(e.title)+'</strong><div>'+esc(fmt(e.date))+'</div><div class="muted">'+esc(e.detail||'Evento registrado por GM')+'</div></div>').join('');
+}
+window.fitRoute=function(){if(line&&points.length)map.fitBounds(line.getBounds(),{padding:[30,30],maxZoom:15});else status('No hay posiciones para centrar.',true)};
+window.togglePlay=function(){
+ if(playing){stopPlay();return}if(!points.length){status('Primero consulta un recorrido con posiciones GPS.',true);return}
+ playing=true;$('play').textContent='Ⅱ Pausar recorrido';idx=0;
+ const step=()=>{if(!playing)return;if(idx>=points.length){stopPlay();return}const p=points[idx++];if(marker)marker.setLatLng([p.lat,p.lon]);map.panTo([p.lat,p.lon],{animate:true,duration:.2});status('Reproduciendo '+idx+' / '+points.length+' · '+fmt(p.fecha));timer=setTimeout(step,Math.max(120,Math.min(650,65000/Math.max(points.length,1))))};step();
+};
+function stopPlay(){playing=false;if(timer)clearTimeout(timer);timer=null;$('play').textContent='▶ Reproducir recorrido'}
+window.exportGeoJSON=function(){
+ if(!points.length){status('No hay puntos para exportar.',true);return}
+ const fc={type:'FeatureCollection',features:points.map(p=>({type:'Feature',properties:{fecha:p.fecha,velocidad_kmh:p.velocidad},geometry:{type:'Point',coordinates:[Number(p.lon),Number(p.lat)]}}))};
+ const blob=new Blob([JSON.stringify(fc,null,2)],{type:'application/geo+json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='recorrido-'+($('unit').value||'unidad')+'.geojson';a.click();URL.revokeObjectURL(a.href)
+};
+init();
+})();
+</script></body></html>
