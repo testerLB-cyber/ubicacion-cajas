@@ -31,7 +31,7 @@ function open(){
  }
  const closeReport=()=>{stopPlayback();traceVersion++;if(map){map.remove();map=null}markers=null;m.remove()};$('gmTripsClose').onclick=closeReport;$('gmTripsCloseBottom').onclick=closeReport;m.addEventListener('click',e=>{if(e.target===m)closeReport()});
  $('gmTripsSearch').onclick=search;$('gmTripsFind').oninput=renderTrips;$('gmTripsShowTransit').onchange=renderTrips;$('gmTripsMode').onchange=syncMode;$('gmTripsClient').onchange=renderTrips;$('gmTripsHoursGo').onclick=traceHours;$('gmTripsPlay').onclick=startPlayback;$('gmTripsPause').onclick=stopPlayback;$('gmTripsReset').onclick=()=>{stopPlayback();seekPlayback(0)};if(window.CC_MIRROR_EXTERNAL){$('gmTripsMp4').style.display='none';$('gmTripsMp4').setAttribute('aria-hidden','true');}$('gmTripsMp4').onclick=exportTripMp4;$('gmTripsProgress').oninput=e=>{stopPlayback();seekPlayback(Number(e.target.value)/100)};
- const end=new Date(),today=date(end);const local=d=>date(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');$('gmTripsHourTo').value=local(end);const before=new Date(end.getTime()-2*3600000);$('gmTripsHourFrom').value=local(before);$('gmTripsTo').value=today;$('gmTripsFrom').value=today;
+ const end=new Date(),today=date(end);const local=d=>date(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');$('gmTripsHourTo').value=local(end);const before=new Date(end.getTime()-2*3600000);$('gmTripsHourFrom').value=local(before);const weekStart=new Date(end);weekStart.setDate(weekStart.getDate()-6);$('gmTripsTo').value=today;$('gmTripsFrom').value=date(weekStart);
  }
  syncMode();
 }
@@ -67,9 +67,9 @@ function updateClientOptions(){
 function renderTrips(){
  if($('gmTripsMode')?.value!=='VIAJES')return;
  const client=$('gmTripsClient')?.value||'';
- const q=String($('gmTripsFind')?.value||'').trim().toLowerCase();
+ const q=String($('gmTripsFind')?.value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/^MA0+(?=\\d)/,'MA');
  const showTransit=!!$('gmTripsShowTransit')?.checked;
- const filtered=rows.filter(x=>{const finished=!!x.ended_at;const inTransit=!x.ended_at;return (finished||(showTransit&&inTransit))&&(!client||String(x.cliente||'').trim()===client)&&(!q||[x.numero_viaje,x.identificador_viaje,x.unidad,x.cliente].some(v=>String(v||'').toLowerCase().includes(q)))});
+ const filtered=rows.filter(x=>{const finished=!!x.ended_at;const inTransit=!x.ended_at;return (finished||(showTransit&&inTransit))&&(!client||String(x.cliente||'').trim()===client)&&(!q||[x.numero_viaje,x.identificador_viaje,x.unidad,x.cliente].some(v=>String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/^MA0+(?=\\d)/,'MA').includes(q)))});
  $('gmTripsResults').innerHTML=filtered.map(x=>'<button type="button" data-trip="'+x.id+'" style="display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #e2e8f0;padding:12px;cursor:pointer"><b>'+esc(x.unidad)+'</b> · '+esc(x.numero_viaje||x.identificador_viaje||'Sin folio')+'<br><span style="font-size:11px;color:#64748b">'+esc(x.cliente||'')+'</span><br><span style="font-size:11px">'+esc(x.origen||'—')+' → '+esc(x.destino||'—')+'</span><br><span style="font-size:11px;color:#475569">Estado: '+(x.ended_at?'FINALIZADO':'EN SEGUIMIENTO')+' · Inicio: '+esc(String(x.salida||x.first_seen||'').slice(0,16).replace('T',' '))+'</span></button>').join('')||'<p style="padding:14px;color:#64748b">No se encontraron viajes para este período.</p>';
  $('gmTripsStatus').textContent=filtered.length+' viajes '+(showTransit?'(finalizados y en tránsito)':'finalizados con cierre registrado');
 }
