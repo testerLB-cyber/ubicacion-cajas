@@ -9,6 +9,12 @@ const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||['ADMIN','SUPERADMIN','SU
 const unitLabel=u=>(u.numero||u.id)+(u.descripcion?' · '+u.descripcion:'');
 function ensure(){
  const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
+ // Limpieza de raíz: versiones anteriores dejaron un botón de navegación normal.
+ // Si queda en el DOM, ccConfigSection intercepta ese botón y manda al usuario
+ // a la sección del final de Configuración en vez de mantener el modal abierto.
+ nav.querySelectorAll('[data-config="flotaTrafico"],[data-config="flota"],#ccFlotaTraficoNav,[data-flota-trafico-nav]').forEach(el=>el.remove());
+ // También elimina duplicados antiguos con el mismo texto aunque no tengan ID estable.
+ nav.querySelectorAll('button').forEach(el=>{if(/flota de usuarios de tráfico|configurar flota de tráfico/i.test((el.innerText||el.textContent||'').trim())&&!el.hasAttribute('data-cc-flota-modal-launcher'))el.remove();});
  // Este acceso NO usa .cc-config-nav-btn ni data-config: esos selectores
  // pertenecen al enrutador de secciones normales y no deben interceptar el modal.
  let b=nav.querySelector('[data-cc-flota-modal-launcher]');
