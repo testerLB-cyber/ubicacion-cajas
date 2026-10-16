@@ -2440,6 +2440,27 @@ let currentData = [];
     items.forEach(x => { const k = String(x[campo] || 'SIN DATO').trim() || 'SIN DATO'; map.set(k,(map.get(k)||0)+1); });
     return Array.from(map, ([nombre,total])=>({nombre,total:total.toLocaleString('es-MX')})).sort((a,b)=>Number(b.total.replace(/,/g,''))-Number(a.total.replace(/,/g,'')) || a.nombre.localeCompare(b.nombre,'es'));
   }
+  function categoriaServicio(servicio, tipo) {
+    const normaliza = v => String(v || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toUpperCase();
+    const t = normaliza(String(servicio || '')+' '+String(tipo || ''));
+    if (t.includes('EXPORT') || /\\bEXPO\\b/.test(t)) return 'Exportación';
+    if (t.includes('IMPORT') || /\\bIMPO\\b/.test(t)) return 'Importación';
+    if (t.includes('FORANEO') || t.includes('FORANEA')) return 'Foránea';
+    return 'Movimientos';
+  }
+  function agruparPorTipo(items, campo) {
+    const map = new Map();
+    items.forEach(x => {
+      const nombre = String(x[campo] || 'SIN DATO').trim() || 'SIN DATO';
+      if (!map.has(nombre)) map.set(nombre, {nombre, exportacion:0, importacion:0, foranea:0, movimientos:0, total:0});
+      const row=map.get(nombre); row.total++;
+      if (x.categoriaServicio==='Exportación') row.exportacion++;
+      else if (x.categoriaServicio==='Importación') row.importacion++;
+      else if (x.categoriaServicio==='Foránea') row.foranea++;
+      else row.movimientos++;
+    });
+    return [...map.values()].sort((a,b)=>b.total-a.total || a.nombre.localeCompare(b.nombre,'es')).map(r=>({...r,exportacion:r.exportacion.toLocaleString('es-MX'),importacion:r.importacion.toLocaleString('es-MX'),foranea:r.foranea.toLocaleString('es-MX'),movimientos:r.movimientos.toLocaleString('es-MX'),total:r.total.toLocaleString('es-MX')}));
+  }
   function iniciar() {
     const host = document.getElementById('ccPanelDashboard');
     if (!host || document.getElementById('oplServiciosComprobados')) return;
@@ -2549,7 +2570,7 @@ let currentData = [];
         if(c.unidad_numero&&asignados.units.size&&!unitAssigned)alertas.push('Unidad fuera de flota actual');
         const clientId=String(c.cliente_id||f.cliente_id||'');
         const cliente=String(c.cliente_nombre||f.cliente_nombre||clientCatalog.get(clientId)||clientId||'SIN CLIENTE');
-        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
+        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),categoriaServicio:categoriaServicio(c.servicio,c.tipo),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
       const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
       if(!services.length){
@@ -2569,8 +2590,9 @@ let currentData = [];
         celda('Unidades asignadas',assignedUnitTotal.toLocaleString('es-MX'),'Relaciones ejecutivo-unidad')+
         celda('Clientes asignados',assignedClientsRes.error?'N/D':assignedClientTotal.toLocaleString('es-MX'),assignedClientsRes.error?'No disponible por permisos':'Relaciones ejecutivo-cliente');
       const renderAgg=(id,title,field)=>{panel.querySelector(id).innerHTML=tabla(title,agrupar(services,field),[{key:'nombre',label:'Nombre'},{key:'total',label:'Servicios'}]);};
-      renderAgg('#oplServiciosCliente','Servicios comprobados por cliente','cliente');
-      renderAgg('#oplServiciosOperador','Servicios realizados por operador','operador');
+      const colsTipo=[{key:'nombre',label:'Cliente / operador'},{key:'exportacion',label:'Exportación'},{key:'importacion',label:'Importación'},{key:'foranea',label:'Foránea'},{key:'movimientos',label:'Movimientos'},{key:'total',label:'Total'}];
+      panel.querySelector('#oplServiciosCliente').innerHTML=tabla('Servicios comprobados por cliente',agruparPorTipo(services,'cliente'),colsTipo);
+      panel.querySelector('#oplServiciosOperador').innerHTML=tabla('Servicios realizados por operador',agruparPorTipo(services,'operador'),colsTipo);
       renderAgg('#oplServiciosUnidad','Servicios realizados por unidad','unidad');
       const executiveRows=executives.map(u=>{
         const uid=String(u.user_id), assignment=assignedByUser.get(uid)||{ops:new Set(),units:new Set()}, clients=clientsByUser.get(uid)||new Set();
