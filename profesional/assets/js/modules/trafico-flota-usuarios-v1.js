@@ -13,7 +13,7 @@ function ensure(){
  // pertenecen al enrutador de secciones normales y no deben interceptar el modal.
  let b=nav.querySelector('[data-cc-flota-modal-launcher]');
  if(!b){b=document.createElement('button');b.type='button';b.className='cc-flota-modal-launcher';b.dataset.ccFlotaModalLauncher='1';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openListModal();});nav.appendChild(b);}
- b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
+ b.style.cssText='display:'+(window.CC_AUTH_READY&&isAdmin()?'flex':'none')+';align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;margin:5px 0;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1e293b;cursor:pointer;font:inherit;';
  // No se crea ni se conserva un panel de flota dentro de la página: todo vive en el modal.
  $('#ccConfigFlotaTrafico')?.remove();
  // Limpia cualquier sección antigua que pudiera haber quedado insertada por versiones previas.
