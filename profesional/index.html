@@ -188,6 +188,15 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 @media(prefers-reduced-motion:reduce){#controlCajasSection .cc-tabs .cc-tab{transition:none!important}}
 
 @media(max-width:650px){#controlCajasSection .cc-tabs .cc-tab i{flex-basis:30px!important;width:30px!important;min-width:30px!important;font-size:19px!important}}
+
+/* Icono proporcional al botón y un solo fondo continuo, sin recuadro blanco separado */
+#controlCajasSection .cc-tabs .cc-tab{background:linear-gradient(145deg,#e5efff,#dce8ff)!important;border-color:#d0def3!important;color:#25446f!important;padding:0 9px 0 0!important;gap:8px!important}
+#controlCajasSection .cc-tabs .cc-tab i{align-self:stretch!important;flex:0 0 2.8em!important;width:2.8em!important;min-width:0!important;height:auto!important;min-height:100%!important;border-radius:7px 0 0 7px!important;margin:0!important;background:transparent!important;color:inherit!important;font-size:1.35em!important;box-shadow:none!important}
+#controlCajasSection .cc-tabs .cc-tab:hover{background:linear-gradient(145deg,#d7e7ff,#cbdcff)!important}
+#controlCajasSection .cc-tabs .cc-tab.active{background:linear-gradient(145deg,#153d78,#1d4ed8 65%,#5145cd)!important;color:#fff!important}
+#controlCajasSection .cc-tabs .cc-tab.active i{background:transparent!important;color:#fff!important;box-shadow:none!important}
+@media(max-width:1100px){#controlCajasSection .cc-tabs .cc-tab i{font-size:1.3em!important;flex-basis:2.6em!important;width:2.6em!important}}
+@media(max-width:650px){#controlCajasSection .cc-tabs .cc-tab i{font-size:1.2em!important;flex-basis:2.4em!important;width:2.4em!important}}
 </style>
 </head>
 <body class="text-slate-700 antialiased cc-auth-locked">
@@ -1673,5 +1682,20 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
 
 <script src="assets/js/modules/casetas-control-2026.js?v=20261014-menu-profesional-v8"></script><script src="assets/js/vendor/qrcode.min.js"></script><script src="assets/js/modules/casetas-lector-escritorio.js?v=20261013-continuo-v16"></script><style>#casScanPair:not([hidden]){display:grid!important}#casScanPair[hidden]{display:none!important}@media(max-width:540px){#casScanPair:not([hidden]){grid-template-columns:1fr!important}}</style><script>document.addEventListener("DOMContentLoaded",()=>{window.ccCasetasNuevoInit?.();const d=document.getElementById("casTicketDate");if(d)d.value=new Date().toISOString().slice(0,10);});</script>
 
-<script src="assets/js/modules/anticipos-catalogos-canonical-v1.js?v=20261012-save-tariff-v2"></script></body>
+<script src="assets/js/modules/anticipos-catalogos-canonical-v1.js?v=20261012-save-tariff-v2"></script>
+<script id="ccMoveSheetsAfterAdvances20261016">
+(function(){
+ function moveSheets(){
+  document.querySelectorAll('.cc-tabs').forEach(function(nav){
+   var tabs=Array.from(nav.querySelectorAll('.cc-tab'));
+   var sheets=tabs.find(function(el){return /control\s+de\s+hojas/i.test((el.textContent||'').replace(/\\s+/g,' ').trim()) || /control\s+de\s+hojas/i.test((el.getAttribute('aria-label')||'')+' '+(el.title||''));});
+   var advances=tabs.find(function(el){return /anticipos/i.test((el.textContent||'').trim()) || /anticipos/i.test((el.getAttribute('aria-label')||'')+' '+(el.title||''));});
+   if(sheets&&advances&&advances.nextElementSibling!==sheets)advances.insertAdjacentElement('afterend',sheets);
+  });
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',moveSheets);else moveSheets();
+ new MutationObserver(moveSheets).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+</body>
 </html>
