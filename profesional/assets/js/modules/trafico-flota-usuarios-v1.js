@@ -8,7 +8,7 @@ const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='
 function ensure(){
  const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
  let b=nav.querySelector('[data-config="flotaTrafico"]');
- if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Usuarios, unidades y operadores</small>';b.onclick=()=>{window.ccConfigSection?.('flotaTrafico',b);load().catch(showError)};nav.appendChild(b);}
+ if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Usuarios, unidades y operadores</small>';b.onclick=()=>{window.ccConfigSection?.('flotaTrafico',b);load().catch(showError)};nav.appendChild(b);}b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
  let sec=$('#ccConfigFlotaTrafico');
  if(!sec){sec=document.createElement('div');sec.id='ccConfigFlotaTrafico';sec.className='cc-config-section';sec.innerHTML=
  '<div class="cc-config-card"><div class="cc-toolbar"><div><strong>Flota de usuarios de Tráfico</strong><div class="cc-note">Marca qué usuarios administrarán una flota y asigna cada unidad con su operador del catálogo.</div></div><button type="button" class="cc-btn cc-btn-light" data-refresh>Actualizar</button></div>'+
