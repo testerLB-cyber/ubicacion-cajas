@@ -2473,11 +2473,13 @@ let currentData = [];
     panel.querySelector('#oplServiciosKPIs').innerHTML = '';
     try {
       const selectComprobaciones='id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email';
+      // Usar límite superior exclusivo: fecha/hora en el último día no debe perderse por comparar contra medianoche.
+      const hastaExclusive = (()=>{const d=new Date(hasta+'T00:00:00');d.setDate(d.getDate()+1);return fechaISO(d);})();
       // Evitar un .or() compuesto que puede comportarse distinto según el parser PostgREST.
       // Consultar cada columna de fecha por separado y unir por id/folio para no perder hojas.
       const [compFechaRes, compUsoRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes] = await Promise.all([
-        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha',desde).lte('fecha',hasta).limit(10000),
-        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha_uso',desde).lte('fecha_uso',hasta).limit(10000),
+        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha',desde).lt('fecha',hastaExclusive).limit(10000),
+        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha_uso',desde).lt('fecha_uso',hastaExclusive).limit(10000),
         sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
         sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000),
         sb.from('cc_trafico_clientes').select('user_id,cliente_id').limit(10000),
@@ -2485,7 +2487,7 @@ let currentData = [];
         sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000)
       ]);
       // La fuente de verdad son las hojas. Si falla una consulta de fechas, usar la otra; si fallan ambas, informar el error.
-      if (compFechaRes.error && compUsoRes.error) throw compFechaRes.error;
+      if (compFechaRes.error && compUsoRes.error) throw new Error('No se pudieron leer hojas comprobadas. fecha: '+compFechaRes.error.message+'; fecha_uso: '+compUsoRes.error.message);
       const compRows=[...(compFechaRes.data||[]),...(compUsoRes.data||[])];
       const compById=new Map();
       compRows.forEach(c=>compById.set(String(c.id||c.folio_id||JSON.stringify(c)),c));
@@ -2550,6 +2552,12 @@ let currentData = [];
         unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
       const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      if(!services.length){
+        const errBits=[compFechaRes.error&&('fecha: '+compFechaRes.error.message),compUsoRes.error&&('fecha_uso: '+compUsoRes.error.message),fleetRes.error&&('flota: '+fleetRes.error.message),usersRes.error&&('usuarios: '+usersRes.error.message)].filter(Boolean);
+        const diag='Diagnóstico: '+raw.length+' comprobaciones leídas; '+folios.length+' folios asociados; '+unique.size+' folios válidos. Rango '+desde+' a '+hasta+'.'+(errBits.length?' Errores: '+errBits.join(' | '):' Si hay comprobaciones pero no folios válidos, revisar relación folio_id/estatus.');
+        panel.querySelector('#oplServiciosKPIs').innerHTML='<div class="col-span-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><strong>No se ocultará el motivo del cero.</strong><div class="mt-1">'+escape(diag)+'</div></div>';
+        panel.querySelector('#oplServiciosCliente').innerHTML='';panel.querySelector('#oplServiciosOperador').innerHTML='';panel.querySelector('#oplServiciosUnidad').innerHTML='';panel.querySelector('#oplServiciosEjecutivo').innerHTML='';
+      }
       const executives=usersData.filter(u=>u.es_trafico===true);
       const exOps=services.filter(s=>s.operador!=='SIN OPERADOR'&&assignedByUser.get(s.ejecutivoId)?.ops.size&&!s.operadorAsignado).length;
       const exUnits=services.filter(s=>s.unidad!=='SIN UNIDAD'&&assignedByUser.get(s.ejecutivoId)?.units.size&&!s.unidadAsignada).length;
