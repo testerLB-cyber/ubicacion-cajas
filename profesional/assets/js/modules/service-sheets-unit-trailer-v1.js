@@ -165,6 +165,23 @@
     const syncTrailer=()=>{const u=unitByNumber(input.value),b=boxByNumber(trailerInput.value);if(!u?.esTracto){trailerInput.style.borderColor='';trailerStatus.textContent='Campo abierto. Si existe en catálogo se sugiere; si no existe también se permite.';trailerStatus.style.color='#64748b';return;}if(!trailerInput.value.trim()){trailerInput.style.borderColor='#ef4444';trailerStatus.textContent='Captura la caja/remolque antes de comprobar.';trailerStatus.style.color='#b91c1c';return;}trailerInput.style.borderColor='#16a34a';trailerStatus.textContent=b?'✓ Caja encontrada en catálogo':'✓ Caja capturada manualmente';trailerStatus.style.color='#15803d';};
     ['input','change','blur'].forEach(evt=>trailerInput.addEventListener(evt,syncTrailer));
     setUnitState(row);syncTrailer();
+    // Movimientos adicionales de la misma hoja: se guardan en la misma transacción que el movimiento original.
+    if(!row.querySelector('[data-extra-movements]')){
+      const obs=row.querySelector('[data-obs]')?.closest('.cc-field');
+      if(obs){
+        const section=document.createElement('div');section.dataset.extraMovements='1';section.style.cssText='margin:10px 0 12px';
+        section.innerHTML='<button type="button" class="cc-btn cc-btn-light" data-add-movement><i class="fa-solid fa-plus"></i> Agregar movimiento</button><div data-extra-movements style="display:grid;gap:10px;margin-top:8px"></div>';
+        obs.parentNode.insertBefore(section,obs);
+        section.querySelector('[data-add-movement]').onclick=()=>{
+          const holder=section.querySelector('[data-extra-movements]'),n=holder.children.length+1,card=document.createElement('div');
+          card.dataset.extraMovement='1';card.style.cssText='border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc';
+          card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>Movimiento adicional '+n+'</strong><button type="button" class="cc-btn cc-btn-light" data-remove-movement>Quitar</button></div><div class="hs104-grid"><div class="cc-field"><label>Tipo de servicio *</label><input data-extra-tipo placeholder="Tipo de servicio"></div><div class="cc-field"><label>Clasificación *</label><input data-extra-clas placeholder="Clasificación"></div><div class="cc-field"><label>Unidad *</label><input data-extra-unidad list="hsUnitCatalogList" autocomplete="off" placeholder="Unidad del catálogo"><div data-extra-unit-status class="hs104-note">Selecciona una unidad válida del catálogo.</div></div><div class="cc-field" data-extra-trailer-wrap style="display:none"><label>Remolque / caja *</label><input data-extra-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Número de remolque"><div class="hs104-note">Obligatorio para tracto-camión.</div></div></div>';
+          const unitInput=card.querySelector('[data-extra-unidad]'),status=card.querySelector('[data-extra-unit-status]'),trailerWrap=card.querySelector('[data-extra-trailer-wrap]'),trailer=card.querySelector('[data-extra-remolque]');
+          const sync=()=>{const u=unitByNumber(unitInput.value);if(u){unitInput.dataset.unitId=String(u.id||'');status.textContent='✓ Unidad del catálogo · '+(u.tipoUnidad||u.categoria||'');status.style.color='#15803d';unitInput.style.borderColor='#16a34a';trailerWrap.style.display=u.esTracto?'block':'none';trailer.required=!!u.esTracto;if(!u.esTracto)trailer.value='';}else{unitInput.dataset.unitId='';status.textContent='Selecciona una unidad válida del catálogo.';status.style.color='#b91c1c';unitInput.style.borderColor=unitInput.value.trim()?'#dc2626':'';trailerWrap.style.display='none';trailer.required=false;}};
+          ['input','change','blur'].forEach(evt=>unitInput.addEventListener(evt,sync));card.querySelector('[data-remove-movement]').onclick=()=>{card.remove();[...holder.children].forEach((el,i)=>{const h=el.querySelector('strong');if(h)h.textContent='Movimiento adicional '+(i+1);});};holder.appendChild(card);sync();unitInput.focus();
+        };
+      }
+    }
 
     const preloaded=!!(ev?.precaptura||row.querySelector('.hs104-pill.hs104-ok'));
     const actions=row.querySelector('.hs-list-head-actions');
@@ -205,7 +222,15 @@
     if(row.querySelector('[data-hs-real-operator]')&&!operadorRealId)throw new Error('Selecciona el operador que realizó el servicio.');
     if(!unit)throw new Error('Selecciona una unidad válida del catálogo.');
     if(unit.esTracto&&!remolqueNumero)throw new Error('Captura la caja/remolque para el TRACTO-CAMIÓN.');
-    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId,facturaNumero:val('[data-hs-factura]')}});
+    const movimientosAdicionales=[...row.querySelectorAll('[data-extra-movement]')].map((card,i)=>{
+      const tipoViaje=String(card.querySelector('[data-extra-tipo]')?.value||'').trim(),clasificacion=String(card.querySelector('[data-extra-clas]')?.value||'').trim(),unitExtra=unitByNumber(card.querySelector('[data-extra-unidad]')?.value||''),rem=String(card.querySelector('[data-extra-remolque]')?.value||'').trim();
+      if(!tipoViaje)throw new Error('Captura el tipo de servicio del movimiento adicional '+(i+1)+'.');
+      if(!clasificacion)throw new Error('Captura la clasificación del movimiento adicional '+(i+1)+'.');
+      if(!unitExtra)throw new Error('Selecciona una unidad válida del catálogo en el movimiento adicional '+(i+1)+'.');
+      if(unitExtra.esTracto&&!rem)throw new Error('Captura el remolque del movimiento adicional '+(i+1)+'.');
+      return {tipoViaje,clasificacion,unidadId:unitExtra.id,unidadNumero:unitExtra.numero,remolqueNumero:unitExtra.esTracto?rem:''};
+    });
+    const r=await sb().rpc('hs_mark_used',{p_item:{folioId,fechaUso,clienteId,tipoViaje,clasificacion,servicio:tipoViaje,observaciones,cantidadCobro,unidadCobro,unidadId:unit.id,unidadNumero:unit.numero,remolqueNumero:unit.esTracto?remolqueNumero:'',operadorRealId,facturaNumero:val('[data-hs-factura]'),movimientosAdicionales}});
     if(r.error)throw r.error;if(r.data?.ok===false)throw new Error(r.data.error||'No se pudo comprobar la hoja.');
     return r.data;
   }
