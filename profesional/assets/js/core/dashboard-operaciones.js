@@ -2627,7 +2627,7 @@ let currentData = [];
         const e=executiveRows.find(x=>x.id===uid); if(!e||!detailHost)return;
         detailHost.classList.remove('hidden');
         const clientes=[...new Set(e.detalle.map(x=>x.cliente))].sort((a,b)=>a.localeCompare(b,'es'));
-        detailHost.innerHTML='<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Detalle de ejecutivo</div><h3 class="mt-1 text-base font-bold text-slate-900">'+escape(e.ejecutivo)+'</h3><p class="text-xs text-slate-500">'+fmtN(e.servicios)+' hojas comprobadas · '+escape(desde)+' al '+escape(hasta)+'</p></div><label class="text-xs text-slate-600">Filtrar por cliente<select id="oplEjecutivoFiltroCliente" class="mt-1 block min-w-56 rounded-md border border-slate-300 bg-white px-2 py-2 text-xs"><option value="">Todos los clientes</option>'+clientes.map(c=>'<option value="'+escape(c)+'">'+escape(c)+'</option>').join('')+'</select></label></div><div id="oplEjecutivoDetalleTabla" class="mt-3"></div>';
+        detailHost.innerHTML='<div class="flex flex-wrap items-end justify-between gap-3"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Detalle de ejecutivo</div><h3 class="mt-1 text-base font-bold text-slate-900">'+escape(e.ejecutivo)+'</h3><p class="text-xs text-slate-500">'+fmtN(e.servicios)+' hojas comprobadas · '+escape(desde)+' al '+escape(hasta)+'</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Filtrar por cliente<select id="oplEjecutivoFiltroCliente" class="mt-1 block min-w-56 rounded-md border border-slate-300 bg-white px-2 py-2 text-xs"><option value="">Todos los clientes</option>'+clientes.map(c=>'<option value="'+escape(c)+'">'+escape(c)+'</option>').join('')+'</select></label><button id="oplEjecutivoRegresar" type="button" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">← Regresar</button></div></div><div id="oplEjecutivoDetalleTabla" class="mt-3"></div>';
         const renderDetalle=()=>{
           const filtro=detailHost.querySelector('#oplEjecutivoFiltroCliente').value;
           const a=assignedByUser.get(e.id)||{ops:new Set(),units:new Set(),pairs:new Set()};
@@ -2636,11 +2636,12 @@ let currentData = [];
           detailHost.querySelector('#oplEjecutivoDetalleTabla').innerHTML=tabla('Desglose de hojas comprobadas ('+list.length+')',list,cols,'No hay servicios para el cliente seleccionado.');
         };
         detailHost.querySelector('#oplEjecutivoFiltroCliente').addEventListener('change',renderDetalle);
+        detailHost.querySelector('#oplEjecutivoRegresar').addEventListener('click',()=>{detailHost.classList.add('hidden');detailHost.innerHTML='';panel.querySelector('#oplServiciosEjecutivoDetalle')?.scrollIntoView({behavior:'smooth',block:'start'});});
         renderDetalle();
         detailHost.scrollIntoView({behavior:'smooth',block:'nearest'});
       };
-      panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('click',ev=>{const row=ev.target.closest('tr[data-ejecutivo-id]');if(row)mostrarDetalle(row.dataset.ejecutivoId);});
-      panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const row=ev.target.closest('tr[data-ejecutivo-id]');if(row){ev.preventDefault();mostrarDetalle(row.dataset.ejecutivoId);}}});
+      panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('click',ev=>{const row=ev.target.closest('tr[data-executivo-id]');if(row)mostrarDetalle(row.dataset.executivoId);});
+      panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const row=ev.target.closest('tr[data-executivo-id]');if(row){ev.preventDefault();mostrarDetalle(row.dataset.executivoId);}}});
 
       // Indicador de cumplimiento de flota configurada por ejecutivo.
       const fleetRows=executives.map(u=>{
