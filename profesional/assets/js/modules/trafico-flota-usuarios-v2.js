@@ -105,7 +105,7 @@ function modalStatus(msg,error){const e=$('#ccTraficoFlotaModal [data-modal-stat
 async function saveUser(){
  const ov=$('#ccTraficoFlotaModal');if(!ov||!activeUser)return;if(!canManageFlota())return modalStatus('Tu usuario no tiene permiso para administrar la flota de Tráfico.',true);
  const enabled=ov.querySelector('[data-flag]').checked;
- if(enabled&&draftUnits.some(a=>!a.unidadId||!a.operadorId))return modalStatus('Completa unidad y operador en cada renglón de la flota.',true);
+ if(enabled&&draftUnits.some(a=>!a.unidadId||!a.operadorId||!D.unidades.some(x=>String(x.id)===String(a.unidadId))||!D.operadores.some(x=>String(x.id)===String(a.operadorId))))return modalStatus('Selecciona una unidad y un operador válidos de los catálogos en cada renglón.',true);
  if(new Set(draftUnits.map(a=>String(a.unidadId)).filter(Boolean)).size!==draftUnits.filter(a=>a.unidadId).length)return modalStatus('No repitas una unidad en esta flota.',true);
  if(new Set(draftClients.map(String)).size!==draftClients.length)return modalStatus('Hay clientes repetidos.',true);
  const save=ov.querySelector('[data-save]');save.disabled=true;save.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Guardando…';
