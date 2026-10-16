@@ -2546,7 +2546,7 @@ let currentData = [];
       const respAssignments=respAssignRes.error?[]:(respAssignRes.data||[]);
       const respById=new Map(respAssignments.map(a=>[String(a.id),a]));
       const assignedByUser=new Map();
-      fleet.forEach(a=>{const uid=String(a.user_id||'');if(!assignedByUser.has(uid))assignedByUser.set(uid,{ops:new Set(),units:new Set(),pairs:new Set()});const x=assignedByUser.get(uid);if(a.operador_id)x.ops.add(norm(a.operador_id));if(a.unidad_id&&!unitIsTracto(a.unidad_id))x.units.add(norm(a.unidad_id));if(a.operador_id&&a.unidad_id&&!unitIsTracto(a.unidad_id))x.pairs.add(norm(a.operador_id)+'|'+norm(a.unidad_id));});
+      fleet.forEach(a=>{const uid=String(a.user_id||'');if(!assignedByUser.has(uid))assignedByUser.set(uid,{ops:new Set(),units:new Set(),pairs:new Set()});const x=assignedByUser.get(uid);if(a.operador_id)x.ops.add(norm(a.operador_id));if(a.unidad_id)x.units.add(norm(a.unidad_id));if(a.operador_id&&a.unidad_id)x.pairs.add(norm(a.operador_id)+'|'+norm(a.unidad_id));});
       const clientCatalog=new Map((clientsRes.error?[]:(clientsRes.data||[])).map(c=>[String(c.id),String(c.nombre||c.razon_social||c.id)]));
       const clientsByUser=new Map();
       (assignedClientsRes.error?[]:(assignedClientsRes.data||[])).forEach(a=>{const uid=String(a.user_id||'');if(!clientsByUser.has(uid))clientsByUser.set(uid,new Set());clientsByUser.get(uid).add(String(a.cliente_id||''));});
