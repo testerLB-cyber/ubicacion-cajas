@@ -6,28 +6,27 @@ const sb=()=>window.gmSupabase;
 function requireSupabase(){const c=sb();if(!c||typeof c.rpc!=='function')throw new Error('La conexión con Supabase aún no está lista. Cierra y vuelve a abrir Configuración en unos segundos.');return c;}
 let D={usuarios:[],unidades:[],operadores:[],clientes:[],asignaciones:[],clientesAsignados:[]},loading=false,activeUser='',draftUnits=[],draftClients=[],tab='flota',search='';
 const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||['ADMIN','SUPERADMIN','SUPER ADMIN'].includes(String(window.CC_ACCESS?.rol||'').toUpperCase());
+const canManageFlota=()=>isAdmin()||window.ccPerm?.('inventario.flota_trafico')===true;
 const unitLabel=u=>(u.numero||u.id)+(u.descripcion?' · '+u.descripcion:'');
 function ensure(){
- const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
- // Limpieza de raíz: versiones anteriores dejaron un botón de navegación normal.
- // Si queda en el DOM, ccConfigSection intercepta ese botón y manda al usuario
- // a la sección del final de Configuración en vez de mantener el modal abierto.
- nav.querySelectorAll('[data-config="flotaTrafico"],[data-config="flota"],#ccFlotaTraficoNav,[data-flota-trafico-nav]').forEach(el=>el.remove());
- // También elimina duplicados antiguos con el mismo texto aunque no tengan ID estable.
- nav.querySelectorAll('button').forEach(el=>{if(/flota de usuarios de tráfico|configurar flota de tráfico/i.test((el.innerText||el.textContent||'').trim())&&!el.hasAttribute('data-cc-flota-modal-launcher'))el.remove();});
- // Este acceso NO usa .cc-config-nav-btn ni data-config: esos selectores
- // pertenecen al enrutador de secciones normales y no deben interceptar el modal.
- let b=nav.querySelector('[data-cc-flota-modal-launcher]');
- if(!b){b=document.createElement('button');b.type='button';b.className='cc-flota-modal-launcher';b.dataset.ccFlotaModalLauncher='1';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openListModal();});nav.appendChild(b);}
- b.style.cssText='display:'+(window.CC_AUTH_READY&&isAdmin()?'flex':'none')+';align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;margin:5px 0;border:1px solid #dbe4ef;border-radius:10px;background:#fff;color:#1e293b;cursor:pointer;font:inherit;';
- // No se crea ni se conserva un panel de flota dentro de la página: todo vive en el modal.
- $('#ccConfigFlotaTrafico')?.remove();
- // Limpia cualquier sección antigua que pudiera haber quedado insertada por versiones previas.
+ const panel=$('#ccPanelInventario'),actions=panel?.querySelector('.cc-toolbar .cc-actions');if(!panel||!actions)return false;
+ // La flota ya no pertenece a Configuración: retirar accesos heredados y paneles antiguos.
+ document.querySelectorAll('#ccPanelConfiguracion .cc-config-nav button').forEach(el=>{
+  if(/flota de usuarios de tráfico|configurar flota de tráfico/i.test((el.innerText||el.textContent||'').trim())||['flotaTrafico','flota'].includes(el.dataset.config))el.remove();
+ });
  document.querySelectorAll('[data-cc-flota-inline-section],#ccConfigFlotaTrafico').forEach(el=>el.remove());
+ let b=actions.querySelector('[data-cc-flota-inventory-launcher]');
+ if(!b){
+  b=document.createElement('button');b.type='button';b.className='cc-btn cc-btn-light';b.dataset.ccFlotaInventoryLauncher='1';
+  b.innerHTML='<i class="fa-solid fa-users-gear mr-1"></i>Flota de usuarios de Tráfico';
+  b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(!canManageFlota()){alert('Tu usuario no tiene permiso para administrar la flota de Tráfico.');return;}openListModal();});
+  actions.insertBefore(b,actions.firstChild);
+ }
+ b.style.display=window.CC_AUTH_READY&&canManageFlota()?'inline-flex':'none';
  return true;
 }
 function openListModal(){
- if(!ensure()||!isAdmin())return;
+ if(!ensure()||!canManageFlota())return;
  if($('#ccTraficoFlotaModal'))return;
  search='';
  const ov=document.createElement('div');ov.id='ccTraficoFlotaModal';
@@ -101,7 +100,7 @@ function renderUserBody(u){
 }
 function modalStatus(msg,error){const e=$('#ccTraficoFlotaModal [data-modal-status]');if(e){e.textContent=msg;e.style.color=error?'#b91c1c':'#64748b';}}
 async function saveUser(){
- const ov=$('#ccTraficoFlotaModal');if(!ov||!activeUser)return;if(!isAdmin())return modalStatus('Solo un administrador puede guardar.',true);
+ const ov=$('#ccTraficoFlotaModal');if(!ov||!activeUser)return;if(!canManageFlota())return modalStatus('Tu usuario no tiene permiso para administrar la flota de Tráfico.',true);
  const enabled=ov.querySelector('[data-flag]').checked;
  if(enabled&&draftUnits.some(a=>!a.unidadId||!a.operadorId))return modalStatus('Completa unidad y operador en cada renglón de la flota.',true);
  if(new Set(draftUnits.map(a=>String(a.unidadId)).filter(Boolean)).size!==draftUnits.filter(a=>a.unidadId).length)return modalStatus('No repitas una unidad en esta flota.',true);
