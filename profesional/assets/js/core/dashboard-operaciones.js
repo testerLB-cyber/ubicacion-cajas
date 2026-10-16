@@ -2440,14 +2440,16 @@ let currentData = [];
     items.forEach(x => { const k = String(x[campo] || 'SIN DATO').trim() || 'SIN DATO'; map.set(k,(map.get(k)||0)+1); });
     return Array.from(map, ([nombre,total])=>({nombre,total:total.toLocaleString('es-MX')})).sort((a,b)=>Number(b.total.replace(/,/g,''))-Number(a.total.replace(/,/g,'')) || a.nombre.localeCompare(b.nombre,'es'));
   }
-  function categoriaServicio(tipoViaje) {
-    const normaliza = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
-    const t = normaliza(tipoViaje);
-    if (t === 'EXPO' || t.includes('EXPORT')) return 'Exportación';
-    if (t === 'IMPO' || t.includes('IMPORT')) return 'Importación';
-    if (t.includes('FORANEO')) return 'Foránea';
-    return 'Movimientos';
-  }
+  function categoriaServicio(...valores) {
+     const normaliza = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+     // Revisar todos los campos: tipo_viaje puede ser genérico mientras servicio/tipo
+     // contiene la clasificación real.
+     const t = valores.map(normaliza).filter(Boolean).join(' | ');
+     if (/(^|[^A-Z])EXPO([^A-Z]|$)|EXPORT/.test(t)) return 'Exportación';
+     if (/(^|[^A-Z])IMPO([^A-Z]|$)|IMPORT/.test(t)) return 'Importación';
+     if (/FORANEO/.test(t)) return 'Foránea';
+     return 'Movimientos';
+   }
   function agruparPorTipo(items, campo) {
     const map = new Map();
     items.forEach(x => {
@@ -2570,7 +2572,7 @@ let currentData = [];
         if(c.unidad_numero&&asignados.units.size&&!unitAssigned)alertas.push('Unidad fuera de flota actual');
         const clientId=String(c.cliente_id||f.cliente_id||'');
         const cliente=String(c.cliente_nombre||f.cliente_nombre||clientCatalog.get(clientId)||clientId||'SIN CLIENTE');
-        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo_viaje||c.servicio||c.tipo||''),categoriaServicio:categoriaServicio(c.tipo_viaje||c.servicio||c.tipo),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
+        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo_viaje||c.servicio||c.tipo||''),categoriaServicio:categoriaServicio(c.tipo_viaje,c.servicio,c.tipo),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
       const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
       if(!services.length){
