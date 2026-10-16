@@ -2415,3 +2415,132 @@ let currentData = [];
 
       renderVigencia30(lista);
     }
+
+
+// OPL_DASH_SERVICIOS_COMPROBADOS_INTEGRADO
+// Se integra dentro de Operaciones > Dashboard principal > Inicio de Operaciones.
+(function iniciarDashboardServiciosComprobadosIntegrado() {
+  const escape = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fechaISO = (d) => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+  function rangoSemanaOperativa(fecha) {
+    const d = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    const dia = d.getDay(); // sábado inicia la semana operativa
+    const desde = new Date(d); desde.setDate(d.getDate() - ((dia + 1) % 7));
+    const hasta = new Date(desde); hasta.setDate(desde.getDate() + 6);
+    return {desde: fechaISO(desde), hasta: fechaISO(hasta)};
+  }
+  function celda(label, value) { return '<div class="rounded-lg border border-slate-200 bg-white px-3 py-2"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(label)+'</div><div class="mt-1 text-lg font-bold text-slate-800">'+escape(value)+'</div></div>'; }
+  function tabla(titulo, filas, cols) {
+    const heads = cols.map(c => '<th class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(c.label)+'</th>').join('');
+    const rows = filas.length ? filas.map(f => '<tr class="border-t border-slate-100 hover:bg-blue-50/40">'+cols.map(c=>'<td class="px-3 py-2 text-xs text-slate-700">'+escape(f[c.key] ?? '—')+'</td>').join('')+'</tr>').join('') : '<tr><td class="px-3 py-5 text-center text-xs text-slate-400" colspan="'+cols.length+'">Sin servicios para el periodo seleccionado.</td></tr>';
+    return '<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2 text-sm font-bold text-slate-800">'+escape(titulo)+'</div><div class="overflow-x-auto"><table class="min-w-full"><thead class="bg-slate-50"><tr>'+heads+'</tr></thead><tbody>'+rows+'</tbody></table></div></section>';
+  }
+  function agrupar(items, campo) {
+    const map = new Map();
+    items.forEach(x => { const k = String(x[campo] || 'SIN DATO').trim() || 'SIN DATO'; map.set(k,(map.get(k)||0)+1); });
+    return Array.from(map, ([nombre,total])=>({nombre,total})).sort((a,b)=>b.total-a.total || a.nombre.localeCompare(b.nombre,'es'));
+  }
+  function iniciar() {
+    const host = document.getElementById('vistaOperativa');
+    if (!host || document.getElementById('oplServiciosComprobados')) return;
+    const week = rangoSemanaOperativa(new Date());
+    const panel = document.createElement('section');
+    panel.id = 'oplServiciosComprobados';
+    panel.className = 'mb-6 space-y-4 rounded-xl border border-blue-200 bg-slate-50 p-4';
+    panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Operaciones · Control de Hojas</div><h2 class="mt-1 text-lg font-bold text-slate-900">Servicios comprobados y desempeño por ejecutivo</h2><p class="mt-1 text-xs text-slate-500">Solo hojas utilizadas/comprobadas y no facturables. Excluye nuevas, pendientes, canceladas y devueltas. Las asignaciones se contrastan contra la configuración actual.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar</button></div></div><div id="oplServiciosEstado" class="text-xs text-slate-500">Preparando reporte…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-4"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div><div id="oplServiciosEjecutivo"></div></div><div id="oplServiciosEjecutivoDetalle"></div><div id="oplServiciosExcepciones"></div><div id="oplServiciosDetalle"></div>';
+    host.insertBefore(panel, host.firstChild);
+    panel.querySelector('#oplServiciosDesde').value = week.desde;
+    panel.querySelector('#oplServiciosHasta').value = week.hasta;
+    panel.querySelector('#oplServiciosActualizar').addEventListener('click', cargar);
+    cargar();
+  }
+  async function cargar() {
+    const panel = document.getElementById('oplServiciosComprobados');
+    if (!panel) return;
+    const desde = panel.querySelector('#oplServiciosDesde').value;
+    const hasta = panel.querySelector('#oplServiciosHasta').value;
+    const estado = panel.querySelector('#oplServiciosEstado');
+    if (!desde || !hasta || desde > hasta) { estado.textContent = 'Selecciona un rango de fechas válido.'; return; }
+    const sb = window.gmSupabase || window.supabaseClient;
+    if (!sb) { estado.textContent = 'No se encontró la conexión de datos de la aplicación.'; return; }
+    estado.textContent = 'Consultando servicios y asignaciones…';
+    panel.querySelector('#oplServiciosKPIs').innerHTML = '';
+    try {
+      const compRes = await sb.from('hs_comprobaciones').select('id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email').or('and(fecha.gte.'+desde+',fecha.lte.'+hasta+'),and(fecha_uso.gte.'+desde+',fecha_uso.lte.'+hasta+')').limit(10000);
+      if (compRes.error) throw compRes.error;
+      const raw = compRes.data || [];
+      const ids = Array.from(new Set(raw.map(x=>x.folio_id).filter(Boolean)));
+      let folios = [];
+      for (let i=0; i<ids.length; i+=500) {
+        const fr = await sb.from('hs_folios').select('id,folio,estatus,serie_id,operador_id,operador_nombre,creado_por,creado_por_nombre,cliente_id,cliente_nombre').in('id',ids.slice(i,i+500));
+        if (fr.error) throw fr.error;
+        folios.push(...(fr.data||[]));
+      }
+      const validStatuses = new Set(['UTILIZADO','NO_FACTURABLE']);
+      const folioMap = new Map(folios.map(f=>[String(f.id),f]));
+      const seen = new Set();
+      const services = raw.filter(c => {
+        const f = folioMap.get(String(c.folio_id));
+        if (!f || !validStatuses.has(String(f.estatus||'').toUpperCase())) return false;
+        if (/DEVOLUCION|CANCEL|REGRES/i.test(String(c.tipo||''))) return false;
+        const k = String(c.folio_id);
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      }).map(c=>{
+        const f=folioMap.get(String(c.folio_id));
+        return {fecha:String(c.fecha_uso||c.fecha||''),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente:String(c.cliente_nombre||f.cliente_nombre||'SIN CLIENTE'),operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId:String(c.operador_id||f.operador_id||''),unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId:String(c.unidad_id||''),ejecutivo:String(c.responsable_nombre||f.creado_por_nombre||c.aceptado_por_nombre||'SIN EJECUTIVO'),ejecutivoId:String(c.responsable_id||f.creado_por||c.creado_por||''),tipo:String(c.tipo||''),estatus:String(f.estatus||'')};
+      }).filter(s=>s.fecha>=desde&&s.fecha<=hasta);
+      const [fleetRes, usersRes] = await Promise.all([
+        sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
+        sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000)
+      ]);
+      if (fleetRes.error) throw fleetRes.error;
+      if (usersRes.error) throw usersRes.error;
+      const users = new Map((usersRes.data||[]).map(u=>[String(u.user_id),u]));
+      const fleet = fleetRes.data||[];
+      const idNorm = v=>String(v||'').trim().toLowerCase();
+      const executiveMap = new Map();
+      fleet.forEach(a=>{
+        const uid=String(a.user_id||''); if(!executiveMap.has(uid)) executiveMap.set(uid,{ops:new Set(),units:new Set()});
+        const e=executiveMap.get(uid); if(a.operador_id)e.ops.add(idNorm(a.operador_id)); if(a.unidad_id)e.units.add(idNorm(a.unidad_id));
+      });
+      const normalizeName = v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
+      services.forEach(s=>{
+        const assign=executiveMap.get(s.ejecutivoId)||{ops:new Set(),units:new Set()};
+        const opKey=idNorm(s.operadorId)||normalizeName(s.operador);
+        const unitKey=idNorm(s.unidadId)||normalizeName(s.unidad);
+        s.operadorAsignado=!!opKey&&assign.ops.has(opKey);
+        s.unidadAsignada=!!unitKey&&assign.units.has(unitKey);
+        s.ejecutivoNombre=users.get(s.ejecutivoId)?.nombre||users.get(s.ejecutivoId)?.username||s.ejecutivo;
+      });
+      const total=services.length;
+      const exOps=services.filter(s=>s.operador!=='SIN OPERADOR'&&!s.operadorAsignado).length;
+      const exUnits=services.filter(s=>s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada).length;
+      panel.querySelector('#oplServiciosKPIs').innerHTML =
+        celda('Servicios comprobados',total.toLocaleString('es-MX'))+
+        celda('Clientes con servicio',new Set(services.map(s=>s.cliente)).size.toLocaleString('es-MX'))+
+        celda('Servicios con operador fuera de flota',exOps.toLocaleString('es-MX'))+
+        celda('Servicios con unidad fuera de flota',exUnits.toLocaleString('es-MX'));
+      const renderAgg=(id,title,field)=>{ panel.querySelector(id).innerHTML=tabla(title,agrupar(services,field).map(x=>({nombre:x.nombre,total:x.total})),[{key:'nombre',label:'Nombre'},{key:'total',label:'Servicios'}]); };
+      renderAgg('#oplServiciosCliente','Servicios por cliente','cliente');
+      renderAgg('#oplServiciosOperador','Servicios por operador','operador');
+      renderAgg('#oplServiciosUnidad','Servicios por unidad','unidad');
+      renderAgg('#oplServiciosEjecutivo','Servicios por ejecutivo','ejecutivoNombre');
+      const executiveRows = (usersRes.data||[]).filter(u=>u.es_trafico).map(u=>{
+        const uid=String(u.user_id); const assigned=executiveMap.get(uid)||{ops:new Set(),units:new Set()};
+        const own=services.filter(s=>s.ejecutivoId===uid);
+        const withOp=own.filter(s=>s.operadorAsignado).length, withUnit=own.filter(s=>s.unidadAsignada).length;
+        return {ejecutivo:u.nombre||u.username||u.email||uid,operadores:assigned.ops.size,unidades:assigned.units.size,servicios:own.length,conOperadorAsignado:withOp,fueraOperador:own.filter(s=>s.operador!=='SIN OPERADOR'&&!s.operadorAsignado).length,conUnidadAsignada:withUnit,fueraUnidad:own.filter(s=>s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada).length};
+      }).sort((a,b)=>b.servicios-a.servicios);
+      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML=tabla('Detalle por ejecutivo · configuración actual',executiveRows,[{key:'ejecutivo',label:'Ejecutivo'},{key:'operadores',label:'Operadores asignados'},{key:'unidades',label:'Unidades asignadas'},{key:'servicios',label:'Servicios'},{key:'conOperadorAsignado',label:'Con operador asignado'},{key:'fueraOperador',label:'Fuera de asignación'},{key:'conUnidadAsignada',label:'Con unidad asignada'},{key:'fueraUnidad',label:'Fuera de asignación'}]);
+      const exceptions=services.filter(s=>(s.operador!=='SIN OPERADOR'&&!s.operadorAsignado)||(s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada)).map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,motivo:[s.operador!=='SIN OPERADOR'&&!s.operadorAsignado?'Operador fuera de asignación':'',s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada?'Unidad fuera de asignación':''].filter(Boolean).join(' · ')}));
+      panel.querySelector('#oplServiciosExcepciones').innerHTML=tabla('Servicios con recursos fuera de la asignación actual',exceptions,[{key:'fecha',label:'Fecha'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'motivo',label:'Motivo'}]);
+      panel.querySelector('#oplServiciosDetalle').innerHTML=tabla('Detalle de servicios incluidos',services.map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,estatus:s.estatus==='NO_FACTURABLE'?'No facturable':'Comprobado'})),[{key:'fecha',label:'Fecha de servicio'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'estatus',label:'Tipo'}]);
+      estado.textContent='Reporte actualizado. Periodo '+desde+' a '+hasta+'. Las asignaciones mostradas corresponden a la configuración actual; no se detectó historial de asignaciones para reconstruir periodos pasados.';
+    } catch(err) {
+      console.error('Dashboard integrado de servicios:',err);
+      estado.textContent='No se pudo cargar el reporte: '+String(err?.message||err);
+    }
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar,{once:true}); else iniciar();
+})();
