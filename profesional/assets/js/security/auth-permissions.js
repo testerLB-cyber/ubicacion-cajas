@@ -15,7 +15,7 @@ const PERM_SCHEMA=[
  ['dashboard','Dashboard',[['ver','Ver Dashboard']]],
  ['control_cajas','Control de Cajas',[['ver','Entrar a Control de Cajas']]],
  ['anticipos','Control de Anticipos',[['ver','Ver módulo'],['crear','Crear anticipos'],['comprobar','Comprobar'],['reabrir','Reabrir anticipos'],['caja','Movimientos de caja'],['editar_caja','Editar movimientos de caja'],['reportes','Reportes'],['catalogos','Catálogos'],['editar','Editar'],['cancelar','Cancelar']]],
- ['inventario','Inventario',[['ver','Ver'],['crear','Agregar / importar'],['editar','Editar'],['mantenimiento','Fuera de servicio'],['dot','DOT'],['qr','QR']]],
+ ['inventario','Inventario',[['ver','Ver'],['crear','Agregar / importar'],['editar','Editar'],['mantenimiento','Fuera de servicio'],['dot','DOT'],['qr','QR'],['flota_trafico','Administrar flota de usuarios de Tráfico']]],
  ['rentas','Control de renta',[['ver','Ver'],['crear','Crear'],['editar','Editar'],['finalizar','Finalizar']]],
  ['historial','Historial',[['ver','Ver'],['exportar','Exportar']]],
  ['proforma','Proforma',[['ver','Ver'],['generar_pdf','Generar PDF']]],
