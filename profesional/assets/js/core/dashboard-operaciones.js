@@ -2472,7 +2472,7 @@ let currentData = [];
     const panel = document.createElement('section');
     panel.id = 'oplServiciosComprobados';
     panel.className = 'mb-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-3 md:p-4';
-    panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Dashboard ejecutivo · Operaciones</div><h2 class="mt-1 text-lg font-bold text-slate-900">Desempeño real por ejecutivo, operador, unidad y cliente</h2><p class="mt-1 max-w-3xl text-xs text-slate-500">Actividad basada en hojas comprobadas. Incluye servicios no facturables; excluye pendientes, cancelados y devoluciones. Las asignaciones son las configuradas actualmente, no una reconstrucción histórica.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar indicadores</button></div></div><div id="oplServiciosEstado" role="status" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">Preparando consulta…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div></div><div id="oplServiciosEjecutivoDetalle"></div>';
+    panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Dashboard ejecutivo · Operaciones</div><h2 class="mt-1 text-lg font-bold text-slate-900">Desempeño real por ejecutivo, operador, unidad y cliente</h2><p class="mt-1 max-w-3xl text-xs text-slate-500">Actividad basada en hojas comprobadas. Incluye servicios no facturables; excluye pendientes, cancelados y devoluciones. Las asignaciones son las configuradas actualmente, no una reconstrucción histórica.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar indicadores</button></div></div><div id="oplServiciosEstado" role="status" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">Preparando consulta…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div></div><div id="oplServiciosEjecutivoDetalle"></div><div id="oplAsignacionesFlotaDetalle"></div>';
     host.insertBefore(panel, host.firstChild);
     panel.querySelector('#oplServiciosDesde').value = week.desde;
     panel.querySelector('#oplServiciosHasta').value = week.hasta;
@@ -2500,14 +2500,15 @@ let currentData = [];
       const hastaExclusive = (()=>{const d=new Date(hasta+'T00:00:00');d.setDate(d.getDate()+1);return fechaISO(d);})();
       // Evitar un .or() compuesto que puede comportarse distinto según el parser PostgREST.
       // Consultar cada columna de fecha por separado y unir por id/folio para no perder hojas.
-      const [compFechaRes, compUsoRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes] = await Promise.all([
+      const [compFechaRes, compUsoRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes, unitsRes] = await Promise.all([
         sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha',desde).lt('fecha',hastaExclusive).limit(10000),
         sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha_uso',desde).lt('fecha_uso',hastaExclusive).limit(10000),
         sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
         sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000),
         sb.from('cc_trafico_clientes').select('user_id,cliente_id').limit(10000),
         sb.from('cc_clientes').select('id,nombre,razon_social').limit(10000),
-        sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000)
+        sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000),
+        sb.from('cc_unidades').select('id,numero').limit(10000)
       ]);
       // La fuente de verdad son las hojas. Si falla una consulta de fechas, usar la otra; si fallan ambas, informar el error.
       if (compFechaRes.error && compUsoRes.error) throw new Error('No se pudieron leer hojas comprobadas. fecha: '+compFechaRes.error.message+'; fecha_uso: '+compUsoRes.error.message);
@@ -2534,13 +2535,14 @@ let currentData = [];
       const validStatuses = new Set(['UTILIZADO','NO_FACTURABLE']);
       const folioMap = new Map(folios.map(f=>[String(f.id),f]));
       const usersData=usersRes.data||[], fleet=fleetRes.data||[];
+      const unitIdByNumber=new Map((unitsRes.error?[]:(unitsRes.data||[])).map(u=>[norm(u.numero),norm(u.id)]));
       const userMap=new Map(usersData.map(u=>[String(u.user_id),u]));
       const userByEmail=new Map(usersData.filter(u=>u.email).map(u=>[norm(u.email),u]));
       const userByName=new Map(usersData.map(u=>[norm(u.nombre||u.username),u]));
       const respAssignments=respAssignRes.error?[]:(respAssignRes.data||[]);
       const respById=new Map(respAssignments.map(a=>[String(a.id),a]));
       const assignedByUser=new Map();
-      fleet.forEach(a=>{const uid=String(a.user_id||'');if(!assignedByUser.has(uid))assignedByUser.set(uid,{ops:new Set(),units:new Set()});const x=assignedByUser.get(uid);if(a.operador_id)x.ops.add(norm(a.operador_id));if(a.unidad_id)x.units.add(norm(a.unidad_id));});
+      fleet.forEach(a=>{const uid=String(a.user_id||'');if(!assignedByUser.has(uid))assignedByUser.set(uid,{ops:new Set(),units:new Set(),pairs:new Set()});const x=assignedByUser.get(uid);if(a.operador_id)x.ops.add(norm(a.operador_id));if(a.unidad_id)x.units.add(norm(a.unidad_id));if(a.operador_id&&a.unidad_id)x.pairs.add(norm(a.operador_id)+'|'+norm(a.unidad_id));});
       const clientCatalog=new Map((clientsRes.error?[]:(clientsRes.data||[])).map(c=>[String(c.id),String(c.nombre||c.razon_social||c.id)]));
       const clientsByUser=new Map();
       (assignedClientsRes.error?[]:(assignedClientsRes.data||[])).forEach(a=>{const uid=String(a.user_id||'');if(!clientsByUser.has(uid))clientsByUser.set(uid,new Set());clientsByUser.get(uid).add(String(a.cliente_id||''));});
@@ -2634,6 +2636,26 @@ let currentData = [];
       };
       panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('click',ev=>{const row=ev.target.closest('tr[data-ejecutivo-id]');if(row)mostrarDetalle(row.dataset.ejecutivoId);});
       panel.querySelector('#oplServiciosEjecutivoDetalle')?.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const row=ev.target.closest('tr[data-ejecutivo-id]');if(row){ev.preventDefault();mostrarDetalle(row.dataset.ejecutivoId);}}});
+
+      // Indicador de cumplimiento de flota configurada por ejecutivo.
+      const fleetRows=executives.map(u=>{
+        const uid=String(u.user_id), ids=clientsByUser.get(uid)||new Set(), keys=new Set();
+        ids.forEach(id=>{const k=String(id||'').trim();if(k)keys.add('id:'+k);const n=clientCatalog.get(k);if(n)keys.add('name:'+norm(n));if(k)keys.add('name:'+norm(k));});
+        const own=services.filter(x=>{const id=String(x.clienteId||'').trim();return (id&&keys.has('id:'+id))||keys.has('name:'+norm(x.cliente));});
+        const a=assignedByUser.get(uid)||{ops:new Set(),units:new Set(),pairs:new Set()};
+        const detail=own.map(x=>{const op=norm(x.operadorId),unit=norm(x.unidadId)||unitIdByNumber.get(norm(x.unidad))||'';return {...x,opOk:!!op&&a.ops.has(op),unitOk:!!unit&&a.units.has(unit),pairOk:!!op&&!!unit&&a.pairs.has(op+'|'+unit)};});
+        return {id:uid,name:u.nombre||u.username||u.email||uid,detail,total:detail.length,both:detail.filter(x=>x.opOk&&x.unitOk).length,missing:detail.filter(x=>!x.opOk).length,same:detail.filter(x=>x.opOk&&x.pairOk).length,other:detail.filter(x=>x.opOk&&!x.pairOk).length};
+      }).sort((a,b)=>b.total-a.total);
+      const fh=[['name','Ejecutivo'],['total','Servicios'],['both','Operador y unidad asignados'],['missing','Operador no asignado'],['same','En su unidad asignada'],['other','En otra unidad']];
+      const fhHtml=fh.map(c=>'<th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase text-slate-500">'+escape(c[1])+'</th>').join('');
+      const frHtml=fleetRows.map(e=>'<tr data-flota-exec="'+escape(e.id)+'" tabindex="0" role="button" class="cursor-pointer border-t hover:bg-blue-50">'+fh.map(c=>'<td class="whitespace-nowrap px-3 py-2 text-xs">'+escape(c[0]==='name'?e.name:fmtN(e[c[0]]))+'</td>').join('')+'</tr>').join('')||'<tr><td colspan="6" class="px-3 py-4 text-center text-xs text-slate-400">Sin servicios en el periodo.</td></tr>';
+      const flotaHost=panel.querySelector('#oplAsignacionesFlotaDetalle');
+      flotaHost.innerHTML='<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b px-3 py-2.5"><div class="text-sm font-bold">Servicios vs. asignaciones de operador y unidad</div><div class="mt-1 text-xs text-slate-500">Clic en un ejecutivo para ver los servicios y filtrar por cliente. Se compara contra la flota actualmente configurada.</div></div><div class="max-h-96 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+fhHtml+'</tr></thead><tbody>'+frHtml+'</tbody></table></div></section><section id="oplFlotaDetalle" class="mt-3 hidden rounded-xl border border-blue-200 bg-white p-3"></section>';
+      const fd=flotaHost.querySelector('#oplFlotaDetalle');
+      const showFlota=id=>{const e=fleetRows.find(x=>x.id===id);if(!e)return;const cs=[...new Set(e.detail.map(x=>x.cliente))].sort((a,b)=>a.localeCompare(b,'es'));fd.classList.remove('hidden');fd.innerHTML='<div class="flex flex-wrap items-end justify-between gap-3"><div><h3 class="font-bold">'+escape(e.name)+'</h3><p class="text-xs text-slate-500">'+fmtN(e.total)+' servicios · '+escape(desde)+' al '+escape(hasta)+'</p></div><label class="text-xs">Filtrar por cliente<select id="oplFlotaCliente" class="ml-2 rounded border px-2 py-2"><option value="">Todos</option>'+cs.map(c=>'<option>'+escape(c)+'</option>').join('')+'</select></label></div><div id="oplFlotaRows" class="mt-3"></div>';const render=()=>{const q=fd.querySelector('#oplFlotaCliente').value,rows=e.detail.filter(x=>!q||x.cliente===q).map(x=>({...x,operadorAsignado:x.opOk?'Sí':'No',unidadAsignada:x.unitOk?'Sí':'No',unidadOperador:x.pairOk?'Su unidad':'Otra unidad'}));fd.querySelector('#oplFlotaRows').innerHTML=tabla('Desglose de servicios ('+rows.length+')',rows,[{key:'fecha',label:'Fecha'},{key:'folio',label:'Folio'},{key:'cliente',label:'Cliente'},{key:'tipo',label:'Tipo de servicio'},{key:'operador',label:'Operador'},{key:'operadorAsignado',label:'Operador asignado'},{key:'unidad',label:'Unidad usada'},{key:'unidadAsignada',label:'Unidad de flota'},{key:'unidadOperador',label:'Unidad del operador'}]);};fd.querySelector('#oplFlotaCliente').addEventListener('change',render);render();fd.scrollIntoView({behavior:'smooth',block:'nearest'});};
+      flotaHost.addEventListener('click',ev=>{const r=ev.target.closest('tr[data-flota-exec]');if(r)showFlota(r.dataset.flotaExec);});
+      flotaHost.addEventListener('keydown',ev=>{const r=ev.target.closest('tr[data-flota-exec]');if(r&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();showFlota(r.dataset.flotaExec);}});
+
       const warnings=[];
       if(fleetRes.error)warnings.push('No se pudo consultar la flota asignada; se muestran los servicios sin comparar asignaciones.');
       if(usersRes.error)warnings.push('No se pudo consultar el catálogo de ejecutivos; los servicios se muestran con el responsable registrado en cada hoja.');
