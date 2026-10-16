@@ -9,8 +9,9 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let UNITS=[], OPERATORS=[], EVIDENCE=new Map(), loading=false;
 
-  function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n&&norm(x.estatus||'ACTIVO')!=='INACTIVO')||null;}
-  function boxUnits(){return UNITS.filter(x=>x.esCaja);}
+  function isBoxUnit(x){return !!x&&(!!x.esCaja||[x.tipoUnidad,x.categoria,x.tipoUnidadNombre,x.categoriaUnidad,x.tipoUnidadGeneralNombre,x.tipo_unidad_nombre,x.categoria_unidad,x.tipo_unidad_general_nombre,x.tipo].some(v=>norm(v).includes('CAJA')));}
+  function unitByNumber(v){const n=norm(v);return UNITS.find(x=>norm(x.numero)===n&&norm(x.estatus||'ACTIVO')!=='INACTIVO'&&!isBoxUnit(x))||null;}
+  function boxUnits(){return UNITS.filter(isBoxUnit);}
   function boxByNumber(v){const n=norm(v);return boxUnits().find(x=>norm(x.numero)===n)||null;}
   function operatorLabel(x){return String(x?.nombre||'')+(x?.numeroEmpleado?' · '+x.numeroEmpleado:'');}
   function operatorByLabel(v){
@@ -30,7 +31,7 @@
   function ensureLists(){
     let dl=document.getElementById('hsUnitCatalogList');
     if(!dl){dl=document.createElement('datalist');dl.id='hsUnitCatalogList';document.body.appendChild(dl);}
-    dl.innerHTML=UNITS.filter(x=>norm(x.estatus||'ACTIVO')!=='INACTIVO').map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.tipoUnidad||x.categoria||'')+(x.descripcion?' · '+x.descripcion:''))+'"></option>').join('');
+    dl.innerHTML=UNITS.filter(x=>norm(x.estatus||'ACTIVO')!=='INACTIVO'&&!isBoxUnit(x)).map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.tipoUnidad||x.categoria||'')+(x.descripcion?' · '+x.descripcion:''))+'"></option>').join('');
     let tl=document.getElementById('hsTrailerCatalogList');
     if(!tl){tl=document.createElement('datalist');tl.id='hsTrailerCatalogList';document.body.appendChild(tl);}
     tl.innerHTML=boxUnits().map(x=>'<option value="'+esc(x.numero)+'" label="'+esc((x.descripcion||'Caja')+(norm(x.estatus||'ACTIVO')==='INACTIVO'?' · INACTIVA':''))+'"></option>').join('');
@@ -175,7 +176,7 @@
         section.querySelector('[data-add-movement]').onclick=()=>{
           const holder=section.querySelector('[data-extra-movements]'),n=holder.children.length+1,card=document.createElement('div');
           card.dataset.extraMovement='1';card.style.cssText='border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:#f8fafc';
-          card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>Movimiento adicional '+n+'</strong><button type="button" class="cc-btn cc-btn-light" data-remove-movement>Quitar</button></div><div class="hs104-grid"><div class="cc-field"><label>Tipo de servicio *</label><input data-extra-tipo placeholder="Tipo de servicio"></div><div class="cc-field"><label>Clasificación *</label><input data-extra-clas placeholder="Clasificación"></div><div class="cc-field"><label>Unidad *</label><input data-extra-unidad list="hsUnitCatalogList" autocomplete="off" placeholder="Unidad del catálogo"><div data-extra-unit-status class="hs104-note">Selecciona una unidad válida del catálogo.</div></div><div class="cc-field" data-extra-trailer-wrap style="display:none"><label>Remolque / caja *</label><input data-extra-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Número de remolque"><div class="hs104-note">Obligatorio para tracto-camión.</div></div></div>';
+          card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>Movimiento adicional '+n+'</strong><button type="button" class="cc-btn cc-btn-light" data-remove-movement>Quitar</button></div><div class="hs104-grid"><div class="cc-field"><label>Tipo de servicio *</label><input data-extra-tipo placeholder="Ej. Exportación, Importación, Cruce..."></div><div class="cc-field"><label>Clasificación *</label><input data-extra-clas placeholder="Ej. Cargado, Vacío, Foráneo..."></div><div class="cc-field"><label>Unidad *</label><input data-extra-unidad list="hsUnitCatalogList" autocomplete="off" placeholder="Unidad del catálogo"><div data-extra-unit-status class="hs104-note">Selecciona una unidad válida del catálogo.</div></div><div class="cc-field" data-extra-trailer-wrap style="display:none"><label>Remolque / caja *</label><input data-extra-remolque list="hsTrailerCatalogList" autocomplete="off" placeholder="Número de remolque"><div class="hs104-note">Obligatorio para tracto-camión.</div></div></div>';
           const unitInput=card.querySelector('[data-extra-unidad]'),status=card.querySelector('[data-extra-unit-status]'),trailerWrap=card.querySelector('[data-extra-trailer-wrap]'),trailer=card.querySelector('[data-extra-remolque]');
           const sync=()=>{const u=unitByNumber(unitInput.value);if(u){unitInput.dataset.unitId=String(u.id||'');status.textContent='✓ Unidad del catálogo · '+(u.tipoUnidad||u.categoria||'');status.style.color='#15803d';unitInput.style.borderColor='#16a34a';trailerWrap.style.display=u.esTracto?'block':'none';trailer.required=!!u.esTracto;if(!u.esTracto)trailer.value='';}else{unitInput.dataset.unitId='';status.textContent='Selecciona una unidad válida del catálogo.';status.style.color='#b91c1c';unitInput.style.borderColor=unitInput.value.trim()?'#dc2626':'';trailerWrap.style.display='none';trailer.required=false;}};
           ['input','change','blur'].forEach(evt=>unitInput.addEventListener(evt,sync));card.querySelector('[data-remove-movement]').onclick=()=>{card.remove();[...holder.children].forEach((el,i)=>{const h=el.querySelector('strong');if(h)h.textContent='Movimiento adicional '+(i+1);});};holder.appendChild(card);sync();unitInput.focus();
