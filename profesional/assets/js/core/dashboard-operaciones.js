@@ -2594,19 +2594,20 @@ let currentData = [];
       panel.querySelector('#oplServiciosCliente').innerHTML=tabla('Servicios comprobados por cliente',agruparPorTipo(services,'cliente'),colsTipo);
       panel.querySelector('#oplServiciosOperador').innerHTML=tabla('Servicios realizados por operador',agruparPorTipo(services,'operador'),colsTipo);
       renderAgg('#oplServiciosUnidad','Servicios realizados por unidad','unidad');
-      // Este indicador mide únicamente hojas comprobadas de clientes asignados al ejecutivo.
-      // No incluye conteos ni comparaciones de operadores/unidades asignados.
+      // Indicador por ejecutivo responsable de la flota: cuenta hojas comprobadas
+      // de cualquier persona que las haya comprobado, siempre que el operador
+      // de la hoja esté asignado actualmente a ese ejecutivo.
       const executiveRows=executives.map(u=>{
-        const uid=String(u.user_id), clients=clientsByUser.get(uid)||new Set();
-        const own=services.filter(s=>(s.ejecutivoId===uid || (!s.ejecutivoId&&norm(s.ejecutivoNombre)===norm(u.nombre||u.username))) && !!s.clienteId && clients.has(String(s.clienteId)));
+        const uid=String(u.user_id), assignment=assignedByUser.get(uid)||{ops:new Set(),units:new Set()};
+        const own=services.filter(s=>!!s.operadorId && assignment.ops.has(norm(s.operadorId)));
         const countType=label=>own.filter(s=>s.categoriaServicio===label).length;
         return {id:uid,ejecutivo:u.nombre||u.username||u.email||uid,servicios:own.length,exportacion:countType('Exportación'),importacion:countType('Importación'),foranea:countType('Foránea'),movimientos:countType('Movimientos'),detalle:own};
       }).sort((a,b)=>b.servicios-a.servicios||a.ejecutivo.localeCompare(b.ejecutivo,'es'));
       const fmtN=n=>Number(n||0).toLocaleString('es-MX');
       const execCols=[['ejecutivo','Ejecutivo'],['exportacion','Expo'],['importacion','Impo'],['foranea','Foránea'],['movimientos','Movimientos'],['servicios','Total hojas comprobadas']];
       const execHeads=execCols.map(c=>'<th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(c[1])+'</th>').join('');
-      const execRowsHtml=executiveRows.length?executiveRows.map(e=>'<tr data-executivo-id="'+escape(e.id)+'" tabindex="0" role="button" aria-label="Ver servicios de '+escape(e.ejecutivo)+'" class="cursor-pointer border-t border-slate-100 hover:bg-blue-50 focus:bg-blue-50">'+execCols.map(c=>'<td class="whitespace-nowrap px-3 py-2 text-xs '+(c[0]==='servicios'?'font-bold text-slate-900':'text-slate-700')+'">'+escape(c[0]==='ejecutivo'?e[c[0]]:fmtN(e[c[0]]))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+execCols.length+'" class="px-3 py-5 text-center text-xs text-slate-400">No hay hojas comprobadas de clientes asignados a ejecutivos en este periodo.</td></tr>';
-      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML='<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2.5"><div class="text-sm font-bold text-slate-800">Hojas comprobadas por ejecutivo · clientes asignados</div><div class="mt-1 text-xs text-slate-500">Solo cuenta hojas comprobadas cuyo cliente está asignado al ejecutivo. Haz clic en un ejecutivo para ver las hojas y filtrar por cliente.</div></div><div class="max-h-96 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+execHeads+'</tr></thead><tbody>'+execRowsHtml+'</tbody></table></div></section><section id="oplEjecutivoServiciosDetalle" class="mt-3 hidden rounded-xl border border-blue-200 bg-white p-3"></section>';
+      const execRowsHtml=executiveRows.length?executiveRows.map(e=>'<tr data-executivo-id="'+escape(e.id)+'" tabindex="0" role="button" aria-label="Ver servicios de '+escape(e.ejecutivo)+'" class="cursor-pointer border-t border-slate-100 hover:bg-blue-50 focus:bg-blue-50">'+execCols.map(c=>'<td class="whitespace-nowrap px-3 py-2 text-xs '+(c[0]==='servicios'?'font-bold text-slate-900':'text-slate-700')+'">'+escape(c[0]==='ejecutivo'?e[c[0]]:fmtN(e[c[0]]))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+execCols.length+'" class="px-3 py-5 text-center text-xs text-slate-400">No hay hojas comprobadas de operadores asignados a ejecutivos en este periodo.</td></tr>';
+      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML='<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2.5"><div class="text-sm font-bold text-slate-800">Hojas comprobadas de operadores asignados por ejecutivo</div><div class="mt-1 text-xs text-slate-500">Cuenta hojas comprobadas de cualquier usuario para operadores asignados al ejecutivo, sin importar quién comprobó la hoja. Haz clic para ver el detalle y filtrar por cliente.</div></div><div class="max-h-96 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+execHeads+'</tr></thead><tbody>'+execRowsHtml+'</tbody></table></div></section><section id="oplEjecutivoServiciosDetalle" class="mt-3 hidden rounded-xl border border-blue-200 bg-white p-3"></section>';
       const detailHost=panel.querySelector('#oplEjecutivoServiciosDetalle');
       const mostrarDetalle=uid=>{
         const e=executiveRows.find(x=>x.id===uid); if(!e)return;
