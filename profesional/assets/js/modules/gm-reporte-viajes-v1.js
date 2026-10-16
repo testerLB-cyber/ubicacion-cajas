@@ -450,9 +450,24 @@ function renderGeofencesPanel(data,gps,events){
   const tripName=trip.numero_viaje||trip.identificador_viaje||data.numero_viaje||data.identificador_viaje||'Viaje seleccionado';
   const range=startDate&&endDate?fmtChrono(start)+' — '+fmtChrono(end):'Intervalo registrado del recorrido';
   activeTraceGeofences=ordered;
+  const nearestBoundaryGeo=(target)=>{
+   if(!target)return null;
+   const t=target.getTime();
+   let best=null,delta=Infinity;
+   ordered.forEach(e=>{
+    const d=parseGMDate(e.fecha||e.gpsAt||e.time);
+    if(!d)return;
+    const gap=Math.abs(d.getTime()-t);
+    if(gap<delta){delta=gap;best=e}
+   });
+   // Solo asociar una geocerca cercana al inicio/cierre; no atribuir una de mucho antes o después.
+   return delta<=15*60*1000?best:null;
+  };
+  const startGeo=nearestBoundaryGeo(startDate),endGeo=nearestBoundaryGeo(endDate);
+  const geoLabel=e=>e?((e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada')+' · '+(e.evento||e.tipo_evento||e.tipo||'Evento registrado')):'Sin geocerca registrada cercana';
   const boundaryRows='<div style="display:grid;grid-template-columns:1fr;gap:7px;margin-top:9px">'+
-   (start?'<div style="padding:10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:9px"><div style="font-size:10px;font-weight:800;color:#166534;text-transform:uppercase">Inicio del viaje</div><div style="font-size:12px;font-weight:800;color:#14532d;margin-top:3px">'+esc(fmtChrono(start))+'</div></div>':'')+
-   (end?'<div style="padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:9px"><div style="font-size:10px;font-weight:800;color:#b91c1c;text-transform:uppercase">Finalización del viaje</div><div style="font-size:12px;font-weight:800;color:#7f1d1d;margin-top:3px">'+esc(fmtChrono(end))+'</div><div style="font-size:10px;color:#991b1b;margin-top:3px">Cierre registrado al dejar de aparecer el viaje en GM</div></div>':'')+
+   (start?'<div style="padding:10px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:9px"><div style="font-size:10px;font-weight:800;color:#166534;text-transform:uppercase">Inicio del viaje</div><div style="font-size:12px;font-weight:800;color:#14532d;margin-top:3px">'+esc(fmtChrono(start))+'</div><div style="font-size:11px;font-weight:800;color:#166534;margin-top:5px">Geocerca de inicio: '+esc(geoLabel(startGeo))+'</div></div>':'')+
+   (end?'<div style="padding:10px;border:1px solid #fecaca;background:#fef2f2;border-radius:9px"><div style="font-size:10px;font-weight:800;color:#b91c1c;text-transform:uppercase">Finalización del viaje</div><div style="font-size:12px;font-weight:800;color:#7f1d1d;margin-top:3px">'+esc(fmtChrono(end))+'</div><div style="font-size:11px;font-weight:800;color:#b91c1c;margin-top:5px">Geocerca de finalización: '+esc(geoLabel(endGeo))+'</div><div style="font-size:10px;color:#991b1b;margin-top:3px">Cierre registrado al dejar de aparecer el viaje en GM</div></div>':'')+
   '</div>';
   const cards=ordered.map((e,i)=>{
    const name=e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada';
