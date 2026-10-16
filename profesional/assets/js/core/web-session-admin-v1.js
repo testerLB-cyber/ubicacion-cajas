@@ -25,6 +25,24 @@ const styles=document.createElement('style');styles.textContent=`
 .cc-admin-user{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
 `;document.head.appendChild(styles);
 function modal(title){document.getElementById('ccWebAdminModal')?.remove();const root=document.createElement('div');root.id='ccWebAdminModal';root.className='cc-admin-modal';root.innerHTML='<div class="cc-admin-card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>'+esc(title)+'</h2><button class="cc-admin-action subtle" id="ccWebClose">Cerrar ✕</button></div><div id="ccWebAdminContent">Cargando…</div></div>';document.body.appendChild(root);root.querySelector('#ccWebClose').onclick=()=>root.remove();root.addEventListener('click',e=>{if(e.target===root)root.remove()});return root.querySelector('#ccWebAdminContent')}
+window.ccManageMirrorSessions=async()=>{
+ if(!has('sesiones_web'))return alert('No tienes permiso para administrar sesiones');
+ const body=modal('Usuarios Cuenta Espejo · Sesiones');
+ async function refresh(){
+  body.innerHTML='Cargando sesiones…';
+  try{
+   const {data,error}=await sb().rpc('cc_mirror_session_control',{p_action:'list'});
+   if(error)throw error;
+   const rows=data?.sessions||[];
+   body.innerHTML='<p>Sesiones de cuentas externas de Cuenta Espejo activas en los últimos 30 minutos. El cierre remoto se aplica en la siguiente comprobación (máximo aproximado 20 segundos).</p><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin:10px 0"><b>'+rows.filter(r=>r.online).length+' en línea · '+rows.length+' recientes</b><button class="cc-admin-action subtle" id="ccMirrorRefresh">Actualizar</button></div><div id="ccMirrorRows"></div>';
+   body.querySelector('#ccMirrorRefresh').onclick=refresh;
+   const list=body.querySelector('#ccMirrorRows');
+   if(!rows.length){list.innerHTML='<div class="cc-admin-user">No hay sesiones recientes registradas. Al entrar al portal aparecerán aquí.</div>';return}
+   rows.forEach(row=>{const div=document.createElement('div');div.className='cc-admin-user';const device=/Mobile|Android|iPhone/i.test(row.user_agent||'')?'Móvil':'Escritorio';div.innerHTML='<div style="min-width:0;flex:1"><b>'+esc(row.nombre||row.email||'Usuario')+'</b> <span style="color:'+(row.online?'#15803d':'#b45309')+'">'+(row.online?'● En línea':'● Reciente')+'</span><div style="font-size:12px;color:#64748b">'+esc(row.email||'')+' · Cliente: '+esc(row.cliente||'Sin cliente')+' · '+device+'<br>Última actividad: '+esc(new Date(row.last_seen_at).toLocaleString('es-MX'))+'</div></div><button class="cc-admin-action danger">Cerrar sesión</button>';div.querySelector('button').onclick=async()=>{if(!confirm('¿Cerrar remotamente la sesión de '+(row.nombre||row.email||'este usuario')+'?'))return;try{const r=await sb().rpc('cc_mirror_session_control',{p_action:'revoke',p_session_id:row.id});if(r.error)throw r.error;await refresh()}catch(e){alert('No se pudo cerrar la sesión: '+e.message)}};list.appendChild(div)});
+  }catch(e){body.textContent='Error al consultar sesiones Cuenta Espejo: '+e.message}
+ }
+ await refresh();
+};
 window.ccManageWebSessions=async()=>{
  if(!has('sesiones_web'))return alert('No tienes permiso para administrar sesiones');
  const body=modal('Sesiones activas · Web App');
@@ -68,7 +86,7 @@ window.ccSendWebNotifications=async()=>{
  body.querySelector('#ccWebNotifSend').onclick=async()=>{const title=body.querySelector('#ccWebNotifTitle').value.trim(),message=body.querySelector('#ccWebNotifMessage').value.trim(),ids=[...wrap.querySelectorAll('.ccWebRecipient:checked')].map(x=>x.value);if(!title||!message||!ids.length)return alert('Captura título, mensaje y destinatarios');if(!confirm('¿Enviar notificación a '+ids.length+' usuarios?'))return;const b=body.querySelector('#ccWebNotifSend');b.disabled=true;try{const r=await rpc('send',{p_user_ids:ids,p_title:title,p_message:message});body.querySelector('#ccWebNotifResult').textContent='Enviadas: '+r.sent}catch(e){alert(e.message)}finally{b.disabled=false}};
  }catch(e){body.textContent='Error: '+e.message}
 };
-function buttons(){const a=document.getElementById('gmSideOperatorNotifications');if(!a)return;const session=document.getElementById('gmSideWebSessions'),notify=document.getElementById('gmSideWebNotifs');if(session)session.style.display=has('sesiones_web')?'':'none';if(notify)notify.style.display=has('notificaciones_usuarios')?'':'none'}
+function buttons(){const a=document.getElementById('gmSideOperatorNotifications');if(!a)return;const session=document.getElementById('gmSideWebSessions'),notify=document.getElementById('gmSideWebNotifs'),mirror=document.getElementById('gmSideMirrorSessions');if(session)session.style.display=has('sesiones_web')?'':'none';if(notify)notify.style.display=has('notificaciones_usuarios')?'':'none';if(mirror)mirror.style.display=has('sesiones_web')?'':'none'}
 window.ccSyncAdminMenu=buttons;buttons();setInterval(()=>{buttons();tick()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){buttons();tick()}});document.addEventListener('cc:access-ready',buttons);
 window.addEventListener('beforeunload',()=>{});window.ccWebSessionEndSelf=async()=>{try{await rpc('end_self',{p_client_key:key})}catch(_){}finally{key=crypto.randomUUID();sessionStorage.setItem(keyName,key)}};
 })();
