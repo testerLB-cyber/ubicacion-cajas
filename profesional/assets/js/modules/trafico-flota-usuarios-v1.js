@@ -5,11 +5,27 @@ const $=s=>document.querySelector(s), esc=v=>String(v==null?'':v).replace(/[&<>"
 const sb=()=>window.gmSupabase;
 let D={usuarios:[],unidades:[],operadores:[],clientes:[],asignaciones:[],clientesAsignados:[]},loading=false,activeUser='',draftUnits=[],draftClients=[],tab='flota',search='';
 const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||['ADMIN','SUPERADMIN','SUPER ADMIN'].includes(String(window.CC_ACCESS?.rol||'').toUpperCase());
+function openListModal(){
+ if(!ensure())return;
+ if($('#ccTraficoFlotaListModal'))return;
+ const sec=$('#ccConfigFlotaTrafico'),parent=sec.parentElement,next=sec.nextSibling;
+ const ov=document.createElement('div');ov.id='ccTraficoFlotaListModal';
+ ov.style.cssText='position:fixed;inset:0;z-index:100400;background:rgba(15,23,42,.68);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:clamp(8px,2vw,24px)';
+ ov.innerHTML='<div role="dialog" aria-modal="true" aria-label="Flota de usuarios de Tráfico" style="background:#f8fafc;width:min(1240px,98vw);height:min(880px,94vh);display:flex;flex-direction:column;border-radius:18px;overflow:hidden;box-shadow:0 24px 80px rgba(15,23,42,.4);border:1px solid #cbd5e1"><div style="flex:0 0 auto;background:#fff;border-bottom:1px solid #dbe3ef;padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div style="display:flex;align-items:center;gap:12px"><div style="width:42px;height:42px;border-radius:12px;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-size:19px"><i class="fa-solid fa-truck-fast"></i></div><div><div style="font-size:20px;font-weight:900;color:#172b4d">Flota de usuarios de Tráfico</div><div style="font-size:12px;color:#64748b;margin-top:3px">Administra unidades, operadores y clientes por usuario</div></div></div><button type="button" data-list-close aria-label="Cerrar ventana" style="border:0;background:#f1f5f9;color:#334155;border-radius:9px;width:38px;height:38px;font-size:22px;cursor:pointer">×</button></div><div data-list-content style="overflow:auto;flex:1;min-height:0;padding:12px"></div></div>';
+ document.body.appendChild(ov);
+ sec.style.cssText='display:block!important;visibility:visible!important;position:static!important;width:100%;max-width:none;margin:0!important;padding:0!important';
+ ov.querySelector('[data-list-content]').appendChild(sec);
+ const close=()=>{if(!$('#ccTraficoFlotaListModal'))return;if(next&&next.parentNode===parent)parent.insertBefore(sec,next);else parent.appendChild(sec);sec.style.cssText='';ov.remove();};
+ ov.querySelector('[data-list-close]').onclick=close;
+ ov.addEventListener('click',e=>{if(e.target===ov)close()});
+ const keyClose=e=>{if(e.key==='Escape'){close();document.removeEventListener('keydown',keyClose)}};
+ document.addEventListener('keydown',keyClose);
+}
 const unitLabel=u=>(u.numero||u.id)+(u.descripcion?' · '+u.descripcion:'');
 function ensure(){
  const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
  let b=nav.querySelector('[data-config="flotaTrafico"]');
- if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.onclick=()=>{window.ccConfigSection?.('flotaTrafico',b);load().catch(showError)};nav.appendChild(b);}
+ if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.onclick=()=>{openListModal();load().catch(showError)};nav.appendChild(b);}
  b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
  let sec=$('#ccConfigFlotaTrafico');
  if(!sec){
