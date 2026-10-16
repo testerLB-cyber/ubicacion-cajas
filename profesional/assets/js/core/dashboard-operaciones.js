@@ -2493,7 +2493,7 @@ let currentData = [];
     btn.disabled = true; btn.textContent = 'Consultando…';
     panel.querySelector('#oplServiciosKPIs').innerHTML = '';
     try {
-      const selectComprobaciones='id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email';
+      const selectComprobaciones='id,folio_id,fecha,fecha_uso,tipo,servicio,tipo_viaje,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email';
       // Usar límite superior exclusivo: fecha/hora en el último día no debe perderse por comparar contra medianoche.
       const hastaExclusive = (()=>{const d=new Date(hasta+'T00:00:00');d.setDate(d.getDate()+1);return fechaISO(d);})();
       // Evitar un .or() compuesto que puede comportarse distinto según el parser PostgREST.
@@ -2570,7 +2570,7 @@ let currentData = [];
         if(c.unidad_numero&&asignados.units.size&&!unitAssigned)alertas.push('Unidad fuera de flota actual');
         const clientId=String(c.cliente_id||f.cliente_id||'');
         const cliente=String(c.cliente_nombre||f.cliente_nombre||clientCatalog.get(clientId)||clientId||'SIN CLIENTE');
-        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),categoriaServicio:categoriaServicio(c.servicio),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
+        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId:clientId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo_viaje||c.servicio||c.tipo||''),categoriaServicio:categoriaServicio(c.tipo_viaje||c.servicio||c.tipo),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
       const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
       if(!services.length){
@@ -2598,9 +2598,32 @@ let currentData = [];
         const uid=String(u.user_id), assignment=assignedByUser.get(uid)||{ops:new Set(),units:new Set()}, clients=clientsByUser.get(uid)||new Set();
         const own=services.filter(s=>s.ejecutivoId===uid || (!s.ejecutivoId&&norm(s.ejecutivoNombre)===norm(u.nombre||u.username)));
         const usedClients=new Set(own.map(s=>s.clienteId||norm(s.cliente)));
-        return {ejecutivo:u.nombre||u.username||u.email||uid,clientesAsignados:clients.size,clientesConServicio:usedClients.size,operadoresAsignados:assignment.ops.size,unidadesAsignadas:assignment.units.size,servicios:own.length,operadorAsignado:own.filter(s=>s.operadorAsignado).length,operadorFuera:own.filter(s=>s.operador!=='SIN OPERADOR'&&assignment.ops.size&&!s.operadorAsignado).length,unidadAsignada:own.filter(s=>s.unidadAsignada).length,unidadFuera:own.filter(s=>s.unidad!=='SIN UNIDAD'&&assignment.units.size&&!s.unidadAsignada).length};
+        const countType=label=>own.filter(s=>s.categoriaServicio===label).length;
+        return {id:uid,ejecutivo:u.nombre||u.username||u.email||uid,clientesAsignados:clients.size,clientesConServicio:usedClients.size,operadoresAsignados:assignment.ops.size,unidadesAsignadas:assignment.units.size,servicios:own.length,exportacion:countType('Exportación'),importacion:countType('Importación'),foranea:countType('Foránea'),movimientos:countType('Movimientos'),operadorAsignado:own.filter(s=>s.operadorAsignado).length,operadorFuera:own.filter(s=>s.operador!=='SIN OPERADOR'&&assignment.ops.size&&!s.operadorAsignado).length,unidadAsignada:own.filter(s=>s.unidadAsignada).length,unidadFuera:own.filter(s=>s.unidad!=='SIN UNIDAD'&&assignment.units.size&&!s.unidadAsignada).length,detalle:own};
       }).sort((a,b)=>b.servicios-a.servicios||a.ejecutivo.localeCompare(b.ejecutivo,'es'));
-      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML=tabla('Control por ejecutivo · asignado contra realizado',executiveRows,[{key:'ejecutivo',label:'Ejecutivo'},{key:'clientesAsignados',label:'Clientes asignados'},{key:'clientesConServicio',label:'Clientes atendidos'},{key:'operadoresAsignados',label:'Operadores asignados'},{key:'unidadesAsignadas',label:'Unidades asignadas'},{key:'servicios',label:'Servicios reales'},{key:'operadorAsignado',label:'Servicios con operador de flota'},{key:'operadorFuera',label:'Operador fuera de flota'},{key:'unidadAsignada',label:'Servicios con unidad de flota'},{key:'unidadFuera',label:'Unidad fuera de flota'}]);
+      const fmtN=n=>Number(n||0).toLocaleString('es-MX');
+      const execCols=[['ejecutivo','Ejecutivo'],['clientesAsignados','Clientes asignados'],['clientesConServicio','Clientes atendidos'],['operadoresAsignados','Operadores asignados'],['unidadesAsignadas','Unidades asignadas'],['exportacion','Expo'],['importacion','Impo'],['foranea','Foránea'],['movimientos','Movimientos'],['servicios','Total servicios'],['operadorAsignado','Operador de flota'],['operadorFuera','Operador fuera de flota'],['unidadAsignada','Unidad de flota'],['unidadFuera','Unidad fuera de flota']];
+      const execHeads=execCols.map(c=>'<th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(c[1])+'</th>').join('');
+      const execRowsHtml=executiveRows.length?executiveRows.map(e=>'<tr data-executivo-id="'+escape(e.id)+'" tabindex="0" role="button" aria-label="Ver servicios de '+escape(e.ejecutivo)+'" class="cursor-pointer border-t border-slate-100 hover:bg-blue-50 focus:bg-blue-50">'+execCols.map(c=>'<td class="whitespace-nowrap px-3 py-2 text-xs '+(c[0]==='servicios'?'font-bold text-slate-900':'text-slate-700')+'">'+escape(c[0]==='ejecutivo'?e[c[0]]:fmtN(e[c[0]]))+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+execCols.length+'" class="px-3 py-5 text-center text-xs text-slate-400">No hay servicios asignados a ejecutivos en este periodo.</td></tr>';
+      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML='<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2.5"><div class="text-sm font-bold text-slate-800">Control por ejecutivo · asignado contra realizado</div><div class="mt-1 text-xs text-slate-500">Haz clic en cualquier ejecutivo para consultar sus hojas comprobadas y filtrar por cliente.</div></div><div class="max-h-96 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+execHeads+'</tr></thead><tbody>'+execRowsHtml+'</tbody></table></div></section><section id="oplEjecutivoServiciosDetalle" class="mt-3 hidden rounded-xl border border-blue-200 bg-white p-3"></section>';
+      const detailHost=panel.querySelector('#oplEjecutivoServiciosDetalle');
+      const mostrarDetalle=uid=>{
+        const e=executiveRows.find(x=>x.id===uid); if(!e)return;
+        detailHost.classList.remove('hidden');
+        const clientes=[...new Set(e.detalle.map(x=>x.cliente))].sort((a,b)=>a.localeCompare(b,'es'));
+        detailHost.innerHTML='<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Detalle de ejecutivo</div><h3 class="mt-1 text-base font-bold text-slate-900">'+escape(e.ejecutivo)+'</h3><p class="text-xs text-slate-500">'+fmtN(e.servicios)+' hojas comprobadas · '+escape(desde)+' al '+escape(hasta)+'</p></div><label class="text-xs text-slate-600">Filtrar por cliente<select id="oplEjecutivoFiltroCliente" class="mt-1 block min-w-56 rounded-md border border-slate-300 bg-white px-2 py-2 text-xs"><option value="">Todos los clientes</option>'+clientes.map(c=>'<option value="'+escape(c)+'">'+escape(c)+'</option>').join('')+'</select></label></div><div id="oplEjecutivoDetalleTabla" class="mt-3"></div>';
+        const renderDetalle=()=>{
+          const filtro=detailHost.querySelector('#oplEjecutivoFiltroCliente').value;
+          const list=e.detalle.filter(x=>!filtro||x.cliente===filtro).sort((a,b)=>b.fecha.localeCompare(a.fecha)||a.folio.localeCompare(b.folio,'es'));
+          const cols=[{key:'fecha',label:'Fecha'},{key:'folio',label:'Folio'},{key:'cliente',label:'Cliente'},{key:'tipo',label:'Tipo de servicio'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'estatus',label:'Estatus'}];
+          detailHost.querySelector('#oplEjecutivoDetalleTabla').innerHTML=tabla('Hojas comprobadas del ejecutivo ('+list.length+')',list,cols,'No hay servicios para el cliente seleccionado.');
+        };
+        detailHost.querySelector('#oplEjecutivoFiltroCliente').addEventListener('change',renderDetalle);
+        renderDetalle();
+        detailHost.scrollIntoView({behavior:'smooth',block:'nearest'});
+      };
+      panel.querySelector('#oplServiciosEjecutivoDetalle tbody')?.addEventListener('click',ev=>{const row=ev.target.closest('tr[data-ejecutivo-id]');if(row)mostrarDetalle(row.dataset.ejecutivoId);});
+      panel.querySelector('#oplServiciosEjecutivoDetalle tbody')?.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const row=ev.target.closest('tr[data-ejecutivo-id]');if(row){ev.preventDefault();mostrarDetalle(row.dataset.ejecutivoId);}}});
       const warnings=[];
       if(fleetRes.error)warnings.push('No se pudo consultar la flota asignada; se muestran los servicios sin comparar asignaciones.');
       if(usersRes.error)warnings.push('No se pudo consultar el catálogo de ejecutivos; los servicios se muestran con el responsable registrado en cada hoja.');
