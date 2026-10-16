@@ -1,80 +1,91 @@
 (function(){
 'use strict';
-if(window.__ccTraficoFlotaV1)return;window.__ccTraficoFlotaV1=true;
+if(window.__ccTraficoFlotaV2)return;window.__ccTraficoFlotaV2=true;
 const $=s=>document.querySelector(s), esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sb=()=>window.gmSupabase;
-let data={usuarios:[],unidades:[],operadores:[],asignaciones:[]},selected='',draft=[],loading=false;
-const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||window.CC_ACCESS?.rol==='ADMIN';
+let D={usuarios:[],unidades:[],operadores:[],clientes:[],asignaciones:[],clientesAsignados:[]},loading=false,activeUser='',draftUnits=[],draftClients=[],tab='flota',search='';
+const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||['ADMIN','SUPERADMIN','SUPER ADMIN'].includes(String(window.CC_ACCESS?.rol||'').toUpperCase());
+const unitLabel=u=>(u.numero||u.id)+(u.descripcion?' · '+u.descripcion:'');
 function ensure(){
  const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
  let b=nav.querySelector('[data-config="flotaTrafico"]');
- if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Usuarios, unidades y operadores</small>';b.onclick=()=>{window.ccConfigSection?.('flotaTrafico',b);load().catch(showError)};nav.appendChild(b);}b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
+ if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.onclick=()=>{window.ccConfigSection?.('flotaTrafico',b);load().catch(showError)};nav.appendChild(b);}
+ b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
  let sec=$('#ccConfigFlotaTrafico');
- if(!sec){sec=document.createElement('div');sec.id='ccConfigFlotaTrafico';sec.className='cc-config-section';sec.innerHTML=
- '<div class="cc-config-card"><div class="cc-toolbar"><div><strong>Flota de usuarios de Tráfico</strong><div class="cc-note">Marca qué usuarios administrarán una flota y asigna cada unidad con su operador del catálogo.</div></div><button type="button" class="cc-btn cc-btn-light" data-refresh>Actualizar</button></div>'+
- '<div class="cc-grid" style="grid-template-columns:minmax(220px,1fr) minmax(220px,2fr);align-items:end;margin-top:12px"><div class="cc-field"><label>Buscar usuario</label><input data-search placeholder="Nombre o correo"></div><div class="cc-field"><label>Usuario</label><select data-user><option value="">Selecciona un usuario</option></select></div></div>'+
- '<div data-editor style="display:none;margin-top:14px"><label style="display:flex;gap:10px;align-items:center;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-weight:800;color:#1e3a8a"><input type="checkbox" data-flag style="width:18px;height:18px"> Este usuario es de Tráfico y puede tener flota asignada</label>'+
- '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px"><strong>Unidades asignadas y sus operadores</strong><button type="button" class="cc-btn cc-btn-light" data-add>+ Agregar unidad</button></div>'+
- '<div data-rows style="display:grid;gap:8px"></div><div class="cc-note" style="margin-top:8px">Cada unidad solo puede estar asignada a un usuario de Tráfico. Puedes asignar varias unidades al mismo usuario.</div>'+
- '<div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" class="cc-btn cc-btn-primary" data-save>Guardar configuración</button></div></div><div data-empty class="cc-note" style="padding:18px 0">Selecciona un usuario para configurar su flota.</div><div data-status role="status" style="margin-top:10px"></div></div>';
- panel.appendChild(sec);
- sec.querySelector('[data-refresh]').onclick=()=>load().catch(showError);
- sec.querySelector('[data-search]').oninput=renderUsers;
- sec.querySelector('[data-user]').onchange=e=>{selected=e.target.value;draft=(data.asignaciones||[]).filter(x=>x.userId===selected).map(x=>({unidadId:x.unidadId,operadorId:x.operadorId}));renderEditor();};
- sec.querySelector('[data-flag]').onchange=()=>renderEditor();
- sec.querySelector('[data-add]').onclick=()=>{if(!sec.querySelector('[data-flag]').checked)return status('Marca primero al usuario como usuario de Tráfico.','error');draft.push({unidadId:'',operadorId:''});renderRows();};
- sec.querySelector('[data-save]').onclick=save;
+ if(!sec){
+  sec=document.createElement('div');sec.id='ccConfigFlotaTrafico';sec.className='cc-config-section';
+  sec.innerHTML='<div class="cc-config-card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px"><div><div style="font-size:20px;font-weight:850;color:#172b4d">Flota de usuarios de Tráfico</div><div class="cc-note" style="margin-top:5px">Configura qué usuarios administran unidades, operadores y clientes autorizados.</div></div><button type="button" class="cc-btn cc-btn-light" data-refresh><i class="fa-solid fa-rotate"></i> Actualizar</button></div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px"><input data-search placeholder="Buscar por nombre o correo…" style="flex:1;min-width:220px;max-width:420px"><span data-count class="cc-note"></span></div><div data-table style="overflow:auto"></div><div data-status role="status" style="margin-top:12px"></div></div>';
+  panel.appendChild(sec);sec.querySelector('[data-refresh]').onclick=()=>load().catch(showError);sec.querySelector('[data-search]').oninput=e=>{search=e.target.value.toLowerCase();renderTable();};
  }
  return true;
 }
-function status(msg,type){const e=$('#ccConfigFlotaTrafico [data-status]');if(e){e.textContent=msg;e.style.color=type==='error'?'#b91c1c':'#166534';}}
-function showError(e){status(e?.message||String(e),'error');}
+function status(msg,error=false){const el=$('#ccConfigFlotaTrafico [data-status]');if(el){el.textContent=msg;el.style.color=error?'#b91c1c':'#166534';}}
+function showError(e){status(e?.message||String(e),true);}
 async function load(){
- if(loading||!ensure())return;loading=true;status('Cargando catálogos…');
+ if(loading||!ensure())return;loading=true;status('Actualizando usuarios y catálogos…');
  try{const r=await sb().rpc('cc_trafico_flota_list');if(r.error)throw r.error;if(!r.data?.ok)throw new Error(r.data?.error==='SIN_PERMISO'?'Solo un administrador puede configurar la flota.':'No se pudo cargar la configuración.');
- data={usuarios:r.data.usuarios||[],unidades:r.data.unidades||[],operadores:r.data.operadores||[],asignaciones:r.data.asignaciones||[]};
- const sel=$('#ccConfigFlotaTrafico [data-user]');const prev=selected;sel.innerHTML='<option value="">Selecciona un usuario</option>'+data.usuarios.map(u=>'<option value="'+esc(u.userId)+'">'+esc(u.nombre||u.email||'Usuario')+' · '+esc(u.email||'')+(u.activo?'':' · INACTIVO')+'</option>').join('');
- selected=data.usuarios.some(u=>u.userId===prev)?prev:'';sel.value=selected;
- draft=selected?data.asignaciones.filter(x=>x.userId===selected).map(x=>({unidadId:x.unidadId,operadorId:x.operadorId})):[];
- renderUsers();renderEditor();status('Catálogos actualizados.'); 
+ D={usuarios:r.data.usuarios||[],unidades:r.data.unidades||[],operadores:r.data.operadores||[],clientes:r.data.clientes||[],asignaciones:r.data.asignaciones||[],clientesAsignados:r.data.clientesAsignados||[]};
+ renderTable();status('Información actualizada.');
  }finally{loading=false;}
 }
-function renderUsers(){
- const sel=$('#ccConfigFlotaTrafico [data-user]');if(!sel)return;const q=($('#ccConfigFlotaTrafico [data-search]').value||'').trim().toLowerCase();const current=selected;
- const list=data.usuarios.filter(u=>!q||[u.nombre,u.email,u.rol].some(v=>String(v||'').toLowerCase().includes(q)));
- sel.innerHTML='<option value="">Selecciona un usuario ('+list.length+')</option>'+list.map(u=>'<option value="'+esc(u.userId)+'">'+esc(u.nombre||u.email||'Usuario')+' · '+esc(u.email||'')+(u.esTrafico?' · TRÁFICO':'')+(u.activo?'':' · INACTIVO')+'</option>').join('');
- if(list.some(u=>u.userId===current)){sel.value=current;}else if(current){selected='';draft=[];renderEditor();}
+function renderTable(){
+ const el=$('#ccConfigFlotaTrafico [data-table]');if(!el)return;
+ const users=D.usuarios.filter(u=>!search||[u.nombre,u.email,u.rol].some(x=>String(x||'').toLowerCase().includes(search)));
+ $('#ccConfigFlotaTrafico [data-count]').textContent=users.length+' usuarios';
+ if(!users.length){el.innerHTML='<div style="padding:28px;text-align:center;color:#64748b">No se encontraron usuarios.</div>';return;}
+ el.innerHTML='<table style="width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:720px"><thead><tr style="background:#f1f5f9;color:#475569;text-align:left"><th style="padding:12px;border-bottom:1px solid #dbe3ef">Usuario</th><th style="padding:12px;border-bottom:1px solid #dbe3ef">Tipo</th><th style="padding:12px;border-bottom:1px solid #dbe3ef;text-align:center">Unidades</th><th style="padding:12px;border-bottom:1px solid #dbe3ef;text-align:center">Clientes</th><th style="padding:12px;border-bottom:1px solid #dbe3ef">Estado</th><th style="padding:12px;border-bottom:1px solid #dbe3ef;text-align:right">Acción</th></tr></thead><tbody>'+users.map((u,i)=>{
+ const units=D.asignaciones.filter(x=>x.userId===u.userId),clients=D.clientesAsignados.filter(x=>x.userId===u.userId);
+ return '<tr style="background:'+(i%2?'#fbfdff':'#fff')+'"><td style="padding:13px 12px;border-bottom:1px solid #e7edf5"><div style="font-weight:800;color:#172b4d">'+esc(u.nombre||'Usuario sin nombre')+'</div><div style="color:#64748b;margin-top:3px">'+esc(u.email||'')+'</div></td><td style="padding:12px;border-bottom:1px solid #e7edf5">'+(u.esTrafico?'<span style="display:inline-block;background:#dbeafe;color:#1d4ed8;border-radius:999px;padding:4px 9px;font-weight:800">TRÁFICO</span>':'<span style="color:#64748b">Usuario general</span>')+'</td><td style="padding:12px;border-bottom:1px solid #e7edf5;text-align:center;font-weight:800">'+units.length+'</td><td style="padding:12px;border-bottom:1px solid #e7edf5;text-align:center;font-weight:800">'+clients.length+'</td><td style="padding:12px;border-bottom:1px solid #e7edf5">'+(u.activo?'<span style="color:#15803d">Activo</span>':'<span style="color:#b91c1c">Inactivo</span>')+'</td><td style="padding:12px;border-bottom:1px solid #e7edf5;text-align:right"><button type="button" data-configure="'+esc(u.userId)+'" style="background:#1d4ed8;color:#fff;border:0;border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer"><i class="fa-solid fa-sliders"></i> Configurar</button></td></tr>';
+ }).join('')+'</tbody></table>';
+ el.querySelectorAll('[data-configure]').forEach(b=>b.onclick=()=>openModal(b.dataset.configure));
 }
-function renderEditor(){
- const sec=$('#ccConfigFlotaTrafico');if(!sec)return;const u=data.usuarios.find(x=>x.userId===selected),ed=sec.querySelector('[data-editor]'),empty=sec.querySelector('[data-empty]');
- ed.style.display=u?'block':'none';empty.style.display=u?'none':'block';if(!u)return;
- const flag=sec.querySelector('[data-flag]');flag.checked=!!u.esTrafico;
- sec.querySelector('[data-add]').disabled=!flag.checked;
- sec.querySelector('[data-save]').disabled=!isAdmin();
- renderRows();
+function openModal(userId){
+ const u=D.usuarios.find(x=>x.userId===userId);if(!u)return;activeUser=userId;tab='flota';
+ draftUnits=D.asignaciones.filter(x=>x.userId===userId).map(x=>({unidadId:x.unidadId,operadorId:x.operadorId}));
+ draftClients=D.clientesAsignados.filter(x=>x.userId===userId).map(x=>x.clienteId);
+ const ov=document.createElement('div');ov.id='ccTraficoFlotaModal';ov.style.cssText='position:fixed;inset:0;z-index:100500;background:rgba(15,23,42,.62);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px';
+ ov.innerHTML='<div role="dialog" aria-modal="true" aria-label="Configurar flota de usuario" style="background:#f8fafc;width:min(1050px,98vw);max-height:94vh;display:flex;flex-direction:column;border-radius:18px;overflow:hidden;box-shadow:0 24px 80px rgba(15,23,42,.35);border:1px solid #dbe4f0">'+
+ '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px"><div style="display:flex;gap:14px;align-items:center"><div style="width:48px;height:48px;border-radius:14px;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center;font-size:21px"><i class="fa-solid fa-truck-fast"></i></div><div><div style="font-size:21px;font-weight:900;color:#172b4d">Configurar flota de Tráfico</div><div style="margin-top:4px;color:#64748b;font-size:13px">'+esc(u.nombre||'')+' · '+esc(u.email||'')+'</div></div></div><button type="button" data-close aria-label="Cerrar" style="border:0;background:#f1f5f9;color:#475569;border-radius:9px;width:38px;height:38px;font-size:20px;cursor:pointer">×</button></div>'+
+ '<div style="padding:18px 24px 0;background:#fff"><label style="display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid '+(u.esTrafico?'#bfdbfe':'#e2e8f0')+';background:'+(u.esTrafico?'#eff6ff':'#f8fafc')+';border-radius:12px;color:#1e3a8a;font-weight:800"><input data-flag type="checkbox" '+(u.esTrafico?'checked':'')+' style="width:18px;height:18px;accent-color:#2563eb"> Este usuario pertenece a Tráfico y puede tener flota asignada</label><div style="display:flex;gap:6px;margin-top:16px;border-bottom:1px solid #e2e8f0"><button type="button" data-tab="flota" style="padding:12px 16px;border:0;border-bottom:3px solid #2563eb;background:#fff;color:#1d4ed8;font-weight:850;cursor:pointer"><i class="fa-solid fa-truck"></i> Unidades y operadores <span data-unit-count style="background:#dbeafe;border-radius:999px;padding:2px 7px;margin-left:4px">'+draftUnits.length+'</span></button><button type="button" data-tab="clientes" style="padding:12px 16px;border:0;border-bottom:3px solid transparent;background:#fff;color:#475569;font-weight:850;cursor:pointer"><i class="fa-solid fa-building"></i> Clientes <span data-client-count style="background:#e2e8f0;border-radius:999px;padding:2px 7px;margin-left:4px">'+draftClients.length+'</span></button></div></div>'+
+ '<div data-body style="overflow:auto;padding:20px 24px;flex:1;min-height:180px"></div><div style="background:#fff;border-top:1px solid #e2e8f0;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div data-modal-status style="font-size:12px;color:#64748b">Los cambios se aplican al guardar.</div><div style="display:flex;gap:8px"><button type="button" data-cancel style="padding:10px 16px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#334155;font-weight:800;cursor:pointer">Cancelar</button><button type="button" data-save style="padding:10px 18px;border:0;border-radius:9px;background:#1d4ed8;color:#fff;font-weight:850;cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> Guardar configuración</button></div></div></div>';
+ document.body.appendChild(ov);
+ const close=()=>ov.remove();ov.querySelector('[data-close]').onclick=close;ov.querySelector('[data-cancel]').onclick=close;ov.addEventListener('click',e=>{if(e.target===ov)close()});document.addEventListener('keydown',function escClose(e){if(e.key==='Escape'&&$('#ccTraficoFlotaModal')){close();document.removeEventListener('keydown',escClose)}});
+ ov.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;renderModal()});ov.querySelector('[data-flag]').onchange=()=>{renderModal();};
+ ov.querySelector('[data-save]').onclick=saveModal;renderModal();
 }
-function renderRows(){
- const sec=$('#ccConfigFlotaTrafico'),el=sec?.querySelector('[data-rows]');if(!el)return;
- const enabled=!!sec.querySelector('[data-flag]').checked;
- el.innerHTML=draft.map((a,i)=>{
-  const unitOpts='<option value="">Selecciona unidad</option>'+data.unidades.map(u=>'<option value="'+esc(u.id)+'" '+(a.unidadId===u.id?'selected':'')+'>'+esc(u.numero||u.id)+' · '+esc(u.descripcion||u.tipo||'')+'</option>').join('');
-  const opOpts='<option value="">Selecciona operador</option>'+data.operadores.map(o=>'<option value="'+esc(o.id)+'" '+(a.operadorId===o.id?'selected':'')+'>'+esc(o.nombre||o.id)+(o.numeroEmpleado?' · '+esc(o.numeroEmpleado):'')+'</option>').join('');
-  return '<div style="display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) auto;gap:8px;align-items:end;padding:10px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc" data-row="'+i+'"><div class="cc-field"><label>Unidad</label><select data-unit '+(enabled?'':'disabled')+'>'+unitOpts+'</select></div><div class="cc-field"><label>Operador asignado</label><select data-op '+(enabled?'':'disabled')+'>'+opOpts+'</select></div><button type="button" class="cc-btn cc-btn-light" data-remove="'+i+'" '+(enabled?'':'disabled')+'>Quitar</button></div>';
- }).join('')||'<div class="cc-note" style="padding:12px;border:1px dashed #cbd5e1;border-radius:8px">No hay unidades asignadas todavía.</div>';
- el.querySelectorAll('[data-row]').forEach(row=>{const i=Number(row.dataset.row);row.querySelector('[data-unit]').onchange=e=>{draft[i].unidadId=e.target.value;};row.querySelector('[data-op]').onchange=e=>{draft[i].operadorId=e.target.value;};row.querySelector('[data-remove]').onclick=()=>{draft.splice(i,1);renderRows();};});
+function renderModal(){
+ const ov=$('#ccTraficoFlotaModal');if(!ov)return;const enabled=ov.querySelector('[data-flag]').checked,body=ov.querySelector('[data-body]');
+ ov.querySelectorAll('[data-tab]').forEach(b=>{const active=b.dataset.tab===tab;b.style.borderBottomColor=active?'#2563eb':'transparent';b.style.color=active?'#1d4ed8':'#475569';b.style.background=active?'#f8fafc':'#fff';});
+ ov.querySelector('[data-unit-count]').textContent=draftUnits.length;ov.querySelector('[data-client-count]').textContent=draftClients.length;
+ if(!enabled){body.innerHTML='<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:22px;color:#9a3412"><div style="font-weight:900;font-size:16px">Usuario sin acceso de Tráfico</div><p style="margin:7px 0 0;font-size:13px">Activa la casilla superior para editar unidades, operadores y clientes de este usuario.</p></div>';return;}
+ if(tab==='flota'){
+  body.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap"><div><div style="font-weight:900;font-size:16px;color:#172b4d">Flota asignada</div><div style="font-size:12px;color:#64748b;margin-top:4px">Cada unidad lleva el operador que la tiene asignada en este usuario.</div></div><button type="button" data-add-unit style="border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:9px;padding:10px 13px;font-weight:850;cursor:pointer"><i class="fa-solid fa-plus"></i> Agregar unidad</button></div>'+
+  (draftUnits.length?'<div style="display:grid;gap:10px">'+draftUnits.map((a,i)=>'<div data-unit-row="'+i+'" style="display:grid;grid-template-columns:minmax(180px,1.1fr) minmax(200px,1.4fr) 42px;gap:10px;align-items:end;padding:14px;background:#fff;border:1px solid #dce5f0;border-radius:12px"><div><label style="display:block;font-size:11px;font-weight:850;color:#64748b;margin-bottom:6px">UNIDAD</label><select data-unit style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172b4d"><option value="">Selecciona unidad</option>'+D.unidades.map(x=>'<option value="'+esc(x.id)+'" '+(a.unidadId===x.id?'selected':'')+'>'+esc(unitLabel(x))+'</option>').join('')+'</select></div><div><label style="display:block;font-size:11px;font-weight:850;color:#64748b;margin-bottom:6px">OPERADOR ASIGNADO</label><select data-operator style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172b4d"><option value="">Selecciona operador</option>'+D.operadores.map(x=>'<option value="'+esc(x.id)+'" '+(a.operadorId===x.id?'selected':'')+'>'+esc(x.nombre||x.id)+(x.numeroEmpleado?' · '+esc(x.numeroEmpleado):'')+'</option>').join('')+'</select></div><button type="button" data-remove-unit="'+i+'" title="Quitar unidad" style="height:40px;border:1px solid #fecaca;background:#fff1f2;color:#be123c;border-radius:8px;cursor:pointer"><i class="fa-solid fa-trash"></i></button></div>').join('')+'</div>':'<div style="padding:36px 18px;text-align:center;background:#fff;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b"><i class="fa-solid fa-truck" style="font-size:26px;color:#94a3b8"></i><div style="font-weight:800;color:#334155;margin-top:10px">Todavía no hay unidades asignadas</div><div style="font-size:12px;margin-top:4px">Usa “Agregar unidad” para construir la flota.</div></div>')+
+  '<div style="margin-top:12px;font-size:12px;color:#64748b"><i class="fa-solid fa-circle-info"></i> Una unidad no puede pertenecer a dos usuarios de Tráfico. Puedes asignar varias unidades a un mismo usuario.</div>';
+  body.querySelector('[data-add-unit]').onclick=()=>{draftUnits.push({unidadId:'',operadorId:''});renderModal();};
+  body.querySelectorAll('[data-unit-row]').forEach(row=>{const i=Number(row.dataset.unitRow);row.querySelector('[data-unit]').onchange=e=>draftUnits[i].unidadId=e.target.value;row.querySelector('[data-operator]').onchange=e=>draftUnits[i].operadorId=e.target.value;row.querySelector('[data-remove-unit]').onclick=()=>{draftUnits.splice(i,1);renderModal();};});
+ }else{
+  body.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap"><div><div style="font-weight:900;font-size:16px;color:#172b4d">Clientes autorizados</div><div style="font-size:12px;color:#64748b;margin-top:4px">Selecciona los clientes que este usuario podrá atender o consultar.</div></div><input data-client-search placeholder="Buscar cliente…" style="padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;min-width:220px"></div><div data-client-list style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px"></div><div style="margin-top:12px;font-size:12px;color:#64748b">Puedes asignar un cliente a más de un usuario de Tráfico cuando sea necesario.</div>';
+  const renderClients=q=>{const list=D.clientes.filter(c=>!q||String(c.nombre||'').toLowerCase().includes(q)||String(c.razonSocial||'').toLowerCase().includes(q));const dest=body.querySelector('[data-client-list]');dest.innerHTML=list.map(c=>{const checked=draftClients.includes(c.id);return '<label style="display:flex;gap:10px;align-items:flex-start;padding:12px;background:'+(checked?'#eff6ff':'#fff')+';border:1px solid '+(checked?'#93c5fd':'#dbe4ef')+';border-radius:10px;cursor:pointer"><input type="checkbox" data-client="'+esc(c.id)+'" '+(checked?'checked':'')+' style="margin-top:3px;width:16px;height:16px;accent-color:#2563eb"><span><span style="display:block;font-weight:800;color:#172b4d">'+esc(c.nombre||c.razonSocial||'Cliente')+'</span>'+(c.razonSocial&&c.razonSocial!==c.nombre?'<span style="display:block;color:#64748b;font-size:11px;margin-top:3px">'+esc(c.razonSocial)+'</span>':'')+'</span></label>';}).join('')||'<div style="padding:20px;color:#64748b">No hay clientes que coincidan.</div>';dest.querySelectorAll('[data-client]').forEach(ch=>ch.onchange=()=>{const id=ch.dataset.client;if(ch.checked&&!draftClients.includes(id))draftClients.push(id);if(!ch.checked)draftClients=draftClients.filter(x=>x!==id);ov.querySelector('[data-client-count]').textContent=draftClients.length;ch.closest('label').style.background=ch.checked?'#eff6ff':'#fff';ch.closest('label').style.borderColor=ch.checked?'#93c5fd':'#dbe4ef';});};
+  body.querySelector('[data-client-search]').oninput=e=>renderClients(e.target.value.toLowerCase());renderClients('');
+ }
 }
-async function save(){
- const sec=$('#ccConfigFlotaTrafico'),flag=sec?.querySelector('[data-flag]');if(!selected)return status('Selecciona un usuario.','error');
- if(!isAdmin())return status('Solo un administrador puede guardar esta configuración.','error');
- const enabled=!!flag.checked;
- if(enabled&&draft.some(a=>!a.unidadId||!a.operadorId))return status('Completa la unidad y el operador de cada renglón.','error');
- if(new Set(draft.map(a=>a.unidadId).filter(Boolean)).size!==draft.filter(a=>a.unidadId).length)return status('No repitas una unidad en la misma flota.','error');
- if(!enabled&&draft.length){draft=[];}
- const b=sec.querySelector('[data-save]');b.disabled=true;b.textContent='Guardando…';
- try{const r=await sb().rpc('cc_trafico_flota_save',{p_user_id:selected,p_es_trafico:enabled,p_asignaciones:enabled?draft:[]});if(r.error)throw r.error;if(!r.data?.ok){const msgs={UNIDAD_ASIGNADA_A_OTRO_USUARIO:'Una de las unidades ya está asignada a otro usuario de Tráfico.',UNIDAD_NO_DISPONIBLE:'Una unidad seleccionada ya no está activa.',OPERADOR_NO_DISPONIBLE:'Un operador seleccionado ya no está activo.',UNIDAD_Y_OPERADOR_REQUERIDOS:'Cada unidad necesita un operador.'};throw new Error(msgs[r.data?.error]||r.data?.error||'No se pudo guardar.');}
- status('Configuración guardada correctamente.');await load();
- }catch(e){showError(e);}finally{b.disabled=false;b.textContent='Guardar configuración';}
+async function saveModal(){
+ const ov=$('#ccTraficoFlotaModal');if(!ov||!activeUser)return;
+ if(!isAdmin())return modalStatus('Solo un administrador puede guardar.',true);
+ const enabled=ov.querySelector('[data-flag]').checked;
+ if(enabled&&draftUnits.some(a=>!a.unidadId||!a.operadorId))return modalStatus('Completa unidad y operador en cada renglón de la flota.',true);
+ if(new Set(draftUnits.map(a=>a.unidadId).filter(Boolean)).size!==draftUnits.filter(a=>a.unidadId).length)return modalStatus('No repitas una unidad en esta flota.',true);
+ if(new Set(draftClients).size!==draftClients.length)return modalStatus('Hay clientes repetidos.',true);
+ const save=ov.querySelector('[data-save]');save.disabled=true;save.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Guardando…';
+ try{
+  const r=await sb().rpc('cc_trafico_flota_save',{p_user_id:activeUser,p_es_trafico:enabled,p_asignaciones:enabled?draftUnits:[],p_clientes:enabled?draftClients.map(clienteId=>({clienteId})):[]});
+  if(r.error)throw r.error;
+  if(!r.data?.ok){const msgs={UNIDAD_ASIGNADA_A_OTRO_USUARIO:'Una unidad ya está asignada a otro usuario de Tráfico.',UNIDAD_NO_DISPONIBLE:'Una unidad seleccionada ya no está activa.',OPERADOR_NO_DISPONIBLE:'Un operador seleccionado ya no está activo.',UNIDAD_Y_OPERADOR_REQUERIDOS:'Cada unidad debe tener un operador.',CLIENTE_NO_DISPONIBLE:'Uno de los clientes seleccionados ya no está activo.',MARCA_USUARIO_COMO_TRAFICO_PRIMERO:'Activa primero el permiso de usuario de Tráfico.'};throw new Error(msgs[r.data.error]||r.data.error||'No se pudo guardar la configuración.');}
+  ov.remove();await load();status('Flota, operadores y clientes guardados correctamente.');
+ }catch(e){modalStatus(e.message||String(e),true);}finally{if($('#ccTraficoFlotaModal')){save.disabled=false;save.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Guardar configuración';}}
 }
+function modalStatus(msg,error){const e=$('#ccTraficoFlotaModal [data-modal-status]');if(e){e.textContent=msg;e.style.color=error?'#b91c1c':'#64748b';}}
 document.addEventListener('cc:access-ready',()=>{if(ensure()&&isAdmin())load().catch(showError);});
 document.addEventListener('click',e=>{if(e.target.closest('[onclick*="ccTab(\'configuracion\'"]'))setTimeout(()=>{if(ensure()&&isAdmin())load().catch(showError);},120);});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(ensure()&&isAdmin()&&window.CC_AUTH_READY)load().catch(showError);});else if(ensure()&&isAdmin()&&window.CC_AUTH_READY)load().catch(showError);
