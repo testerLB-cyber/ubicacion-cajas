@@ -2472,18 +2472,26 @@ let currentData = [];
     btn.disabled = true; btn.textContent = 'Consultando…';
     panel.querySelector('#oplServiciosKPIs').innerHTML = '';
     try {
-      const [compRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes] = await Promise.all([
-        sb.from('hs_comprobaciones').select('id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email').or('and(fecha.gte.'+desde+',fecha.lte.'+hasta+'),and(fecha_uso.gte.'+desde+',fecha_uso.lte.'+hasta+')').limit(10000),
+      const selectComprobaciones='id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email';
+      // Evitar un .or() compuesto que puede comportarse distinto según el parser PostgREST.
+      // Consultar cada columna de fecha por separado y unir por id/folio para no perder hojas.
+      const [compFechaRes, compUsoRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes] = await Promise.all([
+        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha',desde).lte('fecha',hasta).limit(10000),
+        sb.from('hs_comprobaciones').select(selectComprobaciones).gte('fecha_uso',desde).lte('fecha_uso',hasta).limit(10000),
         sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
         sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000),
         sb.from('cc_trafico_clientes').select('user_id,cliente_id').limit(10000),
         sb.from('cc_clientes').select('id,nombre,razon_social').limit(10000),
         sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000)
       ]);
-      // Las hojas comprobadas son el dato principal. Las consultas de flota/usuarios enriquecen el reporte, pero nunca deben impedir mostrar servicios si tienen un problema de permisos.
-      if (compRes.error) throw compRes.error;
-      // Una hoja puede tener fecha_uso vacía o fuera del rango mientras fecha sí está en el rango.
-      const raw = (compRes.data||[]).filter(c=>{
+      // La fuente de verdad son las hojas. Si falla una consulta de fechas, usar la otra; si fallan ambas, informar el error.
+      if (compFechaRes.error && compUsoRes.error) throw compFechaRes.error;
+      const compRows=[...(compFechaRes.data||[]),...(compUsoRes.data||[])];
+      const compById=new Map();
+      compRows.forEach(c=>compById.set(String(c.id||c.folio_id||JSON.stringify(c)),c));
+      const compData=[...compById.values()];
+      // Las hojas comprobadas son el dato principal. Las consultas de flota/usuarios enriquecen el reporte, pero nunca deben impedir mostrar servicios.
+      const raw = compData.filter(c=>{
         const fu=String(c.fecha_uso||'').slice(0,10), f=String(c.fecha||'').slice(0,10);
         return (fu>=desde&&fu<=hasta)||(f>=desde&&f<=hasta);
       });
