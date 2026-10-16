@@ -1710,5 +1710,24 @@ html,body{min-height:100%;margin:0;background:#f1f5f9;font-family:Arial,Helvetic
  new MutationObserver(moveSheets).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
+
+<script id="ccRenameSheetsMenu20261016">
+(function(){
+ function renameSheets(){
+  document.querySelectorAll('.cc-tabs .cc-tab').forEach(function(el){
+   var label=((el.textContent||'')+' '+(el.getAttribute('aria-label')||'')+' '+(el.title||'')).replace(/\\s+/g,' ').trim();
+   if(!/control\\s+de\\s+hojas/i.test(label))return;
+   Array.from(el.childNodes).forEach(function(node){
+    if(node.nodeType===Node.TEXT_NODE && /control\\s+de\\s+hojas/i.test(node.nodeValue||''))node.nodeValue=' Hojas de servicio';
+   });
+   if(el.hasAttribute('aria-label'))el.setAttribute('aria-label','Hojas de servicio');
+   if(el.title)el.title='Hojas de servicio';
+  });
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',renameSheets);else renameSheets();
+ new MutationObserver(renameSheets).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+
 </body>
 </html>
