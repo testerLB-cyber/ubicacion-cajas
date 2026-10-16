@@ -2480,10 +2480,17 @@ let currentData = [];
         sb.from('cc_clientes').select('id,nombre,razon_social').limit(10000),
         sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000)
       ]);
+      // Las hojas comprobadas son el dato principal. Las consultas de flota/usuarios enriquecen el reporte, pero nunca deben impedir mostrar servicios si tienen un problema de permisos.
       if (compRes.error) throw compRes.error;
-      if (fleetRes.error) throw fleetRes.error;
-      if (usersRes.error) throw usersRes.error;
-      const raw = (compRes.data||[]).filter(c=>{const d=String(c.fecha_uso||c.fecha||'');return d>=desde&&d<=hasta;});
+      // Una hoja puede tener fecha_uso vacía o fuera del rango mientras fecha sí está en el rango.
+      const raw = (compRes.data||[]).filter(c=>{
+        const fu=String(c.fecha_uso||'').slice(0,10), f=String(c.fecha||'').slice(0,10);
+        return (fu>=desde&&fu<=hasta)||(f>=desde&&f<=hasta);
+      });
+      const fechaServicio = c => {
+        const fu=String(c.fecha_uso||'').slice(0,10), f=String(c.fecha||'').slice(0,10);
+        return (fu>=desde&&fu<=hasta)?fu:f;
+      };
       const ids = Array.from(new Set(raw.map(x=>x.folio_id).filter(Boolean)));
       const folios = [];
       for (let i=0; i<ids.length; i+=500) {
@@ -2532,7 +2539,7 @@ let currentData = [];
         if(c.unidad_numero&&asignados.units.size&&!unitAssigned)alertas.push('Unidad fuera de flota actual');
         const clientId=String(c.cliente_id||f.cliente_id||'');
         const cliente=String(c.cliente_nombre||f.cliente_nombre||clientCatalog.get(clientId)||clientId||'SIN CLIENTE');
-        unique.set(k,{fecha:String(c.fecha_uso||c.fecha||''),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
+        unique.set(k,{fecha:fechaServicio(c),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
       const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
       const executives=usersData.filter(u=>u.es_trafico===true);
@@ -2564,6 +2571,8 @@ let currentData = [];
       panel.querySelector('#oplServiciosExcepciones').innerHTML=tabla('Revisión de servicios con operador o unidad fuera de la flota asignada',exceptions,[{key:'fecha',label:'Fecha'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador utilizado'},{key:'unidad',label:'Unidad utilizada'},{key:'motivo',label:'Observación'}]);
       panel.querySelector('#oplServiciosDetalle').innerHTML=tabla('Detalle completo de hojas comprobadas',services.map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,estatus:s.estatus==='NO_FACTURABLE'?'No facturable':'Comprobado',alerta:s.alerta||'—'})),[{key:'fecha',label:'Fecha de servicio'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'estatus',label:'Estatus'},{key:'alerta',label:'Validación de flota'}]);
       const warnings=[];
+      if(fleetRes.error)warnings.push('No se pudo consultar la flota asignada; se muestran los servicios sin comparar asignaciones.');
+      if(usersRes.error)warnings.push('No se pudo consultar el catálogo de ejecutivos; los servicios se muestran con el responsable registrado en cada hoja.');
       if(assignedClientsRes.error)warnings.push('La consulta de clientes asignados no está disponible por permisos.');
       if(clientsRes.error)warnings.push('Se muestran identificadores cuando el catálogo de clientes no es accesible.');
       if(respAssignRes.error)warnings.push('Se utilizó la información de responsable disponible en las hojas.');
