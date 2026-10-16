@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let map=null,markers=null,rows=[],playTimer=null,playPath=[],playIndex=0,playMarker=null,playLine=null,traceVersion=0,selectedTrip=null;
+let map=null,markers=null,rows=[],playTimer=null,playPath=[],playIndex=0,playMarker=null,playLine=null,traceVersion=0,selectedTrip=null,activeTraceData=null,activeTraceGps=[],activeTraceGeofences=[],geofenceFocusMarker=null;
 const date=d=>{const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
 function inject(){
  const bar=$('airHistoryBtn')?.parentElement;if(!bar||bar.querySelector('#gmTripReportButton'))return;
@@ -23,6 +23,15 @@ function open(){
  '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px"><label style="display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;font-weight:700"><input id="gmTripsShowTransit" type="checkbox" style="accent-color:#0f766e"> Mostrar viajes en tránsito</label><label id="gmTripsFindWrap">Buscar número de viaje <input id="gmTripsFind" type="search" placeholder="Ej. 80564" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:180px"></label><label>Consultar por <select id="gmTripsMode" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"><option value="VIAJES">Viajes</option><option value="HORAS">Unidad y horario</option></select></label><div id="gmTripsHours" style="display:none;gap:7px;flex-wrap:wrap;align-items:end;width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><label>Unidad <input id="gmTripsUnit" placeholder="Ej. LB14" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px;width:110px"></label><label>Desde <input type="datetime-local" id="gmTripsHourFrom" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></label><label>Hasta <input type="datetime-local" id="gmTripsHourTo" style="display:block;padding:9px;border:1px solid #cbd5e1;border-radius:8px"></label><button id="gmTripsHoursGo" type="button" class="airFullBtn">Ver recorrido por horas</button></div></div>'+ '<p id="gmTripsStatus" style="font-size:12px;color:#475569"></p><div style="display:grid;grid-template-columns:minmax(230px,0.82fr) minmax(360px,1.2fr) minmax(360px,1.15fr);gap:10px;flex:1;min-height:0;overflow:hidden" id="gmTripsLayout"><div id="gmTripsResults" style="overflow:auto;min-height:0;border:1px solid #e2e8f0;border-radius:10px"></div><div id="gmTripsMap" style="height:100%;min-height:0;border-radius:10px;background:#e2e8f0"></div><div id="gmTripsEvents" style="overflow-y:auto;overflow-x:hidden;min-height:0;border:1px solid #e2e8f0;border-radius:10px;padding:8px;font-size:12px;color:#475569;overscroll-behavior:contain">Selecciona un viaje para ver su cronología completa.</div></div>'+
  '<div id="gmTripsPlayback" style="display:none;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;flex-shrink:0"><button type="button" id="gmTripsPlay" style="border:0;border-radius:8px;background:#0f766e;color:white;padding:9px 15px;font-weight:700;cursor:pointer">▶ Reproducir</button><button type="button" id="gmTripsPause" class="airFullBtn">⏸ Pausar</button><button type="button" id="gmTripsReset" class="airFullBtn">↺ Reiniciar</button><label style="font-size:12px">Velocidad <select id="gmTripsSpeed"><option value="1">1×</option><option value="2">2×</option><option value="5" selected>5×</option><option value="10">10×</option></select></label><label style="font-size:12px;display:inline-flex;align-items:center;gap:5px"><input id="gmTripsFollow" type="checkbox" checked> Seguir unidad</label><button type="button" id="gmTripsMp4" class="airFullBtn">🎞 Descargar animación GIF</button><input type="range" id="gmTripsProgress" value="0" min="0" max="100" style="flex:1;min-width:120px" aria-label="Posición del recorrido"><span id="gmTripsTime" style="font-size:11px;color:#475569"></span></div>'+ '<footer style="flex-shrink:0;border-top:1px solid #e2e8f0;padding:7px 0 0;margin-top:7px;display:flex;justify-content:flex-end"><button type="button" id="gmTripsCloseBottom" style="background:#0f172a;color:white;padding:11px 22px;border:0;border-radius:9px;font-weight:800;cursor:pointer">Cerrar reporte</button></footer>'+ '<style>#gmTripsTripFilters{flex-shrink:0;margin:8px 0!important}#gmTripsLayout{flex:1;min-height:0}#gmTripsMap{height:100%!important}@media(max-width:1000px){#gmTripsLayout{grid-template-columns:minmax(180px,.7fr) minmax(280px,1fr)!important}#gmTripsEvents{grid-column:1/-1;max-height:220px}#gmTripsMap{min-height:360px!important}}@media(max-width:650px){#gmTripsLayout{grid-template-columns:1fr!important;overflow:auto!important}#gmTripsResults{max-height:180px}#gmTripsMap{height:300px!important;min-height:300px!important}#gmTripsEvents{max-height:300px}}</style></section>';
  document.body.appendChild(m);
+ const eventsPanel=$('gmTripsEvents');
+ if(eventsPanel&&!eventsPanel.dataset.geofenceClickBound){
+  eventsPanel.dataset.geofenceClickBound='1';
+  eventsPanel.addEventListener('click',ev=>{
+   const card=ev.target.closest('[data-geofence-index]');
+   if(!card)return;
+   focusGeofenceAtTime(Number(card.dataset.geofenceIndex));
+  });
+ }
  if(window.CC_MIRROR_EXTERNAL){
   const clientFilter=$('gmTripsClient')?.closest('label');if(clientFilter)clientFilter.style.display='none';
   const scope=document.createElement('div');scope.id='gmTripsMirrorScope';scope.style.cssText='padding:8px 11px;border:1px solid #bfdbfe;background:#eff6ff;color:#1e40af;border-radius:9px;font-size:12px;font-weight:700;margin:8px 0';scope.textContent='Cuenta espejo · Reporte limitado automáticamente a los viajes del cliente asignado.';
@@ -440,13 +449,41 @@ function renderGeofencesPanel(data,gps,events){
   const ordered=(events||[]).filter(within).slice().sort((a,b)=>(parseGMDate(a.fecha||a.gpsAt||a.time)?.getTime()||0)-(parseGMDate(b.fecha||b.gpsAt||b.time)?.getTime()||0));
   const tripName=trip.numero_viaje||trip.identificador_viaje||data.numero_viaje||data.identificador_viaje||'Viaje seleccionado';
   const range=startDate&&endDate?fmtChrono(start)+' — '+fmtChrono(end):'Intervalo registrado del recorrido';
+  activeTraceGeofences=ordered;
   const cards=ordered.map((e,i)=>{
    const name=e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada';
    const event=e.evento||e.tipo_evento||e.tipo||'Registro de historial';
    const time=e.fecha||e.gpsAt||e.time;
-   return '<article style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:start;padding:11px;border:1px solid #e2e8f0;border-radius:11px;background:#fff;box-shadow:0 1px 2px #0f172a08;margin-top:8px"><div style="width:36px;height:36px;border-radius:10px;background:#e6f4f1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900">'+(i+1)+'</div><div style="min-width:0"><div style="font-size:12px;font-weight:800;color:#0f172a;overflow-wrap:anywhere">'+esc(name)+'</div><div style="margin-top:4px;font-size:11px;color:#0f766e;font-weight:700">'+esc(event)+'</div><div style="margin-top:5px;font-size:10px;color:#64748b">'+esc(fmtChrono(time))+'</div></div></article>';
+   return '<button type="button" data-geofence-index="'+i+'" title="Mostrar ubicación de la unidad a esta hora en el mapa" style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:start;padding:11px;border:1px solid #cbd5e1;border-radius:11px;background:#fff;box-shadow:0 1px 2px #0f172a08;margin-top:8px;width:100%;text-align:left;cursor:pointer;color:inherit"><div style="width:36px;height:36px;border-radius:10px;background:#e6f4f1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900">'+(i+1)+'</div><div style="min-width:0"><div style="font-size:12px;font-weight:800;color:#0f172a;overflow-wrap:anywhere">'+esc(name)+'</div><div style="margin-top:4px;font-size:11px;color:#0f766e;font-weight:700">'+esc(event)+'</div><div style="margin-top:5px;font-size:10px;color:#64748b">'+esc(fmtChrono(time))+'</div><div style="margin-top:6px;font-size:10px;color:#2563eb;font-weight:800">⌖ Ver ubicación en el mapa</div></div></button>';
   }).join('');
   return '<section style="height:100%;min-height:0;display:flex;flex-direction:column;background:#f8fafc;border-radius:8px;padding:10px"><header style="padding:12px;border-radius:12px;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff;box-shadow:0 4px 12px #0f766e20"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800;opacity:.85">Historial del recorrido</div><div style="font-size:14px;font-weight:800;margin-top:4px">'+esc(tripName)+'</div><div style="display:flex;align-items:baseline;gap:7px;margin-top:10px"><strong style="font-size:34px;line-height:1">'+ordered.length+'</strong><span style="font-size:12px;font-weight:700">geocercas registradas</span></div><div style="font-size:10px;line-height:1.5;opacity:.9;margin-top:8px">'+esc(range)+'</div></header><div style="font-size:11px;color:#64748b;margin:12px 2px 4px">Registros guardados en el historial durante el intervalo del viaje, independientemente de que GM los muestre.</div><div style="overflow:auto;min-height:0;flex:1;padding:0 2px 8px">'+(ordered.length?cards:'<div style="margin-top:10px;padding:18px 12px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;background:#fff"><div style="font-size:22px;color:#94a3b8">◎</div><div style="font-size:12px;font-weight:800;color:#334155;margin-top:6px">Sin geocercas en este intervalo</div><div style="font-size:11px;color:#64748b;margin-top:4px">No se encontraron registros de historial dentro del lapso del viaje.</div></div>')+'</div></section>';
+}
+function focusGeofenceAtTime(index){
+ const event=activeTraceGeofences[index];
+ if(!event||!map||!markers)return;
+ const time=event.fecha||event.gpsAt||event.time,at=parseGMDate(time);
+ if(!at||!activeTraceGps.length){
+  if($('gmTripsStatus'))$('gmTripsStatus').textContent='No hay posiciones GPS del recorrido para ubicar la unidad a la hora de esta geocerca.';
+  return;
+ }
+ let nearest=null,delta=Infinity;
+ for(const p of activeTraceGps){const d=parseGMDate(p.time);if(!d)continue;const diff=Math.abs(d.getTime()-at.getTime());if(diff<delta){delta=diff;nearest=p}}
+ if(!nearest){
+  if($('gmTripsStatus'))$('gmTripsStatus').textContent='No se encontró una posición GPS con hora válida para esta geocerca.';
+  return;
+ }
+ if(geofenceFocusMarker){markers.removeLayer(geofenceFocusMarker);geofenceFocusMarker=null}
+ const name=event.nombre||event.geocerca||event.nombre_geocerca||'Geocerca registrada';
+ const ev=event.evento||event.tipo_evento||event.tipo||'Evento';
+ const seconds=Math.round(delta/1000);
+ const deltaText=seconds<60?seconds+' s':Math.round(seconds/60)+' min';
+ const icon=vehicleIcon(activeTraceData||{});
+ geofenceFocusMarker=L.marker([nearest.lat,nearest.lng],{icon,zIndexOffset:2500})
+  .bindPopup('<b>'+esc((activeTraceData&&activeTraceData.unidad)||'Unidad')+'</b><br>'+esc(name)+' · '+esc(ev)+'<br>Hora de geocerca: '+esc(fmtChrono(time))+'<br>GPS utilizado: '+esc(fmtChrono(nearest.time))+(seconds?' <br><small>Diferencia entre evento y GPS: '+esc(deltaText)+'</small>':''))
+  .addTo(markers);
+ map.setView([nearest.lat,nearest.lng],Math.max(map.getZoom(),14),{animate:false});
+ geofenceFocusMarker.openPopup();
+ if($('gmTripsStatus'))$('gmTripsStatus').textContent='Unidad ubicada en la posición GPS más cercana al evento de geocerca: '+fmtChrono(time)+'.';
 }
 function buildChronology(data,gps,events,statusRows){
  const trip=selectedTrip||{};
@@ -469,7 +506,8 @@ function buildChronology(data,gps,events,statusRows){
 }
 async function showTrace(data,version){
  try{
- const allGps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time));const gps=allGps,events=(data.geocercas||[]),statusRows=(data.estatus_unidad||[]);
+ activeTraceData=data;geofenceFocusMarker=null;
+ const allGps=(data.puntos||[]).filter(x=>Number.isFinite(+x.lat)&&Number.isFinite(+x.lon)).map(x=>({lat:Number(x.lat),lng:Number(x.lon),time:x.fecha})).sort((a,b)=>new Date(a.time)-new Date(b.time));const gps=allGps,events=(data.geocercas||[]),statusRows=(data.estatus_unidad||[]);activeTraceGps=gps;
   const geosHtml=renderGeofencesPanel(data,gps,events);
  await ensureTripsLeaflet();if(version!==traceVersion||!$('gmTripsMap'))return;
  if(!map){map=L.map('gmTripsMap').setView([29.1,-110.9],9);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19,crossOrigin:'anonymous'}).addTo(map)}
@@ -580,8 +618,7 @@ async function showTrace(data,version){
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
-  '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:11px"><span><i style="display:inline-block;width:18px;border-top:3px dashed #64748b;margin-right:5px"></i>Trayectoria GPS registrada</span><span style="color:#0f766e;font-weight:800">➤ Dirección de avance</span></div>'+
-  '<div style="font-size:10px;color:#64748b;margin-bottom:5px">Trayecto considerado: desde la salida registrada en GM hasta que el viaje desapareció de la API; si sigue activo, hasta el último GPS disponible. Distancia calculada a partir de posiciones GPS registradas · '+km.toFixed(1)+' km aprox.</div><div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml;
+<div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml;
   updateRouteCoverage();
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
