@@ -2418,7 +2418,7 @@ let currentData = [];
 
 
 // OPL_DASH_SERVICIOS_COMPROBADOS_INTEGRADO
-// Se integra dentro de Operaciones > Dashboard principal > Inicio de Operaciones.
+// Ubicación correcta: Operaciones > Inicio (ccPanelDashboard). Nunca en la página principal.
 (function iniciarDashboardServiciosComprobadosIntegrado() {
   const escape = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fechaISO = (d) => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
@@ -2441,13 +2441,15 @@ let currentData = [];
     return Array.from(map, ([nombre,total])=>({nombre,total})).sort((a,b)=>b.total-a.total || a.nombre.localeCompare(b.nombre,'es'));
   }
   function iniciar() {
-    const host = document.getElementById('vistaOperativa');
+    // El panel pertenece al Inicio del módulo Operaciones, no al dashboard principal de acceso.
+    const host = document.getElementById('ccPanelDashboard');
     if (!host || document.getElementById('oplServiciosComprobados')) return;
     const week = rangoSemanaOperativa(new Date());
     const panel = document.createElement('section');
     panel.id = 'oplServiciosComprobados';
     panel.className = 'mb-6 space-y-4 rounded-xl border border-blue-200 bg-slate-50 p-4';
     panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Operaciones · Control de Hojas</div><h2 class="mt-1 text-lg font-bold text-slate-900">Servicios comprobados y desempeño por ejecutivo</h2><p class="mt-1 text-xs text-slate-500">Solo hojas utilizadas/comprobadas y no facturables. Excluye nuevas, pendientes, canceladas y devueltas. Las asignaciones se contrastan contra la configuración actual.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar</button></div></div><div id="oplServiciosEstado" class="text-xs text-slate-500">Preparando reporte…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-4"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div><div id="oplServiciosEjecutivo"></div></div><div id="oplServiciosEjecutivoDetalle"></div><div id="oplServiciosExcepciones"></div><div id="oplServiciosDetalle"></div>';
+    // Colocarlo arriba del contenido existente de Inicio de Operaciones.
     host.insertBefore(panel, host.firstChild);
     panel.querySelector('#oplServiciosDesde').value = week.desde;
     panel.querySelector('#oplServiciosHasta').value = week.hasta;
