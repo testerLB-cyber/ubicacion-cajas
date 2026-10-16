@@ -2600,7 +2600,14 @@ let currentData = [];
       // asignados actualmente a ese ejecutivo, sin importar quién comprobó la hoja.
       const executiveRows=executives.map(u=>{
         const uid=String(u.user_id), clientIds=clientsByUser.get(uid)||new Set();
-        const own=services.filter(s=>!!s.clienteId && clientIds.has(String(s.clienteId)));
+        // Comparar por ID y por nombre normalizado: algunos registros históricos guardan
+        // el nombre del cliente en vez del ID del catálogo.
+        const clientKeys=new Set();
+        clientIds.forEach(id=>{const key=String(id||'').trim();if(key)clientKeys.add('id:'+key);const name=clientCatalog.get(key);if(name)clientKeys.add('name:'+norm(name));if(key)clientKeys.add('name:'+norm(key));});
+        const own=services.filter(s=>{
+          const id=String(s.clienteId||'').trim();
+          return (id&&clientKeys.has('id:'+id)) || clientKeys.has('name:'+norm(s.cliente));
+        });
         const countType=label=>own.filter(s=>s.categoriaServicio===label).length;
         return {id:uid,ejecutivo:u.nombre||u.username||u.email||uid,servicios:own.length,exportacion:countType('Exportación'),importacion:countType('Importación'),foranea:countType('Foránea'),movimientos:countType('Movimientos'),detalle:own};
       }).sort((a,b)=>b.servicios-a.servicios||a.ejecutivo.localeCompare(b.ejecutivo,'es'));
@@ -2611,7 +2618,7 @@ let currentData = [];
       panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML='<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2.5"><div class="text-sm font-bold text-slate-800">Hojas comprobadas de operadores asignados por ejecutivo</div><div class="mt-1 text-xs text-slate-500">Cuenta hojas comprobadas de los clientes asignados actualmente al ejecutivo, sin importar quién comprobó la hoja. Haz clic para ver el detalle por cliente y tipo de servicio.</div></div><div class="max-h-96 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+execHeads+'</tr></thead><tbody>'+execRowsHtml+'</tbody></table></div></section><section id="oplEjecutivoServiciosDetalle" class="mt-3 hidden rounded-xl border border-blue-200 bg-white p-3"></section>';
       const detailHost=panel.querySelector('#oplEjecutivoServiciosDetalle');
       const mostrarDetalle=uid=>{
-        const e=executiveRows.find(x=>x.id===uid); if(!e)return;
+        const e=executiveRows.find(x=>x.id===uid); if(!e||!detailHost)return;
         detailHost.classList.remove('hidden');
         const clientes=[...new Set(e.detalle.map(x=>x.cliente))].sort((a,b)=>a.localeCompare(b,'es'));
         detailHost.innerHTML='<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Detalle de ejecutivo</div><h3 class="mt-1 text-base font-bold text-slate-900">'+escape(e.ejecutivo)+'</h3><p class="text-xs text-slate-500">'+fmtN(e.servicios)+' hojas comprobadas · '+escape(desde)+' al '+escape(hasta)+'</p></div><label class="text-xs text-slate-600">Filtrar por cliente<select id="oplEjecutivoFiltroCliente" class="mt-1 block min-w-56 rounded-md border border-slate-300 bg-white px-2 py-2 text-xs"><option value="">Todos los clientes</option>'+clientes.map(c=>'<option value="'+escape(c)+'">'+escape(c)+'</option>').join('')+'</select></label></div><div id="oplEjecutivoDetalleTabla" class="mt-3"></div>';
