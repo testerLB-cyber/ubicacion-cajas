@@ -9,11 +9,15 @@ const isAdmin=()=>window.CC_ACCESS?.superAdmin===true||['ADMIN','SUPERADMIN','SU
 const unitLabel=u=>(u.numero||u.id)+(u.descripcion?' · '+u.descripcion:'');
 function ensure(){
  const panel=$('#ccPanelConfiguracion'),nav=panel?.querySelector('.cc-config-nav');if(!panel||!nav)return false;
- let b=nav.querySelector('[data-config="flotaTrafico"]');
- if(!b){b=document.createElement('button');b.type='button';b.className='cc-config-nav-btn';b.dataset.config='flotaTrafico';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.onclick=openListModal;nav.appendChild(b);}
+ // Este acceso NO usa .cc-config-nav-btn ni data-config: esos selectores
+ // pertenecen al enrutador de secciones normales y no deben interceptar el modal.
+ let b=nav.querySelector('[data-cc-flota-modal-launcher]');
+ if(!b){b=document.createElement('button');b.type='button';b.className='cc-flota-modal-launcher';b.dataset.ccFlotaModalLauncher='1';b.innerHTML='<i class="fa-solid fa-truck"></i><span>Flota de usuarios de Tráfico</span><small>Unidades, operadores y clientes</small>';b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openListModal();});nav.appendChild(b);}
  b.style.display=(window.CC_AUTH_READY&&isAdmin())?'':'none';
  // No se crea ni se conserva un panel de flota dentro de la página: todo vive en el modal.
  $('#ccConfigFlotaTrafico')?.remove();
+ // Limpia cualquier sección antigua que pudiera haber quedado insertada por versiones previas.
+ document.querySelectorAll('[data-cc-flota-inline-section],#ccConfigFlotaTrafico').forEach(el=>el.remove());
  return true;
 }
 function openListModal(){
