@@ -445,8 +445,10 @@ function renderGeofencesPanel(data,gps,events){
   const start=data.salida_viaje||trip.salida||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
   const end=data.fin_viaje||trip.ended_at||(gps.length?gps[gps.length-1].time:null);
   const startDate=start?parseGMDate(start):null,endDate=end?parseGMDate(end):null;
-  const within=e=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
-  const ordered=(events||[]).filter(within).slice().sort((a,b)=>(parseGMDate(a.fecha||a.gpsAt||a.time)?.getTime()||0)-(parseGMDate(b.fecha||b.gpsAt||b.time)?.getTime()||0));
+  // El RPC ya entrega los eventos de historial acotados al intervalo real del viaje.
+  // No volver a filtrarlos con las horas resumidas del viaje: puede ocultar salidas válidas.
+  const eventTime=e=>e.fecha||e.gpsAt||e.time||e.fecha_hora||null;
+  const ordered=(events||[]).filter(e=>!!parseGMDate(eventTime(e))).slice().sort((a,b)=>(parseGMDate(eventTime(a))?.getTime()||0)-(parseGMDate(eventTime(b))?.getTime()||0));
   const tripName=trip.numero_viaje||trip.identificador_viaje||data.numero_viaje||data.identificador_viaje||'Viaje seleccionado';
   const range=startDate&&endDate?fmtChrono(start)+' — '+fmtChrono(end):'Intervalo registrado del recorrido';
   activeTraceGeofences=ordered;
@@ -455,7 +457,7 @@ function renderGeofencesPanel(data,gps,events){
    const t=target.getTime();
    let best=null,delta=Infinity;
    ordered.forEach(e=>{
-    const d=parseGMDate(e.fecha||e.gpsAt||e.time);
+    const d=parseGMDate(eventTime(e));
     if(!d)return;
     const gap=Math.abs(d.getTime()-t);
     if(gap<delta){delta=gap;best=e}
@@ -469,7 +471,7 @@ function renderGeofencesPanel(data,gps,events){
   const cards=ordered.map((e,i)=>{
    const name=e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada';
    const event=e.evento||e.tipo_evento||e.tipo||'Registro de historial';
-   const time=e.fecha||e.gpsAt||e.time;
+   const time=eventTime(e);
    return '<button type="button" data-geofence-index="'+i+'" title="Mostrar ubicación de la unidad a esta hora en el mapa" style="display:grid;grid-template-columns:24px minmax(0,1fr);gap:7px;align-items:start;padding:6px 7px;border:1px solid #dbe3ec;border-radius:7px;background:#fff;margin-top:5px;width:100%;text-align:left;cursor:pointer;color:inherit"><div style="width:23px;height:23px;border-radius:6px;background:#e6f4f1;color:#0f766e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900">'+(i+1)+'</div><div style="min-width:0"><div style="font-size:11px;font-weight:800;color:#0f172a;line-height:1.25;overflow-wrap:anywhere">'+esc(name)+'</div><div style="margin-top:2px;font-size:10px;color:#0f766e;font-weight:700;line-height:1.25">'+esc(event)+'</div><div style="margin-top:2px;font-size:9px;color:#64748b;line-height:1.2">'+esc(fmtChrono(time))+'</div></div></button>';
   }).join('');
   return '<section style="height:100%;min-height:0;display:flex;flex-direction:column;background:#f8fafc;border-radius:8px;padding:6px"><header style="padding:7px 8px;border-radius:8px;background:linear-gradient(135deg,#0f766e,#115e59);color:#fff"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="min-width:0"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800;opacity:.85">Historial del recorrido</div><div style="font-size:12px;font-weight:800;margin-top:3px;line-height:1.25">'+esc(tripName)+'</div></div>'+boundaryTimes+'</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:6px"><strong style="font-size:20px;line-height:1">'+ordered.length+'</strong><span style="font-size:11px;font-weight:700">geocercas registradas</span></div><div style="font-size:9px;line-height:1.3;opacity:.9;margin-top:4px">'+esc(range)+'</div></header><div style="font-size:9px;color:#64748b;line-height:1.3;margin:5px 2px 2px">Geocercas del historial dentro del intervalo del viaje.</div><div style="overflow:auto;min-height:0;flex:1;padding:0 1px 4px">'+(ordered.length?cards:'<div style="margin-top:10px;padding:18px 12px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;background:#fff"><div style="font-size:22px;color:#94a3b8">◎</div><div style="font-size:12px;font-weight:800;color:#334155;margin-top:6px">Sin geocercas en este intervalo</div><div style="font-size:11px;color:#64748b;margin-top:4px">No se encontraron registros de historial dentro del lapso del viaje.</div></div>')+'</div></section>';
@@ -507,18 +509,20 @@ function buildChronology(data,gps,events,statusRows){
  const departure=data.salida_viaje||trip.salida||data.inicio_viaje||trip.first_seen||(gps[0]&&gps[0].time)||null;
  const arrival=data.fin_viaje||trip.ended_at||(gps.length?gps[gps.length-1].time:null);
  const startDate=departure?parseGMDate(departure):null,endDate=arrival?parseGMDate(arrival):null;
- const within=(e)=>{const d=parseGMDate(e.fecha||e.gpsAt||e.time);return !!d&&(!startDate||d>=startDate)&&(!endDate||d<=endDate)};
- const ordered=(events||[]).filter(within).slice().sort((a,b)=>(parseGMDate(a.fecha)?.getTime()||0)-(parseGMDate(b.fecha)?.getTime()||0));
+ // Los eventos ya vienen limitados por el historial persistido en gm_reporte_trayecto.
+ // Mostrar Entrada y Salida tal como están registradas, sin descartar salidas por otro límite de hora.
+ const eventTime=e=>e.fecha||e.gpsAt||e.time||e.fecha_hora||null;
+ const ordered=(events||[]).filter(e=>!!parseGMDate(eventTime(e))).slice().sort((a,b)=>(parseGMDate(eventTime(a))?.getTime()||0)-(parseGMDate(eventTime(b))?.getTime()||0));
  const items=[];
  if(departure)items.push({time:departure,kind:'SALIDA',name:'Salida',detail:trip.origen||data.origen||''});
- ordered.forEach(e=>items.push({time:e.fecha,kind:'GEOCERCA',name:e.nombre||e.geocerca||'Geocerca registrada',detail:e.evento||e.tipo_evento||'Paso registrado'}));
+ ordered.forEach(e=>{const raw=String(e.evento||e.tipo_evento||e.tipo||'').trim();const isExit=/salida|exit|out|fuera/i.test(raw);const isEntry=/entrada|entry|enter|ingreso/i.test(raw);items.push({time:eventTime(e),kind:isExit?'GEOFENCE_EXIT':isEntry?'GEOFENCE_ENTRY':'GEOCERCA',name:(isExit?'Salida de geocerca: ':isEntry?'Entrada a geocerca: ':'')+(e.nombre||e.geocerca||e.nombre_geocerca||'Geocerca registrada'),detail:raw||'Evento registrado'});});
  if(arrival)items.push({time:arrival,kind:data.perdido_api?'API_FIN':'ULTIMO_GPS',name:'Finalización / último registro del viaje',detail:'Cierre del ciclo de seguimiento; la hora de llegada real solo se considera confirmada si GM la proporcionó'});
  items.sort((a,b)=>(parseGMDate(a.time)?.getTime()||0)-(parseGMDate(b.time)?.getTime()||0));
  if(!items.length)return '<div style="padding:8px;color:#64748b">No hay horas ni geocercas registradas para este viaje.</div>';
  const elapsed=startDate&&endDate?Math.max(0,Math.round((endDate-startDate)/60000)):null;
  const duration=elapsed==null?'':(' · '+Math.floor(elapsed/60)+' h '+String(elapsed%60).padStart(2,'0')+' min');
  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin:2px 0 6px"><b style="font-size:13px">Viaje '+esc(trip.numero_viaje||trip.identificador_viaje||'')+'</b><span style="font-size:10px;color:#64748b">'+Math.max(0,items.length-(departure?1:0)-(arrival?1:0))+' geocercas'+esc(duration)+'</span></div>'+
- items.map(e=>'<div style="display:grid;grid-template-columns:65px 7px minmax(0,1fr);gap:6px;align-items:start;padding:4px 0;border-bottom:1px solid #edf2f7"><span style="font-size:10px;font-weight:800;color:'+(e.kind==='SALIDA'?'#15803d':e.kind==='API_FIN'?'#b91c1c':'#0369a1')+'">'+esc((parseGMDate(e.time)||new Date(e.time)).toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}))+'</span><span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:'+(e.kind==='SALIDA'?'#16a34a':e.kind==='API_FIN'?'#dc2626':'#0284c7')+'"></span><div><b style="font-size:11px">'+esc(e.name)+'</b>'+(e.detail?'<div style="font-size:10px;color:#64748b">'+esc(e.detail)+'</div>':'')+'</div></div>').join('');
+ items.map(e=>'<div style="display:grid;grid-template-columns:65px 7px minmax(0,1fr);gap:6px;align-items:start;padding:4px 0;border-bottom:1px solid #edf2f7"><span style="font-size:10px;font-weight:800;color:'+(e.kind==='SALIDA'?'#15803d':e.kind==='API_FIN'||e.kind==='GEOFENCE_EXIT'?'#b91c1c':e.kind==='GEOFENCE_ENTRY'?'#047857':'#0369a1')+'">'+esc((parseGMDate(e.time)||new Date(e.time)).toLocaleTimeString('es-MX',{timeZone:'America/Hermosillo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}))+'</span><span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:'+(e.kind==='SALIDA'?'#16a34a':e.kind==='API_FIN'||e.kind==='GEOFENCE_EXIT'?'#dc2626':e.kind==='GEOFENCE_ENTRY'?'#059669':'#0284c7')+'"></span><div><b style="font-size:11px">'+esc(e.name)+'</b>'+(e.detail?'<div style="font-size:10px;color:#64748b">'+esc(e.detail)+'</div>':'')+'</div></div>').join('');
 }
 async function showTrace(data,version){
  try{
