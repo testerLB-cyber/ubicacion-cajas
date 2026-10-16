@@ -618,7 +618,7 @@ async function showTrace(data,version){
   const endTime=gps[gps.length-1]?.time?new Date(gps[gps.length-1].time).toLocaleString('es-MX',{timeZone:'America/Hermosillo'}):'—';
   $('gmTripsEvents').innerHTML='<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:8px 0 12px">'+
   '<div style="padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc"><div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase">Distancia GPS Recorrida aprox.</div><b style="font-size:20px">'+km.toFixed(1)+' km</b></div></div>'+
-<div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml;
+  '<div id="gmTripsRouteCoverage" style="font-size:11px;padding:8px;margin:7px 0;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0">Verificando continuidad del recorrido…</div>'+geosHtml;
   updateRouteCoverage();
  }else{
  // Sin puntos dentro del período solicitado no mostramos la ubicación actual como si perteneciera al reporte.
