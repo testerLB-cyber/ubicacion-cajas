@@ -2418,42 +2418,44 @@ let currentData = [];
 
 
 // OPL_DASH_SERVICIOS_COMPROBADOS_INTEGRADO
-// Ubicación correcta: Operaciones > Inicio (ccPanelDashboard). Nunca en la página principal.
+// Dashboard gerencial exclusivo de Operaciones > Inicio. La página principal no se modifica.
 (function iniciarDashboardServiciosComprobadosIntegrado() {
   const escape = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const norm = (v) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('es-MX').replace(/\s+/g,' ');
   const fechaISO = (d) => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
   function rangoSemanaOperativa(fecha) {
     const d = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
-    const dia = d.getDay(); // sábado inicia la semana operativa
-    const desde = new Date(d); desde.setDate(d.getDate() - ((dia + 1) % 7));
+    const desde = new Date(d); desde.setDate(d.getDate() - ((d.getDay() + 1) % 7));
     const hasta = new Date(desde); hasta.setDate(desde.getDate() + 6);
     return {desde: fechaISO(desde), hasta: fechaISO(hasta)};
   }
-  function celda(label, value) { return '<div class="rounded-lg border border-slate-200 bg-white px-3 py-2"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(label)+'</div><div class="mt-1 text-lg font-bold text-slate-800">'+escape(value)+'</div></div>'; }
-  function tabla(titulo, filas, cols) {
-    const heads = cols.map(c => '<th class="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(c.label)+'</th>').join('');
-    const rows = filas.length ? filas.map(f => '<tr class="border-t border-slate-100 hover:bg-blue-50/40">'+cols.map(c=>'<td class="px-3 py-2 text-xs text-slate-700">'+escape(f[c.key] ?? '—')+'</td>').join('')+'</tr>').join('') : '<tr><td class="px-3 py-5 text-center text-xs text-slate-400" colspan="'+cols.length+'">Sin servicios para el periodo seleccionado.</td></tr>';
-    return '<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2 text-sm font-bold text-slate-800">'+escape(titulo)+'</div><div class="overflow-x-auto"><table class="min-w-full"><thead class="bg-slate-50"><tr>'+heads+'</tr></thead><tbody>'+rows+'</tbody></table></div></section>';
+  const celda = (label, value, detail='') => '<div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5"><div class="text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(label)+'</div><div class="mt-1 text-xl font-bold tabular-nums text-slate-900">'+escape(value)+'</div>'+(detail?'<div class="mt-1 text-[10px] text-slate-500">'+escape(detail)+'</div>':'')+'</div>';
+  function tabla(titulo, filas, cols, empty='Sin registros para el periodo seleccionado.') {
+    const heads = cols.map(c => '<th class="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">'+escape(c.label)+'</th>').join('');
+    const rows = filas.length ? filas.map(f => '<tr class="border-t border-slate-100 hover:bg-blue-50/50">'+cols.map(c=>'<td class="px-3 py-2 text-xs text-slate-700">'+escape(f[c.key] ?? '—')+'</td>').join('')+'</tr>').join('') : '<tr><td class="px-3 py-5 text-center text-xs text-slate-400" colspan="'+cols.length+'">'+escape(empty)+'</td></tr>';
+    return '<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><div class="border-b border-slate-100 px-3 py-2.5 text-sm font-bold text-slate-800">'+escape(titulo)+'</div><div class="max-h-80 overflow-auto"><table class="min-w-full"><thead class="sticky top-0 bg-slate-50"><tr>'+heads+'</tr></thead><tbody>'+rows+'</tbody></table></div></section>';
   }
   function agrupar(items, campo) {
     const map = new Map();
     items.forEach(x => { const k = String(x[campo] || 'SIN DATO').trim() || 'SIN DATO'; map.set(k,(map.get(k)||0)+1); });
-    return Array.from(map, ([nombre,total])=>({nombre,total})).sort((a,b)=>b.total-a.total || a.nombre.localeCompare(b.nombre,'es'));
+    return Array.from(map, ([nombre,total])=>({nombre,total:total.toLocaleString('es-MX')})).sort((a,b)=>Number(b.total.replace(/,/g,''))-Number(a.total.replace(/,/g,'')) || a.nombre.localeCompare(b.nombre,'es'));
   }
   function iniciar() {
-    // El panel pertenece al Inicio del módulo Operaciones, no al dashboard principal de acceso.
     const host = document.getElementById('ccPanelDashboard');
     if (!host || document.getElementById('oplServiciosComprobados')) return;
+    // Sustituir visualmente el dashboard antiguo de indicadores por tipo, sin romper sus rutinas internas.
+    ['ccDashboardTipoFilter','ccDashboardContent'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.setAttribute('aria-hidden','true');}});
     const week = rangoSemanaOperativa(new Date());
     const panel = document.createElement('section');
     panel.id = 'oplServiciosComprobados';
-    panel.className = 'mb-6 space-y-4 rounded-xl border border-blue-200 bg-slate-50 p-4';
-    panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Operaciones · Control de Hojas</div><h2 class="mt-1 text-lg font-bold text-slate-900">Servicios comprobados y desempeño por ejecutivo</h2><p class="mt-1 text-xs text-slate-500">Solo hojas utilizadas/comprobadas y no facturables. Excluye nuevas, pendientes, canceladas y devueltas. Las asignaciones se contrastan contra la configuración actual.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar</button></div></div><div id="oplServiciosEstado" class="text-xs text-slate-500">Preparando reporte…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-4"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div><div id="oplServiciosEjecutivo"></div></div><div id="oplServiciosEjecutivoDetalle"></div><div id="oplServiciosExcepciones"></div><div id="oplServiciosDetalle"></div>';
-    // Colocarlo arriba del contenido existente de Inicio de Operaciones.
+    panel.className = 'mb-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-3 md:p-4';
+    panel.innerHTML = '<div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between"><div><div class="text-[10px] font-bold uppercase tracking-widest text-blue-700">Dashboard ejecutivo · Operaciones</div><h2 class="mt-1 text-lg font-bold text-slate-900">Desempeño real por ejecutivo, operador, unidad y cliente</h2><p class="mt-1 max-w-3xl text-xs text-slate-500">Actividad basada en hojas comprobadas. Incluye servicios no facturables; excluye pendientes, cancelados y devoluciones. Las asignaciones son las configuradas actualmente, no una reconstrucción histórica.</p></div><div class="flex flex-wrap items-end gap-2"><label class="text-xs text-slate-600">Desde<input id="oplServiciosDesde" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><label class="text-xs text-slate-600">Hasta<input id="oplServiciosHasta" type="date" class="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs"></label><button id="oplServiciosActualizar" type="button" class="rounded-md bg-blue-700 px-4 py-2 text-xs font-bold text-white hover:bg-blue-800">Actualizar indicadores</button></div></div><div id="oplServiciosEstado" role="status" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">Preparando consulta…</div><div id="oplServiciosKPIs" class="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"></div><div class="grid grid-cols-1 gap-3 xl:grid-cols-2"><div id="oplServiciosCliente"></div><div id="oplServiciosOperador"></div><div id="oplServiciosUnidad"></div><div id="oplServiciosEjecutivo"></div></div><div id="oplServiciosEjecutivoDetalle"></div><div id="oplServiciosExcepciones"></div><div id="oplServiciosDetalle"></div>';
     host.insertBefore(panel, host.firstChild);
     panel.querySelector('#oplServiciosDesde').value = week.desde;
     panel.querySelector('#oplServiciosHasta').value = week.hasta;
     panel.querySelector('#oplServiciosActualizar').addEventListener('click', cargar);
+    panel.querySelector('#oplServiciosDesde').addEventListener('change', cargar);
+    panel.querySelector('#oplServiciosHasta').addEventListener('change', cargar);
     cargar();
   }
   async function cargar() {
@@ -2462,87 +2464,116 @@ let currentData = [];
     const desde = panel.querySelector('#oplServiciosDesde').value;
     const hasta = panel.querySelector('#oplServiciosHasta').value;
     const estado = panel.querySelector('#oplServiciosEstado');
+    const btn = panel.querySelector('#oplServiciosActualizar');
     if (!desde || !hasta || desde > hasta) { estado.textContent = 'Selecciona un rango de fechas válido.'; return; }
     const sb = window.gmSupabase || window.supabaseClient;
     if (!sb) { estado.textContent = 'No se encontró la conexión de datos de la aplicación.'; return; }
-    estado.textContent = 'Consultando servicios y asignaciones…';
+    estado.textContent = 'Consultando hojas comprobadas, flotas y clientes asignados…';
+    btn.disabled = true; btn.textContent = 'Consultando…';
     panel.querySelector('#oplServiciosKPIs').innerHTML = '';
     try {
-      const compRes = await sb.from('hs_comprobaciones').select('id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email').or('and(fecha.gte.'+desde+',fecha.lte.'+hasta+'),and(fecha_uso.gte.'+desde+',fecha_uso.lte.'+hasta+')').limit(10000);
+      const [compRes, fleetRes, usersRes, assignedClientsRes, clientsRes, respAssignRes] = await Promise.all([
+        sb.from('hs_comprobaciones').select('id,folio_id,fecha,fecha_uso,tipo,servicio,cliente_id,cliente_nombre,operador_id,operador_nombre,responsable_id,responsable_nombre,unidad_id,unidad_numero,unidad_tipo,remolque_numero,creado_por,aceptado_por_nombre,aceptado_por_email').or('and(fecha.gte.'+desde+',fecha.lte.'+hasta+'),and(fecha_uso.gte.'+desde+',fecha_uso.lte.'+hasta+')').limit(10000),
+        sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
+        sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000),
+        sb.from('cc_trafico_clientes').select('user_id,cliente_id').limit(10000),
+        sb.from('cc_clientes').select('id,nombre,razon_social').limit(10000),
+        sb.from('hs_asignaciones_responsable').select('id,responsable_id,responsable_nombre,responsable_email,creado_por,estatus').limit(10000)
+      ]);
       if (compRes.error) throw compRes.error;
-      const raw = compRes.data || [];
+      if (fleetRes.error) throw fleetRes.error;
+      if (usersRes.error) throw usersRes.error;
+      const raw = (compRes.data||[]).filter(c=>{const d=String(c.fecha_uso||c.fecha||'');return d>=desde&&d<=hasta;});
       const ids = Array.from(new Set(raw.map(x=>x.folio_id).filter(Boolean)));
-      let folios = [];
+      const folios = [];
       for (let i=0; i<ids.length; i+=500) {
-        const fr = await sb.from('hs_folios').select('id,folio,estatus,serie_id,operador_id,operador_nombre,creado_por,creado_por_nombre,cliente_id,cliente_nombre').in('id',ids.slice(i,i+500));
+        const fr = await sb.from('hs_folios').select('id,folio,estatus,serie_id,operador_id,operador_nombre,creado_por,creado_por_nombre,cliente_id,cliente_nombre,asignacion_responsable_id,responsable_nombre,responsable_email').in('id',ids.slice(i,i+500));
         if (fr.error) throw fr.error;
         folios.push(...(fr.data||[]));
       }
       const validStatuses = new Set(['UTILIZADO','NO_FACTURABLE']);
       const folioMap = new Map(folios.map(f=>[String(f.id),f]));
-      const seen = new Set();
-      const services = raw.filter(c => {
-        const f = folioMap.get(String(c.folio_id));
-        if (!f || !validStatuses.has(String(f.estatus||'').toUpperCase())) return false;
-        if (/DEVOLUCION|CANCEL|REGRES/i.test(String(c.tipo||''))) return false;
-        const k = String(c.folio_id);
-        if (seen.has(k)) return false;
-        seen.add(k); return true;
-      }).map(c=>{
+      const usersData=usersRes.data||[], fleet=fleetRes.data||[];
+      const userMap=new Map(usersData.map(u=>[String(u.user_id),u]));
+      const userByEmail=new Map(usersData.filter(u=>u.email).map(u=>[norm(u.email),u]));
+      const userByName=new Map(usersData.map(u=>[norm(u.nombre||u.username),u]));
+      const respAssignments=respAssignRes.error?[]:(respAssignRes.data||[]);
+      const respById=new Map(respAssignments.map(a=>[String(a.id),a]));
+      const assignedByUser=new Map();
+      fleet.forEach(a=>{const uid=String(a.user_id||'');if(!assignedByUser.has(uid))assignedByUser.set(uid,{ops:new Set(),units:new Set()});const x=assignedByUser.get(uid);if(a.operador_id)x.ops.add(norm(a.operador_id));if(a.unidad_id)x.units.add(norm(a.unidad_id));});
+      const clientCatalog=new Map((clientsRes.error?[]:(clientsRes.data||[])).map(c=>[String(c.id),String(c.nombre||c.razon_social||c.id)]));
+      const clientsByUser=new Map();
+      (assignedClientsRes.error?[]:(assignedClientsRes.data||[])).forEach(a=>{const uid=String(a.user_id||'');if(!clientsByUser.has(uid))clientsByUser.set(uid,new Set());clientsByUser.get(uid).add(String(a.cliente_id||''));});
+      const unique=new Map();
+      raw.forEach(c=>{
         const f=folioMap.get(String(c.folio_id));
-        return {fecha:String(c.fecha_uso||c.fecha||''),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente:String(c.cliente_nombre||f.cliente_nombre||'SIN CLIENTE'),operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId:String(c.operador_id||f.operador_id||''),unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId:String(c.unidad_id||''),ejecutivo:String(c.responsable_nombre||f.creado_por_nombre||c.aceptado_por_nombre||'SIN EJECUTIVO'),ejecutivoId:String(c.responsable_id||f.creado_por||c.creado_por||''),tipo:String(c.tipo||''),estatus:String(f.estatus||'')};
-      }).filter(s=>s.fecha>=desde&&s.fecha<=hasta);
-      const [fleetRes, usersRes] = await Promise.all([
-        sb.from('cc_trafico_flota').select('user_id,unidad_id,operador_id').limit(10000),
-        sb.from('cc_app_users').select('user_id,nombre,username,email,es_trafico,activo').eq('activo',true).limit(10000)
-      ]);
-      if (fleetRes.error) throw fleetRes.error;
-      if (usersRes.error) throw usersRes.error;
-      const users = new Map((usersRes.data||[]).map(u=>[String(u.user_id),u]));
-      const fleet = fleetRes.data||[];
-      const idNorm = v=>String(v||'').trim().toLowerCase();
-      const executiveMap = new Map();
-      fleet.forEach(a=>{
-        const uid=String(a.user_id||''); if(!executiveMap.has(uid)) executiveMap.set(uid,{ops:new Set(),units:new Set()});
-        const e=executiveMap.get(uid); if(a.operador_id)e.ops.add(idNorm(a.operador_id)); if(a.unidad_id)e.units.add(idNorm(a.unidad_id));
+        if(!f||!validStatuses.has(String(f.estatus||'').toUpperCase()))return;
+        if(/DEVOLUCION|CANCEL|REGRES/i.test(String(c.tipo||'')))return;
+        const k=String(c.folio_id);
+        if(unique.has(k))return;
+        const ra=respById.get(String(c.responsable_id||f.asignacion_responsable_id||''));
+        const execName=String(c.responsable_nombre||f.responsable_nombre||ra?.responsable_nombre||c.aceptado_por_nombre||'').trim();
+        const execEmail=String(f.responsable_email||ra?.responsable_email||c.aceptado_por_email||'').trim();
+        const execIdCandidates=[c.responsable_id,ra?.responsable_id,c.creado_por,f.creado_por,ra?.creado_por].filter(Boolean).map(String);
+        let execUser=execIdCandidates.map(id=>userMap.get(id)).find(Boolean);
+        if(!execUser&&execEmail)execUser=userByEmail.get(norm(execEmail));
+        if(!execUser&&execName)execUser=userByName.get(norm(execName));
+        const ejecutivoId=String(execUser?.user_id||execIdCandidates[0]||'');
+        const ejecutivoNombre=String(execUser?.nombre||execUser?.username||execName||'SIN EJECUTIVO');
+        const operadorId=String(c.operador_id||f.operador_id||'');
+        const unidadId=String(c.unidad_id||'');
+        const asignados=assignedByUser.get(ejecutivoId)||{ops:new Set(),units:new Set()};
+        const opKey=norm(operadorId)||norm(c.operador_nombre||f.operador_nombre);
+        const unitKey=norm(unidadId)||norm(c.unidad_numero);
+        const opAssigned=!!opKey&&asignados.ops.has(opKey);
+        const unitAssigned=!!unitKey&&asignados.units.has(unitKey);
+        const alertas=[];
+        if(c.operador_nombre&&asignados.ops.size&&!opAssigned)alertas.push('Operador fuera de flota actual');
+        if(c.unidad_numero&&asignados.units.size&&!unitAssigned)alertas.push('Unidad fuera de flota actual');
+        const clientId=String(c.cliente_id||f.cliente_id||'');
+        const cliente=String(c.cliente_nombre||f.cliente_nombre||clientCatalog.get(clientId)||clientId||'SIN CLIENTE');
+        unique.set(k,{fecha:String(c.fecha_uso||c.fecha||''),folio:String(f.folio||c.folio_id||''),serie:String(f.serie_id||''),cliente,clienteId,operador:String(c.operador_nombre||f.operador_nombre||'SIN OPERADOR'),operadorId,unidad:String(c.unidad_numero||'SIN UNIDAD'),unidadId,ejecutivoNombre,ejecutivoId,tipo:String(c.tipo||''),estatus:String(f.estatus||''),operadorAsignado:opAssigned,unidadAsignada:unitAssigned,alerta:alertas.join(' · ')});
       });
-      const normalizeName = v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
-      services.forEach(s=>{
-        const assign=executiveMap.get(s.ejecutivoId)||{ops:new Set(),units:new Set()};
-        const opKey=idNorm(s.operadorId)||normalizeName(s.operador);
-        const unitKey=idNorm(s.unidadId)||normalizeName(s.unidad);
-        s.operadorAsignado=!!opKey&&assign.ops.has(opKey);
-        s.unidadAsignada=!!unitKey&&assign.units.has(unitKey);
-        s.ejecutivoNombre=users.get(s.ejecutivoId)?.nombre||users.get(s.ejecutivoId)?.username||s.ejecutivo;
-      });
-      const total=services.length;
-      const exOps=services.filter(s=>s.operador!=='SIN OPERADOR'&&!s.operadorAsignado).length;
-      const exUnits=services.filter(s=>s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada).length;
+      const services=[...unique.values()].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      const executives=usersData.filter(u=>u.es_trafico===true);
+      const exOps=services.filter(s=>s.operador!=='SIN OPERADOR'&&assignedByUser.get(s.ejecutivoId)?.ops.size&&!s.operadorAsignado).length;
+      const exUnits=services.filter(s=>s.unidad!=='SIN UNIDAD'&&assignedByUser.get(s.ejecutivoId)?.units.size&&!s.unidadAsignada).length;
+      const assignedOperatorTotal=new Set(fleet.map(a=>String(a.user_id)+'|'+String(a.operador_id||'')).filter(x=>!x.endsWith('|'))).size;
+      const assignedUnitTotal=new Set(fleet.map(a=>String(a.user_id)+'|'+String(a.unidad_id||'')).filter(x=>!x.endsWith('|'))).size;
+      const assignedClientTotal=new Set((assignedClientsRes.error?[]:(assignedClientsRes.data||[])).map(a=>String(a.user_id)+'|'+String(a.cliente_id||'')).filter(x=>!x.endsWith('|'))).size;
       panel.querySelector('#oplServiciosKPIs').innerHTML =
-        celda('Servicios comprobados',total.toLocaleString('es-MX'))+
-        celda('Clientes con servicio',new Set(services.map(s=>s.cliente)).size.toLocaleString('es-MX'))+
-        celda('Servicios con operador fuera de flota',exOps.toLocaleString('es-MX'))+
-        celda('Servicios con unidad fuera de flota',exUnits.toLocaleString('es-MX'));
-      const renderAgg=(id,title,field)=>{ panel.querySelector(id).innerHTML=tabla(title,agrupar(services,field).map(x=>({nombre:x.nombre,total:x.total})),[{key:'nombre',label:'Nombre'},{key:'total',label:'Servicios'}]); };
-      renderAgg('#oplServiciosCliente','Servicios por cliente','cliente');
-      renderAgg('#oplServiciosOperador','Servicios por operador','operador');
-      renderAgg('#oplServiciosUnidad','Servicios por unidad','unidad');
-      renderAgg('#oplServiciosEjecutivo','Servicios por ejecutivo','ejecutivoNombre');
-      const executiveRows = (usersRes.data||[]).filter(u=>u.es_trafico).map(u=>{
-        const uid=String(u.user_id); const assigned=executiveMap.get(uid)||{ops:new Set(),units:new Set()};
-        const own=services.filter(s=>s.ejecutivoId===uid);
-        const withOp=own.filter(s=>s.operadorAsignado).length, withUnit=own.filter(s=>s.unidadAsignada).length;
-        return {ejecutivo:u.nombre||u.username||u.email||uid,operadores:assigned.ops.size,unidades:assigned.units.size,servicios:own.length,conOperadorAsignado:withOp,fueraOperador:own.filter(s=>s.operador!=='SIN OPERADOR'&&!s.operadorAsignado).length,conUnidadAsignada:withUnit,fueraUnidad:own.filter(s=>s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada).length};
-      }).sort((a,b)=>b.servicios-a.servicios);
-      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML=tabla('Detalle por ejecutivo · configuración actual',executiveRows,[{key:'ejecutivo',label:'Ejecutivo'},{key:'operadores',label:'Operadores asignados'},{key:'unidades',label:'Unidades asignadas'},{key:'servicios',label:'Servicios'},{key:'conOperadorAsignado',label:'Con operador asignado'},{key:'fueraOperador',label:'Fuera de asignación'},{key:'conUnidadAsignada',label:'Con unidad asignada'},{key:'fueraUnidad',label:'Fuera de asignación'}]);
-      const exceptions=services.filter(s=>(s.operador!=='SIN OPERADOR'&&!s.operadorAsignado)||(s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada)).map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,motivo:[s.operador!=='SIN OPERADOR'&&!s.operadorAsignado?'Operador fuera de asignación':'',s.unidad!=='SIN UNIDAD'&&!s.unidadAsignada?'Unidad fuera de asignación':''].filter(Boolean).join(' · ')}));
-      panel.querySelector('#oplServiciosExcepciones').innerHTML=tabla('Servicios con recursos fuera de la asignación actual',exceptions,[{key:'fecha',label:'Fecha'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'motivo',label:'Motivo'}]);
-      panel.querySelector('#oplServiciosDetalle').innerHTML=tabla('Detalle de servicios incluidos',services.map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,estatus:s.estatus==='NO_FACTURABLE'?'No facturable':'Comprobado'})),[{key:'fecha',label:'Fecha de servicio'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'estatus',label:'Tipo'}]);
-      estado.textContent='Reporte actualizado. Periodo '+desde+' a '+hasta+'. Las asignaciones mostradas corresponden a la configuración actual; no se detectó historial de asignaciones para reconstruir periodos pasados.';
+        celda('Servicios comprobados',services.length.toLocaleString('es-MX'),'Hojas únicas del periodo')+
+        celda('Ejecutivos activos',executives.length.toLocaleString('es-MX'),'Con acceso de tráfico')+
+        celda('Operadores asignados',assignedOperatorTotal.toLocaleString('es-MX'),'Relaciones ejecutivo-operador')+
+        celda('Unidades asignadas',assignedUnitTotal.toLocaleString('es-MX'),'Relaciones ejecutivo-unidad')+
+        celda('Clientes asignados',assignedClientsRes.error?'N/D':assignedClientTotal.toLocaleString('es-MX'),assignedClientsRes.error?'No disponible por permisos':'Relaciones ejecutivo-cliente')+
+        celda('Servicios fuera de flota', (exOps+exUnits).toLocaleString('es-MX'),'Eventos recurso no asignado; puede haber ambos por servicio');
+      const renderAgg=(id,title,field)=>{panel.querySelector(id).innerHTML=tabla(title,agrupar(services,field),[{key:'nombre',label:'Nombre'},{key:'total',label:'Servicios'}]);};
+      renderAgg('#oplServiciosCliente','Servicios comprobados por cliente','cliente');
+      renderAgg('#oplServiciosOperador','Servicios realizados por operador','operador');
+      renderAgg('#oplServiciosUnidad','Servicios realizados por unidad','unidad');
+      renderAgg('#oplServiciosEjecutivo','Servicios por ejecutivo responsable','ejecutivoNombre');
+      const executiveRows=executives.map(u=>{
+        const uid=String(u.user_id), assignment=assignedByUser.get(uid)||{ops:new Set(),units:new Set()}, clients=clientsByUser.get(uid)||new Set();
+        const own=services.filter(s=>s.ejecutivoId===uid || (!s.ejecutivoId&&norm(s.ejecutivoNombre)===norm(u.nombre||u.username)));
+        const usedClients=new Set(own.map(s=>s.clienteId||norm(s.cliente)));
+        return {ejecutivo:u.nombre||u.username||u.email||uid,clientesAsignados:clients.size,clientesConServicio:usedClients.size,operadoresAsignados:assignment.ops.size,unidadesAsignadas:assignment.units.size,servicios:own.length,operadorAsignado:own.filter(s=>s.operadorAsignado).length,operadorFuera:own.filter(s=>s.operador!=='SIN OPERADOR'&&assignment.ops.size&&!s.operadorAsignado).length,unidadAsignada:own.filter(s=>s.unidadAsignada).length,unidadFuera:own.filter(s=>s.unidad!=='SIN UNIDAD'&&assignment.units.size&&!s.unidadAsignada).length};
+      }).sort((a,b)=>b.servicios-a.servicios||a.ejecutivo.localeCompare(b.ejecutivo,'es'));
+      panel.querySelector('#oplServiciosEjecutivoDetalle').innerHTML=tabla('Control por ejecutivo · asignado contra realizado',executiveRows,[{key:'ejecutivo',label:'Ejecutivo'},{key:'clientesAsignados',label:'Clientes asignados'},{key:'clientesConServicio',label:'Clientes atendidos'},{key:'operadoresAsignados',label:'Operadores asignados'},{key:'unidadesAsignadas',label:'Unidades asignadas'},{key:'servicios',label:'Servicios reales'},{key:'operadorAsignado',label:'Servicios con operador de flota'},{key:'operadorFuera',label:'Operador fuera de flota'},{key:'unidadAsignada',label:'Servicios con unidad de flota'},{key:'unidadFuera',label:'Unidad fuera de flota'}]);
+      const exceptions=services.filter(s=>s.alerta).map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,motivo:s.alerta}));
+      panel.querySelector('#oplServiciosExcepciones').innerHTML=tabla('Revisión de servicios con operador o unidad fuera de la flota asignada',exceptions,[{key:'fecha',label:'Fecha'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador utilizado'},{key:'unidad',label:'Unidad utilizada'},{key:'motivo',label:'Observación'}]);
+      panel.querySelector('#oplServiciosDetalle').innerHTML=tabla('Detalle completo de hojas comprobadas',services.map(s=>({fecha:s.fecha,folio:s.serie+' '+s.folio,cliente:s.cliente,ejecutivo:s.ejecutivoNombre,operador:s.operador,unidad:s.unidad,estatus:s.estatus==='NO_FACTURABLE'?'No facturable':'Comprobado',alerta:s.alerta||'—'})),[{key:'fecha',label:'Fecha de servicio'},{key:'folio',label:'Serie / folio'},{key:'cliente',label:'Cliente'},{key:'ejecutivo',label:'Ejecutivo'},{key:'operador',label:'Operador'},{key:'unidad',label:'Unidad'},{key:'estatus',label:'Estatus'},{key:'alerta',label:'Validación de flota'}]);
+      const warnings=[];
+      if(assignedClientsRes.error)warnings.push('La consulta de clientes asignados no está disponible por permisos.');
+      if(clientsRes.error)warnings.push('Se muestran identificadores cuando el catálogo de clientes no es accesible.');
+      if(respAssignRes.error)warnings.push('Se utilizó la información de responsable disponible en las hojas.');
+      estado.textContent='Actualizado '+new Date().toLocaleString('es-MX')+' · '+services.length.toLocaleString('es-MX')+' hojas únicas · '+desde+' a '+hasta+'. Las asignaciones reflejan la configuración actual, no el historial.'+(warnings.length?' Aviso: '+warnings.join(' '):'');
     } catch(err) {
       console.error('Dashboard integrado de servicios:',err);
       estado.textContent='No se pudo cargar el reporte: '+String(err?.message||err);
-    }
+    } finally { btn.disabled=false; btn.textContent='Actualizar indicadores'; }
   }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar,{once:true}); else iniciar();
+  // Reintento por si el módulo de Operaciones se monta después del DOM inicial.
+  setTimeout(iniciar,1200);
 })();
