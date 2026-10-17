@@ -2,7 +2,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let map=null,markers=null,rows=[],playTimer=null,playPath=[],playIndex=0,playMarker=null,playLine=null,traceVersion=0,selectedTrip=null,activeTraceData=null,activeTraceGps=[],activeTraceGeofences=[],geofenceFocusMarker=null;
+let map=null,markers=null,rows=[],playTimer=null,playPath=[],playIndex=0,playMarker=null,playLine=null,traceVersion=0,selectedTrip=null,activeTraceData=null,activeTraceGps=[],activeTraceGeofences=[],geofenceFocusMarker=null,traceProgressTimer=null,traceProgressStarted=0;
 const date=d=>{const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
 function inject(){
  const bar=$('airHistoryBtn')?.parentElement;if(!bar||bar.querySelector('#gmTripReportButton'))return;
@@ -427,16 +427,24 @@ async function addPostTripLocation(data,gps,version){
   map.fitBounds(bounds,{padding:[28,28],maxZoom:13,animate:false});
  }catch(e){console.warn('No se pudo dibujar la continuación por calles; se conserva el marcador F sin dibujar una recta:',e)}
 }
+function startTraceProgress(){
+ stopTraceProgress();traceProgressStarted=Date.now();
+ const panel=$('gmTripsEvents');if(!panel)return;
+ if(!document.getElementById('gmTripsProgressStyle')){const style=document.createElement('style');style.id='gmTripsProgressStyle';style.textContent='@keyframes gmTraceProgressMove{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}.gm-trace-progress-track{height:7px;overflow:hidden;background:#dbeafe;border-radius:99px}.gm-trace-progress-bar{height:100%;width:32%;background:#0f766e;border-radius:99px;animation:gmTraceProgressMove 1.25s ease-in-out infinite}.gm-trace-progress-card{padding:18px 14px;margin:8px 0;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1e3a8a}.gm-trace-progress-card small{display:block;color:#475569;margin-top:9px}';document.head.appendChild(style)}
+ panel.innerHTML='<div class="gm-trace-progress-card"><b>Preparando recorrido GPS…</b><div class="gm-trace-progress-track" style="margin-top:12px"><div class="gm-trace-progress-bar"></div></div><small id="gmTraceElapsed">Tiempo transcurrido: 0 s</small><small>Consultando posiciones GPS, geocercas y estados de la unidad. La barra indica actividad; no es un porcentaje inventado.</small></div>';
+ traceProgressTimer=setInterval(()=>{const el=$('gmTraceElapsed');if(el){const secs=Math.floor((Date.now()-traceProgressStarted)/1000);el.textContent='Tiempo transcurrido: '+(secs<60?secs+' s':Math.floor(secs/60)+' min '+(secs%60)+' s')+' · la consulta sigue activa';}},500);
+}
+function stopTraceProgress(){if(traceProgressTimer){clearInterval(traceProgressTimer);traceProgressTimer=null}}
 async function trace(id){
  stopPlayback();const version=++traceVersion;
- $('gmTripsEvents').textContent='Consultando trayectoria del viaje…';$('gmTripsPlayback').style.display='none';
+ $('gmTripsPlayback').style.display='none';startTraceProgress();
  try{
  const data=await rpc('gm_reporte_trayecto',{p_viaje_id:id});
  // La ubicación posterior se consulta por separado y solo se agrega a la capa visual del mapa.
  try{const follow=await rpc('gm_reporte_ubicacion_posterior',{p_viaje_id:id});data.ubicacion_posterior=follow?.ubicacion_posterior||null;data.fin_viaje_mapa=follow?.fin_viaje||null;}catch(e){console.warn('Ubicación posterior no disponible:',e)}
  if(version!==traceVersion)return;
- await showTrace(data,version);
- }catch(e){if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
+ stopTraceProgress();await showTrace(data,version);
+ }catch(e){stopTraceProgress();if(version===traceVersion&&$('gmTripsEvents'))$('gmTripsEvents').textContent='Error de recorrido: '+(e.message||e)}
 }
 function parseGMDate(v){if(!v)return null;const s=String(v).trim();const d=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(s)?new Date(s+'Z'):new Date(s);return Number.isNaN(d.getTime())?null:d}
 function fmtChrono(v){if(!v)return 'Hora no disponible';const d=parseGMDate(v);return !d?String(v):d.toLocaleString('es-MX',{timeZone:'America/Hermosillo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}
