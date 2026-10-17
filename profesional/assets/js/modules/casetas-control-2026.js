@@ -203,10 +203,11 @@ async function casReportRun(){
    const rows=cashMov.map(x=>[date(x.fecha),x.concepto||x.tipo,x.naturaleza||'SIN CLASIFICAR',x.operador||'—',x.anticipo||x.referencia||'—',x.naturaleza==='ENTRADA'?fmt(x.monto):'—',x.naturaleza==='SALIDA'?fmt(x.monto):'—',x.observaciones||'—']);
    casReportRender('Movimientos y cierre administrativo de Caja de Casetas',base,['Fecha','Movimiento','Naturaleza','Operador','Folio / Referencia','Entrada','Salida','Comentarios'],rows);
   }else{
-   const data=await rpc('cc_ant_casetas_list'),opsMap=new Map((data.operadores||[]).map(o=>[o.id,o.nombre])),ant=(data.anticipos||[]).filter(a=>String(a.fecha||'').slice(0,10)>=from&&String(a.fecha||'').slice(0,10)<=to),comp=(data.comprobaciones_resumen||[]).filter(x=>String(x.fecha||'').slice(0,10)>=from&&String(x.fecha||'').slice(0,10)<=to);
+   const data=await rpc('cc_ant_casetas_list'),opsMap=new Map((data.operadores||[]).map(o=>[o.id,o.nombre])),allAnt=data.anticipos||[],ant=allAnt.filter(a=>String(a.fecha||'').slice(0,10)>=from&&String(a.fecha||'').slice(0,10)<=to),comp=(data.comprobaciones_resumen||[]).filter(x=>String(x.fecha||'').slice(0,10)>=from&&String(x.fecha||'').slice(0,10)<=to),antById=new Map(allAnt.map(a=>[String(a.id),a])),refundMov=(data.movimientos||[]).filter(m=>String(m.tipo||'').toUpperCase()==='DEVOLUCION'&&String(m.fecha||'').slice(0,10)>=from&&String(m.fecha||'').slice(0,10)<=to);
    if(type==='OPERADORES'){
     const map=new Map();const ensure=id=>{if(!map.has(id))map.set(id,{nombre:opsMap.get(id)||'Operador',ent:0,comp:0,dev:0,tickets:0});return map.get(id);};
-    ant.forEach(a=>{let x=ensure(a.operadorId);x.ent+=Number(a.montoEntregado||0);x.dev+=Number(a.devuelto||0);});
+    ant.forEach(a=>{let x=ensure(a.operadorId);x.ent+=Number(a.montoEntregado||0);});
+    refundMov.forEach(m=>{const a=antById.get(String(m.anticipo_id||''));if(a){let x=ensure(a.operadorId);x.dev+=Number(m.monto||0);}});
     comp.forEach(c=>{let x=ensure(c.operador_id);x.comp+=Number(c.importe_total||0);x.tickets+=Number(c.cantidad||0);});
     const owed=await rpc('cc_ant_casetas_saldos_favor_list'),owedMap=new Map();(owed.saldos||[]).forEach(x=>owedMap.set(x.operadorId,(owedMap.get(x.operadorId)||0)+Number(x.pendiente||0)));
     const rows=[...map.entries()].sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre)).map(([id,x])=>[x.nombre,fmt(x.ent),fmt(x.comp),fmt(x.dev),fmt(Math.max(x.ent-x.comp-x.dev,0)),fmt(owedMap.get(id)||0),x.tickets]);
@@ -506,6 +507,8 @@ async function casAuditLoad(){
   for(const x of data.comprobaciones_resumen||[]){if(!within(x))continue;const key=[x.operador_id,x.fecha,x.creado_por||''].join('|');let g=groups.get(key);if(!g){g={fecha:x.fecha||'',tipo:'COMPROBACION',operador:names.get(x.operador_id)||'—',referencia:'Comprobación de casetas',monto:0,estatus:'COMPROBADO',tickets:0};groups.set(key,g);}g.monto+=Number(x.importe_total)||0;g.tickets+=Number(x.cantidad)||0;}
   for(const g of groups.values()){g.referencia=g.tickets+' tickets comprobados';rows.push(g);}
   for(const x of data.tickets||[]){if(!within(x)||x.estatus==='CANCELADO')continue;rows.push({fecha:x.fecha||'',tipo:'TICKET',operador:names.get(x.operador_id)||'—',referencia:x.folio_ticket||'Ticket de caseta',monto:Number(x.total)||0,estatus:x.estatus||'REGISTRADO',tickets:Number(x.cantidad)||1});}
+  const antById=new Map((data.anticipos||[]).map(a=>[String(a.id),a]));
+  for(const m of data.movimientos||[]){if(String(m.tipo||'').toUpperCase()!=='DEVOLUCION'||!within(m))continue;const a=antById.get(String(m.anticipo_id||''));if(!a)continue;rows.push({id:m.id,fecha:m.fecha||'',tipo:'DEVOLUCION',operador:names.get(a.operadorId)||a.operador||'—',operadorId:a.operadorId,referencia:m.referencia||a.folio||'Devolución de efectivo',monto:Number(m.monto)||0,estatus:m.estatus||'REGISTRADO',tickets:0});}
   rows.sort((x,y)=>String(y.fecha).localeCompare(String(x.fecha)));
   const filtered=rows.filter(x=>!kind||x.tipo===kind);
   casAuditRows=filtered;
