@@ -314,8 +314,10 @@ function casSimpleHistory(){
  const body=$('#casSimpleHistory');if(!body)return;
  const op=comprobarSelectedId;if(!op){body.innerHTML='<tr><td colspan="4">Selecciona un operador.</td></tr>';return;}
  const advances=(state.data?.anticipos||[]).filter(a=>a.operadorId===op).map(a=>({date:a.fecha||'',kind:'Entrega',ref:a.folio,amount:a.montoEntregado||0}));
+ const opAnticipos=new Map((state.data?.anticipos||[]).filter(a=>a.operadorId===op).map(a=>[String(a.id),a]));
  const tickets=(state.data?.tickets||[]).filter(t=>t.operador_id===op).map(t=>({date:t.fecha||t.created_at||'',kind:'Comprobación',ref:t.folio_ticket||'Ticket',amount:t.total||0}));
- const rows=[...advances,...tickets].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,10);
+ const returns=(state.data?.movimientos||[]).filter(m=>String(m.tipo||'').toUpperCase()==='DEVOLUCION'&&opAnticipos.has(String(m.anticipo_id||''))).map(m=>({date:m.fecha||m.created_at||'',kind:'Devolución de efectivo',ref:m.referencia||opAnticipos.get(String(m.anticipo_id)).folio||'Devolución',amount:m.monto||0}));
+ const rows=[...advances,...tickets,...returns].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,10);
  body.innerHTML=rows.map(x=>'<tr><td>'+esc(String(x.date).slice(0,16).replace('T',' '))+'</td><td>'+esc(x.kind)+'</td><td>'+esc(x.ref||'—')+'</td><td><b>'+money(x.amount)+'</b></td></tr>').join('')||'<tr><td colspan="4">Sin movimientos registrados.</td></tr>';
 }
 let casPendingRequest=0;
