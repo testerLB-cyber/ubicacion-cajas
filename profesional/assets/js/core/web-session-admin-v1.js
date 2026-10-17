@@ -3,7 +3,7 @@ const sb=()=>window.gmSupabase,esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':
 const keyName='cc_professional_web_session_key';let key=sessionStorage.getItem(keyName);if(!key){key=crypto.randomUUID();sessionStorage.setItem(keyName,key)}
 let lastUid='',heartbeatBusy=false;
 async function rpc(action,extra={}){const {data,error}=await sb().rpc('cc_web_session_control',{p_action:action,...extra});if(error)throw error;return data}
-function has(which){const a=window.CC_ACCESS||{};return a.superAdmin===true||a.es_super_admin===true||a.permisos?.[which]?.[which==='sesiones_web'?'administrar':'enviar']===true}
+function has(which){const a=window.CC_ACCESS||{};return a.superAdmin===true||a.es_super_admin===true||a.rol==='ADMIN'||a.permisos?.[which]?.[which==='sesiones_web'?'administrar':'enviar']===true}
 async function tick(){
  if(heartbeatBusy||!sb()||!window.CC_AUTH_READY)return;
  heartbeatBusy=true;
