@@ -390,8 +390,8 @@ async function comprobarGuardar(){
  if(!op){fail('Selecciona un operador válido de la lista');return;}
  if(pending<=0){fail('El operador no tiene anticipos pendientes para comprobar');return;}
  if(items.some(i=>!Number.isSafeInteger(i.cantidad)||i.cantidad<0||i.cantidad>1000)){fail('Las cantidades deben ser números enteros entre 0 y 1000');return;}
- if(qty<=0){fail('Captura al menos un ticket');return;}
- if(!Number.isFinite(amount)||amount<=0){fail('El importe de comprobación no es válido');return;}
+ if(qty<=0&&refund<=0){fail('Captura al menos un ticket o indica el efectivo que el operador devuelve a caja');return;}
+ if(!Number.isFinite(amount)||amount<0||(qty>0&&amount<=0)){fail('El importe de comprobación no es válido');return;}
  if(!Number.isFinite(refund)||refund<0){fail('El efectivo a devolver debe ser un importe válido');return;}
  if(refund>0&&amount+refund>pending+0.001){fail('Tickets y devolución no pueden superar el saldo pendiente de '+money(pending));return;}
  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){fail('Selecciona una fecha válida');return;}
@@ -402,25 +402,41 @@ async function comprobarGuardar(){
  state.busy=true;$('#casComprobarGuardar').disabled=true;statusBox('#casComprobarEstado','Guardando comprobación…');
  let saved=false;
  try{
-  await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00',comentarios:$('#casComprobarComentarios').value.trim(),excesoModo});
-  saved=true;
-  if(refund>0){
-   try{
-    await refreshBalances();
-    let remaining=refund;
-    for(const a of funds(op.id)){
-     if(remaining<=0.005)break;
-     const take=Math.min(remaining,Number(a.pendiente||0));
-     if(take<=0)continue;
-     await rpc('cc_ant_add_cash_movement',{anticipoId:a.id,cuentaId:a.cuentaId,tipo:'DEVOLUCION',monto:Math.round(take*100)/100,fecha:new Date().toISOString(),referencia:a.folio,observaciones:'Devolución de efectivo aceptada durante comprobación de casetas'});
-     remaining=Math.round((remaining-take)*100)/100;
+  if(qty>0){
+   await rpc('cc_ant_casetas_comprobar_mixto',{operadorId:op.id,tickets:items,fecha:fecha+'T12:00:00',comentarios:$('#casComprobarComentarios').value.trim(),excesoModo});
+   saved=true;
+   if(refund>0){
+    try{
+     await refreshBalances();
+     let remaining=refund;
+     for(const a of funds(op.id)){
+      if(remaining<=0.005)break;
+      const take=Math.min(remaining,Number(a.pendiente||0));
+      if(take<=0)continue;
+      await rpc('cc_ant_add_cash_movement',{anticipoId:a.id,cuentaId:a.cuentaId,tipo:'DEVOLUCION',monto:Math.round(take*100)/100,fecha:new Date().toISOString(),referencia:a.folio,observaciones:'Devolución de efectivo aceptada durante comprobación de casetas'});
+      remaining=Math.round((remaining-take)*100)/100;
+     }
+     if(remaining>0.005)throw Error('Quedó una devolución sin aplicar por '+money(remaining)+'. No repitas los tickets; revisa los movimientos de caja.');
+    }catch(returnError){
+     statusBox('#casComprobarEstado','Los tickets quedaron comprobados, pero el retorno de efectivo NO se registró completamente: '+(returnError.message||returnError)+'. Revisa Caja de Casetas antes de volver a intentar.',true);
+     await refreshBalances();
+     return;
     }
-    if(remaining>0.005)throw Error('Quedó una devolución sin aplicar por '+money(remaining)+'. No repitas los tickets; revisa los movimientos de caja.');
-   }catch(returnError){
-    statusBox('#casComprobarEstado','Los tickets quedaron comprobados, pero el retorno de efectivo NO se registró completamente: '+(returnError.message||returnError)+'. Revisa Caja de Casetas antes de volver a intentar.',true);
-    await refreshBalances();
-    return;
    }
+  }else{
+   // Devolución únicamente de efectivo: no exigir ni crear tickets.
+   let remaining=Math.round(refund*100)/100;
+   const uuid=()=>{if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();let b=new Uint8Array(16);if(window.crypto&&window.crypto.getRandomValues)window.crypto.getRandomValues(b);else for(let i=0;i<16;i++)b[i]=Math.floor(Math.random()*256);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join('');return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);};
+   await refreshBalances();
+   for(const a of funds(op.id)){
+    if(remaining<=0.005)break;
+    const take=Math.round(Math.min(remaining,Number(a.pendiente||0))*100)/100;
+    if(take<=0)continue;
+    await rpc('cc_ant_casetas_conciliar',{anticipoId:a.id,operadorId:op.id,cuentaId:a.cuentaId,requestId:uuid(),tickets:[],devolucion:take,observaciones:'Devolución de efectivo sin tickets confirmada durante comprobación de casetas · Anticipo '+(a.folio||''),referencia:'DEVOLUCION_ANTICIPO:'+a.id});
+    remaining=Math.round((remaining-take)*100)/100;
+   }
+   if(remaining>0.005)throw Error('No se pudo aplicar toda la devolución; queda pendiente '+money(remaining)+'. Revisa Caja de Casetas antes de volver a intentar.');
+   saved=true;
   }
   document.querySelectorAll('#casComprobarTiposFilas [data-cas-qty]').forEach(el=>el.value='0');
   $('#casComprobarDevolucion').value='0';
