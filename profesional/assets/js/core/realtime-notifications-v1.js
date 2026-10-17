@@ -20,7 +20,7 @@
       .cc-rt-modal-head{display:flex;align-items:center;gap:12px;padding:18px 20px 12px}
       .cc-rt-modal-icon{width:46px;height:46px;border-radius:14px;background:#eff6ff;display:grid;place-items:center;font-size:22px;flex:0 0 auto}
       .cc-rt-modal-title{font-weight:900;color:#0f172a;font-size:18px;line-height:1.25}
-      .cc-rt-modal-body{padding:2px 20px 18px;color:#334155;font-size:15px;line-height:1.5;white-space:pre-wrap}
+      .cc-rt-modal-body{padding:2px 20px 18px;color:#334155;font-size:15px;line-height:1.5;white-space:pre-wrap}.cc-rt-modal-image{display:block;width:calc(100% - 40px);max-width:calc(100% - 40px);max-height:360px;object-fit:contain;margin:0 20px 18px;border-radius:12px;background:#f1f5f9}
       .cc-rt-modal-actions{display:flex;justify-content:flex-end;gap:9px;padding:14px 20px 18px;border-top:1px solid #e2e8f0;background:#f8fafc}
       .cc-rt-btn{border:0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:850;cursor:pointer}
       .cc-rt-btn-secondary{background:#e2e8f0;color:#0f172a}
@@ -177,7 +177,7 @@
       actions.appendChild(open);
     }
 
-    modal.append(head,body,actions);
+    modal.append(head,body);if(n.image_path&&sb()){const image=document.createElement('img');image.className='cc-rt-modal-image';image.alt='Imagen adjunta a la notificación';image.loading='lazy';image.style.display='none';sb().storage.from('cc-web-notifications').createSignedUrl(n.image_path,3600).then(({data,error})=>{if(!error&&data?.signedUrl){image.src=data.signedUrl;image.style.display='block'}}).catch(e=>console.warn('IMAGEN NOTIFICACION',e));modal.appendChild(image)}modal.appendChild(actions);
     backdrop.appendChild(modal);
     root.innerHTML='';
     root.appendChild(backdrop);
@@ -210,7 +210,7 @@
     loadingPending=true;
     try{
       const {data,error}=await sb().from('cc_push_notifications')
-        .select('id,user_id,title,body,url,source,created_at,read_at')
+        .select('id,user_id,title,body,url,source,image_path,created_at,read_at')
         .eq('user_id',userId)
         .is('read_at',null)
         .order('created_at',{ascending:false})
