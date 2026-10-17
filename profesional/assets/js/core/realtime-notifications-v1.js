@@ -156,11 +156,11 @@
     const ok=document.createElement('button');
     ok.type='button';
     ok.className='cc-rt-btn cc-rt-btn-secondary';
-    ok.textContent='Entendido';
+    ok.textContent='Enterado';
     ok.onclick=(ev)=>{
       ev.preventDefault();
       ev.stopPropagation();
-      closeCurrent(markable?n.id:null);
+      if(markable&&n.id){ok.disabled=true;ok.textContent='Guardando…';sb().rpc('cc_web_notification_ack',{p_notification_id:n.id}).then(({error})=>{if(error)throw error;closeCurrent(null)}).catch(err=>{console.warn('CONFIRMAR NOTIFICACION',err);ok.disabled=false;ok.textContent='Reintentar Enterado';alert('No se pudo guardar la confirmación. Intenta nuevamente.')})}else closeCurrent(null);
       return false;
     };
     actions.appendChild(ok);
