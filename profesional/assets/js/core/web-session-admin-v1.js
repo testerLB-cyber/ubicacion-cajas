@@ -34,7 +34,7 @@ async function tick(){
 }
 const styles=document.createElement('style');styles.textContent=`
 .cc-admin-modal{position:fixed;inset:0;background:#091728a8;z-index:2147482500;display:flex;align-items:center;justify-content:center;padding:16px}
-.cc-admin-card{background:#fff;color:#17263e;border-radius:18px;width:min(900px,95vw);max-height:90vh;overflow:auto;box-shadow:0 25px 75px #0005;padding:22px}
+.cc-admin-card{background:#fff;color:#17263e;border-radius:18px;width:min(1440px,98vw);max-height:94vh;overflow:auto;box-shadow:0 25px 75px #0005;padding:22px}.cc-admin-card:has(.cc-notif-workspace){width:min(1600px,98vw)}
 .cc-admin-card h2{margin:0 0 4px;font-size:21px}.cc-admin-card p{font-size:13px;color:#64748b}
 .cc-admin-action{border:0;background:#1d4ed8;color:#fff;border-radius:9px;padding:9px 14px;cursor:pointer;font-weight:700}
 .cc-admin-action.danger{background:#b91c1c}.cc-admin-action.subtle{background:#f1f5f9;color:#334155}
