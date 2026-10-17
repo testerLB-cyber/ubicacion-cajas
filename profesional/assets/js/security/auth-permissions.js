@@ -100,7 +100,7 @@ function protect(name,path){
 
 const CC_MODULE_PERMISSIONS={
  anticipos:'anticipos.ver',
- dashboard:'control_cajas.ver',
+ dashboard:'dashboard.ver',
  inventario:'inventario.ver',
  renta:'rentas.ver',
  historial:'historial.ver',
@@ -131,14 +131,27 @@ function firstControlTab(){
 function applyAccess(){
  const a=window.CC_ACCESS||{};
  const dashboard=ccPerm('dashboard.ver');
- const controlBase=ccPerm('control_cajas.ver');
  const control=ccHasAnyOperationalModule();
  const sd=document.getElementById('gmSideDashboard'),sc=document.getElementById('gmSideCajas');
- if(sd)sd.style.display=dashboard?'':'none';if(sc)sc.style.display=control?'':'none';
+ if(sd)sd.style.display=dashboard?'':'none';
+ if(sc)sc.style.display=control?'':'none';
  const back=document.getElementById('ccBackDashboard');if(back)back.style.display=dashboard?'':'none';
  const isAdmin=a.superAdmin===true||a.rol==='ADMIN';
- document.getElementById('ccAdminSideSection').style.display=isAdmin?'':'none';
- document.getElementById('gmSideUsers').style.display=isAdmin?'':'none';
+ const canUsers=ccPerm('usuarios.administrar');
+ const canMirrorSessions=ccPerm('sesiones_web.administrar');
+ const canWebNotifications=ccPerm('notificaciones_usuarios.enviar');
+ const canOperatorNotifications=isAdmin;
+ const sideItems=[
+  ['gmSideUsers',canUsers],
+  ['gmSideMirrorSessions',canMirrorSessions],
+  ['gmSideOperatorNotifications',canOperatorNotifications],
+  ['gmSideWebSessions',canMirrorSessions],
+  ['gmSideWebNotifs',canWebNotifications]
+ ];
+ sideItems.forEach(([id,visible])=>{const el=document.getElementById(id);if(el)el.style.display=visible?'':'none';});
+ const showAdminSection=sideItems.some(([id,visible])=>visible&&!!document.getElementById(id));
+ const adminSection=document.getElementById('ccAdminSideSection');
+ if(adminSection)adminSection.style.display=showAdminSection?'':'none';
  const session=document.getElementById('ccSessionBox');if(session)session.style.display='block';
  document.getElementById('ccSessionName').textContent=a.nombre||a.email||'Usuario';
  document.getElementById('ccSessionRole').textContent=a.rol+(a.activo?' · ACTIVO':' · INACTIVO');
