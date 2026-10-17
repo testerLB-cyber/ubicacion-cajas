@@ -41,6 +41,30 @@ const styles=document.createElement('style');styles.textContent=`
 .cc-admin-action.danger{background:#b91c1c}.cc-admin-action.subtle{background:#f1f5f9;color:#334155}
 .cc-admin-input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:9px;padding:10px;font:inherit}
 .cc-admin-user{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}.cc-notif-workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:18px}.cc-notif-panel{border:1px solid #dbe4ef;border-radius:14px;padding:16px;background:#f8fafc}.cc-notif-preview{background:white;border:1px solid #dbe4ef;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px #0f172a0d}.cc-notif-preview-head{padding:16px 18px;background:#eff6ff;font-weight:800;color:#0f172a}.cc-notif-preview-body{padding:18px;color:#334155;white-space:pre-wrap;min-height:60px}.cc-notif-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.cc-notif-toolbar button{background:#e2e8f0;color:#0f172a;padding:5px 9px}.cc-notif-preview img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:0 auto 12px}@media(max-width:760px){.cc-notif-workspace{grid-template-columns:1fr}}
+.cc-admin-card.cc-notif-catalog-modal{width:min(1080px,96vw);max-height:92vh;padding:18px}
+.cc-notif-catalog-root{display:flex;flex-direction:column;gap:12px;color:#17263e}
+.cc-notif-catalog-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cc-notif-catalog-stats{display:flex;gap:8px;flex-wrap:wrap}
+.cc-notif-stat{font-size:12px;padding:6px 9px;border:1px solid #dbe4ef;background:#f8fafc;border-radius:9px;font-weight:800}
+.cc-notif-batch-list{display:flex;flex-direction:column;gap:7px;max-height:59vh;overflow:auto;padding:2px}
+.cc-notif-batch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 13px;border:1px solid #dbe4ef;border-radius:11px;background:#fff;cursor:pointer;text-align:left;color:#17263e;width:100%;box-sizing:border-box}
+.cc-notif-batch:hover{background:#f8fafc;border-color:#93c5fd}
+.cc-notif-batch-main{min-width:0;flex:1}.cc-notif-batch-title{font-size:13px;font-weight:850;overflow-wrap:anywhere}
+.cc-notif-batch-sub{font-size:11px;color:#64748b;margin-top:4px}.cc-notif-batch-preview{font-size:12px;color:#475569;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:760px}
+.cc-notif-counts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cc-notif-pill{display:inline-block;font-size:10px;font-weight:850;padding:4px 7px;border-radius:99px;white-space:nowrap}
+.cc-notif-pill.ok{background:#dcfce7;color:#166534}.cc-notif-pill.pending{background:#fef3c7;color:#92400e}.cc-notif-pill.neutral{background:#e2e8f0;color:#334155}
+.cc-notif-detail-preview{border:1px solid #dbe4ef;border-radius:13px;overflow:hidden;background:#fff}
+.cc-notif-detail-preview-head{padding:13px 15px;background:#eff6ff;border-bottom:1px solid #dbeafe}
+.cc-notif-detail-title{font-size:16px;font-weight:900;color:#0f172a}.cc-notif-detail-meta{font-size:11px;color:#64748b;margin-top:5px}
+.cc-notif-detail-body{padding:15px;font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:#334155}
+.cc-notif-detail-image{display:block;max-width:100%;max-height:300px;object-fit:contain;margin:0 auto 14px;border-radius:9px}
+.cc-notif-recipient-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cc-notif-recipient-panel{border:1px solid #dbe4ef;border-radius:11px;overflow:hidden;background:#fff;min-width:0}
+.cc-notif-recipient-panel h4{margin:0;padding:10px 12px;font-size:12px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.cc-notif-recipient-list{max-height:32vh;overflow:auto}.cc-notif-recipient{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px 11px;border-bottom:1px solid #f1f5f9}
+.cc-notif-recipient:last-child{border-bottom:0}.cc-notif-recipient-name{font-size:12px;font-weight:800;overflow-wrap:anywhere}.cc-notif-recipient-meta{font-size:10px;color:#64748b;margin-top:3px;overflow-wrap:anywhere}.cc-notif-empty{padding:18px;text-align:center;color:#64748b;font-size:12px}
+@media(max-width:700px){.cc-notif-recipient-columns{grid-template-columns:1fr}.cc-notif-batch{align-items:flex-start;flex-direction:column}.cc-notif-counts{justify-content:flex-start}.cc-notif-batch-list{max-height:52vh}}
 `;document.head.appendChild(styles);
 function modal(title){document.getElementById('ccWebAdminModal')?.remove();const root=document.createElement('div');root.id='ccWebAdminModal';root.className='cc-admin-modal';root.innerHTML='<div class="cc-admin-card"><div style="display:flex;justify-content:space-between;align-items:center"><h2>'+esc(title)+'</h2><button class="cc-admin-action subtle" id="ccWebClose">Cerrar ✕</button></div><div id="ccWebAdminContent">Cargando…</div></div>';document.body.appendChild(root);root.querySelector('#ccWebClose').onclick=()=>root.remove();root.addEventListener('click',e=>{if(e.target===root)root.remove()});return root.querySelector('#ccWebAdminContent')}
 window.ccManageMirrorSessions=async()=>{
@@ -106,13 +130,83 @@ window.ccSendWebNotifications=async()=>{
 };
 
 window.ccOpenWebNotificationCatalog=async function(parentBody){
-  if(!canViewNotificationCatalog())return alert('No tienes permiso para ver el Catálogo de notificaciones. Solicita el permiso en Usuarios → Permisos.');
- const holder=parentBody||modal('Catálogo de notificaciones · Confirmaciones');
- const previous=holder.innerHTML;
- holder.innerHTML='<div class="cc-notif-panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h3 style="margin:0">Confirmaciones de lectura</h3><p>Consulta quién marcó Enterado y quién sigue pendiente.</p></div><button id="ccNotifCatalogRefresh" class="cc-admin-action subtle">Actualizar</button></div><input id="ccNotifCatalogSearch" class="cc-admin-input" placeholder="Buscar título, usuario o correo"><div id="ccNotifCatalogStats" style="margin:12px 0;font-weight:800"></div><div id="ccNotifCatalogRows" style="max-height:55vh;overflow:auto;background:white;border:1px solid #dbe4ef;border-radius:10px">Cargando catálogo…</div><button id="ccNotifCatalogBack" class="cc-admin-action subtle" style="margin-top:12px">Volver al envío</button></div>';
- holder.querySelector('#ccNotifCatalogBack').onclick=()=>{holder.innerHTML=previous};
- async function load(){const list=holder.querySelector('#ccNotifCatalogRows');list.textContent='Cargando…';try{const {data,error}=await sb().rpc('cc_web_notification_catalog');if(error)throw error;const rows=data||[];const stats=rows.reduce((s,r)=>{s.total++;if(r.acknowledged_at)s.ok++;else s.pending++;return s},{total:0,ok:0,pending:0});holder.querySelector('#ccNotifCatalogStats').textContent=stats.total+' destinatarios · '+stats.ok+' confirmados · '+stats.pending+' pendientes';const render=()=>{const q=holder.querySelector('#ccNotifCatalogSearch').value.toLowerCase();list.innerHTML='';const filtered=rows.filter(r=>[r.title,r.user_name,r.email,r.body].some(v=>String(v||'').toLowerCase().includes(q)));if(!filtered.length){list.textContent='No hay resultados para esta búsqueda.';return}filtered.forEach(r=>{const row=document.createElement('div');row.className='cc-admin-user';const details=document.createElement('div');details.style.flex='1';details.style.minWidth='220px';const title=document.createElement('b');title.textContent=r.title||'Notificación';const sub=document.createElement('div');sub.style.cssText='font-size:12px;color:#64748b;margin-top:4px';sub.textContent=(r.user_name||'Usuario')+' · '+(r.email||'')+' · Enviada '+(r.created_at?new Date(r.created_at).toLocaleString('es-MX'):'');const state=document.createElement('div');state.style.cssText='font-size:12px;font-weight:800;margin-top:5px;color:'+(r.acknowledged_at?'#15803d':'#b45309');state.textContent=r.acknowledged_at?'✓ Enterado: '+new Date(r.acknowledged_at).toLocaleString('es-MX'):'◷ Pendiente de confirmar';details.append(title,sub,state);row.append(details);list.append(row)});};holder.querySelector('#ccNotifCatalogSearch').oninput=render;render()}catch(e){list.textContent='No fue posible consultar el catálogo. Verifica el permiso «Catálogo de notificaciones → Ver confirmaciones». '+e.message}}
- holder.querySelector('#ccNotifCatalogRefresh').onclick=load;await load();
+ if(!canViewNotificationCatalog())return alert('No tienes permiso para ver el Catálogo de notificaciones. Solicita el permiso en Usuarios → Permisos.');
+ const returnHtml=parentBody?parentBody.innerHTML:null;
+ const holder=parentBody||modal('Catálogo de notificaciones');
+ if(!parentBody)holder.closest('.cc-admin-card')?.classList.add('cc-notif-catalog-modal');
+ const fmt=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'})};
+ const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
+ const groupRows=rows=>{
+  const map=new Map();
+  rows.forEach(r=>{
+   // El envío inserta todos los destinatarios en una sola transacción; created_at, título y contenido identifican el envío.
+   const key=[r.created_at||'',r.title||'',r.body||'',r.image_path||''].join('\u001f');
+   if(!map.has(key))map.set(key,{key,title:r.title||'Notificación sin título',body:r.body||'',image_path:r.image_path||null,created_at:r.created_at,users:[]});
+   const g=map.get(key);
+   if(!g.users.some(u=>String(u.user_id)===String(r.user_id)))g.users.push(r);
+  });
+  return [...map.values()].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+ };
+ const statusStats=g=>({total:g.users.length,ok:g.users.filter(u=>u.acknowledged_at).length,pending:g.users.filter(u=>!u.acknowledged_at).length});
+ const pill=(txt,kind)=>el('span','cc-notif-pill '+kind,txt);
+ let batches=[];
+ function showList(){
+  holder.innerHTML='<div class="cc-notif-catalog-root"><div class="cc-notif-catalog-toolbar"><div><h3 style="margin:0">Catálogo de notificaciones</h3><p style="margin:4px 0 0">Selecciona una notificación para ver el mensaje enviado y sus confirmaciones.</p></div><button type="button" id="ccNotifCatalogRefresh" class="cc-admin-action subtle">Actualizar</button></div><input id="ccNotifCatalogSearch" class="cc-admin-input" placeholder="Buscar por título o contenido"><div id="ccNotifCatalogStats" class="cc-notif-catalog-stats"></div><div id="ccNotifCatalogRows" class="cc-notif-batch-list"><div class="cc-notif-empty">Cargando notificaciones…</div></div><div id="ccNotifCatalogFooter"></div></div>';
+  const list=holder.querySelector('#ccNotifCatalogRows'),search=holder.querySelector('#ccNotifCatalogSearch'),stats=holder.querySelector('#ccNotifCatalogStats');
+  if(parentBody){const back=el('button','cc-admin-action subtle','Volver al envío');back.type='button';back.style.alignSelf='flex-start';back.onclick=()=>{holder.innerHTML=returnHtml};holder.querySelector('#ccNotifCatalogFooter').append(back)}
+  const render=()=>{
+   const query=search.value.trim().toLocaleLowerCase('es-MX');
+   const filtered=batches.filter(g=>[g.title,g.body].some(v=>String(v||'').toLocaleLowerCase('es-MX').includes(query)));
+   list.replaceChildren();
+   if(!filtered.length){list.append(el('div','cc-notif-empty',batches.length?'No hay notificaciones que coincidan con la búsqueda.':'No hay notificaciones en el periodo consultado.'));return}
+   filtered.forEach(g=>{
+    const st=statusStats(g),row=el('button','cc-notif-batch');row.type='button';
+    const main=el('div','cc-notif-batch-main'),title=el('div','cc-notif-batch-title',g.title),sub=el('div','cc-notif-batch-sub','Enviada: '+fmt(g.created_at)),preview=el('div','cc-notif-batch-preview',g.body||'(Sin mensaje)');
+    main.append(title,sub,preview);
+    const counts=el('div','cc-notif-counts');counts.append(pill(st.total+' usuarios','neutral'),pill(st.ok+' Enterado','ok'),pill(st.pending+' pendiente'+(st.pending===1?'':'s'),'pending'));
+    const arrow=el('span','cc-notif-pill neutral','Ver detalle ›');counts.append(arrow);row.append(main,counts);row.onclick=()=>showDetail(g);list.append(row);
+   });
+  };
+  const total=batches.reduce((n,g)=>n+g.users.length,0),confirmed=batches.reduce((n,g)=>n+statusStats(g).ok,0),pending=total-confirmed;
+  stats.replaceChildren(pill(batches.length+' notificaciones','neutral'),pill(total+' destinatarios','neutral'),pill(confirmed+' confirmados','ok'),pill(pending+' pendientes','pending'));
+  search.oninput=render;
+  holder.querySelector('#ccNotifCatalogRefresh').onclick=load;
+  render();
+ }
+ async function showDetail(g){
+  const st=statusStats(g),accepted=g.users.filter(u=>u.acknowledged_at).sort((a,b)=>String(a.user_name||a.email||'').localeCompare(String(b.user_name||b.email||''),'es')),pending=g.users.filter(u=>!u.acknowledged_at).sort((a,b)=>String(a.user_name||a.email||'').localeCompare(String(b.user_name||b.email||''),'es'));
+  holder.innerHTML='<div class="cc-notif-catalog-root"><div class="cc-notif-catalog-toolbar"><div><h3 style="margin:0">Detalle de notificación</h3><p style="margin:4px 0 0">Mensaje original y estado individual de cada destinatario.</p></div><button type="button" id="ccNotifBackList" class="cc-admin-action subtle">← Todas las notificaciones</button></div><div id="ccNotifSentPreview" class="cc-notif-detail-preview"></div><div id="ccNotifDetailStats" class="cc-notif-catalog-stats"></div><input id="ccNotifRecipientSearch" class="cc-admin-input" placeholder="Buscar usuario o correo"><div class="cc-notif-recipient-columns"><section class="cc-notif-recipient-panel"><h4 id="ccNotifAcceptedHeading">✓ Confirmaron Enterado</h4><div id="ccNotifAcceptedList" class="cc-notif-recipient-list"></div></section><section class="cc-notif-recipient-panel"><h4 id="ccNotifPendingHeading">◷ Pendientes de confirmar</h4><div id="ccNotifPendingList" class="cc-notif-recipient-list"></div></section></div></div>';
+  holder.querySelector('#ccNotifBackList').onclick=showList;
+  const preview=holder.querySelector('#ccNotifSentPreview'),head=el('div','cc-notif-detail-preview-head'),title=el('div','cc-notif-detail-title',g.title),meta=el('div','cc-notif-detail-meta','Enviada: '+fmt(g.created_at)),body=el('div','cc-notif-detail-body',g.body||'(Sin mensaje)');
+  head.append(title,meta);preview.append(head,body);
+  const detailStats=holder.querySelector('#ccNotifDetailStats');detailStats.append(pill(st.total+' destinatarios','neutral'),pill(st.ok+' confirmaron','ok'),pill(st.pending+' pendientes','pending'));
+  if(g.image_path){
+   const wrap=el('div');wrap.style.cssText='padding:0 15px 14px;text-align:center';const img=el('img','cc-notif-detail-image');img.alt='Imagen adjunta de la notificación';img.style.display='none';const imageMsg=el('div','cc-notif-detail-meta','Cargando imagen adjunta…');wrap.append(img,imageMsg);preview.append(wrap);
+   try{const {data,error}=await sb().storage.from('cc-web-notifications').createSignedUrl(g.image_path,3600);if(error)throw error;if(data?.signedUrl){img.src=data.signedUrl;img.style.display='block';imageMsg.remove()}else imageMsg.textContent='La imagen adjunta no está disponible.'}catch(e){imageMsg.textContent='No se pudo cargar la imagen adjunta.';console.warn('CATALOGO IMAGEN NOTIFICACION',e)}
+  }
+  const renderRecipients=()=>{
+   const q=holder.querySelector('#ccNotifRecipientSearch').value.trim().toLocaleLowerCase('es-MX');
+   const paint=(id,users,acceptedState)=>{
+    const box=holder.querySelector(id);box.replaceChildren();
+    const matches=users.filter(u=>[u.user_name,u.email].some(v=>String(v||'').toLocaleLowerCase('es-MX').includes(q)));
+    if(!matches.length){box.append(el('div','cc-notif-empty',users.length?'Sin coincidencias.':'Ningún usuario en esta sección.'));return}
+    matches.forEach(u=>{
+     const row=el('div','cc-notif-recipient'),left=el('div'),name=el('div','cc-notif-recipient-name',u.user_name||'Usuario'),email=el('div','cc-notif-recipient-meta',u.email||'Sin correo');
+     left.append(name,email);const state=el('div','cc-notif-recipient-meta',acceptedState?'Enterado: '+fmt(u.acknowledged_at):'Pendiente');state.style.cssText='text-align:right;white-space:nowrap;font-weight:800;color:'+(acceptedState?'#15803d':'#b45309');row.append(left,state);box.append(row);
+    });
+   };
+   paint('#ccNotifAcceptedList',accepted,true);paint('#ccNotifPendingList',pending,false);
+  };
+  holder.querySelector('#ccNotifAcceptedHeading').textContent='✓ Confirmaron Enterado ('+accepted.length+')';
+  holder.querySelector('#ccNotifPendingHeading').textContent='◷ Pendientes de confirmar ('+pending.length+')';
+  holder.querySelector('#ccNotifRecipientSearch').oninput=renderRecipients;renderRecipients();
+ }
+ async function load(){
+  const list=holder.querySelector('#ccNotifCatalogRows');if(list)list.innerHTML='<div class="cc-notif-empty">Cargando notificaciones…</div>';
+  try{const {data,error}=await sb().rpc('cc_web_notification_catalog');if(error)throw error;batches=groupRows(Array.isArray(data)?data:[]);showList()}
+  catch(e){if(list)list.textContent='No fue posible consultar el catálogo. '+(e.message||String(e));else alert('No fue posible consultar el catálogo. '+(e.message||String(e)))}
+ }
+ showList();await load();
 };
 
 function buttons(){const a=document.getElementById('gmSideOperatorNotifications');if(!a)return;const session=document.getElementById('gmSideWebSessions'),notify=document.getElementById('gmSideWebNotifs'),mirror=document.getElementById('gmSideMirrorSessions'),catalog=document.querySelector('#ccPanelConfiguracion [data-config="catalogoNotificaciones"]');if(session)session.style.display=has('sesiones_web')?'':'none';if(notify)notify.style.display=has('notificaciones_usuarios')?'':'none';if(mirror)mirror.style.display=has('sesiones_web')?'':'none';if(catalog)catalog.style.display=canViewNotificationCatalog()?'':'none'}window.ccSyncAdminMenu=buttons;buttons();setInterval(()=>{buttons();tick()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){buttons();tick()}});document.addEventListener('cc:access-ready',buttons);
