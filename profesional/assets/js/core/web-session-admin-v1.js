@@ -4,6 +4,23 @@ const keyName='cc_professional_web_session_key';let key=sessionStorage.getItem(k
 let lastUid='',heartbeatBusy=false;
 async function rpc(action,extra={}){const {data,error}=await sb().rpc('cc_web_session_control',{p_action:action,...extra});if(error)throw error;return data}
 function has(which){const a=window.CC_ACCESS||{};return a.superAdmin===true||a.es_super_admin===true||a.rol==='ADMIN'||a.permisos?.[which]?.[which==='sesiones_web'?'administrar':'enviar']===true}
+async function forceFreshAppReload(){
+ try{
+  if('caches' in window){
+   const keys=await caches.keys();
+   await Promise.all(keys.filter(k=>k.startsWith('trafico-profesional-')).map(k=>caches.delete(k)));
+  }
+ }catch(e){console.warn('APP CACHE CLEANUP',e.message||e)}
+ try{
+  if('serviceWorker' in navigator){
+   const reg=await navigator.serviceWorker.getRegistration('./');
+   if(reg)await reg.unregister();
+  }
+ }catch(e){console.warn('SERVICE WORKER RESET',e.message||e)}
+ const url=new URL(location.href);
+ url.searchParams.set('_session_refresh',String(Date.now()));
+ location.replace(url.toString());
+}
 async function tick(){
  if(heartbeatBusy||!sb()||!window.CC_AUTH_READY)return;
  heartbeatBusy=true;
@@ -12,7 +29,7 @@ async function tick(){
   if(!user){lastUid='';return}
   lastUid=user.id;
   const state=await rpc('heartbeat',{p_client_key:key});
-  if(state?.revoked){sessionStorage.removeItem(keyName);await sb().auth.signOut();window.CC_AUTH_READY=false;window.CC_ACCESS=null;document.body.classList.add('cc-auth-locked');document.getElementById('ccLoginGate')?.classList.remove('cc-hidden');alert('Esta sesión fue cerrada por el administrador. Inicia sesión nuevamente.');location.reload();}
+  if(state?.revoked){sessionStorage.removeItem(keyName);await sb().auth.signOut();window.CC_AUTH_READY=false;window.CC_ACCESS=null;document.body.classList.add('cc-auth-locked');document.getElementById('ccLoginGate')?.classList.remove('cc-hidden');alert('Tu sesión fue cerrada por el administrador. Se actualizará la aplicación; inicia sesión nuevamente.');await forceFreshAppReload();}
  }catch(e){console.warn('SESSION_HEARTBEAT',e.message||e)}finally{heartbeatBusy=false}
 }
 const styles=document.createElement('style');styles.textContent=`
