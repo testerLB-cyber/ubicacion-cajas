@@ -2517,14 +2517,14 @@ let currentData = [];
       compRows.forEach(c=>compById.set(String(c.id||c.folio_id||JSON.stringify(c)),c));
       const compData=[...compById.values()];
       // Las hojas comprobadas son el dato principal. Las consultas de flota/usuarios enriquecen el reporte, pero nunca deben impedir mostrar servicios.
+      // Regla del indicador: el periodo se determina exclusivamente por la fecha de uso de la comprobación.
+      // No incluir hojas por fecha de registro si fecha_uso cae fuera del rango o está vacía.
+      if (compUsoRes.error) throw new Error('No se pudieron consultar comprobaciones por fecha de uso: '+compUsoRes.error.message);
       const raw = compData.filter(c=>{
-        const fu=String(c.fecha_uso||'').slice(0,10), f=String(c.fecha||'').slice(0,10);
-        return (fu>=desde&&fu<=hasta)||(f>=desde&&f<=hasta);
+        const fu=String(c.fecha_uso||'').slice(0,10);
+        return !!fu && fu>=desde && fu<=hasta;
       });
-      const fechaServicio = c => {
-        const fu=String(c.fecha_uso||'').slice(0,10), f=String(c.fecha||'').slice(0,10);
-        return (fu>=desde&&fu<=hasta)?fu:f;
-      };
+      const fechaServicio = c => String(c.fecha_uso||'').slice(0,10);
       const ids = Array.from(new Set(raw.map(x=>x.folio_id).filter(Boolean)));
       const folios = [];
       for (let i=0; i<ids.length; i+=500) {
