@@ -508,7 +508,7 @@ async function casAuditLoad(){
   for(const g of groups.values()){g.referencia=g.tickets+' tickets comprobados';rows.push(g);}
   for(const x of data.tickets||[]){if(!within(x)||x.estatus==='CANCELADO')continue;rows.push({fecha:x.fecha||'',tipo:'TICKET',operador:names.get(x.operador_id)||'—',referencia:x.folio_ticket||'Ticket de caseta',monto:Number(x.total)||0,estatus:x.estatus||'REGISTRADO',tickets:Number(x.cantidad)||1});}
   const antById=new Map((data.anticipos||[]).map(a=>[String(a.id),a]));
-  for(const m of data.movimientos||[]){if(String(m.tipo||'').toUpperCase()!=='DEVOLUCION'||!within(m))continue;const a=antById.get(String(m.anticipo_id||''));if(!a)continue;rows.push({id:m.id,fecha:m.fecha||'',tipo:'DEVOLUCION',operador:names.get(a.operadorId)||a.operador||'—',operadorId:a.operadorId,referencia:m.referencia||a.folio||'Devolución de efectivo',monto:Number(m.monto)||0,estatus:m.estatus||'REGISTRADO',tickets:0});}
+  for(const m of data.movimientos||[]){if(String(m.tipo||'').toUpperCase()!=='DEVOLUCION')continue;const a=antById.get(String(m.anticipo_id||''));if(!a)continue;const refund={id:m.id,fecha:m.fecha||'',tipo:'DEVOLUCION',operador:names.get(a.operadorId)||a.operador||'—',operadorId:a.operadorId,referencia:m.referencia||a.folio||'Devolución de efectivo',monto:Number(m.monto)||0,estatus:m.estatus||'REGISTRADO',tickets:0};if(within(refund))rows.push(refund);}
   rows.sort((x,y)=>String(y.fecha).localeCompare(String(x.fecha)));
   const filtered=rows.filter(x=>!kind||x.tipo===kind);
   casAuditRows=filtered;
